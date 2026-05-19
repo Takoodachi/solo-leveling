@@ -9,7 +9,6 @@ export interface Exercise {
   type: ExerciseType
   defaultUnit: 'kg' | 'lb' | 'min' | 'reps' | 'km'
   isCustom: boolean
-  imageUrl?: string
   muscles?: string[]
   musclesSecondary?: string[]
   wgerId?: number

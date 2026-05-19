@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Flame, Star } from 'lucide-react'
+import { Dumbbell, Flame, Star, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -8,8 +8,8 @@ import StatCard from '@/components/StatCard'
 import MacroBar from '@/features/nutrition/components/MacroBar'
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
 import { useWorkoutStore } from '@/features/workouts/store'
-import { formatDisplayDate } from '@/lib/date'
 import { clampPercent, formatDurationMin } from '@/lib/format'
+import { format, parseISO } from 'date-fns'
 
 function xpForLevel(n: number): number {
   return Math.round(100 * Math.pow(n, 1.5))
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const xpPercent = clampPercent(xp, xpNeeded)
   const streak = userStats?.currentStreak ?? 0
 
+  const today = parseISO(todayStr)
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
@@ -40,11 +41,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-xl font-bold">{greeting} 👋</h1>
-        <p className="text-sm text-muted-foreground">{formatDisplayDate(todayStr)}</p>
+    <div className="p-4 flex flex-col gap-5">
+      {/* Greeting hero */}
+      <div className="pt-2">
+        <p className="text-sm font-medium text-primary mb-0.5">{format(today, 'EEEE, MMM d')}</p>
+        <h1 className="text-2xl font-bold tracking-tight">{greeting}</h1>
       </div>
 
       {/* Calories ring + macros */}
@@ -72,14 +73,18 @@ export default function DashboardPage() {
         />
       ) : (
         <Card>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Dumbbell size={20} className="text-muted-foreground" />
+          <CardContent className="p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                <Dumbbell size={20} className="text-primary" />
               </div>
-              <p className="text-sm text-muted-foreground">No workout yet today</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Ready to lift?</p>
+                <p className="text-xs text-muted-foreground">No workout logged today</p>
+              </div>
             </div>
-            <Button size="sm" onClick={handleStartWorkout}>
+            <Button size="sm" onClick={handleStartWorkout} className="gap-1.5 shrink-0">
+              <Play size={14} className="fill-current" />
               Start
             </Button>
           </CardContent>

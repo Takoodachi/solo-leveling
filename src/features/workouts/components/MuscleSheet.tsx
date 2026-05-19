@@ -46,16 +46,6 @@ export default function MuscleSheet({ exercise, open, onClose }: Props) {
             </div>
           )}
 
-          {/* Exercise image */}
-          {exercise.imageUrl && !hasDiagram && (
-            <img
-              src={exercise.imageUrl}
-              alt={exercise.name}
-              className="w-full h-40 object-cover rounded-lg"
-              loading="lazy"
-            />
-          )}
-
           {/* Muscle chip lists */}
           {hasMuscles && (
             <div className="flex flex-col gap-3">

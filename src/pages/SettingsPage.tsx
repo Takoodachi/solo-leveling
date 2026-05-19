@@ -8,6 +8,7 @@ import TargetForm from '@/features/settings/components/TargetForm'
 import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
 import NumberStepper from '@/components/NumberStepper'
+import SectionHeader from '@/components/SectionHeader'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useAuth } from '@/features/auth/useAuth'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
@@ -79,36 +80,34 @@ export default function SettingsPage() {
 
       {/* Profile & Goals */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Profile & Goals</h2>
+        <SectionHeader>Profile & Goals</SectionHeader>
         <Card>
           <CardContent className="p-4 flex flex-col gap-5">
 
             {/* Height */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
               <Label>Height (cm)</Label>
-              <div className="w-40">
-                <NumberStepper
-                  value={String(settings?.heightCm ?? '')}
-                  onChange={v => void updateSettings({ heightCm: Number(v) || undefined })}
-                  step={1}
-                  min={100}
-                  max={250}
-                  inputMode="numeric"
-                  placeholder="175"
-                />
-              </div>
+              <NumberStepper
+                value={String(settings?.heightCm ?? '')}
+                onChange={v => void updateSettings({ heightCm: Number(v) || undefined })}
+                step={1}
+                min={100}
+                max={250}
+                inputMode="numeric"
+                placeholder="175"
+              />
             </div>
 
             {/* Sex */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
               <Label>Biological sex</Label>
-              <div className="flex gap-1 p-0.5 bg-muted rounded-md">
+              <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
                 {(['male', 'female'] as Sex[]).map(s => (
                   <button
                     key={s}
                     onClick={() => void updateSettings({ sex: s })}
                     className={cn(
-                      'px-4 py-1.5 rounded text-sm font-medium transition-colors capitalize',
+                      'px-5 py-1.5 rounded text-sm font-medium transition-colors capitalize',
                       sex === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                     )}
                   >
@@ -173,7 +172,7 @@ export default function SettingsPage() {
 
       {/* Targets */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Daily Targets</h2>
+        <SectionHeader>Daily Targets</SectionHeader>
         <Card>
           <CardContent className="p-4">
             <TargetForm />
@@ -183,33 +182,29 @@ export default function SettingsPage() {
 
       {/* Workout preferences */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Workout</h2>
+        <SectionHeader>Workout</SectionHeader>
         <Card>
           <CardContent className="p-4 flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
               <Label>Rest timer (seconds)</Label>
-              <div className="w-40">
-                <NumberStepper
-                  value={String(settings?.defaultRestSeconds ?? 90)}
-                  onChange={v => void updateSettings({ defaultRestSeconds: Number(v) })}
-                  step={15}
-                  min={10}
-                  max={600}
-                  inputMode="numeric"
-                />
-              </div>
+              <NumberStepper
+                value={String(settings?.defaultRestSeconds ?? 90)}
+                onChange={v => void updateSettings({ defaultRestSeconds: Number(v) })}
+                step={15}
+                min={10}
+                max={600}
+                inputMode="numeric"
+              />
             </div>
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
               <Label>Barbell weight (kg)</Label>
-              <div className="w-40">
-                <NumberStepper
-                  value={String(settings?.barWeightKg ?? 20)}
-                  onChange={v => void updateSettings({ barWeightKg: Number(v) })}
-                  step={1}
-                  min={0}
-                  inputMode="decimal"
-                />
-              </div>
+              <NumberStepper
+                value={String(settings?.barWeightKg ?? 20)}
+                onChange={v => void updateSettings({ barWeightKg: Number(v) })}
+                step={1}
+                min={0}
+                inputMode="decimal"
+              />
             </div>
           </CardContent>
         </Card>
@@ -217,7 +212,7 @@ export default function SettingsPage() {
 
       {/* Data */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Data</h2>
+        <SectionHeader>Data</SectionHeader>
         <Card>
           <CardContent className="p-4 flex flex-col gap-3">
             <p className="text-xs text-muted-foreground">
@@ -234,7 +229,7 @@ export default function SettingsPage() {
       {/* Account */}
       {session && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Account</h2>
+          <SectionHeader>Account</SectionHeader>
           <Card>
             <CardContent className="p-4 flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">{session.user.email}</p>

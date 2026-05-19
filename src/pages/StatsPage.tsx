@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ResponsiveContainer, LineChart, Line, YAxis } from 'recharts'
 import StatCard from '@/components/StatCard'
+import SectionHeader from '@/components/SectionHeader'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { clampPercent } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -35,7 +36,7 @@ export default function StatsPage() {
 
       {/* Streak */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Streak</h2>
+        <SectionHeader>Streak</SectionHeader>
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             label="Current streak"
@@ -60,7 +61,7 @@ export default function StatsPage() {
 
       {/* Level + XP */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Level</h2>
+        <SectionHeader>Level</SectionHeader>
         <Card>
           <CardContent className="p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -85,7 +86,7 @@ export default function StatsPage() {
 
       {/* Body weight */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Body</h2>
+        <SectionHeader>Body</SectionHeader>
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -122,7 +123,7 @@ export default function StatsPage() {
 
       {/* Achievements */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Achievements</h2>
+        <SectionHeader>Achievements</SectionHeader>
         {sortedAchievements.length === 0 ? (
           <Card>
             <CardContent className="p-4 flex flex-col items-center gap-2 py-8">
