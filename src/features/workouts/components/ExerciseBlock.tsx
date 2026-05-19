@@ -1,7 +1,9 @@
-import { Plus, X } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, X, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import SetRow from './SetRow'
+import MuscleSheet from './MuscleSheet'
 import { useWorkoutStore } from '../store'
 import type { BlockDraft, SetDraft } from '../types'
 
@@ -13,14 +15,21 @@ interface Props {
 
 export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props) {
   const { addSet, updateSet, removeSet, removeBlock } = useWorkoutStore()
+  const [showMuscles, setShowMuscles] = useState(false)
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="font-medium text-sm">{block.exercise.name}</p>
-          <p className="text-xs text-muted-foreground">{block.exercise.category}</p>
-        </div>
+        <button
+          onClick={() => setShowMuscles(true)}
+          className="flex items-center gap-1.5 text-left min-w-0"
+        >
+          <div className="min-w-0">
+            <p className="font-medium text-sm">{block.exercise.name}</p>
+            <p className="text-xs text-muted-foreground">{block.exercise.category}</p>
+          </div>
+          <Info size={13} className="text-muted-foreground shrink-0 mt-0.5" />
+        </button>
         <Button
           variant="ghost"
           size="icon"
@@ -57,6 +66,12 @@ export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props)
         <Plus size={14} />
         Add set
       </Button>
+
+      <MuscleSheet
+        exercise={block.exercise}
+        open={showMuscles}
+        onClose={() => setShowMuscles(false)}
+      />
     </div>
   )
 }

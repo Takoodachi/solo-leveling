@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import NumberStepper from '@/components/NumberStepper'
 import { cn } from '@/lib/utils'
 import type { SetDraft } from '../types'
 import type { ExerciseType } from '@/types'
@@ -17,8 +17,7 @@ interface Props {
 export default function SetRow({ set, index, exerciseType, onChange, onDelete, onSetComplete }: Props) {
   const isCardio = exerciseType === 'cardio'
 
-  function handleBlur() {
-    // Trigger rest timer when a value is entered
+  function handleComplete() {
     const hasValue = isCardio
       ? set.duration || set.distanceKm
       : set.reps || set.weight
@@ -32,67 +31,62 @@ export default function SetRow({ set, index, exerciseType, onChange, onDelete, o
       {isCardio ? (
         <>
           <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[10px] text-muted-foreground">min</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
+            <span className="text-[10px] text-muted-foreground text-center">min</span>
+            <NumberStepper
               value={set.duration}
-              onChange={e => onChange('duration', e.target.value)}
-              onBlur={handleBlur}
-              className="h-9 text-center px-2"
+              onChange={v => onChange('duration', v)}
+              onBlur={handleComplete}
+              step={1}
+              min={0}
+              inputMode="decimal"
             />
           </div>
           <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[10px] text-muted-foreground">km</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
+            <span className="text-[10px] text-muted-foreground text-center">km</span>
+            <NumberStepper
               value={set.distanceKm}
-              onChange={e => onChange('distanceKm', e.target.value)}
-              onBlur={handleBlur}
-              className="h-9 text-center px-2"
+              onChange={v => onChange('distanceKm', v)}
+              onBlur={handleComplete}
+              step={0.5}
+              min={0}
+              inputMode="decimal"
             />
           </div>
         </>
       ) : (
         <>
           <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[10px] text-muted-foreground">reps</span>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="0"
+            <span className="text-[10px] text-muted-foreground text-center">reps</span>
+            <NumberStepper
               value={set.reps}
-              onChange={e => onChange('reps', e.target.value)}
-              onBlur={handleBlur}
-              className="h-9 text-center px-2"
+              onChange={v => onChange('reps', v)}
+              onBlur={handleComplete}
+              step={1}
+              min={0}
+              inputMode="numeric"
             />
           </div>
           <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[10px] text-muted-foreground">kg</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
+            <span className="text-[10px] text-muted-foreground text-center">kg</span>
+            <NumberStepper
               value={set.weight}
-              onChange={e => onChange('weight', e.target.value)}
-              onBlur={handleBlur}
-              className="h-9 text-center px-2"
+              onChange={v => onChange('weight', v)}
+              onBlur={handleComplete}
+              step={2.5}
+              min={0}
+              inputMode="decimal"
             />
           </div>
-          <div className="flex flex-col gap-0.5 w-14">
-            <span className="text-[10px] text-muted-foreground">RPE</span>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="—"
-              min="1"
-              max="10"
+          <div className="flex flex-col gap-0.5 w-24">
+            <span className="text-[10px] text-muted-foreground text-center">RPE</span>
+            <NumberStepper
               value={set.rpe}
-              onChange={e => onChange('rpe', e.target.value)}
-              className="h-9 text-center px-2"
+              onChange={v => onChange('rpe', v)}
+              step={1}
+              min={1}
+              max={10}
+              placeholder="—"
+              inputMode="numeric"
             />
           </div>
         </>

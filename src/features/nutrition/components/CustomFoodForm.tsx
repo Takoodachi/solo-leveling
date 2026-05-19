@@ -45,7 +45,7 @@ export default function CustomFoodForm({ onSuccess, onCancel }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <Label>Calories (kcal)</Label>
+          <Label>Calories</Label>
           <Input type="number" inputMode="decimal" {...register('kcalPerServing', { valueAsNumber: true })} />
           {errors.kcalPerServing && <p className="text-xs text-destructive">{errors.kcalPerServing.message}</p>}
         </div>

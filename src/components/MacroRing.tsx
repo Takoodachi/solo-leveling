@@ -52,7 +52,7 @@ export default function MacroRing({ consumed, target, className }: Props) {
       {/* Center text */}
       <div className="absolute flex flex-col items-center">
         <span className="text-xl font-bold leading-none">{Math.round(consumed)}</span>
-        <span className="text-xs text-muted-foreground">kcal</span>
+        <span className="text-xs text-muted-foreground">cal</span>
       </div>
     </div>
   )

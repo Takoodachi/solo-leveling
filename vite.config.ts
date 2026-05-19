@@ -42,11 +42,11 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/wger\.de\/media\/.*/i,
+            urlPattern: /^https:\/\/wger\.de\/(media|en\/exercise)\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'exercise-images',
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],

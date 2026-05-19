@@ -47,7 +47,7 @@ export default function NutritionPage() {
       <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
         <div className="flex justify-between items-baseline">
           <span className="text-2xl font-bold">{formatKcal(totals.kcal)}</span>
-          <span className="text-sm text-muted-foreground">/ {formatKcal(kcalTarget)} kcal</span>
+          <span className="text-sm text-muted-foreground">/ {formatKcal(kcalTarget)} cal</span>
         </div>
         <MacroBar label="Protein" value={totals.protein} target={proteinTarget} colorClass="text-blue-400" />
         <MacroBar label="Carbs"   value={totals.carbs}   target={carbsTarget}   colorClass="text-orange-400" />

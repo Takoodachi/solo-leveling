@@ -3,10 +3,8 @@ import { BUILT_IN_EXERCISES } from '@/data/exercises'
 import { BUILT_IN_FOODS } from '@/data/foods'
 
 export async function seedDatabase(): Promise<void> {
-  const exerciseCount = await db.exercises.count()
-  if (exerciseCount === 0) {
-    await db.exercises.bulkAdd(BUILT_IN_EXERCISES)
-  }
+  // Always upsert built-in exercises so imageUrl / muscle data is refreshed on existing installs
+  await db.exercises.bulkPut(BUILT_IN_EXERCISES)
 
   const foodCount = await db.foods.count()
   if (foodCount === 0) {

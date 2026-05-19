@@ -10,6 +10,9 @@ export interface Exercise {
   defaultUnit: 'kg' | 'lb' | 'min' | 'reps' | 'km'
   isCustom: boolean
   imageUrl?: string
+  muscles?: string[]
+  musclesSecondary?: string[]
+  wgerId?: number
   updatedAt: number
   syncPending?: boolean
 }
@@ -115,6 +118,9 @@ export interface Settings {
   id: 1
   defaultRestSeconds: number
   barWeightKg: number
+  heightCm?: number
+  sex?: 'male' | 'female'
+  goalType?: 'cut' | 'maintain' | 'bulk'
 }
 
 // View types (not stored, derived from joins)

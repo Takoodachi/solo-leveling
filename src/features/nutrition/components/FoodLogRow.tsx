@@ -20,7 +20,7 @@ export default function FoodLogRow({ entry, onDelete }: Props) {
         <p className="text-sm font-medium truncate">{entry.food.name}</p>
         <p className="text-xs text-muted-foreground">{servingLabel}</p>
       </div>
-      <span className="text-sm font-medium shrink-0">{formatKcal(kcal)} kcal</span>
+      <span className="text-sm font-medium shrink-0">{formatKcal(kcal)} cal</span>
       <Button
         variant="ghost"
         size="icon"

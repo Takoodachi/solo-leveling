@@ -38,7 +38,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
         <div className="flex items-center gap-2">
           <span className="font-medium text-sm">{MEAL_LABELS[mealType]}</span>
           {entries.length > 0 && (
-            <span className="text-xs text-muted-foreground">{formatKcal(mealKcal)} kcal</span>
+            <span className="text-xs text-muted-foreground">{formatKcal(mealKcal)} cal</span>
           )}
         </div>
         {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}

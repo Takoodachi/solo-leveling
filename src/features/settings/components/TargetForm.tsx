@@ -44,7 +44,7 @@ export default function TargetForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 flex flex-col gap-1">
-          <Label>Daily Calories (kcal)</Label>
+          <Label>Daily Calories</Label>
           <Input type="number" inputMode="numeric" {...register('dailyKcal', { valueAsNumber: true })} />
           {errors.dailyKcal && <p className="text-xs text-destructive">{errors.dailyKcal.message}</p>}
         </div>

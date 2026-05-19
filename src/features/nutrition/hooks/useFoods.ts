@@ -3,6 +3,7 @@ import { db } from '@/db'
 import type { Food } from '@/types'
 import { syncService } from '@/lib/sync'
 import { useAuthStore } from '@/features/auth/authStore'
+import { toast } from 'sonner'
 
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
@@ -66,12 +67,52 @@ export function useFoods() {
     if (userId) void syncService.sync(userId)
   }
 
+  async function addBarcodeFood(barcode: string): Promise<Food | null> {
+    // Check if we already have this food (by barcode stored in uuid prefix)
+    const existingKey = `barcode-${barcode}`
+    const existing = await db.foods.get(existingKey)
+    if (existing) return existing
+
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+      const json = await res.json() as { status: number; product?: Record<string, unknown> }
+      if (json.status !== 1 || !json.product) {
+        toast.error('Product not found — add it manually')
+        return null
+      }
+      const p = json.product
+      const n = p.nutriments as Record<string, number> | undefined ?? {}
+      const name = (p.product_name as string | undefined) || (p.generic_name as string | undefined) || 'Unknown product'
+      const food: Food = {
+        uuid: existingKey,
+        name: String(name),
+        kcalPerServing: Math.round(n['energy-kcal_100g'] ?? n['energy_100g'] ?? 0 / 4.184),
+        protein: Math.round((n['proteins_100g'] ?? 0) * 10) / 10,
+        carbs: Math.round((n['carbohydrates_100g'] ?? 0) * 10) / 10,
+        fat: Math.round((n['fat_100g'] ?? 0) * 10) / 10,
+        servingSize: 100,
+        servingUnit: 'g',
+        isCustom: true,
+        isFavorite: false,
+        updatedAt: Date.now(),
+        syncPending: true,
+      }
+      await db.foods.put(food)
+      toast.success(`Found: ${food.name}`)
+      return food
+    } catch {
+      toast.error('Could not look up barcode — check your connection')
+      return null
+    }
+  }
+
   return {
     foods: foods ?? [],
     favorites: favorites ?? [],
     searchFoods,
     toggleFavorite,
     addCustomFood,
+    addBarcodeFood,
     addFoodLog,
     removeFoodLog,
   }

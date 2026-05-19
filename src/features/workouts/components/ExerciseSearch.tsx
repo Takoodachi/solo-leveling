@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Dumbbell } from 'lucide-react'
+import { Search, Dumbbell, Plus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useExercises } from '../hooks/useExercises'
+import CreateExerciseForm from './CreateExerciseForm'
 import type { Exercise } from '@/types'
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
   const [query, setQuery] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
   const { searchExercises, groupByCategory } = useExercises()
 
   const results = searchExercises(query)
@@ -30,6 +32,28 @@ export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
     onSelect(exercise)
     setQuery('')
     onClose()
+  }
+
+  function handleCreated(exercise: Exercise) {
+    setShowCreate(false)
+    handleSelect(exercise)
+  }
+
+  if (showCreate) {
+    return (
+      <Dialog open={open} onOpenChange={open => !open && onClose()}>
+        <DialogContent className="max-w-sm p-0 gap-0">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle>Create Exercise</DialogTitle>
+          </DialogHeader>
+          <CreateExerciseForm
+            initialName={query}
+            onCreated={handleCreated}
+            onCancel={() => setShowCreate(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
@@ -50,8 +74,8 @@ export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
           />
         </div>
 
-        <ScrollArea className="h-[360px]">
-          <div className="px-2 pb-4">
+        <ScrollArea className="h-[320px]">
+          <div className="px-2 pb-2">
             {categories.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">No exercises found</p>
             )}
@@ -82,7 +106,12 @@ export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
                           <Dumbbell size={16} className="text-muted-foreground" />
                         </div>
                       )}
-                      <span>{exercise.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate">{exercise.name}</p>
+                        {exercise.isCustom && (
+                          <p className="text-[10px] text-primary">Custom</p>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -90,6 +119,16 @@ export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
             ))}
           </div>
         </ScrollArea>
+
+        <div className="px-4 pb-4 pt-1 border-t border-border">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            <Plus size={14} />
+            Create{query ? ` "${query}"` : ' custom exercise'}
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   )

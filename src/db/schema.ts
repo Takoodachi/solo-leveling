@@ -35,5 +35,6 @@ export class SoloLevelingDB extends Dexie {
     this.version(2).stores({
       achievements: 'uuid, key, unlockedAt, syncPending',
     })
+    this.version(3).stores({}) // Settings gains optional profile fields (no index changes)
   }
 }
