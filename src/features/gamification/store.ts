@@ -3,7 +3,10 @@ import { db } from '@/db'
 
 export function useGamification() {
   const userStats = useLiveQuery(() => db.userStats.get(1), [])
-  const achievements = useLiveQuery(() => db.achievements.orderBy('unlockedAt').reverse().toArray(), [])
+  const achievements = useLiveQuery(
+    () => db.achievements.toArray().then(arr => arr.sort((a, b) => b.unlockedAt - a.unlockedAt)),
+    []
+  )
 
   return {
     xp: userStats?.xp ?? 0,

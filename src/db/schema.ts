@@ -32,5 +32,8 @@ export class SoloLevelingDB extends Dexie {
       prRecords:    'uuid, exerciseId, metric, syncPending',
       settings:     'id',
     })
+    this.version(2).stores({
+      achievements: 'uuid, key, unlockedAt, syncPending',
+    })
   }
 }
