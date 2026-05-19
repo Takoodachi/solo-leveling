@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,7 +18,7 @@ import { today, formatShortDate } from '@/lib/date'
 
 export default function WeightLogPage() {
   const navigate = useNavigate()
-  const { metrics, logWeight } = useBodyMetrics(90)
+  const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
   const [weight, setWeight] = useState('')
   const [date, setDate] = useState(today())
   const [saving, setSaving] = useState(false)
@@ -135,7 +135,16 @@ export default function WeightLogPage() {
         {metrics.map(m => (
           <div key={m.uuid} className="flex items-center justify-between py-2 border-b border-border last:border-0">
             <span className="text-sm">{formatShortDate(m.date)}</span>
-            <span className="text-sm font-medium">{m.weightKg} kg</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">{m.weightKg} kg</span>
+              <button
+                onClick={() => deleteMetric(m.uuid)}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Delete entry"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

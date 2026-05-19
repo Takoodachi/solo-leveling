@@ -9,6 +9,7 @@ export interface Exercise {
   type: ExerciseType
   defaultUnit: 'kg' | 'lb' | 'min' | 'reps' | 'km'
   isCustom: boolean
+  imageUrl?: string
   updatedAt: number
   syncPending?: boolean
 }

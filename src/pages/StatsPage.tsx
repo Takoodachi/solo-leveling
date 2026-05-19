@@ -1,21 +1,33 @@
 import { useNavigate } from 'react-router-dom'
-import { Flame, Star, Trophy, Scale, ShieldCheck } from 'lucide-react'
+import { Flame, Star, Trophy, Scale, ShieldCheck, Lock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ResponsiveContainer, LineChart, Line, YAxis } from 'recharts'
 import StatCard from '@/components/StatCard'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
-import { ACHIEVEMENT_DEFS } from '@/features/gamification/achievements'
 import { clampPercent } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
+import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 
 export default function StatsPage() {
   const navigate = useNavigate()
-  const { xp, level, currentStreak, longestStreak, streakFreezes, achievements } = useGamification()
+  const { xp, level, currentStreak, longestStreak, streakFreezes, allAchievements } = useGamification()
+  const { metrics } = useBodyMetrics(30)
 
   const xpNeeded = xpForLevel(level)
   const xpPercent = clampPercent(xp, xpNeeded)
+
+  const chartData = [...metrics]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(m => ({ weight: m.weightKg }))
+
+  const sortedAchievements = [
+    ...allAchievements.filter(a => a.unlocked).sort((a, b) => (b.unlockedAt ?? 0) - (a.unlockedAt ?? 0)),
+    ...allAchievements.filter(a => !a.unlocked),
+  ]
 
   return (
     <div className="p-4 flex flex-col gap-6">
@@ -75,14 +87,33 @@ export default function StatsPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Body</h2>
         <Card>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="p-2 rounded-lg bg-muted flex-shrink-0">
                 <Scale size={20} className="text-muted-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground">Track your weight over time</p>
+              <div className="flex-1 min-w-0">
+                {metrics[0] ? (
+                  <>
+                    <p className="text-lg font-bold">{metrics[0].weightKg} <span className="text-sm font-normal text-muted-foreground">kg</span></p>
+                    <p className="text-xs text-muted-foreground">Latest weight</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Track your weight over time</p>
+                )}
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate('/stats/weight')}>
+            {chartData.length > 1 && (
+              <div className="w-20 h-10 flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <YAxis domain={['auto', 'auto']} hide />
+                    <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <Button variant="outline" size="sm" className="flex-shrink-0" onClick={() => navigate('/stats/weight')}>
               Open
             </Button>
           </CardContent>
@@ -92,36 +123,45 @@ export default function StatsPage() {
       {/* Achievements */}
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Achievements</h2>
-        {achievements.length === 0 ? (
+        {sortedAchievements.length === 0 ? (
           <Card>
             <CardContent className="p-4 flex flex-col items-center gap-2 py-8">
               <Trophy size={32} className="text-muted-foreground" />
               <p className="text-sm text-muted-foreground text-center">
-                No achievements yet — keep logging!
+                No achievements defined yet
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="flex flex-col gap-2">
-            {achievements.map(a => {
-              const def = ACHIEVEMENT_DEFS.find(d => d.key === a.key)
-              return (
-                <Card key={a.uuid}>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <span className="text-2xl">{def?.icon ?? '🏆'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{def?.title ?? a.key}</p>
-                      {def?.description && (
-                        <p className="text-xs text-muted-foreground">{def.description}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
+            {sortedAchievements.map(a => (
+              <Card
+                key={a.key}
+                className={cn(
+                  'transition-opacity',
+                  a.unlocked ? 'border-yellow-500/40' : 'opacity-50'
+                )}
+              >
+                <CardContent className="p-3 flex items-center gap-3">
+                  <span className={cn('text-2xl', !a.unlocked && 'grayscale')}>{a.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('font-medium text-sm', !a.unlocked && 'text-muted-foreground')}>
+                      {a.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{a.description}</p>
+                    {a.unlocked && a.unlockedAt && (
+                      <p className="text-xs text-yellow-500/80 mt-0.5">
                         {format(new Date(a.unlockedAt), 'MMM d, yyyy')}
                       </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                    )}
+                  </div>
+                  {a.unlocked
+                    ? <Trophy size={14} className="text-yellow-500 flex-shrink-0" />
+                    : <Lock size={14} className="text-muted-foreground flex-shrink-0" />
+                  }
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </section>

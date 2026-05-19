@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Dumbbell } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -65,11 +65,25 @@ export default function ExerciseSearch({ open, onClose, onSelect }: Props) {
                     key={exercise.uuid}
                     onClick={() => handleSelect(exercise)}
                     className={cn(
-                      'w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors',
+                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
                       'hover:bg-accent hover:text-accent-foreground'
                     )}
                   >
-                    {exercise.name}
+                    <div className="flex items-center gap-2.5">
+                      {exercise.imageUrl ? (
+                        <img
+                          src={exercise.imageUrl}
+                          alt=""
+                          className="w-10 h-10 rounded object-cover bg-muted flex-shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-muted flex-shrink-0 flex items-center justify-center">
+                          <Dumbbell size={16} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <span>{exercise.name}</span>
+                    </div>
                   </button>
                 ))}
               </div>

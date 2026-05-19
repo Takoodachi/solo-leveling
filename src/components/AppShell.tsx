@@ -1,11 +1,42 @@
-import { Outlet } from 'react-router-dom'
+import { useRef } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav from './BottomNav'
 
+const TAB_ORDER = ['/dashboard', '/workouts', '/nutrition', '/stats', '/settings']
+
+function getTabIndex(pathname: string) {
+  const i = TAB_ORDER.findIndex(t => pathname.startsWith(t))
+  return i === -1 ? 0 : i
+}
+
 export default function AppShell() {
+  const location = useLocation()
+  const currentIdx = getTabIndex(location.pathname)
+  const prevIdxRef = useRef(currentIdx)
+
+  const dir = currentIdx >= prevIdxRef.current ? 1 : -1
+  prevIdxRef.current = currentIdx
+
+  // Key on the top-level path segment so sub-routes don't trigger a slide
+  const topSegment = location.pathname.split('/')[1] ?? 'dashboard'
+
   return (
-    <div className="flex flex-col h-dvh bg-background text-foreground">
-      <main className="flex-1 overflow-y-auto pb-16">
-        <Outlet />
+    <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
+      <main className="flex-1 overflow-hidden relative">
+        <AnimatePresence initial={false} mode="wait" custom={dir}>
+          <motion.div
+            key={topSegment}
+            custom={dir}
+            initial={(d: number) => ({ x: `${d * 100}%`, opacity: 0 })}
+            animate={{ x: 0, opacity: 1 }}
+            exit={(d: number) => ({ x: `${d * -100}%`, opacity: 0 })}
+            transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
+            className="absolute inset-0 overflow-y-auto pb-16"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
       <BottomNav />
     </div>
