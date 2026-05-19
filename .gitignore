@@ -16,6 +16,12 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Claude Code internal files
+.claude/
+
+# Misplaced shadcn output (components are in src/components/ui instead)
+@/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
