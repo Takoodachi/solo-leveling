@@ -10,6 +10,12 @@ function getTabIndex(pathname: string) {
   return i === -1 ? 0 : i
 }
 
+const slideVariants = {
+  initial: (dir: number) => ({ x: `${dir * 100}%`, opacity: 0 }),
+  animate: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: `${dir * -100}%`, opacity: 0 }),
+}
+
 export default function AppShell() {
   const location = useLocation()
   const currentIdx = getTabIndex(location.pathname)
@@ -28,9 +34,10 @@ export default function AppShell() {
           <motion.div
             key={topSegment}
             custom={dir}
-            initial={(d: number) => ({ x: `${d * 100}%`, opacity: 0 })}
-            animate={{ x: 0, opacity: 1 }}
-            exit={(d: number) => ({ x: `${d * -100}%`, opacity: 0 })}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
             className="absolute inset-0 overflow-y-auto pb-16"
           >
