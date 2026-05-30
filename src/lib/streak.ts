@@ -35,6 +35,8 @@ export async function updateStreak(): Promise<void> {
     longestStreak,
     lastLogDate: todayStr,
     streakFreezes,
+    updatedAt: Date.now(),
+    syncPending: true,
   })
 }
 
@@ -42,6 +44,10 @@ export async function grantWeeklyStreakFreeze(): Promise<void> {
   const stats = await db.userStats.get(1)
   if (!stats) return
   if (stats.streakFreezes < 2) {
-    await db.userStats.update(1, { streakFreezes: stats.streakFreezes + 1 })
+    await db.userStats.update(1, {
+      streakFreezes: stats.streakFreezes + 1,
+      updatedAt: Date.now(),
+      syncPending: true,
+    })
   }
 }

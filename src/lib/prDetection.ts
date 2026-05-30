@@ -104,21 +104,6 @@ export async function detectAndRecordPrs(savedSets: WorkoutSet[]): Promise<Detec
   return fired
 }
 
-export async function unlockFirstPrAchievement(): Promise<boolean> {
-  const existing = await db.achievements.where('key').equals('first_pr').first()
-  if (existing) return false
-  const now = Date.now()
-  await db.achievements.add({
-    uuid: crypto.randomUUID(),
-    key: 'first_pr',
-    unlockedAt: now,
-    progress: 1,
-    updatedAt: now,
-    syncPending: true,
-  })
-  return true
-}
-
 export function formatPrLabel(pr: DetectedPr): string {
   switch (pr.metric) {
     case 'maxWeight':

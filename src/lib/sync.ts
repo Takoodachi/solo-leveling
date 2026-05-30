@@ -2,7 +2,7 @@ import { db } from '@/db'
 import { supabase, isSupabaseConfigured } from './supabase'
 import type {
   Exercise, Workout, WorkoutSet, Food, FoodLog,
-  BodyMetric, Targets, Achievement, PrRecord,
+  BodyMetric, Targets, Achievement, PrRecord, UserStats,
 } from '@/types'
 
 const LAST_SYNCED_KEY = 'soloLeveling_lastSyncedAt'
@@ -84,6 +84,7 @@ class SyncService {
         (rows) => db.prRecords.bulkPut(rows),
       ),
       this.pushTargets(userId),
+      this.pushUserStats(userId),
     ])
   }
 
@@ -144,6 +145,7 @@ class SyncService {
         (rows) => db.prRecords.bulkPut(rows),
       ),
       this.pullTargets(userId),
+      this.pullUserStats(userId),
     ])
   }
 
@@ -183,6 +185,35 @@ class SyncService {
     if (!local || remote.updatedAt > local.updatedAt) {
       const { user_id: _uid, ...rest } = remote
       await db.targets.put({ ...rest, id: 1, syncPending: false })
+    }
+  }
+
+  private async pushUserStats(userId: string): Promise<void> {
+    const stats = await db.userStats.get(1)
+    if (!stats?.syncPending) return
+    const { syncPending: _sp, ...rest } = stats
+    const { error } = await sb
+      .from('user_stats')
+      .upsert({ ...rest, user_id: userId }, { onConflict: 'user_id' })
+    if (!error) {
+      await db.userStats.put({ ...stats, syncPending: false })
+    }
+  }
+
+  private async pullUserStats(userId: string): Promise<void> {
+    const { data, error } = await sb
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error || !data) return
+
+    const local = await db.userStats.get(1)
+    const remote = data as UserStats & { user_id: string; updatedAt: number }
+    if (!local || (remote.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
+      const { user_id: _uid, ...rest } = remote
+      await db.userStats.put({ ...rest, id: 1, syncPending: false })
     }
   }
 }

@@ -89,6 +89,8 @@ export interface UserStats {
   longestStreak: number
   lastLogDate: string | null // YYYY-MM-DD
   streakFreezes: number
+  updatedAt?: number
+  syncPending?: boolean
 }
 
 export interface Targets {

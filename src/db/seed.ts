@@ -1,6 +1,8 @@
 import { db } from './index'
 import { BUILT_IN_EXERCISES } from '@/data/exercises'
 import { BUILT_IN_FOODS } from '@/data/foods'
+import { grantWeeklyStreakFreeze } from '@/lib/streak'
+import { getISOWeekNumber } from '@/lib/date'
 
 export async function seedDatabase(): Promise<void> {
   // Always upsert built-in exercises so imageUrl / muscle data is refreshed on existing installs
@@ -29,6 +31,8 @@ export async function seedDatabase(): Promise<void> {
       longestStreak: 0,
       lastLogDate: null,
       streakFreezes: 0,
+      updatedAt: Date.now(),
+      syncPending: true,
     })
   }
 
@@ -51,5 +55,12 @@ export async function seedDatabase(): Promise<void> {
       defaultRestSeconds: 90,
       barWeightKg: 20,
     })
+  }
+
+  // Grant one streak freeze per ISO week (max 2 banked, enforced in grantWeeklyStreakFreeze).
+  const weekKey = `${new Date().getFullYear()}-W${getISOWeekNumber(new Date())}`
+  if (localStorage.getItem('solo:lastFreezeGrantWeek') !== weekKey) {
+    await grantWeeklyStreakFreeze()
+    localStorage.setItem('solo:lastFreezeGrantWeek', weekKey)
   }
 }

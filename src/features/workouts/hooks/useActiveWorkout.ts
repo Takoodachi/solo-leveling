@@ -5,7 +5,10 @@ import { db } from '@/db'
 import { syncService } from '@/lib/sync'
 import { useAuthStore } from '@/features/auth/authStore'
 import { today } from '@/lib/date'
-import { detectAndRecordPrs, formatPrLabel, unlockFirstPrAchievement } from '@/lib/prDetection'
+import { detectAndRecordPrs, formatPrLabel } from '@/lib/prDetection'
+import { grantXp, XP } from '@/lib/xp'
+import { updateStreak } from '@/lib/streak'
+import { evaluateAchievements } from '@/lib/achievementEval'
 import { useWorkoutStore } from '../store'
 import { getWorkoutWithSets } from './useWorkouts'
 import type { WorkoutDraft, BlockDraft } from '../types'
@@ -62,10 +65,21 @@ export function useActiveWorkout() {
 
     // PR detection runs after the save commits so history queries see the new sets.
     const prs = await detectAndRecordPrs(sets)
-    let firstPrUnlocked = false
-    if (prs.length > 0) {
-      firstPrUnlocked = await unlockFirstPrAchievement()
+
+    // Streak only updates when the user actually trained today.
+    if (workoutDate === today()) {
+      await updateStreak()
     }
+
+    // XP: workout + per-set + per-PR.
+    const filledSetCount = sets.filter(s =>
+      s.reps != null || s.weight != null || s.duration != null || s.distanceKm != null
+    ).length
+    const xpAmount = XP.WORKOUT + filledSetCount * XP.PER_SET + prs.length * XP.NEW_PR
+    const xpResult = await grantXp(xpAmount)
+
+    // Evaluate achievements after stats settle (counts, streak, level, PRs).
+    const newAchievements = await evaluateAchievements()
 
     const userId = useAuthStore.getState().userId
     if (userId) void syncService.sync(userId)
@@ -77,12 +91,15 @@ export function useActiveWorkout() {
       colors: ['#8b5cf6', '#a855f7', '#d946ef'] // matches primary purples
     })
 
-    toast.success(`Workout saved — ${sets.length} sets`)
+    toast.success(`Workout saved — ${sets.length} sets · +${xpAmount} XP`)
     for (const pr of prs) {
       toast.success(`New PR: ${formatPrLabel(pr)}`, { icon: '💪' })
     }
-    if (firstPrUnlocked) {
-      toast.success('Achievement unlocked: New Record', { icon: '🏆' })
+    if (xpResult?.leveledUp) {
+      toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' })
+    }
+    for (const ach of newAchievements) {
+      toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
     }
     navigate('/workouts')
   }

@@ -10,11 +10,8 @@ import MacroBar from '@/features/nutrition/components/MacroBar'
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { clampPercent, formatDurationMin } from '@/lib/format'
+import { xpForLevel } from '@/lib/xp'
 import { format, parseISO } from 'date-fns'
-
-function xpForLevel(n: number): number {
-  return Math.round(100 * Math.pow(n, 1.5))
-}
 
 export default function DashboardPage() {
   const navigate = useNavigate()

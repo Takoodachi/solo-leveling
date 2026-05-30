@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import { ACHIEVEMENT_DEFS } from './achievements'
+export { xpForLevel } from '@/lib/xp'
 
 export function useGamification() {
   const userStats = useLiveQuery(() => db.userStats.get(1), [])
@@ -28,6 +29,3 @@ export function useGamification() {
   }
 }
 
-export function xpForLevel(n: number): number {
-  return Math.round(100 * Math.pow(n, 1.5))
-}

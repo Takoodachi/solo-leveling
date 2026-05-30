@@ -1,8 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { toast } from 'sonner'
 import { db } from '@/db'
 import type { BodyMetric } from '@/types'
 import { syncService } from '@/lib/sync'
 import { useAuthStore } from '@/features/auth/authStore'
+import { evaluateAchievements } from '@/lib/achievementEval'
 
 export function useBodyMetrics(limit = 90) {
   const metrics = useLiveQuery(
@@ -26,6 +28,11 @@ export function useBodyMetrics(limit = 90) {
         syncPending: true,
       }
       await db.bodyMetrics.add(entry)
+    }
+
+    const newAchievements = await evaluateAchievements()
+    for (const ach of newAchievements) {
+      toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
     }
 
     const userId = useAuthStore.getState().userId

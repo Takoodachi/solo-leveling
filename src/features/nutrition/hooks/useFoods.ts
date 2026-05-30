@@ -4,6 +4,10 @@ import type { Food } from '@/types'
 import { syncService } from '@/lib/sync'
 import { useAuthStore } from '@/features/auth/authStore'
 import { toast } from 'sonner'
+import { today } from '@/lib/date'
+import { updateStreak } from '@/lib/streak'
+import { evaluateAchievements } from '@/lib/achievementEval'
+import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
@@ -57,6 +61,21 @@ export function useFoods() {
       updatedAt: Date.now(),
       syncPending: true,
     })
+
+    // Streak only updates when the user actually logged for today.
+    if (params.date === today()) {
+      await updateStreak()
+      const hits = await checkDailyTargetsAndGrant(params.date)
+      for (const label of hits) {
+        toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
+      }
+    }
+
+    const newAchievements = await evaluateAchievements()
+    for (const ach of newAchievements) {
+      toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
+    }
+
     const userId = useAuthStore.getState().userId
     if (userId) void syncService.sync(userId)
   }
