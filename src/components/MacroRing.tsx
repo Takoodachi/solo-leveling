@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 const RADIUS = 52
 const STROKE = 10
@@ -36,7 +37,7 @@ export default function MacroRing({ consumed, target, className }: Props) {
         />
         {/* Fill */}
         {percent > 0 && (
-          <circle
+          <motion.circle
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={RADIUS}
@@ -44,8 +45,9 @@ export default function MacroRing({ consumed, target, className }: Props) {
             stroke={isOver ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'}
             strokeWidth={STROKE}
             strokeLinecap="round"
-            strokeDasharray={`${filled} ${CIRCUMFERENCE}`}
-            className="transition-all duration-500"
+            initial={{ strokeDasharray: `0 ${CIRCUMFERENCE}` }}
+            animate={{ strokeDasharray: `${filled} ${CIRCUMFERENCE}` }}
+            transition={{ duration: 1, ease: "easeOut" }}
           />
         )}
       </svg>

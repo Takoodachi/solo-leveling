@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ResponsiveContainer, LineChart, Line, YAxis } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, YAxis, Tooltip } from 'recharts'
 import StatCard from '@/components/StatCard'
 import SectionHeader from '@/components/SectionHeader'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
@@ -105,12 +105,22 @@ export default function StatsPage() {
               </div>
             </div>
             {chartData.length > 1 && (
-              <div className="w-20 h-10 flex-shrink-0">
+              <div className="w-24 h-12 flex-shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
                     <YAxis domain={['auto', 'auto']} hide />
-                    <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </LineChart>
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 10, padding: '4px' }}
+                      cursor={false}
+                    />
+                    <Area type="monotone" dataKey="weight" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorWeight)" strokeWidth={2} />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dumbbell, Flame, Star, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -28,8 +29,15 @@ export default function DashboardPage() {
   const level = userStats?.level ?? 1
   const xp = userStats?.xp ?? 0
   const xpNeeded = xpForLevel(level)
-  const xpPercent = clampPercent(xp, xpNeeded)
   const streak = userStats?.currentStreak ?? 0
+
+  const xpPercentTarget = clampPercent(xp, xpNeeded)
+  const [xpPercent, setXpPercent] = useState(0)
+
+  useEffect(() => {
+    const t = setTimeout(() => setXpPercent(xpPercentTarget), 100)
+    return () => clearTimeout(t)
+  }, [xpPercentTarget])
 
   const today = parseISO(todayStr)
   const hour = new Date().getHours()

@@ -1,4 +1,6 @@
+import React from 'react'
 import { Trash2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import NumberStepper from '@/components/NumberStepper'
 import { cn } from '@/lib/utils'
@@ -17,15 +19,25 @@ interface Props {
 export default function SetRow({ set, index, exerciseType, onChange, onDelete, onSetComplete }: Props) {
   const isCardio = exerciseType === 'cardio'
 
+  const [isCompleted, setIsCompleted] = React.useState(false)
+
   function handleComplete() {
     const hasValue = isCardio
       ? set.duration || set.distanceKm
       : set.reps || set.weight
-    if (hasValue) onSetComplete()
+    if (hasValue) {
+      setIsCompleted(true)
+      onSetComplete()
+      setTimeout(() => setIsCompleted(false), 500)
+    }
   }
 
   return (
-    <div className="flex items-center gap-2 py-1">
+    <motion.div 
+      className="flex items-center gap-2 py-1 px-1 rounded-md"
+      animate={{ backgroundColor: isCompleted ? 'hsl(var(--primary) / 0.2)' : 'transparent' }}
+      transition={{ duration: 0.3 }}
+    >
       <span className="text-xs text-muted-foreground w-6 text-center shrink-0">{index + 1}</span>
 
       {isCardio ? (
@@ -101,6 +113,6 @@ export default function SetRow({ set, index, exerciseType, onChange, onDelete, o
       >
         <Trash2 size={14} />
       </Button>
-    </div>
+    </motion.div>
   )
 }
