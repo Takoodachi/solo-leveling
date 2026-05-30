@@ -127,5 +127,7 @@ export function formatPrLabel(pr: DetectedPr): string {
       return `${pr.exerciseName} — est. 1RM ${pr.value} kg`
     case 'maxVolume':
       return `${pr.exerciseName} — ${pr.value} kg volume`
+    case 'maxReps':
+      return `${pr.exerciseName} — ${pr.value} reps`
   }
 }
