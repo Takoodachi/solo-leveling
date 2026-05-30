@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useWorkouts } from '@/features/workouts/hooks/useWorkouts'
+import { useWorkoutsWithSummary } from '@/features/workouts/hooks/useWorkoutsWithSummary'
 import WorkoutCard from '@/features/workouts/components/WorkoutCard'
 
 export default function WorkoutHistoryPage() {
   const navigate = useNavigate()
-  const workouts = useWorkouts()
+  const workouts = useWorkoutsWithSummary()
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -21,8 +21,14 @@ export default function WorkoutHistoryPage() {
         {workouts.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-12">No workouts yet</p>
         )}
-        {workouts.map(workout => (
-          <WorkoutCard key={workout.uuid} workout={workout} />
+        {workouts.map(w => (
+          <WorkoutCard
+            key={w.uuid}
+            workout={w}
+            setCount={w.setCount}
+            exerciseNames={w.exerciseNames}
+            onClick={() => navigate(`/workouts/${w.uuid}`)}
+          />
         ))}
       </div>
     </div>

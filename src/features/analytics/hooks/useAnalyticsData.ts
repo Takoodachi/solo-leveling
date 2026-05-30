@@ -69,7 +69,7 @@ export function useMacroAdherence(rangeDays: number): MacroResult {
       const windowDays = settings.activityWindowDays ?? 7
       const todayDate = parseISO(today())
       const windowDates = Array.from({ length: windowDays }, (_, i) =>
-        format(subDays(todayDate, i + 1), 'yyyy-MM-dd'),
+        format(subDays(todayDate, i), 'yyyy-MM-dd'),
       )
       const windowEarliest = windowDates[windowDates.length - 1]
       const [activity, workouts, latestWeight] = await Promise.all([

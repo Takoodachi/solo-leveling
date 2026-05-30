@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Dumbbell, History, ClipboardEdit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useWorkouts } from '@/features/workouts/hooks/useWorkouts'
+import { useWorkoutsWithSummary } from '@/features/workouts/hooks/useWorkoutsWithSummary'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { today } from '@/lib/date'
@@ -10,7 +10,7 @@ import SectionHeader from '@/components/SectionHeader'
 
 export default function WorkoutsPage() {
   const navigate = useNavigate()
-  const recentWorkouts = useWorkouts(5)
+  const recentWorkouts = useWorkoutsWithSummary(5)
   const { repeatLastWorkout } = useActiveWorkout()
   const { startWorkout, startLogWorkout } = useWorkoutStore()
 
@@ -62,8 +62,14 @@ export default function WorkoutsPage() {
           >
             Recent
           </SectionHeader>
-          {recentWorkouts.map(workout => (
-            <WorkoutCard key={workout.uuid} workout={workout} />
+          {recentWorkouts.map(w => (
+            <WorkoutCard
+              key={w.uuid}
+              workout={w}
+              setCount={w.setCount}
+              exerciseNames={w.exerciseNames}
+              onClick={() => navigate(`/workouts/${w.uuid}`)}
+            />
           ))}
         </div>
       )}

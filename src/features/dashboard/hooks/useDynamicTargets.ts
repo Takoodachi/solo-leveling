@@ -10,10 +10,10 @@ export interface UseDynamicTargetsResult {
   breakdown: DynamicBreakdown | undefined
 }
 
-function windowDatesExcludingToday(windowDays: number): string[] {
+function windowDatesIncludingToday(windowDays: number): string[] {
   const todayDate = parseISO(today())
   const dates: string[] = []
-  for (let i = 1; i <= windowDays; i++) {
+  for (let i = 0; i < windowDays; i++) {
     dates.push(format(subDays(todayDate, i), 'yyyy-MM-dd'))
   }
   return dates
@@ -32,7 +32,7 @@ export function useDynamicTargets(): UseDynamicTargetsResult {
     }
 
     const windowDays = settings.activityWindowDays ?? 7
-    const windowDates = windowDatesExcludingToday(windowDays)
+    const windowDates = windowDatesIncludingToday(windowDays)
     const earliest = windowDates[windowDates.length - 1]
 
     const [dailyActivity, workouts] = await Promise.all([

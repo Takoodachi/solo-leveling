@@ -10,6 +10,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import WorkoutsPage from '@/pages/WorkoutsPage'
 import ActiveWorkoutPage from '@/pages/ActiveWorkoutPage'
 import LogWorkoutPage from '@/pages/LogWorkoutPage'
+import WorkoutDetailPage from '@/pages/WorkoutDetailPage'
 import WorkoutHistoryPage from '@/pages/WorkoutHistoryPage'
 import NutritionPage from '@/pages/NutritionPage'
 import StatsPage from '@/pages/StatsPage'
@@ -52,6 +53,7 @@ function AuthenticatedApp() {
       {/* Full-screen — outside AppShell, no bottom nav */}
       <Route path="workouts/active" element={<ActiveWorkoutPage />} />
       <Route path="workouts/log" element={<LogWorkoutPage />} />
+      <Route path="workouts/:uuid" element={<WorkoutDetailPage />} />
       <Route path="stats/weight" element={<WeightLogPage />} />
       <Route path="stats/analytics" element={<AnalyticsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
