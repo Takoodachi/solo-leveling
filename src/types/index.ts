@@ -130,6 +130,16 @@ export interface Settings {
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
+  dynamicTargetsEnabled?: boolean
+  activityWindowDays?: number // 3-7
+}
+
+export interface DailyActivity {
+  uuid: string
+  date: string // YYYY-MM-DD
+  steps: number
+  updatedAt: number
+  syncPending?: boolean
 }
 
 // View types (not stored, derived from joins)

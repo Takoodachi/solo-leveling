@@ -2,7 +2,7 @@ import { db } from '@/db'
 import { supabase, isSupabaseConfigured } from './supabase'
 import type {
   Exercise, Workout, WorkoutSet, Food, FoodLog,
-  BodyMetric, Targets, Achievement, PrRecord, UserStats,
+  BodyMetric, Targets, Achievement, PrRecord, UserStats, DailyActivity,
 } from '@/types'
 
 const LAST_SYNCED_KEY = 'soloLeveling_lastSyncedAt'
@@ -75,6 +75,10 @@ class SyncService {
         () => db.bodyMetrics.filter(r => !!r.syncPending).toArray(),
         (rows) => db.bodyMetrics.bulkPut(rows),
       ),
+      this.pushTable<DailyActivity>('daily_activity', userId,
+        () => db.dailyActivity.filter(r => !!r.syncPending).toArray(),
+        (rows) => db.dailyActivity.bulkPut(rows),
+      ),
       this.pushTable<Achievement>('achievements', userId,
         () => db.achievements.filter(r => !!r.syncPending).toArray(),
         (rows) => db.achievements.bulkPut(rows),
@@ -137,6 +141,9 @@ class SyncService {
       ),
       this.pullTable<BodyMetric>('body_metrics', userId, lastSyncedAt,
         (rows) => db.bodyMetrics.bulkPut(rows),
+      ),
+      this.pullTable<DailyActivity>('daily_activity', userId, lastSyncedAt,
+        (rows) => db.dailyActivity.bulkPut(rows),
       ),
       this.pullTable<Achievement>('achievements', userId, lastSyncedAt,
         (rows) => db.achievements.bulkPut(rows),

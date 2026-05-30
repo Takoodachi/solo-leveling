@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Flame, Star, Play } from 'lucide-react'
+import { Dumbbell, Flame, Star, Play, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -8,6 +8,9 @@ import MacroRing from '@/components/MacroRing'
 import StatCard from '@/components/StatCard'
 import MacroBar from '@/features/nutrition/components/MacroBar'
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
+import { useDynamicTargets } from '@/features/dashboard/hooks/useDynamicTargets'
+import StepLogCard from '@/features/dashboard/components/StepLogCard'
+import TargetBreakdownSheet from '@/features/dashboard/components/TargetBreakdownSheet'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { clampPercent, formatDurationMin } from '@/lib/format'
 import { xpForLevel } from '@/lib/xp'
@@ -17,11 +20,13 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { startWorkout } = useWorkoutStore()
   const { nutritionTotals, targets, userStats, todayWorkout, todayStr } = useDashboardData()
+  const dyn = useDynamicTargets()
+  const [breakdownOpen, setBreakdownOpen] = useState(false)
 
-  const kcalTarget = targets?.dailyKcal ?? 2000
-  const proteinTarget = targets?.dailyProtein ?? 150
-  const carbsTarget = targets?.dailyCarbs ?? 200
-  const fatTarget = targets?.dailyFat ?? 65
+  const kcalTarget    = dyn.dynamic && dyn.targets ? dyn.targets.kcal    : (targets?.dailyKcal    ?? 2000)
+  const proteinTarget = dyn.dynamic && dyn.targets ? dyn.targets.protein : (targets?.dailyProtein ?? 150)
+  const carbsTarget   = dyn.dynamic && dyn.targets ? dyn.targets.carbs   : (targets?.dailyCarbs   ?? 200)
+  const fatTarget     = dyn.dynamic && dyn.targets ? dyn.targets.fat     : (targets?.dailyFat     ?? 65)
 
   const level = userStats?.level ?? 1
   const xp = userStats?.xp ?? 0
@@ -56,6 +61,23 @@ export default function DashboardPage() {
       {/* Calories ring + macros */}
       <Card>
         <CardContent className="p-4">
+          {dyn.dynamic && dyn.breakdown && (
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Today's target
+                {dyn.breakdown.activityAvg > 0 && (
+                  <span className="ml-1 text-primary">+{dyn.breakdown.activityAvg} kcal</span>
+                )}
+              </p>
+              <button
+                onClick={() => setBreakdownOpen(true)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="View target breakdown"
+              >
+                <Info size={14} />
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-4">
             <MacroRing consumed={nutritionTotals.kcal} target={kcalTarget} className="shrink-0" />
             <div className="flex-1 flex flex-col gap-2">
@@ -66,6 +88,17 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {dyn.dynamic && <StepLogCard />}
+
+      {dyn.dynamic && dyn.targets && dyn.breakdown && (
+        <TargetBreakdownSheet
+          open={breakdownOpen}
+          onClose={() => setBreakdownOpen(false)}
+          targets={dyn.targets}
+          breakdown={dyn.breakdown}
+        />
+      )}
 
       {/* Today's workout */}
       {todayWorkout ? (

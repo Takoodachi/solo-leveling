@@ -178,6 +178,58 @@ export default function SettingsPage() {
             <TargetForm />
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <Label className="text-sm">Activity-driven targets</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Adjusts carbs and fat based on your recent steps and workouts. Protein stays where you set it.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings?.dynamicTargetsEnabled ?? false}
+                onClick={() => void updateSettings({ dynamicTargetsEnabled: !settings?.dynamicTargetsEnabled })}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                  settings?.dynamicTargetsEnabled ? 'bg-primary' : 'bg-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition-transform',
+                    settings?.dynamicTargetsEnabled ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
+              </button>
+            </div>
+
+            {settings?.dynamicTargetsEnabled && (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs text-muted-foreground">Rolling window</Label>
+                <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
+                  {[3, 5, 7].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => void updateSettings({ activityWindowDays: n })}
+                      className={cn(
+                        'px-3 py-1 rounded text-xs font-medium transition-colors',
+                        (settings.activityWindowDays ?? 7) === n
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                      {n} days
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Workout preferences */}
