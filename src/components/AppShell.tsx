@@ -41,7 +41,9 @@ export default function AppShell() {
             transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
             className="absolute inset-0 overflow-y-auto pb-16"
           >
-            <Outlet />
+            <div className="w-full max-w-md mx-auto">
+              <Outlet />
+            </div>
           </motion.div>
         </AnimatePresence>
       </main>

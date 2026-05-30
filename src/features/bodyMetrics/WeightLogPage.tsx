@@ -40,7 +40,7 @@ export default function WeightLogPage() {
   const latest = metrics[0]
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="w-full max-w-md mx-auto p-4 flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
           <ChevronLeft size={18} />

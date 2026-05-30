@@ -56,6 +56,7 @@ export default function LogWorkoutPage() {
 
   return (
     <div className="h-dvh flex flex-col bg-background">
+      <div className="flex flex-col flex-1 w-full max-w-md mx-auto min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -141,6 +142,7 @@ export default function LogWorkoutPage() {
           </Button>
         </div>
       )}
+      </div>
 
       <ExerciseSearch
         open={showExerciseSearch}
