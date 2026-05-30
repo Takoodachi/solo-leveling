@@ -9,6 +9,7 @@ import LoginPage from '@/features/auth/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import WorkoutsPage from '@/pages/WorkoutsPage'
 import ActiveWorkoutPage from '@/pages/ActiveWorkoutPage'
+import LogWorkoutPage from '@/pages/LogWorkoutPage'
 import WorkoutHistoryPage from '@/pages/WorkoutHistoryPage'
 import NutritionPage from '@/pages/NutritionPage'
 import StatsPage from '@/pages/StatsPage'
@@ -49,6 +50,7 @@ function AuthenticatedApp() {
       </Route>
       {/* Full-screen — outside AppShell, no bottom nav */}
       <Route path="workouts/active" element={<ActiveWorkoutPage />} />
+      <Route path="workouts/log" element={<LogWorkoutPage />} />
       <Route path="stats/weight" element={<WeightLogPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

@@ -6,8 +6,11 @@ interface WorkoutStore {
   draft: WorkoutDraft | null
 
   startWorkout: () => void
+  startLogWorkout: (date: string, durationMin?: number) => void
   loadDraft: (draft: WorkoutDraft) => void
   discardWorkout: () => void
+  setDraftDate: (date: string) => void
+  setDraftDuration: (min: number | undefined) => void
 
   addBlock: (exercise: Exercise) => void
   removeBlock: (blockIdx: number) => void
@@ -32,9 +35,32 @@ export const useWorkoutStore = create<WorkoutStore>((set) => ({
       },
     }),
 
+  startLogWorkout: (date, durationMin = 45) =>
+    set({
+      draft: {
+        startedAt: Date.now(),
+        notes: '',
+        blocks: [],
+        date,
+        durationMin,
+      },
+    }),
+
   loadDraft: (draft) => set({ draft }),
 
   discardWorkout: () => set({ draft: null }),
+
+  setDraftDate: (date) =>
+    set((state) => {
+      if (!state.draft) return state
+      return { draft: { ...state.draft, date } }
+    }),
+
+  setDraftDuration: (min) =>
+    set((state) => {
+      if (!state.draft) return state
+      return { draft: { ...state.draft, durationMin: min } }
+    }),
 
   addBlock: (exercise) =>
     set((state) => {

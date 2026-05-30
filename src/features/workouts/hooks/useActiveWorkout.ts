@@ -19,7 +19,12 @@ export function useActiveWorkout() {
     if (!draft) return
 
     const now = Date.now()
-    const durationMin = Math.max(1, Math.round((now - draft.startedAt) / 60000))
+    const isBackdated = !!draft.date
+    const workoutDate = draft.date ?? today()
+    const durationMin = draft.durationMin ?? Math.max(1, Math.round((now - draft.startedAt) / 60000))
+    const createdAt = isBackdated
+      ? new Date(`${workoutDate}T12:00:00`).getTime()
+      : draft.startedAt
     const workoutUuid = crypto.randomUUID()
 
     const sets = draft.blocks.flatMap((block, blockIdx) =>
@@ -41,10 +46,10 @@ export function useActiveWorkout() {
     await db.transaction('rw', db.workouts, db.workoutSets, async () => {
       await db.workouts.add({
         uuid: workoutUuid,
-        date: today(),
+        date: workoutDate,
         notes: draft.notes,
         durationMin,
-        createdAt: draft.startedAt,
+        createdAt,
         updatedAt: now,
         syncPending: true,
       })

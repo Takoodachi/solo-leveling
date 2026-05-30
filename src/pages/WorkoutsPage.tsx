@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, History } from 'lucide-react'
+import { Dumbbell, History, ClipboardEdit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkouts } from '@/features/workouts/hooks/useWorkouts'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useWorkoutStore } from '@/features/workouts/store'
+import { today } from '@/lib/date'
 import WorkoutCard from '@/features/workouts/components/WorkoutCard'
 import SectionHeader from '@/components/SectionHeader'
 
@@ -11,11 +12,16 @@ export default function WorkoutsPage() {
   const navigate = useNavigate()
   const recentWorkouts = useWorkouts(5)
   const { repeatLastWorkout } = useActiveWorkout()
-  const { startWorkout } = useWorkoutStore()
+  const { startWorkout, startLogWorkout } = useWorkoutStore()
 
   function handleStart() {
     startWorkout()
     navigate('/workouts/active')
+  }
+
+  function handleLogPast() {
+    startLogWorkout(today())
+    navigate('/workouts/log')
   }
 
   return (
@@ -33,6 +39,11 @@ export default function WorkoutsPage() {
           </Button>
         )}
       </div>
+
+      <Button variant="outline" onClick={handleLogPast} className="gap-2 w-full">
+        <ClipboardEdit size={16} />
+        Log past workout
+      </Button>
 
       {recentWorkouts.length > 0 && (
         <div className="flex flex-col gap-2">

@@ -27,6 +27,9 @@ export type WorkoutDraft = {
   startedAt: number
   notes: string
   blocks: BlockDraft[]
+  // Present only for the "log past workout" flow
+  date?: string          // YYYY-MM-DD
+  durationMin?: number   // user-entered, required when date is set
 }
 
 export function emptySet(): SetDraft {
