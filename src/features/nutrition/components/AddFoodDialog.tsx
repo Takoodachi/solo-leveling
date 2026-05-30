@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Search, Star, ScanLine } from 'lucide-react'
+import { db } from '@/db'
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,14 @@ function computeMacros(food: Food, servings: number) {
 
 const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml'
 
+const RECENT_WINDOW_DAYS = 14
+
+function daysAgoIso(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function AddFoodDialog({ open, onClose, date, mealType }: Props) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Food | null>(null)
@@ -45,7 +55,30 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
   const [showScanner, setShowScanner] = useState(false)
   const { searchFoods, addFoodLog, toggleFavorite, addBarcodeFood } = useFoods()
 
-  const results = searchFoods(query)
+  // Map of foodUuid → most-recent-log timestamp within the recent window.
+  const recentMapRaw = useLiveQuery(async () => {
+    const since = daysAgoIso(RECENT_WINDOW_DAYS)
+    const logs = await db.foodLog.where('date').aboveOrEqual(since).toArray()
+    const m = new Map<string, number>()
+    for (const log of logs) {
+      const cur = m.get(log.foodId) ?? 0
+      if (log.updatedAt > cur) m.set(log.foodId, log.updatedAt)
+    }
+    return m
+  }, [])
+  const recentMap = useMemo(() => recentMapRaw ?? new Map<string, number>(), [recentMapRaw])
+
+  const baseResults = searchFoods(query)
+  const results = useMemo(() => {
+    return [...baseResults].sort((a, b) => {
+      const ra = recentMap.get(a.uuid) ?? 0
+      const rb = recentMap.get(b.uuid) ?? 0
+      if (ra && !rb) return -1
+      if (rb && !ra) return 1
+      if (ra && rb) return rb - ra
+      return a.name.localeCompare(b.name)
+    })
+  }, [baseResults, recentMap])
 
   function getEffectiveServings(): number {
     if (inputMode === 'grams' && selected && usesGrams(selected)) {
@@ -224,33 +257,43 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
                 {results.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">No foods found</p>
                 )}
-                {results.map(food => (
-                  <button
-                    key={food.uuid}
-                    onClick={() => handleFoodSelect(food)}
-                    className={cn(
-                      'w-full text-left px-3 py-2.5 rounded-md transition-colors',
-                      'hover:bg-accent flex items-center justify-between gap-2'
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{food.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {food.kcalPerServing} cal / {food.servingSize}{food.servingUnit}
-                      </p>
-                    </div>
+                {results.map(food => {
+                  const isRecent = recentMap.has(food.uuid)
+                  return (
                     <button
-                      onClick={e => { e.stopPropagation(); void toggleFavorite(food.uuid) }}
-                      className="shrink-0 p-1"
-                      aria-label={food.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                      key={food.uuid}
+                      onClick={() => handleFoodSelect(food)}
+                      className={cn(
+                        'w-full text-left px-3 py-2.5 rounded-md transition-colors',
+                        'hover:bg-accent flex items-center justify-between gap-2'
+                      )}
                     >
-                      <Star
-                        size={14}
-                        className={food.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
-                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm truncate">{food.name}</p>
+                          {isRecent && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium shrink-0">
+                              Recent
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {food.kcalPerServing} cal / {food.servingSize}{food.servingUnit}
+                        </p>
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); void toggleFavorite(food.uuid) }}
+                        className="shrink-0 p-1"
+                        aria-label={food.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Star
+                          size={14}
+                          className={food.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
+                        />
+                      </button>
                     </button>
-                  </button>
-                ))}
+                  )
+                })}
               </div>
             </ScrollArea>
             <div className="px-4 pb-4">

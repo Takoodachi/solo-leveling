@@ -40,6 +40,11 @@ export interface WorkoutSet {
   syncPending?: boolean
 }
 
+export interface FoodIngredient {
+  foodUuid: string
+  grams: number
+}
+
 export interface Food {
   uuid: string
   name: string
@@ -51,6 +56,7 @@ export interface Food {
   servingUnit: string
   isCustom: boolean
   isFavorite: boolean
+  ingredients?: FoodIngredient[]
   updatedAt: number
   syncPending?: boolean
 }

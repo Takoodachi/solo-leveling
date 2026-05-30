@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import confetti from 'canvas-confetti'
 import { db } from '@/db'
 import { syncService } from '@/lib/sync'
 import { useAuthStore } from '@/features/auth/authStore'
 import { today } from '@/lib/date'
+import { detectAndRecordPrs, formatPrLabel, unlockFirstPrAchievement } from '@/lib/prDetection'
 import { useWorkoutStore } from '../store'
 import { getWorkoutWithSets } from './useWorkouts'
 import type { WorkoutDraft, BlockDraft } from '../types'
@@ -53,10 +55,30 @@ export function useActiveWorkout() {
 
     store.discardWorkout()
 
+    // PR detection runs after the save commits so history queries see the new sets.
+    const prs = await detectAndRecordPrs(sets)
+    let firstPrUnlocked = false
+    if (prs.length > 0) {
+      firstPrUnlocked = await unlockFirstPrAchievement()
+    }
+
     const userId = useAuthStore.getState().userId
     if (userId) void syncService.sync(userId)
 
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8b5cf6', '#a855f7', '#d946ef'] // matches primary purples
+    })
+
     toast.success(`Workout saved — ${sets.length} sets`)
+    for (const pr of prs) {
+      toast.success(`New PR: ${formatPrLabel(pr)}`, { icon: '💪' })
+    }
+    if (firstPrUnlocked) {
+      toast.success('Achievement unlocked: New Record', { icon: '🏆' })
+    }
     navigate('/workouts')
   }
 

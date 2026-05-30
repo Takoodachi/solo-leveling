@@ -9,9 +9,18 @@ export type SetDraft = {
   distanceKm: string
 }
 
+export type ExerciseSuggestion = {
+  source: 'history' | 'related'
+  weight?: number
+  reps?: number
+  sourceExerciseName?: string
+  lastDate?: string
+}
+
 export type BlockDraft = {
   exercise: Exercise
   sets: SetDraft[]
+  suggestion?: ExerciseSuggestion
 }
 
 export type WorkoutDraft = {

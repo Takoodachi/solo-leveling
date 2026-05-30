@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Exercise } from '@/types'
-import { type WorkoutDraft, type BlockDraft, emptySet } from './types'
+import { type WorkoutDraft, type BlockDraft, type ExerciseSuggestion, emptySet } from './types'
 
 interface WorkoutStore {
   draft: WorkoutDraft | null
@@ -11,6 +11,7 @@ interface WorkoutStore {
 
   addBlock: (exercise: Exercise) => void
   removeBlock: (blockIdx: number) => void
+  applySuggestionToBlock: (blockIdx: number, suggestion: ExerciseSuggestion) => void
 
   addSet: (blockIdx: number) => void
   updateSet: (blockIdx: number, setIdx: number, field: keyof Omit<import('./types').SetDraft, 'uuid'>, value: string) => void
@@ -46,6 +47,26 @@ export const useWorkoutStore = create<WorkoutStore>((set) => ({
     set((state) => {
       if (!state.draft) return state
       const blocks = state.draft.blocks.filter((_, i) => i !== blockIdx)
+      return { draft: { ...state.draft, blocks } }
+    }),
+
+  applySuggestionToBlock: (blockIdx, suggestion) =>
+    set((state) => {
+      if (!state.draft) return state
+      const blocks = state.draft.blocks.map((block, i) => {
+        if (i !== blockIdx) return block
+        // Only prefill the first set, and only if it's still empty (don't clobber user edits)
+        const sets = block.sets.map((s, j) => {
+          if (j !== 0) return s
+          if (s.weight || s.reps) return s
+          return {
+            ...s,
+            weight: suggestion.weight != null ? String(suggestion.weight) : s.weight,
+            reps: suggestion.reps != null ? String(suggestion.reps) : s.reps,
+          }
+        })
+        return { ...block, suggestion, sets }
+      })
       return { draft: { ...state.draft, blocks } }
     }),
 

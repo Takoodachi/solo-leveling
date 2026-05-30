@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import SetRow from './SetRow'
 import MuscleSheet from './MuscleSheet'
 import { useWorkoutStore } from '../store'
-import type { BlockDraft, SetDraft } from '../types'
+import type { BlockDraft, SetDraft, ExerciseSuggestion } from '../types'
 
 interface Props {
   block: BlockDraft
@@ -41,6 +41,8 @@ export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props)
         </Button>
       </div>
 
+      {block.suggestion && <SuggestionHint suggestion={block.suggestion} />}
+
       <Separator />
 
       <div className="flex flex-col">
@@ -74,4 +76,34 @@ export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props)
       />
     </div>
   )
+}
+
+function SuggestionHint({ suggestion }: { suggestion: ExerciseSuggestion }) {
+  if (suggestion.source === 'history') {
+    const wt = suggestion.weight != null ? `${suggestion.weight} kg` : '—'
+    const reps = suggestion.reps != null ? ` × ${suggestion.reps}` : ''
+    const when = suggestion.lastDate ? ` · ${relativeDays(suggestion.lastDate)}` : ''
+    return (
+      <p className="text-[11px] text-muted-foreground -mt-0.5">
+        Last: {wt}{reps}{when}
+      </p>
+    )
+  }
+  const wt = suggestion.weight != null ? `${suggestion.weight} kg` : '—'
+  return (
+    <p className="text-[11px] text-amber-400/80 -mt-0.5">
+      Suggested {wt} from {suggestion.sourceExerciseName} (~70%)
+    </p>
+  )
+}
+
+function relativeDays(isoDate: string): string {
+  const then = new Date(isoDate + 'T00:00:00').getTime()
+  const diffMs = Date.now() - then
+  const days = Math.floor(diffMs / 86400000)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 30) return `${days}d ago`
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`
+  return `${Math.floor(days / 365)}y ago`
 }
