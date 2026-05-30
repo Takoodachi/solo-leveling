@@ -12,6 +12,7 @@ export interface Exercise {
   muscles?: string[]
   musclesSecondary?: string[]
   wgerId?: number
+  instructions?: string
   updatedAt: number
   syncPending?: boolean
 }

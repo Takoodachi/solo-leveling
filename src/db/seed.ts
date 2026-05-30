@@ -6,10 +6,18 @@ export async function seedDatabase(): Promise<void> {
   // Always upsert built-in exercises so imageUrl / muscle data is refreshed on existing installs
   await db.exercises.bulkPut(BUILT_IN_EXERCISES)
 
-  const foodCount = await db.foods.count()
-  if (foodCount === 0) {
-    await db.foods.bulkAdd(BUILT_IN_FOODS)
-  }
+  // Upsert built-in foods on every start so existing installs pick up catalog growth.
+  // Preserve user-set isFavorite — built-ins start as isFavorite: false but the user may have favorited them.
+  const builtInFoodUuids = BUILT_IN_FOODS.map(f => f.uuid)
+  const existingBuiltInFoods = await db.foods.bulkGet(builtInFoodUuids)
+  const favoriteByUuid = new Map(
+    existingBuiltInFoods.flatMap(f => (f ? [[f.uuid, f.isFavorite]] : []))
+  )
+  const mergedFoods = BUILT_IN_FOODS.map(f => ({
+    ...f,
+    isFavorite: favoriteByUuid.get(f.uuid) ?? f.isFavorite,
+  }))
+  await db.foods.bulkPut(mergedFoods)
 
   const stats = await db.userStats.get(1)
   if (!stats) {

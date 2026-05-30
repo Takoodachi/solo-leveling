@@ -1,3 +1,4 @@
+import { PlayCircle } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -17,10 +18,14 @@ interface Props {
 export default function MuscleSheet({ exercise, open, onClose }: Props) {
   const hasDiagram = !!exercise.wgerId
   const hasMuscles = (exercise.muscles?.length ?? 0) > 0
+  const hasInstructions = !!exercise.instructions
+  const youtubeHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    `${exercise.name} how to perform`,
+  )}`
 
   return (
     <Sheet open={open} onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle className="flex items-center gap-2">
             {exercise.name}
@@ -43,6 +48,14 @@ export default function MuscleSheet({ exercise, open, onClose }: Props) {
                   <span className="text-[10px] text-muted-foreground capitalize">{side}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* How to perform */}
+          {hasInstructions && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">How to perform</p>
+              <p className="text-sm leading-relaxed text-foreground/90">{exercise.instructions}</p>
             </div>
           )}
 
@@ -85,11 +98,21 @@ export default function MuscleSheet({ exercise, open, onClose }: Props) {
             </div>
           )}
 
-          {!hasMuscles && !hasDiagram && (
+          {!hasMuscles && !hasDiagram && !hasInstructions && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No muscle data available for this exercise
+              No reference data available for this exercise
             </p>
           )}
+
+          {/* YouTube demo */}
+          <a
+            href={youtubeHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <PlayCircle size={16} /> Watch demo on YouTube
+          </a>
         </div>
       </SheetContent>
     </Sheet>
