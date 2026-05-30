@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Flame, Star, Trophy, Scale, ShieldCheck, Lock } from 'lucide-react'
+import { Flame, Star, Trophy, Scale, ShieldCheck, Lock, LineChart as LineChartIcon, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -129,6 +129,29 @@ export default function StatsPage() {
             </Button>
           </CardContent>
         </Card>
+      </section>
+
+      {/* Analytics */}
+      <section className="flex flex-col gap-3">
+        <SectionHeader>Analytics</SectionHeader>
+        <button
+          type="button"
+          onClick={() => navigate('/stats/analytics')}
+          className="w-full text-left"
+        >
+          <Card className="transition-colors hover:bg-accent/40">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                <LineChartIcon size={20} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Advanced analytics</p>
+                <p className="text-xs text-muted-foreground">Volume, 1RM trends, macro adherence</p>
+              </div>
+              <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+            </CardContent>
+          </Card>
+        </button>
       </section>
 
       {/* Achievements */}

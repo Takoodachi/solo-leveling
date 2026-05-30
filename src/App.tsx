@@ -15,6 +15,7 @@ import NutritionPage from '@/pages/NutritionPage'
 import StatsPage from '@/pages/StatsPage'
 import SettingsPage from '@/pages/SettingsPage'
 import WeightLogPage from '@/features/bodyMetrics/WeightLogPage'
+import AnalyticsPage from '@/pages/AnalyticsPage'
 
 function AuthenticatedApp() {
   const { session, loading } = useAuth()
@@ -52,6 +53,7 @@ function AuthenticatedApp() {
       <Route path="workouts/active" element={<ActiveWorkoutPage />} />
       <Route path="workouts/log" element={<LogWorkoutPage />} />
       <Route path="stats/weight" element={<WeightLogPage />} />
+      <Route path="stats/analytics" element={<AnalyticsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
