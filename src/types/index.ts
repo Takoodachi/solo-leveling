@@ -58,6 +58,7 @@ export interface Food {
   isCustom: boolean
   isFavorite: boolean
   ingredients?: FoodIngredient[]
+  notes?: string
   updatedAt: number
   syncPending?: boolean
 }

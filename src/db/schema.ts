@@ -37,5 +37,6 @@ export class SoloLevelingDB extends Dexie {
     })
     this.version(3).stores({}) // Settings gains optional profile fields (no index changes)
     this.version(4).stores({}) // Food gains optional ingredients[] field (no index changes)
+    this.version(5).stores({}) // Food gains optional notes field + UserStats gains updatedAt/syncPending (no index changes)
   }
 }
