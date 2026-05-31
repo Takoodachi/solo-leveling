@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectRegister: 'auto',
       includeAssets: ['icons/*.png', 'favicon.svg'],
       manifest: {
         name: 'Solo Leveling',
@@ -30,29 +34,12 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/world\.openfoodfacts\.org\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'open-food-facts',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/wger\.de\/en\/exercise\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'muscle-diagrams',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            },
-          },
-        ],
       },
       devOptions: {
         enabled: false,
+        type: 'module',
       },
     }),
   ],

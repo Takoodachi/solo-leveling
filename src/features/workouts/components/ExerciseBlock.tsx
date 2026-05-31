@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus, X, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 import SetRow from './SetRow'
 import MuscleSheet from './MuscleSheet'
 import { useWorkoutStore } from '../store'
@@ -11,11 +12,14 @@ interface Props {
   block: BlockDraft
   blockIdx: number
   onSetComplete: () => void
+  focusMode?: boolean
 }
 
-export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props) {
+export default function ExerciseBlock({ block, blockIdx, onSetComplete, focusMode = false }: Props) {
   const { addSet, updateSet, removeSet, removeBlock } = useWorkoutStore()
   const [showMuscles, setShowMuscles] = useState(false)
+
+  const nameClass = focusMode ? 'font-semibold text-base' : 'font-medium text-sm'
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-2">
@@ -25,7 +29,7 @@ export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props)
           className="flex items-center gap-1.5 text-left min-w-0"
         >
           <div className="min-w-0">
-            <p className="font-medium text-sm">{block.exercise.name}</p>
+            <p className={cn(nameClass)}>{block.exercise.name}</p>
             <p className="text-xs text-muted-foreground">{block.exercise.category}</p>
           </div>
           <Info size={13} className="text-muted-foreground shrink-0 mt-0.5" />
@@ -55,6 +59,8 @@ export default function ExerciseBlock({ block, blockIdx, onSetComplete }: Props)
             onChange={(field, value) => updateSet(blockIdx, setIdx, field, value)}
             onDelete={() => removeSet(blockIdx, setIdx)}
             onSetComplete={onSetComplete}
+            focusMode={focusMode}
+            lastSet={block.lastSessionSets?.[setIdx]}
           />
         ))}
       </div>

@@ -2,21 +2,23 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Exercise, Workout, WorkoutSet, Food, FoodLog,
   BodyMetric, UserStats, Targets, Achievement, PrRecord, Settings, DailyActivity,
+  WorkoutDraftRow,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
-  exercises!:     Table<Exercise,      string>
-  workouts!:      Table<Workout,       string>
-  workoutSets!:   Table<WorkoutSet,    string>
-  foods!:         Table<Food,          string>
-  foodLog!:       Table<FoodLog,       string>
-  bodyMetrics!:   Table<BodyMetric,    string>
-  dailyActivity!: Table<DailyActivity, string>
-  userStats!:     Table<UserStats,     number>
-  targets!:       Table<Targets,       number>
-  achievements!:  Table<Achievement,   string>
-  prRecords!:     Table<PrRecord,      string>
-  settings!:      Table<Settings,      number>
+  exercises!:     Table<Exercise,        string>
+  workouts!:      Table<Workout,         string>
+  workoutSets!:   Table<WorkoutSet,      string>
+  foods!:         Table<Food,            string>
+  foodLog!:       Table<FoodLog,         string>
+  bodyMetrics!:   Table<BodyMetric,      string>
+  dailyActivity!: Table<DailyActivity,   string>
+  userStats!:     Table<UserStats,       number>
+  targets!:       Table<Targets,         number>
+  achievements!:  Table<Achievement,     string>
+  prRecords!:     Table<PrRecord,        string>
+  settings!:      Table<Settings,        number>
+  workoutDrafts!: Table<WorkoutDraftRow, number>
 
   constructor() {
     super('SoloLevelingDB')
@@ -41,6 +43,9 @@ export class SoloLevelingDB extends Dexie {
     this.version(5).stores({}) // Food gains optional notes field + UserStats gains updatedAt/syncPending (no index changes)
     this.version(6).stores({
       dailyActivity: 'uuid, date, syncPending',
+    })
+    this.version(7).stores({
+      workoutDrafts: 'id',
     })
   }
 }

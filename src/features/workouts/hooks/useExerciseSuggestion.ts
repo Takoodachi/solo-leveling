@@ -1,6 +1,6 @@
 import { db } from '@/db'
-import type { Exercise } from '@/types'
-import type { ExerciseSuggestion } from '../types'
+import type { Exercise, WorkoutSet } from '@/types'
+import type { ExerciseSuggestion, LastSet } from '../types'
 
 const RELATED_LOOKBACK_DAYS = 30
 const SCALE_FACTOR = 0.7
@@ -17,10 +17,14 @@ function daysAgoIso(days: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-async function topSetForExercise(exerciseId: string): Promise<
-  { weight: number; reps?: number; workoutId: string; date: string } | null
-> {
-  // Find the user's most recent workout that included this exercise, then return its top-weight set.
+interface MostRecentSession {
+  workoutId: string
+  date: string
+  sets: WorkoutSet[]
+  topSet: WorkoutSet | null
+}
+
+async function lastSessionForExercise(exerciseId: string): Promise<MostRecentSession | null> {
   const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
   if (sets.length === 0) return null
 
@@ -39,16 +43,33 @@ async function topSetForExercise(exerciseId: string): Promise<
   }
   if (!mostRecentWorkoutId) return null
 
-  const recentSets = sets.filter(s => s.workoutId === mostRecentWorkoutId)
-  const top = recentSets.reduce<typeof recentSets[number] | null>((best, s) => {
+  const recentSets = sets
+    .filter(s => s.workoutId === mostRecentWorkoutId)
+    .sort((a, b) => a.setIndex - b.setIndex)
+
+  const topSet = recentSets.reduce<WorkoutSet | null>((best, s) => {
     if (s.weight == null) return best
     if (!best || (s.weight ?? 0) > (best.weight ?? 0)) return s
     return best
   }, null)
-  if (!top || top.weight == null) return null
 
   const w = workoutMap.get(mostRecentWorkoutId)!
-  return { weight: top.weight, reps: top.reps, workoutId: mostRecentWorkoutId, date: w.date }
+  return { workoutId: mostRecentWorkoutId, date: w.date, sets: recentSets, topSet }
+}
+
+function setToLastSet(s: WorkoutSet): LastSet {
+  return {
+    weight: s.weight,
+    reps: s.reps,
+    duration: s.duration,
+    distanceKm: s.distanceKm,
+  }
+}
+
+export async function lastSessionSetsFor(exerciseId: string): Promise<LastSet[] | undefined> {
+  const session = await lastSessionForExercise(exerciseId)
+  if (!session) return undefined
+  return session.sets.map(setToLastSet)
 }
 
 async function topRecentSetAcrossExercise(exerciseId: string, sinceDateIso: string): Promise<number | null> {
@@ -72,13 +93,13 @@ async function topRecentSetAcrossExercise(exerciseId: string, sinceDateIso: stri
 
 export async function suggestForExercise(exercise: Exercise): Promise<ExerciseSuggestion | null> {
   // 1) History path: have we done this exact exercise before?
-  const top = await topSetForExercise(exercise.uuid)
-  if (top) {
+  const session = await lastSessionForExercise(exercise.uuid)
+  if (session?.topSet?.weight != null) {
     return {
       source: 'history',
-      weight: top.weight,
-      reps: top.reps,
-      lastDate: top.date,
+      weight: session.topSet.weight,
+      reps: session.topSet.reps,
+      lastDate: session.date,
     }
   }
 

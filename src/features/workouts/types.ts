@@ -17,10 +17,18 @@ export type ExerciseSuggestion = {
   lastDate?: string
 }
 
+export type LastSet = {
+  weight?: number
+  reps?: number
+  duration?: number
+  distanceKm?: number
+}
+
 export type BlockDraft = {
   exercise: Exercise
   sets: SetDraft[]
   suggestion?: ExerciseSuggestion
+  lastSessionSets?: LastSet[]
 }
 
 export type WorkoutDraft = {

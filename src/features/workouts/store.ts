@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Exercise } from '@/types'
-import { type WorkoutDraft, type BlockDraft, type ExerciseSuggestion, emptySet } from './types'
+import { type WorkoutDraft, type BlockDraft, type ExerciseSuggestion, type LastSet, emptySet } from './types'
 
 interface WorkoutStore {
   draft: WorkoutDraft | null
@@ -15,6 +15,7 @@ interface WorkoutStore {
   addBlock: (exercise: Exercise) => void
   removeBlock: (blockIdx: number) => void
   applySuggestionToBlock: (blockIdx: number, suggestion: ExerciseSuggestion) => void
+  setBlockLastSessionSets: (blockIdx: number, lastSessionSets: LastSet[]) => void
 
   addSet: (blockIdx: number) => void
   updateSet: (blockIdx: number, setIdx: number, field: keyof Omit<import('./types').SetDraft, 'uuid'>, value: string) => void
@@ -96,6 +97,15 @@ export const useWorkoutStore = create<WorkoutStore>((set) => ({
       return { draft: { ...state.draft, blocks } }
     }),
 
+  setBlockLastSessionSets: (blockIdx, lastSessionSets) =>
+    set((state) => {
+      if (!state.draft) return state
+      const blocks = state.draft.blocks.map((block, i) =>
+        i === blockIdx ? { ...block, lastSessionSets } : block,
+      )
+      return { draft: { ...state.draft, blocks } }
+    }),
+
   addSet: (blockIdx) =>
     set((state) => {
       if (!state.draft) return state
@@ -140,3 +150,55 @@ export const useWorkoutStore = create<WorkoutStore>((set) => ({
       return { draft: { ...state.draft, notes } }
     }),
 }))
+
+// ── Persistence layer ────────────────────────────────────────────────
+// We persist the active draft to Dexie on every change so a force-close,
+// memory eviction, or accidental refresh during a workout doesn't lose the
+// in-progress state. Cleared explicitly on save/discard.
+import { db } from '@/db'
+
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+
+function schedulePersist(draft: WorkoutDraft | null): void {
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => {
+    persistTimer = null
+    void doPersist(draft)
+  }, 200)
+}
+
+async function doPersist(draft: WorkoutDraft | null): Promise<void> {
+  try {
+    if (draft == null) {
+      await db.workoutDrafts.delete(1)
+      return
+    }
+    const existing = await db.workoutDrafts.get(1)
+    await db.workoutDrafts.put({
+      id: 1,
+      draftJson: JSON.stringify(draft),
+      restTimerEndAt: existing?.restTimerEndAt ?? null,
+      updatedAt: Date.now(),
+    })
+  } catch {
+    // best-effort
+  }
+}
+
+useWorkoutStore.subscribe((state, prev) => {
+  if (state.draft === prev.draft) return
+  schedulePersist(state.draft)
+})
+
+export async function restoreDraftFromStorage(): Promise<boolean> {
+  try {
+    const row = await db.workoutDrafts.get(1)
+    if (!row?.draftJson) return false
+    const draft = JSON.parse(row.draftJson) as WorkoutDraft
+    if (!draft || typeof draft !== 'object') return false
+    useWorkoutStore.getState().loadDraft(draft)
+    return true
+  } catch {
+    return false
+  }
+}

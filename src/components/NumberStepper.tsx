@@ -1,6 +1,8 @@
 import { Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+type Size = 'sm' | 'lg'
+
 interface Props {
   value: string
   onChange: (v: string) => void
@@ -12,6 +14,16 @@ interface Props {
   className?: string
   inputClassName?: string
   onBlur?: () => void
+  size?: Size
+}
+
+const SIZE_CLASSES: Record<Size, {
+  button: string
+  input: string
+  icon: number
+}> = {
+  sm: { button: 'h-9 w-9',  input: 'h-9 text-sm',  icon: 14 },
+  lg: { button: 'h-12 w-12', input: 'h-12 text-lg font-semibold', icon: 18 },
 }
 
 export default function NumberStepper({
@@ -25,7 +37,10 @@ export default function NumberStepper({
   className,
   inputClassName,
   onBlur,
+  size = 'sm',
 }: Props) {
+  const sz = SIZE_CLASSES[size]
+
   function adjust(delta: number) {
     const current = parseFloat(value) || 0
     let next = Math.round((current + delta) * 1000) / 1000
@@ -39,10 +54,13 @@ export default function NumberStepper({
       <button
         type="button"
         onClick={() => adjust(-step)}
-        className="h-9 w-9 flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+        className={cn(
+          sz.button,
+          'flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors',
+        )}
         aria-label="Decrease"
       >
-        <Minus size={14} />
+        <Minus size={sz.icon} />
       </button>
       <input
         type="number"
@@ -52,19 +70,23 @@ export default function NumberStepper({
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
         className={cn(
-          'flex-1 h-9 text-center bg-background border border-input rounded-md text-sm',
+          'flex-1 text-center bg-background border border-input rounded-md',
+          sz.input,
           'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0',
           '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-          inputClassName
+          inputClassName,
         )}
       />
       <button
         type="button"
         onClick={() => adjust(step)}
-        className="h-9 w-9 flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+        className={cn(
+          sz.button,
+          'flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors',
+        )}
         aria-label="Increase"
       >
-        <Plus size={14} />
+        <Plus size={sz.icon} />
       </button>
     </div>
   )

@@ -142,6 +142,13 @@ export interface DailyActivity {
   syncPending?: boolean
 }
 
+export interface WorkoutDraftRow {
+  id: 1
+  draftJson: string
+  restTimerEndAt: number | null
+  updatedAt: number
+}
+
 // View types (not stored, derived from joins)
 export interface FoodLogWithFood extends FoodLog {
   food: Food

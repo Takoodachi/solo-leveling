@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/features/auth/useAuth'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useSync } from '@/hooks/useSync'
+import { restoreDraftFromStorage } from '@/features/workouts/store'
 import LoginPage from '@/features/auth/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import WorkoutsPage from '@/pages/WorkoutsPage'
@@ -17,6 +18,25 @@ import StatsPage from '@/pages/StatsPage'
 import SettingsPage from '@/pages/SettingsPage'
 import WeightLogPage from '@/features/bodyMetrics/WeightLogPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
+
+function ActiveWorkoutRecovery() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const ran = useRef(false)
+
+  useEffect(() => {
+    if (ran.current) return
+    ran.current = true
+    void restoreDraftFromStorage().then(restored => {
+      if (restored && !location.pathname.startsWith('/workouts/active')) {
+        navigate('/workouts/active', { replace: false })
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return null
+}
 
 function AuthenticatedApp() {
   const { session, loading } = useAuth()
@@ -40,7 +60,9 @@ function AuthenticatedApp() {
   }
 
   return (
-    <Routes>
+    <>
+      <ActiveWorkoutRecovery />
+      <Routes>
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
@@ -57,7 +79,8 @@ function AuthenticatedApp() {
       <Route path="stats/weight" element={<WeightLogPage />} />
       <Route path="stats/analytics" element={<AnalyticsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 
