@@ -7,9 +7,11 @@ This file gives AI assistants the context needed to work productively on this pr
 ## Project Overview
 
 **Name:** Solo Leveling
-**Type:** Personal fitness tracker — workout logging + calorie tracking with gamification
+**Type:** Personal calorie/macro + bodyweight tracker with gamification
 **Platform:** Progressive Web App (PWA), installable on Android
-**Scope:** Single-user, personal use only. No auth, no backend, no multi-user features, no app store deployment planned.
+**Scope:** Single-user, personal use only. Offline-first, but with **optional per-user cloud sync** (the owner uses a phone + a laptop and wants data to stay consistent across both). No multi-user/social features, no app store deployment planned.
+
+> **History:** This started as a workout logger + calorie tracker. Workout logging was removed (it went unused); the app is now focused on **nutrition/macros, body weight, and step-driven activity**. Don't reintroduce workout/exercise/PR concepts without being asked.
 
 **Core principle:** This is a personal tool, not a product. Optimize for the owner's actual habits over generality. Avoid feature creep. Prefer simple, working code over abstraction.
 
@@ -20,15 +22,16 @@ This file gives AI assistants the context needed to work productively on this pr
 - **Framework:** React 18 + Vite
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS + shadcn/ui components
-- **State:** Zustand (one store per domain: workouts, nutrition, gamification, settings)
-- **Persistence:** Dexie.js (IndexedDB wrapper) — all data lives on-device
+- **State:** Zustand for UI/ephemeral state (stores per domain: nutrition, gamification, settings, auth)
+- **Persistence:** Dexie.js (IndexedDB wrapper) — local-first, all data works fully offline
+- **Sync/Auth:** **Supabase** — optional, opt-in. Provides single-user auth and per-user cloud sync of the local data. *Approved deviation from the original "local-only, no backend" design* (the owner needs phone↔laptop consistency). Gated by env vars; if unset, the app runs purely local.
 - **Charts:** Recharts
 - **PWA:** vite-plugin-pwa with Workbox for offline support
 - **Routing:** React Router v6
 - **Icons:** lucide-react
 - **Date utilities:** date-fns (not moment, not dayjs)
 
-**Do not add** Redux, MobX, styled-components, or any backend/auth library. If a feature seems to need a backend, flag it instead of adding one.
+**Do not add** Redux, MobX, or styled-components. Supabase is the only backend/auth dependency — don't add others, and flag any new backend need instead of bolting it on.
 
 ---
 
@@ -40,20 +43,24 @@ src/
   components/       # Reusable UI (PascalCase)
     ui/             # shadcn primitives
   features/         # Feature modules — preferred over splitting by type
-    workouts/
+    nutrition/      # food logging, daily totals, targets
       components/
       hooks/
       store.ts
-      types.ts
-    nutrition/
-    gamification/
-    dashboard/
-    settings/
+    dashboard/      # today's ring, step logging, dynamic-target breakdown
+    analytics/      # macro-adherence chart
+    gamification/   # streaks, XP/levels, achievements
+    bodyMetrics/    # body weight logging + trend
+    settings/       # profile, targets, export/import
+    auth/           # Supabase auth (login, session)
   db/               # Dexie schema, migrations, seed data
     schema.ts
     index.ts
-  lib/              # Pure utilities (date helpers, formatters, calculators)
-  data/             # Static JSON (exercise library, common foods)
+  lib/              # Pure utilities + cross-cutting services
+    sync.ts         # Supabase push/pull sync service
+    supabase.ts     # Supabase client + row types
+    macroTargets.ts # dynamic activity-driven target math
+  data/             # Static seed data (common foods)
   pages/            # Route-level components
   hooks/            # Cross-feature hooks
   types/            # Shared types
@@ -62,60 +69,62 @@ public/
   manifest.webmanifest
 ```
 
-Keep feature code colocated. A workout-specific hook lives in `features/workouts/hooks`, not in the top-level `hooks/`.
+Keep feature code colocated. A nutrition-specific hook lives in `features/nutrition/hooks`, not in the top-level `hooks/`.
 
 ---
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`. When changing this, bump the version number and write a migration — never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 9**. When changing this, bump the version number and write a migration (Dexie `.stores({ table: null })` to drop a table) — never silently mutate the schema.
 
 ```ts
-// Sketches — flesh out in code
+// Sketches — flesh out in code. Row keys are `uuid` (string) unless noted.
 
-exercises:        ++id, name, category, defaultUnit, isCustom
-workouts:         ++id, date, notes, durationMin
-workoutSets:      ++id, workoutId, exerciseId, setIndex, reps, weight, duration, rpe
-foods:            ++id, name, kcalPerServing, protein, carbs, fat, servingSize, servingUnit, isCustom, isFavorite
-foodLog:          ++id, date, foodId, servings, mealType
-bodyMetrics:      ++id, date, weightKg, notes
+foods:            uuid, name, kcalPerServing, protein, carbs, fat, servingSize, servingUnit, isCustom, isFavorite, ingredients?, notes?
+foodLog:          uuid, date, foodId, servings, mealType
+bodyMetrics:      uuid, date, weightKg, notes?
+dailyActivity:    uuid, date, steps                      // manual step entry per day
 userStats:        id=1, xp, level, currentStreak, longestStreak, lastLogDate, streakFreezes
 targets:          id=1, dailyKcal, dailyProtein, dailyCarbs, dailyFat
-achievements:     ++id, key, unlockedAt, progress
-prRecords:        ++id, exerciseId, metric, value, achievedAt
+achievements:     uuid, key, unlockedAt, progress
+settings:         id=1, heightCm?, sex?, goalType?, dynamicTargetsEnabled?, activityWindowDays?
 ```
 
-**Index dates as ISO strings** (`YYYY-MM-DD`) for day-level queries, store timestamps as `number` (Date.now()) for precise ordering.
+- **Index dates as ISO strings** (`YYYY-MM-DD`) for day-level queries; store timestamps as `number` (`Date.now()`) for precise ordering.
+- **Sync fields:** synced rows carry `updatedAt: number` and `syncPending?: boolean`. The singletons (`userStats`, `targets`, `settings`, all `id=1`) follow the same pattern so they can sync last-write-wins.
+- Schema versions 1–9 are kept in `schema.ts` as history; v9 drops the removed workout tables (`exercises`, `workouts`, `workoutSets`, `prRecords`, `workoutDrafts`).
 
 ---
 
-## Core Features (MVP — build these first, in this order)
+## Core Features (shipped)
 
-1. **Data layer** — Dexie schema, seed data (exercise library, ~30 common foods), basic store wiring.
-2. **App shell** — Bottom-nav layout (Dashboard / Workouts / Nutrition / Stats / Settings), routing, theme, PWA manifest.
-3. **Workout logging** — Create workout, add sets per exercise, save. View history per exercise. "Repeat last workout" action.
-4. **Calorie logging** — Add food to a meal (breakfast/lunch/dinner/snack), see daily totals vs target, favorite foods quick-add, custom food creation.
-5. **Dashboard** — Today's kcal vs target (ring), today's workout summary, current streak, level badge.
-
-Do not start gamification work until the above are functional.
+1. **Data layer** — Dexie schema, seed data (~common foods), store wiring, Supabase sync.
+2. **App shell** — Bottom-nav layout (**Home / Nutrition / Stats / Settings**), routing, theme, PWA manifest.
+3. **Calorie logging** — Add food to a meal (breakfast/lunch/dinner/snack), see daily totals vs target, favorite foods quick-add, custom food creation.
+4. **Dashboard** — Today's kcal vs target (ring), macro bars, step logging, current streak, level badge, dynamic-target breakdown.
+5. **Body weight + steps** — Log body weight (with trend) and daily steps; steps feed the dynamic targets.
 
 ---
 
-## Gamification Layer (Phase 2 — after MVP)
+## Gamification Layer
 
-Build in this order, one at a time:
+1. **Streaks** — A day counts as "logged" when food is logged that day. Show current + longest. Auto-grant 1 streak freeze per ISO week (max 2 banked); freezes are consumed automatically on missed days before the streak breaks. (`lib/streak.ts`.)
 
-1. **Streaks** — A day counts as "logged" if either a workout or a complete day of food logging happened. Show current + longest. Auto-grant 1 streak freeze per ISO week (max 2 banked); freezes are consumed automatically on missed days before the streak breaks.
+2. **XP & Levels** — XP sources: hitting daily kcal target within ±10% (+30), hitting protein target (+20), weekly recap viewed (+25, currently unused). Level curve: `xpForLevel(n) = 100 * n^1.5`. Display level + progress bar on dashboard. Constants in `lib/xp.ts`.
 
-2. **XP & Levels** — XP sources: logging a workout (+50), each completed set (+2), hitting daily kcal target within ±10% (+30), hitting protein target (+20), new PR (+100), weekly recap viewed (+25). Level curve: `xpForLevel(n) = 100 * n^1.5` (tune later). Display level + progress bar on dashboard.
+3. **Achievements** — Defined declaratively in `features/gamification/achievements.ts` and evaluated in `lib/achievementEval.ts` after relevant log events; unlocks trigger a toast + persistent entry. Current set rewards consistency/progress only: streak (7/30-day), level (5/10), first food log, protein-goal streak, first weight log.
 
-3. **Achievements** — Defined declaratively in `features/gamification/achievements.ts` as an array of `{ key, title, description, icon, criteria(state) => boolean }`. Evaluated after every relevant log event. Unlocks trigger a toast + persistent entry.
+4. **Progress charts** — Macro adherence (stacked kcal by macro vs. target, week/month) on the Analytics page; body-weight trend on the Stats page.
 
-4. **PR detection** — On workout save, compare each set against historical bests for that exercise (max weight, max reps at given weight, max volume). New best → write to `prRecords`, fire celebration.
+### Dynamic activity-driven targets
 
-5. **Progress charts** — Per-exercise: estimated 1RM over time, volume per session. Nutrition: daily kcal (with target line), macro split, 7-day rolling average. Body weight trend.
+The headline nutrition feature (`lib/macroTargets.ts`, `features/dashboard/hooks/useDynamicTargets.ts`). When `settings.dynamicTargetsEnabled` is on, the daily kcal/macro target is the baseline plus an **activity bonus** derived from steps:
 
-6. **Weekly recap** — Generated Sunday night (or on first open after Sunday). Stats: workouts completed, total volume, avg daily kcal, new PRs this week, streak status, achievements unlocked. Stored so it can be reopened later.
+- Bonus per day ≈ `steps × bodyWeightKg × KCAL_PER_STEP_PER_KG`, averaged over a rolling window (`settings.activityWindowDays`, 3/5/7 — quiet days drag it down).
+- The extra kcal is distributed to **carbs and fat** in the baseline ratio; **protein stays fixed** at the user's set target.
+- The same dynamic target must be used everywhere it's shown (dashboard, nutrition tab, analytics) — compute it through `useDynamicTargets`/`computeDynamicTargets`, don't read the raw baseline.
+
+> **Removed:** workout XP, PR detection, and per-exercise 1RM/volume charts went away with the workout feature. Weekly recap is specced but not implemented.
 
 ---
 
@@ -133,9 +142,10 @@ Build in this order, one at a time:
 - Side effects belong in hooks, not inline in JSX or render bodies.
 
 **State**
-- Server-ish data (workouts, foods, logs) flows through Dexie via custom hooks (`useWorkouts`, `useDailyLog`, etc.) backed by `dexie-react-hooks` `useLiveQuery`.
+- Persistent data (foods, logs, body metrics, activity) flows through Dexie via custom hooks (`useDailyLog`, `useBodyMetrics`, `useTargets`, etc.) backed by `dexie-react-hooks` `useLiveQuery`.
 - UI / ephemeral state stays in Zustand or local `useState`.
 - Don't duplicate Dexie data into Zustand. Zustand holds UI mode, current selections, derived gamification state.
+- Writes that should sync set `updatedAt`/`syncPending` and trigger `syncService.sync(userId)` — see `features/nutrition/hooks/useTargets.ts` and `features/settings/hooks/useSettings.ts` for the pattern.
 
 **Styling**
 - Tailwind utility classes. No CSS modules, no inline styles unless dynamic.
@@ -155,22 +165,31 @@ Build in this order, one at a time:
 
 ---
 
+## Sync (Supabase)
+
+- **Offline-first:** Dexie is the source of truth on-device; the app is fully usable with no network and no Supabase config.
+- When Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) are set, the user signs in and `lib/sync.ts` (`syncService`) does a per-user **push/pull** on a `user_id` scope. Conflict resolution is **last-write-wins on `updatedAt`**. Tables sync as bulk rows (collections) or singletons (`targets`, `user_stats`, `settings`).
+- Row/table types for Supabase live in `lib/supabase.ts`. Keep the Dexie schema, the sync table list, and these types in agreement when adding/removing tables.
+- **Known gap:** the `settings` table sync expects a matching Supabase table that **still needs to be created** (mirror `targets`/`user_stats`: `user_id` PK + the columns + `"updatedAt"`). Until it exists, settings push/pull no-ops safely.
+
+---
+
 ## PWA Requirements
 
 - App must be fully functional offline after first load.
-- All data stays on-device — no network calls except optional ones the user explicitly opts into (e.g. future Open Food Facts barcode lookup).
+- No network calls except: optional Open Food Facts lookups, and the optional Supabase sync the user opts into by signing in.
 - Manifest: standalone display, portrait orientation, themed status bar.
 - Icons: 192×192, 512×512, plus a maskable 512×512.
-- Service worker via Workbox, precaching the app shell.
-- Provide a manual "Export data" (JSON download) and "Import data" in Settings so the owner can back up / move between devices.
+- Service worker via Workbox (`src/sw.ts`), precaching the app shell + an Open Food Facts runtime cache.
+- Provide a manual "Export data" (JSON download) and "Import data" in Settings as a backup path independent of cloud sync.
 
 ---
 
 ## What NOT to Do
 
-- Don't add user accounts, sign-in, or social features.
-- Don't add a backend, API server, or cloud sync. Local-only.
+- Single-user Supabase auth + personal cloud sync are allowed (approved deviation). Don't add **multi-user, sharing, or social** features, and don't add a second backend/auth system.
 - Don't add ads, analytics, telemetry, or third-party trackers.
+- Don't reintroduce workout/exercise/PR tracking, or add gym/strength features, unless explicitly asked.
 - Don't add features designed to make the user feel bad for missing days (no guilt mechanics, no aggressive notifications, no "shame" UI).
 - Don't add aggressive calorie restriction features, weight-loss-focused defaults, or before/after framing — keep nutrition tracking neutral.
 - Don't recommend specific calorie or macro targets in code. The user sets their own targets in Settings.
@@ -207,7 +226,10 @@ To install on Android: open the dev/preview URL in Chrome on the phone (use loca
 
 ## Current Status
 
-**Phase:** Pre-MVP — project not yet scaffolded.
-**Next step:** Scaffold Vite + React + TS project, install dependencies, set up Dexie schema and seed data, build app shell with bottom nav.
+**Phase:** Live — MVP + gamification shipped.
+**Working:** calorie/macro logging, dashboard with macro ring + step logging, body weight logging + trend, dynamic activity-driven targets, macro-adherence analytics, streaks/XP/levels/achievements, export/import, and optional Supabase auth + sync. Bottom nav is **Home / Nutrition / Stats / Settings**.
+**Removed:** the workout/exercise/PR feature (see History in Project Overview).
+**Next step:** create the Supabase `settings` table so settings sync across devices.
+**Future ideas (not started):** adaptive TDEE (estimate maintenance kcal from weight trend vs. intake), bodyweight goals + projection, faster food logging (templates / "copy yesterday" / barcode).
 
 Update this section as the project progresses.
