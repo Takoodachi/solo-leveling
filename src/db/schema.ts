@@ -1,14 +1,10 @@
 import Dexie, { type Table } from 'dexie'
 import type {
-  Exercise, Workout, WorkoutSet, Food, FoodLog,
-  BodyMetric, UserStats, Targets, Achievement, PrRecord, Settings, DailyActivity,
-  WorkoutDraftRow,
+  Food, FoodLog,
+  BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
-  exercises!:     Table<Exercise,        string>
-  workouts!:      Table<Workout,         string>
-  workoutSets!:   Table<WorkoutSet,      string>
   foods!:         Table<Food,            string>
   foodLog!:       Table<FoodLog,         string>
   bodyMetrics!:   Table<BodyMetric,      string>
@@ -16,9 +12,7 @@ export class SoloLevelingDB extends Dexie {
   userStats!:     Table<UserStats,       number>
   targets!:       Table<Targets,         number>
   achievements!:  Table<Achievement,     string>
-  prRecords!:     Table<PrRecord,        string>
   settings!:      Table<Settings,        number>
-  workoutDrafts!: Table<WorkoutDraftRow, number>
 
   constructor() {
     super('SoloLevelingDB')
@@ -47,5 +41,10 @@ export class SoloLevelingDB extends Dexie {
     this.version(7).stores({
       workoutDrafts: 'id',
     })
+    this.version(8).stores({}) // Settings gains updatedAt/syncPending (no index changes)
+    this.version(9).stores({
+      exercises: null, workouts: null, workoutSets: null,
+      prRecords: null, workoutDrafts: null,
+    }) // remove workout feature — drop its tables
   }
 }

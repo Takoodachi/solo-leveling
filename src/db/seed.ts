@@ -1,13 +1,9 @@
 import { db } from './index'
-import { BUILT_IN_EXERCISES } from '@/data/exercises'
 import { BUILT_IN_FOODS } from '@/data/foods'
 import { grantWeeklyStreakFreeze } from '@/lib/streak'
 import { getISOWeekNumber } from '@/lib/date'
 
 export async function seedDatabase(): Promise<void> {
-  // Always upsert built-in exercises so imageUrl / muscle data is refreshed on existing installs
-  await db.exercises.bulkPut(BUILT_IN_EXERCISES)
-
   // Upsert built-in foods on every start so existing installs pick up catalog growth.
   // Preserve user-set isFavorite — built-ins start as isFavorite: false but the user may have favorited them.
   const builtInFoodUuids = BUILT_IN_FOODS.map(f => f.uuid)
@@ -52,8 +48,7 @@ export async function seedDatabase(): Promise<void> {
   if (!settings) {
     await db.settings.add({
       id: 1,
-      defaultRestSeconds: 90,
-      barWeightKg: 20,
+      updatedAt: Date.now(),
     })
   }
 

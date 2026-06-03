@@ -40,11 +40,6 @@ async function checkProteinGoal7Days(): Promise<boolean> {
 
 async function isUnlocked(key: string): Promise<boolean> {
   switch (key) {
-    case 'first_workout':     return (await db.workouts.count()) >= 1
-    case 'ten_workouts':      return (await db.workouts.count()) >= 10
-    case 'fifty_workouts':    return (await db.workouts.count()) >= 50
-    case 'hundred_sets':      return (await db.workoutSets.count()) >= 100
-    case 'first_pr':          return (await db.prRecords.count()) >= 1
     case 'week_streak': {
       const s = await db.userStats.get(1)
       return (s?.longestStreak ?? 0) >= 7

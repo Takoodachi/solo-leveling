@@ -11,26 +11,22 @@ export default function ExportButton() {
   async function handleExport() {
     setExporting(true)
     try {
-      const [exercises, workouts, workoutSets, foods, foodLog, bodyMetrics, userStats, targets, achievements, prRecords, settings] =
+      const [foods, foodLog, bodyMetrics, userStats, targets, achievements, settings] =
         await Promise.all([
-          db.exercises.toArray(),
-          db.workouts.toArray(),
-          db.workoutSets.toArray(),
           db.foods.toArray(),
           db.foodLog.toArray(),
           db.bodyMetrics.toArray(),
           db.userStats.toArray(),
           db.targets.toArray(),
           db.achievements.toArray(),
-          db.prRecords.toArray(),
           db.settings.toArray(),
         ])
 
       const data = {
         version: 1,
         exportedAt: Date.now(),
-        exercises, workouts, workoutSets, foods, foodLog, bodyMetrics,
-        userStats, targets, achievements, prRecords, settings,
+        foods, foodLog, bodyMetrics,
+        userStats, targets, achievements, settings,
       }
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav from './BottomNav'
 
-const TAB_ORDER = ['/dashboard', '/workouts', '/nutrition', '/stats', '/settings']
+const TAB_ORDER = ['/dashboard', '/nutrition', '/stats', '/settings']
 
 function getTabIndex(pathname: string) {
   const i = TAB_ORDER.findIndex(t => pathname.startsWith(t))

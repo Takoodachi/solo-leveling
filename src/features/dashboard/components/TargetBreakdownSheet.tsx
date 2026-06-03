@@ -1,5 +1,9 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import type { DynamicBreakdown, DynamicTargets } from '@/lib/macroTargets'
+import {
+  KCAL_PER_STEP_PER_KG,
+  type DynamicBreakdown,
+  type DynamicTargets,
+} from '@/lib/macroTargets'
 
 interface Props {
   open: boolean
@@ -9,8 +13,7 @@ interface Props {
 }
 
 export default function TargetBreakdownSheet({ open, onClose, targets, breakdown }: Props) {
-  const stepsKcal = Math.round(breakdown.avgSteps * 0.0005 * breakdown.bodyKg)
-  const workoutKcal = Math.round(breakdown.avgWorkoutMin * 6)
+  const stepsKcal = Math.round(breakdown.avgSteps * KCAL_PER_STEP_PER_KG * breakdown.bodyKg)
 
   return (
     <Sheet open={open} onOpenChange={o => !o && onClose()}>
@@ -38,9 +41,6 @@ export default function TargetBreakdownSheet({ open, onClose, targets, breakdown
                 <p>+{breakdown.activityAvg} kcal/day</p>
                 <p className="text-xs text-muted-foreground">
                   Steps avg: {breakdown.avgSteps.toLocaleString()} /day · ~{stepsKcal} kcal
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Workouts avg: {breakdown.avgWorkoutMin} min/day · ~{workoutKcal} kcal
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Body weight used: {breakdown.bodyKg} kg

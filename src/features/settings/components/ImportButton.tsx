@@ -7,16 +7,12 @@ import { z } from 'zod'
 
 const backupSchema = z.object({
   version: z.number(),
-  exercises:   z.array(z.unknown()),
-  workouts:    z.array(z.unknown()),
-  workoutSets: z.array(z.unknown()),
   foods:       z.array(z.unknown()),
   foodLog:     z.array(z.unknown()),
   bodyMetrics: z.array(z.unknown()),
   userStats:   z.array(z.unknown()),
   targets:     z.array(z.unknown()),
   achievements: z.array(z.unknown()),
-  prRecords:   z.array(z.unknown()),
   settings:    z.array(z.unknown()),
 })
 
@@ -41,18 +37,14 @@ export default function ImportButton() {
 
       const data = result.data
 
-      const tables = [db.exercises, db.workouts, db.workoutSets, db.foods, db.foodLog, db.bodyMetrics, db.userStats, db.targets, db.achievements, db.prRecords, db.settings]
+      const tables = [db.foods, db.foodLog, db.bodyMetrics, db.userStats, db.targets, db.achievements, db.settings]
       await db.transaction('rw', tables, async () => {
-        await db.exercises.clear();   await db.exercises.bulkAdd(data.exercises as Parameters<typeof db.exercises.bulkAdd>[0])
-        await db.workouts.clear();    await db.workouts.bulkAdd(data.workouts as Parameters<typeof db.workouts.bulkAdd>[0])
-        await db.workoutSets.clear(); await db.workoutSets.bulkAdd(data.workoutSets as Parameters<typeof db.workoutSets.bulkAdd>[0])
         await db.foods.clear();       await db.foods.bulkAdd(data.foods as Parameters<typeof db.foods.bulkAdd>[0])
         await db.foodLog.clear();     await db.foodLog.bulkAdd(data.foodLog as Parameters<typeof db.foodLog.bulkAdd>[0])
         await db.bodyMetrics.clear(); await db.bodyMetrics.bulkAdd(data.bodyMetrics as Parameters<typeof db.bodyMetrics.bulkAdd>[0])
         await db.userStats.clear();   await db.userStats.bulkAdd(data.userStats as Parameters<typeof db.userStats.bulkAdd>[0])
         await db.targets.clear();     await db.targets.bulkAdd(data.targets as Parameters<typeof db.targets.bulkAdd>[0])
         await db.achievements.clear();await db.achievements.bulkAdd(data.achievements as Parameters<typeof db.achievements.bulkAdd>[0])
-        await db.prRecords.clear();   await db.prRecords.bulkAdd(data.prRecords as Parameters<typeof db.prRecords.bulkAdd>[0])
         await db.settings.clear();    await db.settings.bulkAdd(data.settings as Parameters<typeof db.settings.bulkAdd>[0])
       })
 

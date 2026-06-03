@@ -185,7 +185,7 @@ export default function SettingsPage() {
               <div className="flex-1">
                 <Label className="text-sm">Activity-driven targets</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Adjusts carbs and fat based on your recent steps and workouts. Protein stays where you set it.
+                  Adjusts carbs and fat based on your recent steps. Protein stays where you set it.
                 </p>
               </div>
               <button
@@ -228,36 +228,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Workout preferences */}
-      <section className="flex flex-col gap-3">
-        <SectionHeader>Workout</SectionHeader>
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Rest timer (seconds)</Label>
-              <NumberStepper
-                value={String(settings?.defaultRestSeconds ?? 90)}
-                onChange={v => void updateSettings({ defaultRestSeconds: Number(v) })}
-                step={15}
-                min={10}
-                max={600}
-                inputMode="numeric"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Barbell weight (kg)</Label>
-              <NumberStepper
-                value={String(settings?.barWeightKg ?? 20)}
-                onChange={v => void updateSettings({ barWeightKg: Number(v) })}
-                step={1}
-                min={0}
-                inputMode="decimal"
-              />
-            </div>
           </CardContent>
         </Card>
       </section>

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Flame, Star, Play, Info } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Flame, Star, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import MacroRing from '@/components/MacroRing'
@@ -11,15 +9,12 @@ import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
 import { useDynamicTargets } from '@/features/dashboard/hooks/useDynamicTargets'
 import StepLogCard from '@/features/dashboard/components/StepLogCard'
 import TargetBreakdownSheet from '@/features/dashboard/components/TargetBreakdownSheet'
-import { useWorkoutStore } from '@/features/workouts/store'
-import { clampPercent, formatDurationMin } from '@/lib/format'
+import { clampPercent } from '@/lib/format'
 import { xpForLevel } from '@/lib/xp'
 import { format, parseISO } from 'date-fns'
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
-  const { startWorkout } = useWorkoutStore()
-  const { nutritionTotals, targets, userStats, todayWorkout, todayStr } = useDashboardData()
+  const { nutritionTotals, targets, userStats, todayStr } = useDashboardData()
   const dyn = useDynamicTargets()
   const [breakdownOpen, setBreakdownOpen] = useState(false)
 
@@ -44,11 +39,6 @@ export default function DashboardPage() {
   const today = parseISO(todayStr)
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
-  function handleStartWorkout() {
-    startWorkout()
-    navigate('/workouts/active')
-  }
 
   return (
     <div className="p-4 flex flex-col gap-5">
@@ -98,35 +88,6 @@ export default function DashboardPage() {
           targets={dyn.targets}
           breakdown={dyn.breakdown}
         />
-      )}
-
-      {/* Today's workout */}
-      {todayWorkout ? (
-        <StatCard
-          label="Today's workout"
-          value={formatDurationMin(todayWorkout.durationMin)}
-          sub="Completed"
-          Icon={Dumbbell}
-          iconClassName="text-primary"
-        />
-      ) : (
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                <Dumbbell size={20} className="text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Ready to lift?</p>
-                <p className="text-xs text-muted-foreground">No workout logged today</p>
-              </div>
-            </div>
-            <Button size="sm" onClick={handleStartWorkout} className="gap-1.5 shrink-0">
-              <Play size={14} className="fill-current" />
-              Start
-            </Button>
-          </CardContent>
-        </Card>
       )}
 
       {/* Streak + Level row */}

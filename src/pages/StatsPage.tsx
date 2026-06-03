@@ -146,7 +146,7 @@ export default function StatsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">Advanced analytics</p>
-                <p className="text-xs text-muted-foreground">Volume, 1RM trends, macro adherence</p>
+                <p className="text-xs text-muted-foreground">Macro adherence</p>
               </div>
               <ChevronRight size={16} className="text-muted-foreground shrink-0" />
             </CardContent>

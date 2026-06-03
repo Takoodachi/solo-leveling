@@ -10,21 +10,24 @@ export interface UseDynamicTargetsResult {
   breakdown: DynamicBreakdown | undefined
 }
 
-function windowDatesIncludingToday(windowDays: number): string[] {
-  const todayDate = parseISO(today())
+function windowDatesEndingAt(refDate: string, windowDays: number): string[] {
+  const end = parseISO(refDate)
   const dates: string[] = []
   for (let i = 0; i < windowDays; i++) {
-    dates.push(format(subDays(todayDate, i), 'yyyy-MM-dd'))
+    dates.push(format(subDays(end, i), 'yyyy-MM-dd'))
   }
   return dates
 }
 
-export function useDynamicTargets(): UseDynamicTargetsResult {
+export function useDynamicTargets(refDate?: string): UseDynamicTargetsResult {
+  const ref = refDate ?? today()
   const data = useLiveQuery(async () => {
     const [settings, baseline, latestWeight] = await Promise.all([
       db.settings.get(1),
       db.targets.get(1),
-      db.bodyMetrics.orderBy('date').reverse().first(),
+      // Latest body weight on or before the viewed day, so past days use the
+      // weight that was current then (identical to "latest" when ref is today).
+      db.bodyMetrics.where('date').belowOrEqual(ref).reverse().first(),
     ])
 
     if (!settings?.dynamicTargetsEnabled || !baseline) {
@@ -32,25 +35,21 @@ export function useDynamicTargets(): UseDynamicTargetsResult {
     }
 
     const windowDays = settings.activityWindowDays ?? 7
-    const windowDates = windowDatesIncludingToday(windowDays)
+    const windowDates = windowDatesEndingAt(ref, windowDays)
     const earliest = windowDates[windowDates.length - 1]
 
-    const [dailyActivity, workouts] = await Promise.all([
-      db.dailyActivity.where('date').aboveOrEqual(earliest).toArray(),
-      db.workouts.where('date').aboveOrEqual(earliest).toArray(),
-    ])
+    const dailyActivity = await db.dailyActivity.where('date').aboveOrEqual(earliest).toArray()
 
     const result = computeDynamicTargets({
       baseline,
       windowDays,
       bodyKg: latestWeight?.weightKg,
       dailyActivity,
-      workouts,
       windowDates,
     })
 
     return { dynamic: true, targets: result.targets, breakdown: result.breakdown }
-  }, [])
+  }, [ref])
 
   return data ?? { dynamic: false, targets: undefined, breakdown: undefined }
 }

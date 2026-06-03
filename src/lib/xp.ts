@@ -1,11 +1,8 @@
 import { db } from '@/db'
 
 export const XP = {
-  WORKOUT: 50,
-  PER_SET: 2,
   KCAL_TARGET_HIT: 30,
   PROTEIN_TARGET_HIT: 20,
-  NEW_PR: 100,
   WEEKLY_RECAP: 25,
 } as const
 

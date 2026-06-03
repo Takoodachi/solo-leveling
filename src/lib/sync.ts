@@ -1,8 +1,8 @@
 import { db } from '@/db'
 import { supabase, isSupabaseConfigured } from './supabase'
 import type {
-  Exercise, Workout, WorkoutSet, Food, FoodLog,
-  BodyMetric, Targets, Achievement, PrRecord, UserStats, DailyActivity,
+  Food, FoodLog,
+  BodyMetric, Targets, Achievement, UserStats, DailyActivity, Settings,
 } from '@/types'
 
 const LAST_SYNCED_KEY = 'soloLeveling_lastSyncedAt'
@@ -51,18 +51,6 @@ class SyncService {
 
   private async push(userId: string): Promise<void> {
     await Promise.all([
-      this.pushTable<Exercise>('exercises', userId,
-        () => db.exercises.filter(r => r.isCustom && !!r.syncPending).toArray(),
-        (rows) => db.exercises.bulkPut(rows),
-      ),
-      this.pushTable<Workout>('workouts', userId,
-        () => db.workouts.filter(r => !!r.syncPending).toArray(),
-        (rows) => db.workouts.bulkPut(rows),
-      ),
-      this.pushTable<WorkoutSet>('workout_sets', userId,
-        () => db.workoutSets.filter(r => !!r.syncPending).toArray(),
-        (rows) => db.workoutSets.bulkPut(rows),
-      ),
       this.pushTable<Food>('foods', userId,
         () => db.foods.filter(r => r.isCustom && !!r.syncPending).toArray(),
         (rows) => db.foods.bulkPut(rows),
@@ -83,12 +71,9 @@ class SyncService {
         () => db.achievements.filter(r => !!r.syncPending).toArray(),
         (rows) => db.achievements.bulkPut(rows),
       ),
-      this.pushTable<PrRecord>('pr_records', userId,
-        () => db.prRecords.filter(r => !!r.syncPending).toArray(),
-        (rows) => db.prRecords.bulkPut(rows),
-      ),
       this.pushTargets(userId),
       this.pushUserStats(userId),
+      this.pushSettings(userId),
     ])
   }
 
@@ -124,15 +109,6 @@ class SyncService {
 
   private async pull(userId: string, lastSyncedAt: number): Promise<void> {
     await Promise.all([
-      this.pullTable<Exercise>('exercises', userId, lastSyncedAt,
-        (rows) => db.exercises.bulkPut(rows),
-      ),
-      this.pullTable<Workout>('workouts', userId, lastSyncedAt,
-        (rows) => db.workouts.bulkPut(rows),
-      ),
-      this.pullTable<WorkoutSet>('workout_sets', userId, lastSyncedAt,
-        (rows) => db.workoutSets.bulkPut(rows),
-      ),
       this.pullTable<Food>('foods', userId, lastSyncedAt,
         (rows) => db.foods.bulkPut(rows),
       ),
@@ -148,11 +124,9 @@ class SyncService {
       this.pullTable<Achievement>('achievements', userId, lastSyncedAt,
         (rows) => db.achievements.bulkPut(rows),
       ),
-      this.pullTable<PrRecord>('pr_records', userId, lastSyncedAt,
-        (rows) => db.prRecords.bulkPut(rows),
-      ),
       this.pullTargets(userId),
       this.pullUserStats(userId),
+      this.pullSettings(userId),
     ])
   }
 
@@ -221,6 +195,35 @@ class SyncService {
     if (!local || (remote.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
       const { user_id: _uid, ...rest } = remote
       await db.userStats.put({ ...rest, id: 1, syncPending: false })
+    }
+  }
+
+  private async pushSettings(userId: string): Promise<void> {
+    const settings = await db.settings.get(1)
+    if (!settings?.syncPending) return
+    const { syncPending: _sp, ...rest } = settings
+    const { error } = await sb
+      .from('settings')
+      .upsert({ ...rest, user_id: userId }, { onConflict: 'user_id' })
+    if (!error) {
+      await db.settings.put({ ...settings, syncPending: false })
+    }
+  }
+
+  private async pullSettings(userId: string): Promise<void> {
+    const { data, error } = await sb
+      .from('settings')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error || !data) return
+
+    const local = await db.settings.get(1)
+    const remote = data as Settings & { user_id: string; updatedAt: number }
+    if (!local || (remote.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
+      const { user_id: _uid, ...rest } = remote
+      await db.settings.put({ ...rest, id: 1, syncPending: false })
     }
   }
 }

@@ -1,45 +1,4 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
-export type ExerciseType = 'strength' | 'cardio' | 'bodyweight' | 'flexibility'
-export type PrMetric = 'maxWeight' | 'maxReps' | 'maxVolume' | 'max1RM'
-
-export interface Exercise {
-  uuid: string
-  name: string
-  category: string
-  type: ExerciseType
-  defaultUnit: 'kg' | 'lb' | 'min' | 'reps' | 'km'
-  isCustom: boolean
-  muscles?: string[]
-  musclesSecondary?: string[]
-  wgerId?: number
-  instructions?: string
-  updatedAt: number
-  syncPending?: boolean
-}
-
-export interface Workout {
-  uuid: string
-  date: string // YYYY-MM-DD
-  notes: string
-  durationMin: number
-  createdAt: number
-  updatedAt: number
-  syncPending?: boolean
-}
-
-export interface WorkoutSet {
-  uuid: string
-  workoutId: string
-  exerciseId: string
-  setIndex: number
-  reps?: number
-  weight?: number // kg
-  duration?: number // seconds
-  distanceKm?: number
-  rpe?: number // 1-10
-  updatedAt: number
-  syncPending?: boolean
-}
 
 export interface FoodIngredient {
   foodUuid: string
@@ -113,25 +72,15 @@ export interface Achievement {
   syncPending?: boolean
 }
 
-export interface PrRecord {
-  uuid: string
-  exerciseId: string
-  metric: PrMetric
-  value: number
-  achievedAt: number
-  updatedAt: number
-  syncPending?: boolean
-}
-
 export interface Settings {
   id: 1
-  defaultRestSeconds: number
-  barWeightKg: number
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
   dynamicTargetsEnabled?: boolean
   activityWindowDays?: number // 3-7
+  updatedAt?: number
+  syncPending?: boolean
 }
 
 export interface DailyActivity {
@@ -142,24 +91,9 @@ export interface DailyActivity {
   syncPending?: boolean
 }
 
-export interface WorkoutDraftRow {
-  id: 1
-  draftJson: string
-  restTimerEndAt: number | null
-  updatedAt: number
-}
-
 // View types (not stored, derived from joins)
 export interface FoodLogWithFood extends FoodLog {
   food: Food
-}
-
-export interface WorkoutSetWithExercise extends WorkoutSet {
-  exercise: Exercise
-}
-
-export interface WorkoutWithSets extends Workout {
-  sets: WorkoutSetWithExercise[]
 }
 
 export interface DailyNutrition {

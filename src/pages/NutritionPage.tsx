@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useNutritionStore } from '@/features/nutrition/store'
 import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
 import { useTargets } from '@/features/nutrition/hooks/useTargets'
+import { useDynamicTargets } from '@/features/dashboard/hooks/useDynamicTargets'
 import MacroBar from '@/features/nutrition/components/MacroBar'
 import FavoriteFoods from '@/features/nutrition/components/FavoriteFoods'
 import MealSection from '@/features/nutrition/components/MealSection'
@@ -18,6 +19,7 @@ export default function NutritionPage() {
   const { selectedDate, setDate } = useNutritionStore()
   const { totals, byMeal } = useDailyLog(selectedDate)
   const { targets } = useTargets()
+  const dyn = useDynamicTargets(selectedDate)
 
   function navigate(direction: 1 | -1) {
     const current = parseISO(selectedDate)
@@ -25,10 +27,10 @@ export default function NutritionPage() {
     setDate(format(next, 'yyyy-MM-dd'))
   }
 
-  const kcalTarget = targets?.dailyKcal ?? 2000
-  const proteinTarget = targets?.dailyProtein ?? 150
-  const carbsTarget = targets?.dailyCarbs ?? 200
-  const fatTarget = targets?.dailyFat ?? 65
+  const kcalTarget    = dyn.dynamic && dyn.targets ? dyn.targets.kcal    : (targets?.dailyKcal    ?? 2000)
+  const proteinTarget = dyn.dynamic && dyn.targets ? dyn.targets.protein : (targets?.dailyProtein ?? 150)
+  const carbsTarget   = dyn.dynamic && dyn.targets ? dyn.targets.carbs   : (targets?.dailyCarbs   ?? 200)
+  const fatTarget     = dyn.dynamic && dyn.targets ? dyn.targets.fat     : (targets?.dailyFat     ?? 65)
 
   return (
     <div className="p-4 flex flex-col gap-4">
