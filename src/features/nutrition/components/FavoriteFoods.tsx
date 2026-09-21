@@ -31,9 +31,9 @@ export default function FavoriteFoods({ date, mealType }: Props) {
           {favorites.map(food => (
             <Button
               key={food.uuid}
-              variant="outline"
+              variant="secondary"
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="shrink-0"
               onClick={() => void handleAdd(food.uuid)}
             >
               {food.name}

@@ -1,0 +1,13 @@
+// Cloudflare Workers config: serves the built PWA from ./dist as static assets.
+// No Worker script runs, so requests are free and unmetered on the free plan.
+// "name" must match the Worker's name in the Cloudflare dashboard.
+{
+  "name": "solo-leveling",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    // Unknown paths (e.g. /workouts/active) get index.html so the React router can handle them.
+    // This replaces the old `/* /index.html 200` _redirects rule, which Cloudflare rejects as a loop.
+    "not_found_handling": "single-page-application"
+  }
+}

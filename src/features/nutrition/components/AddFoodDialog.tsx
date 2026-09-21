@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { format, subDays } from 'date-fns'
 import { Search, Star, ScanLine, Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/db'
@@ -18,7 +19,6 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useFoods } from '../hooks/useFoods'
 import CustomFoodForm from './CustomFoodForm'
-import BarcodeScanner from './BarcodeScanner'
 import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
 import NumberStepper from '@/components/NumberStepper'
 import type { Food, MealType } from '@/types'
@@ -41,12 +41,14 @@ function computeMacros(food: Food, servings: number) {
 
 const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml'
 
+// The barcode library is large; load it only when the scanner opens.
+const BarcodeScanner = lazy(() => import('./BarcodeScanner'))
+
 const RECENT_WINDOW_DAYS = 14
+const AI_FOOD_ENABLED = import.meta.env.VITE_ENABLE_AI_FOOD === 'true'
 
 function daysAgoIso(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
+  return format(subDays(new Date(), days), 'yyyy-MM-dd')
 }
 
 export default function AddFoodDialog({ open, onClose, date, mealType }: Props) {
@@ -62,7 +64,8 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
   const { searchFoods, addFoodLog, addCustomFood, toggleFavorite, addBarcodeFood } = useFoods()
   const userId = useAuthStore(s => s.userId)
-  const aiAvailable = isSupabaseConfigured && !!userId
+  // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
+  const aiAvailable = AI_FOOD_ENABLED && isSupabaseConfigured && !!userId
 
   // Map of foodUuid → most-recent-log timestamp within the recent window.
   const recentMapRaw = useLiveQuery(async () => {
@@ -187,10 +190,12 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
           <DialogHeader className="p-4 pb-2">
             <DialogTitle>Scan Barcode</DialogTitle>
           </DialogHeader>
-          <BarcodeScanner
-            onResult={handleBarcodeResult}
-            onCancel={() => setShowScanner(false)}
-          />
+          <Suspense fallback={<p className="p-8 text-center text-sm text-muted-foreground">Starting camera…</p>}>
+            <BarcodeScanner
+              onResult={handleBarcodeResult}
+              onCancel={() => setShowScanner(false)}
+            />
+          </Suspense>
         </DialogContent>
       </Dialog>
     )
@@ -379,15 +384,13 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
                 {results.map(food => {
                   const isRecent = recentMap.has(food.uuid)
                   return (
-                    <button
-                      key={food.uuid}
-                      onClick={() => handleFoodSelect(food)}
-                      className={cn(
-                        'w-full text-left px-3 py-2.5 rounded-md transition-colors',
-                        'hover:bg-accent flex items-center justify-between gap-2'
-                      )}
-                    >
-                      <div className="flex-1 min-w-0">
+                    // Row + favorite star are sibling buttons (a button can't contain a button).
+                    <div key={food.uuid} className="flex items-center gap-1 rounded-xl pr-1 transition-colors hover:bg-accent">
+                      <button
+                        type="button"
+                        onClick={() => handleFoodSelect(food)}
+                        className="min-w-0 flex-1 px-3 py-2.5 text-left"
+                      >
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm truncate">{food.name}</p>
                           {isRecent && (
@@ -399,18 +402,19 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
                         <p className="text-xs text-muted-foreground">
                           {food.kcalPerServing} cal / {food.servingSize}{food.servingUnit}
                         </p>
-                      </div>
+                      </button>
                       <button
-                        onClick={e => { e.stopPropagation(); void toggleFavorite(food.uuid) }}
-                        className="shrink-0 p-1"
+                        type="button"
+                        onClick={() => void toggleFavorite(food.uuid)}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                         aria-label={food.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         <Star
-                          size={14}
+                          size={16}
                           className={food.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
                         />
                       </button>
-                    </button>
+                    </div>
                   )
                 })}
               </div>

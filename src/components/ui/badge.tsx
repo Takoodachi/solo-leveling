@@ -15,6 +15,8 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Orange-tinted category tag (e.g. "Strength" on a routine card)
+        tag: "rounded-lg border-transparent bg-primary/15 px-2 py-1 text-primary backdrop-blur-sm",
       },
     },
     defaultVariants: {
@@ -33,4 +35,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- shadcn exports variants next to the component
 export { Badge, badgeVariants }

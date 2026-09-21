@@ -22,7 +22,7 @@ const SIZE_CLASSES: Record<Size, {
   input: string
   icon: number
 }> = {
-  sm: { button: 'h-9 w-9',  input: 'h-9 text-sm',  icon: 14 },
+  sm: { button: 'h-11 w-11', input: 'h-11 text-base', icon: 16 },
   lg: { button: 'h-12 w-12', input: 'h-12 text-lg font-semibold', icon: 18 },
 }
 
@@ -56,7 +56,7 @@ export default function NumberStepper({
         onClick={() => adjust(-step)}
         className={cn(
           sz.button,
-          'flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors',
+          'flex-shrink-0 rounded-xl bg-secondary flex items-center justify-center hover:bg-accent active:scale-95 transition',
         )}
         aria-label="Decrease"
       >
@@ -70,7 +70,7 @@ export default function NumberStepper({
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
         className={cn(
-          'flex-1 text-center bg-background border border-input rounded-md',
+          'flex-1 min-w-0 text-center bg-secondary border border-transparent rounded-xl',
           sz.input,
           'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0',
           '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
@@ -82,7 +82,7 @@ export default function NumberStepper({
         onClick={() => adjust(step)}
         className={cn(
           sz.button,
-          'flex-shrink-0 rounded bg-muted flex items-center justify-center hover:bg-accent transition-colors',
+          'flex-shrink-0 rounded-xl bg-secondary flex items-center justify-center hover:bg-accent active:scale-95 transition',
         )}
         aria-label="Increase"
       >

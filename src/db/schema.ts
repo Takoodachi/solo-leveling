@@ -2,17 +2,25 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Food, FoodLog,
   BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
+  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
-  foods!:         Table<Food,            string>
-  foodLog!:       Table<FoodLog,         string>
-  bodyMetrics!:   Table<BodyMetric,      string>
-  dailyActivity!: Table<DailyActivity,   string>
-  userStats!:     Table<UserStats,       number>
-  targets!:       Table<Targets,         number>
-  achievements!:  Table<Achievement,     string>
-  settings!:      Table<Settings,        number>
+  foods!:          Table<Food,            string>
+  foodLog!:        Table<FoodLog,         string>
+  bodyMetrics!:    Table<BodyMetric,      string>
+  dailyActivity!:  Table<DailyActivity,   string>
+  userStats!:      Table<UserStats,       number>
+  targets!:        Table<Targets,         number>
+  achievements!:   Table<Achievement,     string>
+  settings!:       Table<Settings,        number>
+  exercises!:      Table<Exercise,        string>
+  workouts!:       Table<Workout,         string>
+  workoutSets!:    Table<WorkoutSet,      string>
+  workoutDrafts!:  Table<WorkoutDraftRow, number>
+  routines!:       Table<Routine,         string>
+  challenges!:     Table<Challenge,       string>
+  pendingDeletes!: Table<PendingDelete,   string>
 
   constructor() {
     super('SoloLevelingDB')
@@ -46,5 +54,14 @@ export class SoloLevelingDB extends Dexie {
       exercises: null, workouts: null, workoutSets: null,
       prRecords: null, workoutDrafts: null,
     }) // remove workout feature — drop its tables
+    this.version(10).stores({
+      exercises:      'uuid, name, category, type, isCustom',
+      workouts:       'uuid, date, createdAt, routineId',
+      workoutSets:    'uuid, workoutId, exerciseId',
+      workoutDrafts:  'id',
+      routines:       'uuid, name',
+      challenges:     'uuid, endDate',
+      pendingDeletes: 'key, table',
+    }) // workouts return (routines, plan, challenges) + sync tombstones
   }
 }

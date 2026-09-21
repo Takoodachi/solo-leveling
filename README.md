@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# Solo Leveling
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal workout + nutrition tracker PWA for a few friends. Offline-first (IndexedDB), with optional
+per-user cloud sync through Supabase. Installable on Android and iOS; all hosting runs on free tiers.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.local.example .env.local   # fill in your Supabase URL + publishable key (or leave empty for local-only)
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`npm run typecheck`, `npm run lint` and `npm run build` should all pass before deploying.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Backend: Supabase (free tier)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **Schema**: open Supabase → SQL Editor, paste `supabase/migrations/20260921000000_sync_v2.sql`, and run it.
+   It's idempotent (safe on an existing project and safe to re-run). It creates/updates every synced table
+   and adds row-level security, so each user only ever sees their own rows.
+2. **Auth** → *Sign In / Providers* → Email: keep enabled. **Turn off "Allow new users to sign up".**
+3. **Auth** → *Users* → **Add user → Create new user** for each person (email + password,
+   tick *Auto Confirm User*). No email service is needed for this.
+4. **Auth** → *URL Configuration*: set **Site URL** to the deployed app URL and add it to *Redirect URLs*
+   (only needed for the optional email-link sign-in).
+
+Free projects pause after 7 days without traffic. `.github/workflows/supabase-keepalive.yml` pings the
+database every ~3 days. Add two repository secrets for it: `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+(the publishable key, never the service_role key).
+
+## Hosting: Cloudflare Workers static assets (free)
+
+Workers & Pages → Create → *Import a repository* → this repo. Settings:
+
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production branch deploy command | `npx wrangler versions upload` |
+| **Build** variables (Settings → Build → Variables and secrets) | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+
+- `wrangler.jsonc` serves `dist/` as static assets, with `not_found_handling: "single-page-application"` so
+  deep links like `/workouts/active` load the app. Don't add a `_redirects` file: Cloudflare rejects
+  `/* /index.html 200` as an infinite loop.
+- The Supabase values must be **build** variables, not runtime ones: Vite bakes them into the bundle at build time.
+- `.nvmrc` pins Node 22 for the build.
+- Every push to `main` redeploys; other branches get preview versions.
+- `public/_headers` stops the service worker and HTML from being cached, so installed apps pick up updates.
+- `netlify.toml` still works if you ever deploy to Netlify instead.
+
+## Install on a phone
+
+- **Android (Chrome)**: open the site → menu → *Add to Home screen* / *Install app*.
+- **iPhone (Safari)**: open the site → Share → *Add to Home Screen*. Sign in **inside the installed app**.
+  iOS keeps the home-screen app's storage separate from Safari.
+
+## How sync works (short version)
+
+- Every write goes to IndexedDB first (`updatedAt`, `syncPending: true`), then a background sync runs.
+- Push, then pull. Deletions are sent as tombstones (`deleted = true`) so they reach other devices.
+- Pull uses the server's `serverUpdatedAt` as its cursor, so edits made offline and uploaded later still arrive.
+- Conflicts are last-write-wins on `updatedAt`, enforced by a server trigger.
+- See `src/lib/sync.ts`.

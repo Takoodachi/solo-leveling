@@ -5,28 +5,39 @@ import { toast } from 'sonner'
 import { db } from '@/db'
 import { format } from 'date-fns'
 
+const BACKUP_VERSION = 2
+
 export default function ExportButton() {
   const [exporting, setExporting] = useState(false)
 
   async function handleExport() {
     setExporting(true)
     try {
-      const [foods, foodLog, bodyMetrics, userStats, targets, achievements, settings] =
-        await Promise.all([
-          db.foods.toArray(),
-          db.foodLog.toArray(),
-          db.bodyMetrics.toArray(),
-          db.userStats.toArray(),
-          db.targets.toArray(),
-          db.achievements.toArray(),
-          db.settings.toArray(),
-        ])
+      const [
+        foods, foodLog, bodyMetrics, dailyActivity, userStats, targets, achievements, settings,
+        exercises, workouts, workoutSets, routines, challenges,
+      ] = await Promise.all([
+        db.foods.filter(f => f.isCustom || f.isFavorite).toArray(),
+        db.foodLog.toArray(),
+        db.bodyMetrics.toArray(),
+        db.dailyActivity.toArray(),
+        db.userStats.toArray(),
+        db.targets.toArray(),
+        db.achievements.toArray(),
+        db.settings.toArray(),
+        db.exercises.filter(e => e.isCustom).toArray(),
+        db.workouts.toArray(),
+        db.workoutSets.toArray(),
+        db.routines.toArray(),
+        db.challenges.toArray(),
+      ])
 
       const data = {
-        version: 1,
+        version: BACKUP_VERSION,
         exportedAt: Date.now(),
-        foods, foodLog, bodyMetrics,
+        foods, foodLog, bodyMetrics, dailyActivity,
         userStats, targets, achievements, settings,
+        exercises, workouts, workoutSets, routines, challenges,
       }
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -46,9 +57,9 @@ export default function ExportButton() {
   }
 
   return (
-    <Button variant="outline" onClick={handleExport} disabled={exporting} className="gap-2">
+    <Button variant="secondary" onClick={handleExport} disabled={exporting} className="gap-2 flex-1">
       <Download size={16} />
-      {exporting ? 'Exporting…' : 'Export data'}
+      {exporting ? 'Exporting…' : 'Export'}
     </Button>
   )
 }

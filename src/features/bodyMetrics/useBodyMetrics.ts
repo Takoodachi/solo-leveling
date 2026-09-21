@@ -2,8 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { toast } from 'sonner'
 import { db } from '@/db'
 import type { BodyMetric } from '@/types'
-import { syncService } from '@/lib/sync'
-import { useAuthStore } from '@/features/auth/authStore'
+import { requestSync, deleteSynced } from '@/lib/sync'
 import { evaluateAchievements } from '@/lib/achievementEval'
 
 export function useBodyMetrics(limit = 90) {
@@ -20,14 +19,16 @@ export function useBodyMetrics(limit = 90) {
       await db.bodyMetrics.update(existing.uuid, { weightKg, notes, updatedAt: now, syncPending: true })
     } else {
       const entry: BodyMetric = {
-        uuid: crypto.randomUUID(),
+        // One entry per day: a date-based id means two devices logging the same
+        // day offline update one row instead of creating duplicates.
+        uuid: `weight-${date}`,
         date,
         weightKg,
         notes,
         updatedAt: now,
         syncPending: true,
       }
-      await db.bodyMetrics.add(entry)
+      await db.bodyMetrics.put(entry)
     }
 
     const newAchievements = await evaluateAchievements()
@@ -35,12 +36,11 @@ export function useBodyMetrics(limit = 90) {
       toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
     }
 
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    requestSync()
   }
 
   async function deleteMetric(uuid: string): Promise<void> {
-    await db.bodyMetrics.delete(uuid)
+    await deleteSynced(db.bodyMetrics, 'body_metrics', [uuid])
   }
 
   return { metrics: metrics ?? [], logWeight, deleteMetric }

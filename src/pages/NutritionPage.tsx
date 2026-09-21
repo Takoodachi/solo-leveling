@@ -1,73 +1,83 @@
+import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { addDays, subDays, parseISO, format } from 'date-fns'
+import PageHeader from '@/components/PageHeader'
 import { useNutritionStore } from '@/features/nutrition/store'
 import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
-import { useTargets } from '@/features/nutrition/hooks/useTargets'
-import { useDynamicTargets } from '@/features/dashboard/hooks/useDynamicTargets'
+import { useEffectiveTargets } from '@/features/dashboard/hooks/useEffectiveTargets'
 import MacroBar from '@/features/nutrition/components/MacroBar'
 import FavoriteFoods from '@/features/nutrition/components/FavoriteFoods'
 import MealSection from '@/features/nutrition/components/MealSection'
+import AddFoodDialog from '@/features/nutrition/components/AddFoodDialog'
 import { formatDisplayDate } from '@/lib/date'
+import { useNow } from '@/hooks/useNow'
 import { formatKcal } from '@/lib/format'
-import { addDays, subDays } from 'date-fns'
-import { parseISO, format } from 'date-fns'
 import type { MealType } from '@/types'
 
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
+/** Best-guess meal for a quick add from the + menu. */
+function mealForNow(hour: number): MealType {
+  if (hour < 10) return 'breakfast'
+  if (hour < 15) return 'lunch'
+  if (hour < 21) return 'dinner'
+  return 'snack'
+}
+
 export default function NutritionPage() {
   const { selectedDate, setDate } = useNutritionStore()
   const { totals, byMeal } = useDailyLog(selectedDate)
-  const { targets } = useTargets()
-  const dyn = useDynamicTargets(selectedDate)
+  const { targets } = useEffectiveTargets(selectedDate)
+  const [params, setParams] = useSearchParams()
+  const quickAdd = params.get('add') === '1'
+  const now = useNow()
 
-  function navigate(direction: 1 | -1) {
+  function shift(direction: 1 | -1) {
     const current = parseISO(selectedDate)
-    const next = direction === 1 ? addDays(current, 1) : subDays(current, 1)
-    setDate(format(next, 'yyyy-MM-dd'))
+    setDate(format(direction === 1 ? addDays(current, 1) : subDays(current, 1), 'yyyy-MM-dd'))
   }
 
-  const kcalTarget    = dyn.dynamic && dyn.targets ? dyn.targets.kcal    : (targets?.dailyKcal    ?? 2000)
-  const proteinTarget = dyn.dynamic && dyn.targets ? dyn.targets.protein : (targets?.dailyProtein ?? 150)
-  const carbsTarget   = dyn.dynamic && dyn.targets ? dyn.targets.carbs   : (targets?.dailyCarbs   ?? 200)
-  const fatTarget     = dyn.dynamic && dyn.targets ? dyn.targets.fat     : (targets?.dailyFat     ?? 65)
+  const pct = targets.kcal > 0 ? Math.min(1, totals.kcal / targets.kcal) : 0
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      {/* Date navigator */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
-          <ChevronLeft size={18} />
-        </Button>
-        <h1 className="text-base font-semibold">{formatDisplayDate(selectedDate)}</h1>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(1)}>
-          <ChevronRight size={18} />
-        </Button>
+    <div className="flex flex-col gap-4">
+      <PageHeader back="/home" title="Nutrition" />
+
+      <div className="flex items-center justify-between rounded-full bg-card p-1">
+        <button type="button" onClick={() => shift(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Previous day">
+          <ChevronLeft size={20} />
+        </button>
+        <span className="font-semibold">{formatDisplayDate(selectedDate)}</span>
+        <button type="button" onClick={() => shift(1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Next day">
+          <ChevronRight size={20} />
+        </button>
       </div>
 
-      {/* Calorie summary */}
-      <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
-        <div className="flex justify-between items-baseline">
-          <span className="text-2xl font-bold">{formatKcal(totals.kcal)}</span>
-          <span className="text-sm text-muted-foreground">/ {formatKcal(kcalTarget)} cal</span>
+      <div className="flex flex-col gap-4 rounded-3xl bg-card p-5">
+        <div className="flex items-baseline justify-between">
+          <span className="font-heading text-3xl font-bold tabular-nums">{formatKcal(totals.kcal)}</span>
+          <span className="text-sm text-muted-foreground">/ {formatKcal(targets.kcal)} kcal</span>
         </div>
-        <MacroBar label="Protein" value={totals.protein} target={proteinTarget} colorClass="text-blue-400" />
-        <MacroBar label="Carbs"   value={totals.carbs}   target={carbsTarget}   colorClass="text-orange-400" />
-        <MacroBar label="Fat"     value={totals.fat}     target={fatTarget}     colorClass="text-yellow-400" />
+        <div className="h-2 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
+        </div>
+        <MacroBar label="Protein" value={totals.protein} target={targets.protein} colorClass="text-primary" />
+        <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} colorClass="text-sky-400" />
+        <MacroBar label="Fat" value={totals.fat} target={targets.fat} colorClass="text-amber-300" />
       </div>
 
-      {/* Favorites quick-add */}
       <FavoriteFoods date={selectedDate} mealType="snack" />
 
-      {/* Meal sections */}
       {MEAL_ORDER.map(meal => (
-        <MealSection
-          key={meal}
-          mealType={meal}
-          entries={byMeal[meal] ?? []}
-          date={selectedDate}
-        />
+        <MealSection key={meal} mealType={meal} entries={byMeal[meal] ?? []} date={selectedDate} />
       ))}
+
+      <AddFoodDialog
+        open={quickAdd}
+        onClose={() => setParams({}, { replace: true })}
+        date={selectedDate}
+        mealType={mealForNow(now.getHours())}
+      />
     </div>
   )
 }
