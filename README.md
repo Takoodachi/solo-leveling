@@ -21,8 +21,11 @@ npm run dev
 2. **Auth** → *Sign In / Providers* → Email: keep enabled. **Turn off "Allow new users to sign up".**
 3. **Auth** → *Users* → **Add user → Create new user** for each person (email + password,
    tick *Auto Confirm User*). No email service is needed for this.
-4. **Auth** → *URL Configuration*: set **Site URL** to the deployed app URL and add it to *Redirect URLs*
-   (only needed for the optional email-link sign-in).
+4. **Auth** → *URL Configuration* (needed for the email sign-in link):
+   - **Site URL**: the full app URL **including `https://`**, e.g. `https://solo-leveling.<you>.workers.dev`.
+     Without the scheme, Supabase treats it as a path on its own domain and links land on a dead page.
+   - **Redirect URLs**: add `https://solo-leveling.<you>.workers.dev/**` (plus `http://localhost:5173/**` for
+     local dev). The app asks to return to its own address; anything not listed falls back to the Site URL.
 
 Free projects pause after 7 days without traffic. `.github/workflows/supabase-keepalive.yml` pings the
 database every ~3 days. Add two repository secrets for it: `SUPABASE_URL` and `SUPABASE_ANON_KEY`
