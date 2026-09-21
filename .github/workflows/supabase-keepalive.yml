@@ -1,0 +1,35 @@
+# Keeps the free Supabase project from pausing (free projects pause after 7 days
+# without activity). Runs every ~3 days and makes one tiny read. Uses only the
+# public anon key, which is already shipped inside the web app.
+#
+# Setup: repo Settings → Secrets and variables → Actions → New repository secret
+#   SUPABASE_URL       = https://<project>.supabase.co
+#   SUPABASE_ANON_KEY  = the publishable/anon key (NOT the service_role key)
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 9 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Query the database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Add SUPABASE_URL and SUPABASE_ANON_KEY repository secrets"
+            exit 1
+          fi
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/targets?select=user_id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY")
+          echo "Supabase responded HTTP $status"
+          test "$status" = "200"

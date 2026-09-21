@@ -1,0 +1,20 @@
+# Response headers for Cloudflare Pages (also understood by Netlify).
+# The service worker and HTML must never be cached, or installed apps can get
+# stuck on an old version. Hashed build assets can be cached forever.
+
+/sw.js
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

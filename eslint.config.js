@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // supabase/functions is Deno code (deployed separately), not part of the web app.
+  globalIgnores(['dist', 'supabase/functions', '@']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
