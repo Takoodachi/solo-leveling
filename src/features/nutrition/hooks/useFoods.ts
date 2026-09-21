@@ -1,20 +1,19 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
-import type { Food } from '@/types'
-import { syncService } from '@/lib/sync'
-import { useAuthStore } from '@/features/auth/authStore'
+import type { Food, MealType } from '@/types'
+import { requestSync, deleteSynced } from '@/lib/sync'
 import { toast } from 'sonner'
 import { today } from '@/lib/date'
 import { updateStreak } from '@/lib/streak'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 
+const KJ_PER_KCAL = 4.184
+
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
-  const favorites = useLiveQuery(
-    () => db.foods.where('isFavorite').equals(1).toArray(),
-    []
-  )
+  // Booleans aren't indexable in IndexedDB, so filter instead of where().
+  const favorites = useLiveQuery(() => db.foods.filter(f => f.isFavorite).toArray(), [])
 
   function searchFoods(query: string): Food[] {
     if (!foods) return []
@@ -31,8 +30,7 @@ export function useFoods() {
       updatedAt: Date.now(),
       syncPending: true,
     })
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    requestSync()
   }
 
   async function addCustomFood(data: Omit<Food, 'uuid' | 'isCustom' | 'updatedAt' | 'syncPending'>): Promise<Food> {
@@ -44,8 +42,7 @@ export function useFoods() {
       syncPending: true,
     }
     await db.foods.add(food)
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    requestSync()
     return food
   }
 
@@ -53,7 +50,7 @@ export function useFoods() {
     date: string
     foodId: string
     servings: number
-    mealType: import('@/types').MealType
+    mealType: MealType
   }): Promise<void> {
     await db.foodLog.add({
       uuid: crypto.randomUUID(),
@@ -76,18 +73,15 @@ export function useFoods() {
       toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
     }
 
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    requestSync()
   }
 
   async function removeFoodLog(logUuid: string): Promise<void> {
-    await db.foodLog.delete(logUuid)
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    await deleteSynced(db.foodLog, 'food_log', [logUuid])
   }
 
   async function addBarcodeFood(barcode: string): Promise<Food | null> {
-    // Check if we already have this food (by barcode stored in uuid prefix)
+    // Barcode foods use a stable id so re-scanning the same product reuses it.
     const existingKey = `barcode-${barcode}`
     const existing = await db.foods.get(existingKey)
     if (existing) return existing
@@ -102,10 +96,12 @@ export function useFoods() {
       const p = json.product
       const n = p.nutriments as Record<string, number> | undefined ?? {}
       const name = (p.product_name as string | undefined) || (p.generic_name as string | undefined) || 'Unknown product'
+      // Prefer the kcal field; fall back to converting the kJ energy value.
+      const kcal = n['energy-kcal_100g'] ?? (n['energy_100g'] != null ? n['energy_100g'] / KJ_PER_KCAL : 0)
       const food: Food = {
         uuid: existingKey,
         name: String(name),
-        kcalPerServing: Math.round(n['energy-kcal_100g'] ?? n['energy_100g'] ?? 0 / 4.184),
+        kcalPerServing: Math.round(kcal),
         protein: Math.round((n['proteins_100g'] ?? 0) * 10) / 10,
         carbs: Math.round((n['carbohydrates_100g'] ?? 0) * 10) / 10,
         fat: Math.round((n['fat_100g'] ?? 0) * 10) / 10,
@@ -117,6 +113,7 @@ export function useFoods() {
         syncPending: true,
       }
       await db.foods.put(food)
+      requestSync()
       toast.success(`Found: ${food.name}`)
       return food
     } catch {

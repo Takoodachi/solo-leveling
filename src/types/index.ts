@@ -49,6 +49,7 @@ export interface UserStats {
   longestStreak: number
   lastLogDate: string | null // YYYY-MM-DD
   streakFreezes: number
+  freezeWeek?: string // ISO week the last streak freeze was granted, e.g. "2026-W38"
   updatedAt?: number
   syncPending?: boolean
 }
@@ -72,13 +73,22 @@ export interface Achievement {
   syncPending?: boolean
 }
 
+export type ReminderDays = 'daily' | 'workout-days'
+
 export interface Settings {
   id: 1
+  displayName?: string
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
   dynamicTargetsEnabled?: boolean
   activityWindowDays?: number // 3-7
+  dailyStepGoal?: number
+  weeklyWorkoutGoal?: number
+  defaultRestSeconds?: number
+  reminderEnabled?: boolean
+  reminderTime?: string // HH:mm
+  reminderDays?: ReminderDays
   updatedAt?: number
   syncPending?: boolean
 }
@@ -91,9 +101,121 @@ export interface DailyActivity {
   syncPending?: boolean
 }
 
+// ── Workouts ──────────────────────────────────────────────────────────────────
+
+export type ExerciseType = 'strength' | 'cardio' | 'bodyweight' | 'flexibility'
+
+export interface Exercise {
+  uuid: string
+  name: string
+  category: string
+  type: ExerciseType
+  defaultUnit: 'kg' | 'lb' | 'min' | 'reps' | 'km'
+  isCustom: boolean
+  muscles?: string[]
+  musclesSecondary?: string[]
+  instructions?: string
+  updatedAt: number
+  syncPending?: boolean
+}
+
+export type RoutineCategory = 'strength' | 'cardio' | 'core' | 'mobility' | 'full-body'
+export type RoutineLevel = 'beginner' | 'intermediate' | 'advanced'
+
+export interface RoutineExercise {
+  exerciseId: string
+  sets: number
+  reps: number // target reps (or minutes for cardio)
+  restSec: number
+}
+
+export interface Routine {
+  uuid: string
+  name: string
+  category: RoutineCategory
+  level: RoutineLevel
+  estDurationMin?: number
+  notes?: string
+  exercises: RoutineExercise[]
+  scheduleDays: number[] // 0 = Sunday … 6 = Saturday
+  updatedAt: number
+  syncPending?: boolean
+}
+
+export interface Workout {
+  uuid: string
+  date: string // YYYY-MM-DD
+  name?: string
+  routineId?: string
+  notes: string
+  durationMin: number
+  startedAt?: number
+  createdAt: number
+  avgHeartRate?: number
+  kcalEst?: number
+  updatedAt: number
+  syncPending?: boolean
+}
+
+export interface WorkoutSet {
+  uuid: string
+  workoutId: string
+  exerciseId: string
+  setIndex: number
+  reps?: number
+  weight?: number // kg
+  duration?: number // minutes
+  distanceKm?: number
+  rpe?: number
+  updatedAt: number
+  syncPending?: boolean
+}
+
+/** Local-only: the in-progress workout, persisted so a reload doesn't lose it. */
+export interface WorkoutDraftRow {
+  id: 1
+  draftJson: string
+  restTimerEndAt: number | null
+  updatedAt: number
+}
+
+// ── Challenges (personal) ─────────────────────────────────────────────────────
+
+export type ChallengeMetric = 'workouts' | 'steps' | 'volume' | 'food-days' | 'protein-days'
+
+export interface Challenge {
+  uuid: string
+  title: string
+  metric: ChallengeMetric
+  target: number
+  startDate: string // YYYY-MM-DD, inclusive
+  endDate: string // YYYY-MM-DD, inclusive
+  createdAt: number
+  updatedAt: number
+  syncPending?: boolean
+}
+
+// ── Sync bookkeeping (local-only) ─────────────────────────────────────────────
+
+/** A row deleted on this device that still has to be tombstoned on the server. */
+export interface PendingDelete {
+  key: string // `${remoteTable}:${uuid}`
+  table: string // remote (Supabase) table name
+  uuid: string
+  deletedAt: number
+}
+
 // View types (not stored, derived from joins)
 export interface FoodLogWithFood extends FoodLog {
   food: Food
+}
+
+export interface WorkoutSetWithExercise extends WorkoutSet {
+  exercise: Exercise
+}
+
+export interface WorkoutWithSets extends Workout {
+  sets: WorkoutSetWithExercise[]
 }
 
 export interface DailyNutrition {

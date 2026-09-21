@@ -1,61 +1,87 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
-import { useEffect } from 'react'
-import { useAuth } from '@/features/auth/useAuth'
+import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
-import { useSync } from '@/hooks/useSync'
 import LoginPage from '@/features/auth/LoginPage'
-import DashboardPage from '@/pages/DashboardPage'
-import NutritionPage from '@/pages/NutritionPage'
-import StatsPage from '@/pages/StatsPage'
-import SettingsPage from '@/pages/SettingsPage'
-import WeightLogPage from '@/features/bodyMetrics/WeightLogPage'
-import AnalyticsPage from '@/pages/AnalyticsPage'
+import HomePage from '@/pages/HomePage'
+const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
+const WorkoutHistoryPage = lazy(() => import('@/pages/WorkoutHistoryPage'))
+const RoutineDetailPage = lazy(() => import('@/pages/RoutineDetailPage'))
+const RoutineEditPage = lazy(() => import('@/pages/RoutineEditPage'))
+const ActiveWorkoutPage = lazy(() => import('@/pages/ActiveWorkoutPage'))
+const WorkoutSummaryPage = lazy(() => import('@/pages/WorkoutSummaryPage'))
+const PlanPage = lazy(() => import('@/pages/PlanPage'))
+const NutritionPage = lazy(() => import('@/pages/NutritionPage'))
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const ChallengesPage = lazy(() => import('@/pages/ChallengesPage'))
+const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
 
-function AuthenticatedApp() {
-  const { session, loading } = useAuth()
-  const { setUserId } = useAuthStore()
-  useSync(session?.user.id)
-
-  useEffect(() => {
-    setUserId(session?.user.id ?? null)
-  }, [session, setUserId])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!session) {
-    return <LoginPage />
-  }
-
+function Spinner() {
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="nutrition" element={<NutritionPage />} />
-        <Route path="stats" element={<StatsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
-      {/* Full-screen — outside AppShell, no bottom nav */}
-      <Route path="stats/weight" element={<WeightLogPage />} />
-      <Route path="stats/analytics" element={<AnalyticsPage />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <div className="flex h-dvh items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  )
+}
+
+function AppRoutes() {
+  useAuthInit()
+  const session = useAuthStore(s => s.session)
+  const userId = useAuthStore(s => s.userId)
+  const loading = useAuthStore(s => s.loading)
+  const localMode = useAuthStore(s => s.localMode)
+
+  // Wait for the session check (and any account-switch wipe) before rendering data.
+  if (loading || (session && !userId)) return <Spinner />
+
+  // Signed out and hasn't chosen local-only mode: offer sign-in (never a dead end).
+  if (!session && !localMode) return <LoginPage />
+
+  // Screens are code-split; the service worker precaches every chunk, so this still works offline.
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<Navigate to="/home" replace />} />
+          <Route path="home" element={<HomePage />} />
+          <Route path="workouts" element={<WorkoutsPage />} />
+          <Route path="nutrition" element={<NutritionPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+        </Route>
+        {/* Full-screen — outside AppShell, no bottom nav */}
+        <Route path="workouts/active" element={<ActiveWorkoutPage />} />
+        <Route path="workouts/plan" element={<PlanPage />} />
+        <Route path="workouts/history" element={<WorkoutHistoryPage />} />
+        <Route path="workouts/routine/new" element={<RoutineEditPage />} />
+        <Route path="workouts/routine/:id" element={<RoutineDetailPage />} />
+        <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />
+        <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
+        <Route path="challenges" element={<ChallengesPage />} />
+        <Route path="analytics/weight" element={<WeightLogPage />} />
+        <Route path="login" element={session ? <Navigate to="/profile" replace /> : <LoginPage embedded />} />
+        {/* Old URLs from the previous layout */}
+        <Route path="dashboard" element={<Navigate to="/home" replace />} />
+        <Route path="settings" element={<Navigate to="/profile" replace />} />
+        <Route path="stats/*" element={<Navigate to="/analytics" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthenticatedApp />
-      <Toaster richColors position="top-center" />
+      <AppRoutes />
+      <Toaster
+        position="top-center"
+        offset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
+        mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
+      />
     </BrowserRouter>
   )
 }

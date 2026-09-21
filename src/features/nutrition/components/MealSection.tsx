@@ -29,14 +29,14 @@ export default function MealSection({ mealType, entries, date }: Props) {
   const mealKcal = entries.reduce((sum, e) => sum + e.food.kcalPerServing * e.servings, 0)
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-3xl bg-card">
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between px-4 py-3 active:bg-accent/40 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 rounded-3xl active:bg-accent/40 transition-colors"
         onClick={() => setOpen(o => !o)}
       >
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">{MEAL_LABELS[mealType]}</span>
+          <span className="font-semibold">{MEAL_LABELS[mealType]}</span>
           {entries.length > 0 && (
             <span className="text-xs text-muted-foreground">{formatKcal(mealKcal)} cal</span>
           )}
@@ -45,7 +45,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
       </button>
 
       {open && (
-        <div className="px-4 pb-3">
+        <div className="px-5 pb-4">
           {entries.length > 0 && <Separator className="mb-2" />}
 
           {entries.map(entry => (
@@ -57,9 +57,9 @@ export default function MealSection({ mealType, entries, date }: Props) {
           ))}
 
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
-            className="w-full mt-1 gap-1.5 text-muted-foreground"
+            className="w-full mt-2 gap-1.5"
             onClick={() => setShowAdd(true)}
           >
             <Plus size={14} />

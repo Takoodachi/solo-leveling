@@ -56,6 +56,10 @@ async function isUnlocked(key: string): Promise<boolean> {
       const s = await db.userStats.get(1)
       return (s?.level ?? 1) >= 10
     }
+    case 'first_workout':     return (await db.workouts.count()) >= 1
+    case 'ten_workouts':      return (await db.workouts.count()) >= 10
+    case 'fifty_workouts':    return (await db.workouts.count()) >= 50
+    case 'hundred_sets':      return (await db.workoutSets.count()) >= 100
     case 'first_calorie_log': return (await db.foodLog.count()) >= 1
     case 'protein_goal':      return await checkProteinGoal7Days()
     case 'weight_logged':     return (await db.bodyMetrics.count()) >= 1
@@ -75,8 +79,9 @@ export async function evaluateAchievements(): Promise<AchievementDef[]> {
   for (const def of ACHIEVEMENT_DEFS) {
     if (unlocked.has(def.key)) continue
     if (await isUnlocked(def.key)) {
-      await db.achievements.add({
-        uuid: crypto.randomUUID(),
+      await db.achievements.put({
+        // Stable id: two devices unlocking the same achievement update one row.
+        uuid: `ach-${def.key}`,
         key: def.key,
         unlockedAt: now,
         progress: 1,

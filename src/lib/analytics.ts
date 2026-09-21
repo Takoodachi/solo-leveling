@@ -1,4 +1,6 @@
+import { parseISO } from 'date-fns'
 import type { Food, FoodLog } from '@/types'
+import { lastNDays } from './date'
 
 export interface MacroPoint {
   date: string
@@ -51,13 +53,7 @@ export function macroAdherenceByDate(
   return dates.map(d => byDate.get(d)!).filter(Boolean)
 }
 
+// Local dates (toISOString() would shift the day for users east of UTC).
 export function lastNDates(n: number, todayIso: string): string[] {
-  const dates: string[] = []
-  const today = new Date(`${todayIso}T00:00:00`)
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    dates.push(d.toISOString().slice(0, 10))
-  }
-  return dates
+  return lastNDays(n, parseISO(todayIso))
 }

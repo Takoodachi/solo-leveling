@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
+import FullScreen from '@/components/FullScreen'
+import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,7 +18,6 @@ import { useBodyMetrics } from './useBodyMetrics'
 import { today, formatShortDate } from '@/lib/date'
 
 export default function WeightLogPage() {
-  const navigate = useNavigate()
   const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
   const [weight, setWeight] = useState('')
   const [date, setDate] = useState(today())
@@ -40,13 +40,8 @@ export default function WeightLogPage() {
   const latest = metrics[0]
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
-          <ChevronLeft size={18} />
-        </Button>
-        <h1 className="text-xl font-bold">Body Weight</h1>
-      </div>
+    <FullScreen className="flex flex-col gap-4">
+      <PageHeader back="/analytics" title="Body weight" />
 
       {latest && (
         <Card>
@@ -148,6 +143,6 @@ export default function WeightLogPage() {
           </div>
         ))}
       </div>
-    </div>
+    </FullScreen>
   )
 }

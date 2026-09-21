@@ -1,9 +1,9 @@
-import { useRef } from 'react'
+import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav from './BottomNav'
 
-const TAB_ORDER = ['/dashboard', '/nutrition', '/stats', '/settings']
+const TAB_ORDER = ['/home', '/workouts', '/nutrition', '/analytics', '/profile']
 
 function getTabIndex(pathname: string) {
   const i = TAB_ORDER.findIndex(t => pathname.startsWith(t))
@@ -11,38 +11,42 @@ function getTabIndex(pathname: string) {
 }
 
 const slideVariants = {
-  initial: (dir: number) => ({ x: `${dir * 100}%`, opacity: 0 }),
+  initial: (dir: number) => ({ x: `${dir * 24}%`, opacity: 0 }),
   animate: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: `${dir * -100}%`, opacity: 0 }),
+  exit: (dir: number) => ({ x: `${dir * -24}%`, opacity: 0 }),
 }
 
 export default function AppShell() {
   const location = useLocation()
   const currentIdx = getTabIndex(location.pathname)
-  const prevIdxRef = useRef(currentIdx)
 
-  const dir = currentIdx >= prevIdxRef.current ? 1 : -1
-  prevIdxRef.current = currentIdx
+  // Slide direction comes from the previous tab (React's "store info from previous renders" pattern).
+  const [nav, setNav] = useState({ idx: currentIdx, dir: 1 })
+  if (nav.idx !== currentIdx) setNav({ idx: currentIdx, dir: currentIdx >= nav.idx ? 1 : -1 })
+  const dir = nav.idx !== currentIdx ? (currentIdx >= nav.idx ? 1 : -1) : nav.dir
 
-  // Key on the top-level path segment so sub-routes don't trigger a slide
-  const topSegment = location.pathname.split('/')[1] ?? 'dashboard'
+  // Key on the full path so each screen gets a fresh scroll position.
+  const key = location.pathname
 
   return (
-    <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
-      <main className="flex-1 overflow-hidden relative">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <main className="relative flex-1 overflow-hidden">
         <AnimatePresence initial={false} mode="wait" custom={dir}>
           <motion.div
-            key={topSegment}
+            key={key}
             custom={dir}
             variants={slideVariants}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
-            className="absolute inset-0 overflow-y-auto pb-16"
+            transition={{ type: 'tween', duration: 0.18, ease: 'easeOut' }}
+            className="absolute inset-0 overflow-y-auto overscroll-contain pt-safe pl-safe pr-safe"
           >
-            <div className="w-full max-w-md mx-auto">
-              <Outlet />
+            {/* Bottom padding clears the nav bar (4rem) + home indicator. */}
+            <div className="mx-auto w-full max-w-md px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
+              <Suspense fallback={null}>
+                <Outlet />
+              </Suspense>
             </div>
           </motion.div>
         </AnimatePresence>

@@ -22,7 +22,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
   return (
-    <div className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs shadow-md">
+    <div className="rounded-xl border border-border bg-popover px-2.5 py-1.5 text-xs shadow-md">
       <p className="font-medium">{formatShortDate(p.date)}</p>
       <p className="text-foreground">{p.totalKcal.toLocaleString()} kcal</p>
       <p className="text-muted-foreground">
@@ -55,28 +55,28 @@ export default function MacroAdherenceChart({ data, targetKcal }: Props) {
             width={36}
           />
           <Tooltip content={<CustomTooltip />} cursor={false} />
-          {/* Protein blue, carbs orange, fat yellow — matching DashboardPage MacroBar palette */}
-          <Bar dataKey="proteinKcal" stackId="kcal" fill="#60a5fa" />
-          <Bar dataKey="carbsKcal"   stackId="kcal" fill="#fb923c" />
-          <Bar dataKey="fatKcal"     stackId="kcal" fill="#facc15" />
+          {/* Same palette as the MacroBar rows on Home: protein = accent, carbs = sky, fat = amber */}
+          <Bar dataKey="proteinKcal" stackId="kcal" fill="hsl(var(--primary))" />
+          <Bar dataKey="carbsKcal"   stackId="kcal" fill="#38bdf8" />
+          <Bar dataKey="fatKcal"     stackId="kcal" fill="#fcd34d" radius={[4, 4, 0, 0]} />
           <ReferenceLine
             y={targetKcal}
-            stroke="hsl(var(--primary))"
+            stroke="hsl(var(--foreground))"
             strokeDasharray="4 4"
             label={{
               value: `${targetKcal} kcal`,
               position: 'insideTopRight',
               fontSize: 10,
-              fill: 'hsl(var(--primary))',
+              fill: 'hsl(var(--foreground))',
             }}
           />
         </BarChart>
       </ResponsiveContainer>
 
       <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#60a5fa]" /> Protein</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#fb923c]" /> Carbs</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#facc15]" /> Fat</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-primary" /> Protein</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-400" /> Carbs</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-300" /> Fat</span>
       </div>
     </div>
   )

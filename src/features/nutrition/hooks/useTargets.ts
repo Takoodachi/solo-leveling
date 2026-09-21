@@ -1,8 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import type { Targets } from '@/types'
-import { syncService } from '@/lib/sync'
-import { useAuthStore } from '@/features/auth/authStore'
+import { requestSync } from '@/lib/sync'
 
 export function useTargets() {
   const targets = useLiveQuery(() => db.targets.get(1), [])
@@ -14,8 +13,7 @@ export function useTargets() {
       updatedAt: Date.now(),
       syncPending: true,
     })
-    const userId = useAuthStore.getState().userId
-    if (userId) void syncService.sync(userId)
+    requestSync()
   }
 
   return { targets, updateTargets }

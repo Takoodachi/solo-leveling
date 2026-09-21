@@ -1,82 +1,93 @@
 import { useState } from 'react'
-import { Dumbbell } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Dumbbell, Mail, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from './useAuth'
 
-export default function LoginPage() {
-  const { signInWithEmail, isConfigured } = useAuth()
+type Mode = 'password' | 'link' | 'link-sent'
+
+/** `embedded`: opened from Profile while using the app locally (shows a back button, no "continue offline"). */
+export default function LoginPage({ embedded = false }: { embedded?: boolean }) {
+  const navigate = useNavigate()
+  const { signInWithPassword, sendSignInLink, continueWithoutAccount } = useAuth()
+  const [mode, setMode] = useState<Mode>('password')
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [busy, setBusy] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
+    setBusy(true)
     setError(null)
-    const { error } = await signInWithEmail(email)
-    setLoading(false)
-    if (error) {
-      setError(error)
-    } else {
-      setSent(true)
-    }
-  }
-
-  if (!isConfigured) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4">
-        <Dumbbell className="text-primary" size={48} />
-        <h1 className="text-2xl font-bold">Solo Leveling</h1>
-        <p className="text-sm text-muted-foreground text-center max-w-xs">
-          Add your Supabase credentials to <code>.env.local</code> to enable sync and sign-in.
-          See <code>.env.local.example</code> for instructions.
-        </p>
-      </div>
-    )
-  }
-
-  if (sent) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4">
-        <Dumbbell className="text-primary" size={48} />
-        <h1 className="text-2xl font-bold">Check your email</h1>
-        <p className="text-sm text-muted-foreground text-center max-w-xs">
-          We sent a magic link to <strong>{email}</strong>. Tap it to sign in.
-        </p>
-      </div>
-    )
+    const { error } = mode === 'password' ? await signInWithPassword(email, password) : await sendSignInLink(email)
+    setBusy(false)
+    if (error) setError(error)
+    else if (mode === 'link') setMode('link-sent')
+    else if (embedded) navigate('/profile', { replace: true })
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-xs flex flex-col gap-6">
-        <div className="flex flex-col items-center gap-2">
-          <Dumbbell className="text-primary" size={48} />
-          <h1 className="text-2xl font-bold">Solo Leveling</h1>
-          <p className="text-sm text-muted-foreground">Sign in to sync across devices</p>
+    <div className="flex min-h-dvh flex-col bg-background pt-safe pb-safe pl-safe pr-safe">
+      {embedded && (
+        <button type="button" onClick={() => navigate(-1)} className="ml-2 mt-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-accent" aria-label="Back">
+          <ChevronLeft size={24} />
+        </button>
+      )}
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-6 py-10">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span className="bg-brand-gradient flex h-20 w-20 items-center justify-center rounded-[28px] shadow-xl shadow-primary/30">
+            <Dumbbell size={40} className="text-white" />
+          </span>
+          <div>
+            <h1 className="text-3xl font-bold">Solo Leveling</h1>
+            <p className="mt-1 text-muted-foreground">Sign in to sync across your devices</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
+        {mode === 'link-sent' ? (
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-card p-6 text-center">
+            <Mail size={32} className="text-primary" />
+            <p className="font-semibold">Check your email</p>
+            <p className="text-sm text-muted-foreground">
+              We sent a sign-in link to <strong className="text-foreground">{email}</strong>. On iPhone, open it in Safari, then set a password in Profile so the home-screen app can sign in.
+            </p>
+            <Button variant="secondary" onClick={() => setMode('password')}>Back</Button>
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Sending…' : 'Send magic link'}
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            </div>
+            {mode === 'password' && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required />
+              </div>
+            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" size="lg" disabled={busy}>
+              {busy ? 'Please wait…' : mode === 'password' ? 'Sign in' : 'Email me a link'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setError(null); setMode(mode === 'password' ? 'link' : 'password') }}
+              className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              {mode === 'password' ? 'No password yet? Email me a sign-in link' : 'Use password instead'}
+            </button>
+          </form>
+        )}
+
+        {!embedded && (
+          <div className="flex flex-col items-center gap-2 border-t border-white/5 pt-6 text-center">
+            <Button variant="ghost" onClick={continueWithoutAccount}>Continue without an account</Button>
+            <p className="text-xs text-muted-foreground">Everything works offline. Your data stays on this device until you sign in.</p>
+          </div>
+        )}
       </div>
     </div>
   )

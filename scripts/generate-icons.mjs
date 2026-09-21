@@ -43,8 +43,8 @@ function svgIcon(size, borderRadius = 0) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <defs>
     <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#5b21b6"/>
+      <stop offset="0%" stop-color="#ff8a3d"/>
+      <stop offset="100%" stop-color="#e8421a"/>
     </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="${size * 0.025}" result="blur"/>
@@ -53,7 +53,7 @@ function svgIcon(size, borderRadius = 0) {
   </defs>
 
   <!-- Background -->
-  <rect width="${size}" height="${size}" rx="${borderRadius}" fill="#0a0a0a"/>
+  <rect width="${size}" height="${size}" rx="${borderRadius}" fill="#0a0a0b"/>
 
   <!-- Hexagon -->
   <polygon points="${hex}" fill="url(#hg)" filter="url(#glow)"/>
@@ -67,13 +67,13 @@ function svgIcon(size, borderRadius = 0) {
   <!-- Right plate -->
   <rect x="${rPlateX}" y="${plateY}" width="${plateW}" height="${plateH}" rx="${plateRx}" fill="#ffffff"/>
 
-  <!-- Gold level-up arrow -->
+  <!-- Level-up arrow -->
   <text
     x="${arrowX}" y="${arrowY}"
     font-family="system-ui, -apple-system, sans-serif"
     font-size="${arrowSize}"
     font-weight="900"
-    fill="#f59e0b"
+    fill="#ffffff"
     text-anchor="middle"
     dominant-baseline="central"
   >↑</text>
@@ -84,6 +84,8 @@ const configs = [
   { name: 'icon-192.png',         size: 192, radius: 32 },
   { name: 'icon-512.png',         size: 512, radius: 80 },
   { name: 'icon-maskable-512.png', size: 512, radius: 0  },
+  // iOS home screen: opaque, square (iOS applies its own rounded mask)
+  { name: 'apple-touch-icon.png',  size: 180, radius: 0  },
 ]
 
 for (const { name, size, radius } of configs) {

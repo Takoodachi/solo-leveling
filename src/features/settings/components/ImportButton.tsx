@@ -1,20 +1,47 @@
 import { useRef, useState } from 'react'
+import type { Table } from 'dexie'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { db } from '@/db'
+import { requestSync } from '@/lib/sync'
 import { z } from 'zod'
 
+const rows = z.array(z.record(z.string(), z.unknown())).optional()
+
+// v1 backups have the first seven arrays; v2 adds workouts, routines, etc.
 const backupSchema = z.object({
   version: z.number(),
-  foods:       z.array(z.unknown()),
-  foodLog:     z.array(z.unknown()),
-  bodyMetrics: z.array(z.unknown()),
-  userStats:   z.array(z.unknown()),
-  targets:     z.array(z.unknown()),
-  achievements: z.array(z.unknown()),
-  settings:    z.array(z.unknown()),
+  foods: rows, foodLog: rows, bodyMetrics: rows, dailyActivity: rows,
+  userStats: rows, targets: rows, achievements: rows, settings: rows,
+  exercises: rows, workouts: rows, workoutSets: rows, routines: rows, challenges: rows,
 })
+
+type Backup = z.infer<typeof backupSchema>
+
+/**
+ * Merge a backup into the local database. Rows keep their original updatedAt
+ * and are marked for sync, so newer data already on the server still wins.
+ */
+async function mergeBackup(data: Backup): Promise<number> {
+  const pairs: [Table<Record<string, unknown>, string | number>, Backup[keyof Backup]][] = [
+    [db.foods, data.foods], [db.foodLog, data.foodLog], [db.bodyMetrics, data.bodyMetrics],
+    [db.dailyActivity, data.dailyActivity], [db.userStats, data.userStats], [db.targets, data.targets],
+    [db.achievements, data.achievements], [db.settings, data.settings], [db.exercises, data.exercises],
+    [db.workouts, data.workouts], [db.workoutSets, data.workoutSets], [db.routines, data.routines],
+    [db.challenges, data.challenges],
+  ].map(([table, list]) => [table as unknown as Table<Record<string, unknown>, string | number>, list as Backup[keyof Backup]])
+
+  let count = 0
+  await db.transaction('rw', pairs.map(([table]) => table), async () => {
+    for (const [table, list] of pairs) {
+      if (!Array.isArray(list) || list.length === 0) continue
+      await table.bulkPut(list.map(r => ({ ...r, syncPending: true })))
+      count += list.length
+    }
+  })
+  return count
+}
 
 export default function ImportButton() {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -26,29 +53,15 @@ export default function ImportButton() {
 
     setImporting(true)
     try {
-      const text = await file.text()
-      const raw: unknown = JSON.parse(text)
+      const raw: unknown = JSON.parse(await file.text())
       const result = backupSchema.safeParse(raw)
-
       if (!result.success) {
         toast.error('Invalid backup file')
         return
       }
-
-      const data = result.data
-
-      const tables = [db.foods, db.foodLog, db.bodyMetrics, db.userStats, db.targets, db.achievements, db.settings]
-      await db.transaction('rw', tables, async () => {
-        await db.foods.clear();       await db.foods.bulkAdd(data.foods as Parameters<typeof db.foods.bulkAdd>[0])
-        await db.foodLog.clear();     await db.foodLog.bulkAdd(data.foodLog as Parameters<typeof db.foodLog.bulkAdd>[0])
-        await db.bodyMetrics.clear(); await db.bodyMetrics.bulkAdd(data.bodyMetrics as Parameters<typeof db.bodyMetrics.bulkAdd>[0])
-        await db.userStats.clear();   await db.userStats.bulkAdd(data.userStats as Parameters<typeof db.userStats.bulkAdd>[0])
-        await db.targets.clear();     await db.targets.bulkAdd(data.targets as Parameters<typeof db.targets.bulkAdd>[0])
-        await db.achievements.clear();await db.achievements.bulkAdd(data.achievements as Parameters<typeof db.achievements.bulkAdd>[0])
-        await db.settings.clear();    await db.settings.bulkAdd(data.settings as Parameters<typeof db.settings.bulkAdd>[0])
-      })
-
-      toast.success('Data imported successfully')
+      const count = await mergeBackup(result.data)
+      requestSync()
+      toast.success(`Backup merged — ${count} records`)
     } catch (err) {
       console.error('Import failed:', err)
       toast.error('Import failed — check file format')
@@ -63,18 +76,18 @@ export default function ImportButton() {
       <input
         ref={fileRef}
         type="file"
-        accept=".json"
+        accept=".json,application/json"
         className="hidden"
         onChange={handleFile}
       />
       <Button
-        variant="outline"
+        variant="secondary"
         onClick={() => fileRef.current?.click()}
         disabled={importing}
-        className="gap-2"
+        className="gap-2 flex-1"
       >
         <Upload size={16} />
-        {importing ? 'Importing…' : 'Import data'}
+        {importing ? 'Importing…' : 'Import'}
       </Button>
     </>
   )
