@@ -23,7 +23,8 @@ export function useDailyLog(date: string) {
       snack: [],
     }
     for (const entry of enriched) {
-      byMeal[entry.mealType].push(entry)
+      // Unknown meal types (e.g. malformed synced data) count as snacks instead of crashing.
+      ;(byMeal[entry.mealType] ?? byMeal.snack).push(entry)
     }
 
     const totals = enriched.reduce<DailyNutrition>((acc, entry) => {

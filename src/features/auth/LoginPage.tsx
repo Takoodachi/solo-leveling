@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Mail, ChevronLeft } from 'lucide-react'
+import { Dumbbell, Mail, ChevronLeft, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from './useAuth'
+import { useAuthStore } from './authStore'
 
 type Mode = 'password' | 'link' | 'link-sent'
 
@@ -17,11 +18,14 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const linkError = useAuthStore(s => s.linkError)
+  const clearLinkError = useAuthStore(s => s.clearLinkError)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
+    clearLinkError()
     const { error } = mode === 'password' ? await signInWithPassword(email, password) : await sendSignInLink(email)
     setBusy(false)
     if (error) setError(error)
@@ -47,12 +51,20 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
           </div>
         </div>
 
+        {linkError && mode !== 'link-sent' && (
+          <div role="alert" className="flex gap-2.5 rounded-2xl bg-amber-400/10 p-3.5 text-sm text-amber-200">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-400" />
+            <p>{linkError}</p>
+          </div>
+        )}
+
         {mode === 'link-sent' ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-card p-6 text-center">
             <Mail size={32} className="text-primary" />
             <p className="font-semibold">Check your email</p>
             <p className="text-sm text-muted-foreground">
-              We sent a sign-in link to <strong className="text-foreground">{email}</strong>. On iPhone, open it in Safari, then set a password in Profile so the home-screen app can sign in.
+              We sent a sign-in link to <strong className="text-foreground">{email}</strong>. It works once and expires after about an hour.
+              On iPhone it opens in Safari, not the home-screen app, so set a password in Profile afterwards and sign in with that in the app.
             </p>
             <Button variant="secondary" onClick={() => setMode('password')}>Back</Button>
           </div>

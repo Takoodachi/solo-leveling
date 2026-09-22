@@ -17,7 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
-import { useFoods } from '../hooks/useFoods'
+import { useFoods, saveScannedFood } from '../hooks/useFoods'
+import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
+import ScannedFoodReview, { type ReviewedFood } from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
 import NumberStepper from '@/components/NumberStepper'
@@ -62,7 +64,8 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
   const [aiText, setAiText] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
-  const { searchFoods, addFoodLog, addCustomFood, toggleFavorite, addBarcodeFood } = useFoods()
+  const { searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
+  const barcode = useBarcodeLookup()
   const userId = useAuthStore(s => s.userId)
   // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
   const aiAvailable = AI_FOOD_ENABLED && isSupabaseConfigured && !!userId
@@ -126,6 +129,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
     setAiText('')
     setAiLoading(false)
     setAiResult(null)
+    barcode.clear()
     onClose()
   }
 
@@ -175,12 +179,47 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
     handleClose()
   }
 
-  async function handleBarcodeResult(barcode: string) {
+  function handleBarcodeResult(code: string) {
     setShowScanner(false)
-    const food = await addBarcodeFood(barcode)
-    if (food) {
-      handleFoodSelect(food)
-    }
+    void barcode.lookup(code)
+  }
+
+  async function handleScanSaved(reviewed: ReviewedFood) {
+    const food = await saveScannedFood(reviewed)
+    barcode.clear()
+    handleFoodSelect(food) // amount defaults to one package serving
+  }
+
+  if (barcode.lookingUp) {
+    return (
+      <Dialog open={open} onOpenChange={open => !open && handleClose()}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Looking up product…</DialogTitle>
+          </DialogHeader>
+          <Loader2 size={28} className="mx-auto my-6 animate-spin text-primary" />
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  if (barcode.scan) {
+    return (
+      <Dialog open={open} onOpenChange={open => !open && handleClose()}>
+        <DialogContent className="max-w-sm p-0 gap-0">
+          <DialogHeader className="p-4 pb-3">
+            <DialogTitle>Check product</DialogTitle>
+          </DialogHeader>
+          <ScannedFoodReview
+            key={`${barcode.scan.barcode}-${barcode.scan.source}`}
+            scan={barcode.scan}
+            onBack={barcode.clear}
+            onRecheck={barcode.scan.source === 'saved' ? () => void barcode.recheck() : undefined}
+            onSave={handleScanSaved}
+          />
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   if (showScanner) {

@@ -47,13 +47,15 @@ src/
     auth/           # authStore, useAuthInit (single auth subscription + sync triggers), useAuth, LoginPage
     workouts/       # routines, active-workout store (persisted), logger components, history, plan
     challenges/     # personal challenges (progress computed from local data)
+    ranks/          # strength ranks: standards, scoring, badges, Ranks screen, rank-ups
+    checkins/       # daily check-ins (creatine tick on Home)
     nutrition/      # food logging, daily totals, targets
     dashboard/      # Home widgets: week strip, activity cards, weekly overview, dynamic-target hooks
     analytics/      # volume, 1RM, macro adherence, weight, steps charts
     gamification/   # achievements, XP/levels
     bodyMetrics/    # body weight logging + trend
     settings/       # Profile page cards, useSettings, export/import
-  db/               # Dexie schema (versions 1–10), seed + wipe
+  db/               # Dexie schema (versions 1–11), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, …
   data/             # Static seed data: foods, exercises (158), routine templates
   pages/            # Route-level components
@@ -73,11 +75,12 @@ Keep feature code colocated. A workout-specific hook lives in `features/workouts
 
 Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
 
-- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral), today's scheduled routine, steps + calories cards, macros, active challenge, streak/level
+- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral), today's scheduled routine, steps + calories cards, macros, creatine check, active challenge, strength rank, streak/level
 - **Workouts**: category chips, my routines, templates (in code, never synced), recent history; **Plan** (weekly schedule, frequency goal, rest timer, reminder prefs)
 - **Routine detail / editor**, **active logger** (full screen, wake lock, rest timer, "Previous" column), **summary** (completion screen / history detail)
 - **Analytics**: weekly volume, est. 1RM progression, macro adherence, body weight, steps
-- **Profile**: name, level/XP, account & sync status, achievements, body & goals, daily targets, backup
+- **Profile**: name, level/XP, strength rank, account & sync status, achievements, body & goals, daily targets, daily check-ins, backup
+- **Ranks** (`/ranks`): overall rank, muscle-group ranks, every ranked lift with its next-division target, how ranks work
 
 Full-screen routes (no nav) use `components/FullScreen`. All screens must respect safe areas (`pt-safe`, `pb-safe`, `env(safe-area-inset-*)`).
 
@@ -85,12 +88,13 @@ Full-screen routes (no nav) use `components/FullScreen`. All screens must respec
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`, currently at **version 10**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 11**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
 
 ```ts
 // Synced collections (key: uuid string)
 foods, foodLog, bodyMetrics, dailyActivity, achievements,
-exercises (built-ins seeded, only custom ones sync), workouts, workoutSets, routines, challenges
+exercises (built-ins seeded, only custom ones sync), workouts, workoutSets, routines, challenges,
+checkins (daily habit ticks, id `creatine-YYYY-MM-DD`, unticking sets done = false)
 // Synced singletons (id = 1)
 userStats, targets, settings
 // Local-only
@@ -109,7 +113,7 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 - **Offline-first:** Dexie is the source of truth on-device.
 - **Writes:** stamp `updatedAt: Date.now()`, set `syncPending: true`, then call `requestSync()` from `lib/sync.ts`. **Deletes:** use `deleteSynced(table, remoteName, uuids)`, never a bare `table.delete()`, or the row comes back from other devices.
 - **Sync run:** push pending rows → push tombstones → pull by server cursor (`serverUpdatedAt`, keyset-paginated, 5-min overlap). Pulled rows never overwrite a newer pending local edit. A sync requested mid-run re-runs afterwards. Sync also runs on sign-in, reconnect and app foreground.
-- **Server:** `supabase/migrations/20260921000000_sync_v2.sql` defines all tables. Collections are keyed by `(user_id, uuid)`, singletons by `user_id`. A trigger stamps `serverUpdatedAt` and ignores stale writes (last-write-wins). RLS: `user_id = auth.uid()` on every table. Columns are camelCase (quoted) because rows sync as-is.
+- **Server:** `supabase/migrations/20260921000000_sync_v2.sql` defines the base tables; later files in that folder add to it (run in filename order). Collections are keyed by `(user_id, uuid)`, singletons by `user_id`. A trigger stamps `serverUpdatedAt` and ignores stale writes (last-write-wins). RLS: `user_id = auth.uid()` on every table. Columns are camelCase (quoted) because rows sync as-is.
 - **Adding a synced field:** add it to the TS type, the column list in `lib/sync.ts`, and a new idempotent migration (`add column if not exists`). PostgREST rejects unknown columns, so keep all three in agreement.
 - **Accounts:** data on a device belongs to one account (`solo:localOwner`). Signing in as a different account wipes local data first; signing out wipes it too (with a warning if changes are unsynced). Local-only data is adopted by the first account that signs in.
 - **Auth:** email + password (magic links don't work inside iOS home-screen apps, and Supabase's built-in mailer only reaches org members). Accounts are created in the Supabase dashboard; public sign-up is disabled.
@@ -120,9 +124,10 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 ## Gamification Layer
 
 1. **Streaks**: a day counts as "logged" when food **or a workout** is logged. One streak freeze per ISO week (max 2 banked), tracked on `userStats.freezeWeek` so it's granted once across devices. Freezes are consumed automatically on missed days (`lib/streak.ts`).
-2. **XP & Levels**: workout finished +50, +2 per set, +25 per new best (est. 1RM); daily kcal target within ±10% +30; protein target +20. Level curve: `xpForLevel(n) = 100 * n^1.5` (`lib/xp.ts`).
-3. **Achievements**: declarative in `features/gamification/achievements.ts`, evaluated in `lib/achievementEval.ts` (first/10/50 workouts, 100 sets, streaks, levels, first food log, protein streak, first weigh-in).
+2. **XP & Levels**: workout finished +50, +2 per set, +25 per new best (est. 1RM), rank-ups (see 5); daily kcal target within ±10% +30; protein target +20. Level curve: `xpForLevel(n) = 100 * n^1.5` (`lib/xp.ts`).
+3. **Achievements**: declarative in `features/gamification/achievements.ts`, evaluated in `lib/achievementEval.ts` (first/10/50 workouts, 100 sets, streaks, levels, first food log, protein streak, first weigh-in, Gold/Diamond lift, overall Gold).
 4. **Personal challenges**: user-set target + deadline (workouts, steps, volume, food-logged days, protein days); progress computed from local data. **Personal only.** Shared challenges are a possible future feature.
+5. **Strength ranks** (inspired by LiftOff): every set gets a 1–1000 rating from its est. 1RM (Epley, reps capped at 20) against standards for the lifter's **sex and bodyweight on that day** (`features/ranks/standards.ts`, `scoring.ts`). Nine tiers (Wood → Olympian, 100-pt bands from 200) × three divisions. A lift's rank is its best set ever (ranks never drop); a muscle group takes its best lift; overall = weighted mean once 3 groups are ranked. Derived on-device, nothing stored or synced. Rank-ups toast live in the logger, show on the summary, and give XP (+30 per lift division, +75 per overall division). Needs `settings.sex` + one weigh-in. Only built-in exercises with a standard are ranked; add more in `standards.ts` (own data or `like` + factor).
 
 ### Dynamic activity-driven targets
 
@@ -208,6 +213,6 @@ Setup of Supabase, Cloudflare Pages and the keep-alive job is in `README.md`.
 ## Current Status
 
 **Phase:** Redesign + infrastructure fix (September 2026).
-**Working:** offline-first logging (workouts, food, weight, steps), routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics, streaks/XP/achievements, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
-**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets. (v2 migration: done.)
+**Working:** offline-first logging (workouts, food, weight, steps), routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics, streaks/XP/achievements, strength ranks, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
+**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; run `20260922000000_checkins.sql` in Supabase. (v2 migration: done.)
 **Future ideas (not started):** reminder push delivery, shared challenges, adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).

@@ -66,7 +66,13 @@ export default function AccountCard() {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{session.user.email}</p>
           <p className="text-sm text-muted-foreground">
-            {status.state === 'syncing' ? 'Syncing…' : status.state === 'error' ? 'Last sync had a problem — will retry' : synced}
+            {status.state === 'syncing'
+              ? 'Syncing…'
+              : status.state === 'error'
+                ? /fetch|network|load failed|timeout|timed out/i.test(status.error ?? '')
+                  ? 'Can’t reach the server — will retry automatically'
+                  : 'Last sync had a problem — will retry'
+                : synced}
           </p>
         </div>
         <button

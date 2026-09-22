@@ -94,6 +94,11 @@ const COLLECTIONS: CollectionSpec[] = [
     table: () => t(db.challenges),
     columns: ['uuid', 'title', 'metric', 'target', 'startDate', 'endDate', 'createdAt', 'updatedAt'],
   },
+  {
+    remote: 'checkins',
+    table: () => t(db.checkins),
+    columns: ['uuid', 'date', 'key', 'done', 'updatedAt'],
+  },
 ]
 
 const SINGLETONS: SingletonSpec[] = [
@@ -114,7 +119,7 @@ const SINGLETONS: SingletonSpec[] = [
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays',
-      'updatedAt',
+      'creatineEnabled', 'updatedAt',
     ],
   },
 ]
@@ -124,6 +129,8 @@ const PULL_PAGE = 1000
 // Re-read a small window before the cursor so rows committed slightly out of
 // order on the server aren't skipped. Re-applying a row is harmless.
 const CURSOR_OVERLAP_MS = 5 * 60_000
+// fetch failures as reported by Chrome, Firefox and Safari, plus our request timeout.
+const NETWORK_ERROR = /failed to fetch|networkerror|load failed|timeouterror|aborterror|timed out|network request failed/i
 
 // Untyped view of the client for dynamic table names.
 type Query = PromiseLike<{ data: unknown; error: { message: string } | null }> & Record<string, (...args: unknown[]) => Query>
@@ -220,12 +227,17 @@ class SyncService {
 
   private async runOnce(userId: string): Promise<string[]> {
     const errors: string[] = []
+    // Once the server is unreachable, skip the remaining tables instead of waiting
+    // for each request to time out; the next trigger (reconnect, foreground, a write) retries.
+    let unreachable = false
     const guard = async (label: string, fn: () => Promise<void>) => {
+      if (unreachable) return
       try {
         await fn()
       } catch (err) {
         const msg = err instanceof Error ? err.message : typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : String(err)
         errors.push(`${label}: ${msg}`)
+        if (NETWORK_ERROR.test(msg)) unreachable = true
       }
     }
 
@@ -319,7 +331,9 @@ class SyncService {
         ? q.or(`serverUpdatedAt.gt.${last.ts},and(serverUpdatedAt.eq.${last.ts},uuid.gt."${last.uuid}")`)
         : q.gte('serverUpdatedAt', since)
 
-      const { data, error } = await q
+      // No client-side retries: sync already retries on reconnect/foreground/next write,
+      // and library retries (x3 with backoff) made a dead connection take minutes to report.
+      const { data, error } = await q.retry(false)
       if (error) throw error
       const rows = (data ?? []) as RemoteRow[]
       if (rows.length === 0) break
@@ -367,7 +381,7 @@ class SyncService {
   }
 
   private async pullSingleton(spec: SingletonSpec, userId: string): Promise<void> {
-    const { data, error } = await sb.from(spec.remote).select('*').eq('user_id', userId).maybeSingle()
+    const { data, error } = await sb.from(spec.remote).select('*').eq('user_id', userId).maybeSingle().retry(false)
     if (error) throw error
     if (!data) return
 

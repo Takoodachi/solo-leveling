@@ -17,4 +17,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: 'first_calorie_log', icon: '🥗', title: 'Eating Clean',    description: 'Log a full day of food' },
   { key: 'protein_goal',      icon: '🥩', title: 'Protein King',    description: 'Hit your protein target 7 days running' },
   { key: 'weight_logged',     icon: '⚖️', title: 'Weigh-In',       description: 'Log your body weight for the first time' },
+  { key: 'lift_gold',         icon: '🥇', title: 'Gold Standard',   description: 'Reach Gold rank on any lift' },
+  { key: 'lift_diamond',      icon: '💎', title: 'Diamond Lifter',  description: 'Reach Diamond rank on any lift' },
+  { key: 'overall_gold',      icon: '🛡️', title: 'All-Rounder',    description: 'Reach an overall rank of Gold' },
 ]

@@ -2,6 +2,8 @@ import { db } from '@/db'
 import { ACHIEVEMENT_DEFS, type AchievementDef } from '@/features/gamification/achievements'
 import { today } from '@/lib/date'
 import { subDays, format, parseISO } from 'date-fns'
+import { computeRanks, type RanksSnapshot } from '@/features/ranks/computeRanks'
+import { TIERS } from '@/features/ranks/tiers'
 
 async function alreadyUnlocked(): Promise<Set<string>> {
   const rows = await db.achievements.toArray()
@@ -38,7 +40,9 @@ async function checkProteinGoal7Days(): Promise<boolean> {
   return true
 }
 
-async function isUnlocked(key: string): Promise<boolean> {
+const tierMin = (key: string) => TIERS.find(t => t.key === key)?.min ?? Infinity
+
+async function isUnlocked(key: string, ranks: () => Promise<RanksSnapshot>): Promise<boolean> {
   switch (key) {
     case 'week_streak': {
       const s = await db.userStats.get(1)
@@ -63,6 +67,9 @@ async function isUnlocked(key: string): Promise<boolean> {
     case 'first_calorie_log': return (await db.foodLog.count()) >= 1
     case 'protein_goal':      return await checkProteinGoal7Days()
     case 'weight_logged':     return (await db.bodyMetrics.count()) >= 1
+    case 'lift_gold':         return ((await ranks()).lifts[0]?.rank.rating ?? 0) >= tierMin('gold')
+    case 'lift_diamond':      return ((await ranks()).lifts[0]?.rank.rating ?? 0) >= tierMin('diamond')
+    case 'overall_gold':      return ((await ranks()).overall?.rating ?? 0) >= tierMin('gold')
     default:                  return false
   }
 }
@@ -75,10 +82,13 @@ export async function evaluateAchievements(): Promise<AchievementDef[]> {
   const unlocked = await alreadyUnlocked()
   const newlyUnlocked: AchievementDef[] = []
   const now = Date.now()
+  // Computed at most once per run, and only if a rank achievement is still locked.
+  let ranksOnce: Promise<RanksSnapshot> | null = null
+  const ranks = () => (ranksOnce ??= computeRanks())
 
   for (const def of ACHIEVEMENT_DEFS) {
     if (unlocked.has(def.key)) continue
-    if (await isUnlocked(def.key)) {
+    if (await isUnlocked(def.key, ranks)) {
       await db.achievements.put({
         // Stable id: two devices unlocking the same achievement update one row.
         uuid: `ach-${def.key}`,

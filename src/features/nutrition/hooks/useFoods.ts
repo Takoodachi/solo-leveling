@@ -8,7 +8,54 @@ import { updateStreak } from '@/lib/streak'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 
-const KJ_PER_KCAL = 4.184
+/** Barcode foods use a stable id, so re-scanning a product finds (and can correct) the saved entry. */
+export function barcodeFoodId(barcode: string): string {
+  return `barcode-${barcode}`
+}
+
+/** Save a reviewed barcode scan. Values are per `amount` `unit` (one package serving, or 100 g/ml). */
+export async function saveScannedFood(scan: {
+  barcode: string
+  name: string
+  amount: number
+  unit: 'g' | 'ml'
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}): Promise<Food> {
+  const uuid = barcodeFoodId(scan.barcode)
+  const existing = await db.foods.get(uuid)
+  const now = Date.now()
+  const food: Food = {
+    uuid,
+    name: scan.name,
+    kcalPerServing: scan.kcal,
+    protein: scan.protein,
+    carbs: scan.carbs,
+    fat: scan.fat,
+    servingSize: scan.amount,
+    servingUnit: scan.unit,
+    isCustom: true,
+    isFavorite: existing?.isFavorite ?? false,
+    notes: `Barcode ${scan.barcode}`,
+    updatedAt: now,
+    syncPending: true,
+  }
+  await db.transaction('rw', db.foods, db.foodLog, async () => {
+    await db.foods.put(food)
+    // Logs store a multiple of the serving size. If the serving changed (e.g. a
+    // corrected "100 g" → "330 ml can"), rescale past logs so the amount eaten
+    // stays the same and only the nutrition values are corrected.
+    if (existing && existing.servingSize > 0 && existing.servingSize !== food.servingSize) {
+      const ratio = existing.servingSize / food.servingSize
+      const logs = await db.foodLog.where('foodId').equals(uuid).toArray()
+      await db.foodLog.bulkPut(logs.map(l => ({ ...l, servings: Math.round(l.servings * ratio * 1000) / 1000, updatedAt: now, syncPending: true })))
+    }
+  })
+  requestSync()
+  return food
+}
 
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
@@ -80,55 +127,12 @@ export function useFoods() {
     await deleteSynced(db.foodLog, 'food_log', [logUuid])
   }
 
-  async function addBarcodeFood(barcode: string): Promise<Food | null> {
-    // Barcode foods use a stable id so re-scanning the same product reuses it.
-    const existingKey = `barcode-${barcode}`
-    const existing = await db.foods.get(existingKey)
-    if (existing) return existing
-
-    try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-      const json = await res.json() as { status: number; product?: Record<string, unknown> }
-      if (json.status !== 1 || !json.product) {
-        toast.error('Product not found — add it manually')
-        return null
-      }
-      const p = json.product
-      const n = p.nutriments as Record<string, number> | undefined ?? {}
-      const name = (p.product_name as string | undefined) || (p.generic_name as string | undefined) || 'Unknown product'
-      // Prefer the kcal field; fall back to converting the kJ energy value.
-      const kcal = n['energy-kcal_100g'] ?? (n['energy_100g'] != null ? n['energy_100g'] / KJ_PER_KCAL : 0)
-      const food: Food = {
-        uuid: existingKey,
-        name: String(name),
-        kcalPerServing: Math.round(kcal),
-        protein: Math.round((n['proteins_100g'] ?? 0) * 10) / 10,
-        carbs: Math.round((n['carbohydrates_100g'] ?? 0) * 10) / 10,
-        fat: Math.round((n['fat_100g'] ?? 0) * 10) / 10,
-        servingSize: 100,
-        servingUnit: 'g',
-        isCustom: true,
-        isFavorite: false,
-        updatedAt: Date.now(),
-        syncPending: true,
-      }
-      await db.foods.put(food)
-      requestSync()
-      toast.success(`Found: ${food.name}`)
-      return food
-    } catch {
-      toast.error('Could not look up barcode — check your connection')
-      return null
-    }
-  }
-
   return {
     foods: foods ?? [],
     favorites: favorites ?? [],
     searchFoods,
     toggleFavorite,
     addCustomFood,
-    addBarcodeFood,
     addFoodLog,
     removeFoodLog,
   }

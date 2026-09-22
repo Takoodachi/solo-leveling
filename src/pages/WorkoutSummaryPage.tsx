@@ -10,6 +10,8 @@ import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
 import { useWorkoutDetail, findNewBests, deleteWorkout, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
+import { findRankUps, type RankUp } from '@/features/ranks/computeRanks'
+import RankUpsSection from '@/features/ranks/components/RankUpsSection'
 import type { WorkoutSetWithExercise } from '@/types'
 
 function describeSet(s: WorkoutSetWithExercise): string {
@@ -34,14 +36,16 @@ export default function WorkoutSummaryPage() {
   const navigate = useNavigate()
   const state = useLocation().state as FinishResult | null
   const workout = useWorkoutDetail(id)
-  const [computedBests, setComputedBests] = useState<NewBest[] | null>(null)
+  const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
   const celebrate = state?.celebrate === true
 
-  // History view: work out new bests on the fly (the finish flow passes them in).
+  // History view: work out new bests and rank-ups on the fly (the finish flow passes them in).
   useEffect(() => {
     if (celebrate || !workout) return
     let cancelled = false
-    void findNewBests(workout).then(b => { if (!cancelled) setComputedBests(b) })
+    void Promise.all([findNewBests(workout), findRankUps(workout)]).then(([bests, rankUps]) => {
+      if (!cancelled) setComputed({ bests, rankUps })
+    })
     return () => { cancelled = true }
   }, [celebrate, workout])
 
@@ -55,7 +59,9 @@ export default function WorkoutSummaryPage() {
     )
   }
 
-  const bests = celebrate ? state.newBests : (computedBests ?? [])
+  const bests = celebrate ? state.newBests : (computed?.bests ?? [])
+  // Older router state (before ranks existed) has no rankUps.
+  const rankUps = celebrate ? (state.rankUps ?? []) : (computed?.rankUps ?? [])
 
   async function handleDelete() {
     if (!workout || !window.confirm('Delete this workout? This can’t be undone.')) return
@@ -76,7 +82,11 @@ export default function WorkoutSummaryPage() {
         />
       )}
 
+      {celebrate && <RankUpsSection ups={rankUps} animate />}
+
       <WorkoutSummaryCard workout={workout} />
+
+      {!celebrate && <RankUpsSection ups={rankUps} />}
 
       {bests.length > 0 && (
         <section className="rounded-3xl bg-card p-5">
