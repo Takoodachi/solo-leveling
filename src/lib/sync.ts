@@ -94,6 +94,11 @@ const COLLECTIONS: CollectionSpec[] = [
     table: () => t(db.challenges),
     columns: ['uuid', 'title', 'metric', 'target', 'startDate', 'endDate', 'createdAt', 'updatedAt'],
   },
+  {
+    remote: 'checkins',
+    table: () => t(db.checkins),
+    columns: ['uuid', 'date', 'key', 'done', 'updatedAt'],
+  },
 ]
 
 const SINGLETONS: SingletonSpec[] = [
@@ -114,7 +119,7 @@ const SINGLETONS: SingletonSpec[] = [
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays',
-      'updatedAt',
+      'creatineEnabled', 'updatedAt',
     ],
   },
 ]

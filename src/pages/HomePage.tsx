@@ -23,6 +23,8 @@ import MacrosCard from '@/features/dashboard/components/MacrosCard'
 import StreakLevelCard from '@/features/dashboard/components/StreakLevelCard'
 import WeeklyOverviewCard from '@/features/dashboard/components/WeeklyOverviewCard'
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
+import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
+import CreatineCard from '@/features/checkins/components/CreatineCard'
 
 type Tab = 'today' | 'week'
 const TABS = [{ value: 'today', label: 'Today’s Plan' }, { value: 'week', label: 'Weekly Stats' }] as const
@@ -78,6 +80,7 @@ export default function HomePage() {
               <CaloriesCard kcal={totals.kcal} target={targets.kcal} macros={totals} macroTargets={targets} />
             </div>
             <MacrosCard totals={totals} targets={targets} dynamic={dynamic} />
+            {settings?.creatineEnabled !== false && <CreatineCard date={selected} today={todayStr} />}
           </section>
 
           <section className="flex flex-col gap-3">
@@ -91,6 +94,7 @@ export default function HomePage() {
             )}
           </section>
 
+          <RankSummaryCard />
           <StreakLevelCard />
         </>
       ) : (

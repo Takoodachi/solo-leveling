@@ -17,6 +17,7 @@ const NutritionPage = lazy(() => import('@/pages/NutritionPage'))
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ChallengesPage = lazy(() => import('@/pages/ChallengesPage'))
+const RanksPage = lazy(() => import('@/pages/RanksPage'))
 const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
 
 function Spinner() {
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />
         <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
         <Route path="challenges" element={<ChallengesPage />} />
+        <Route path="ranks" element={<RanksPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
         <Route path="login" element={session ? <Navigate to="/profile" replace /> : <LoginPage embedded />} />
         {/* Old URLs from the previous layout */}

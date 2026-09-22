@@ -14,7 +14,7 @@ const backupSchema = z.object({
   version: z.number(),
   foods: rows, foodLog: rows, bodyMetrics: rows, dailyActivity: rows,
   userStats: rows, targets: rows, achievements: rows, settings: rows,
-  exercises: rows, workouts: rows, workoutSets: rows, routines: rows, challenges: rows,
+  exercises: rows, workouts: rows, workoutSets: rows, routines: rows, challenges: rows, checkins: rows,
 })
 
 type Backup = z.infer<typeof backupSchema>
@@ -29,7 +29,7 @@ async function mergeBackup(data: Backup): Promise<number> {
     [db.dailyActivity, data.dailyActivity], [db.userStats, data.userStats], [db.targets, data.targets],
     [db.achievements, data.achievements], [db.settings, data.settings], [db.exercises, data.exercises],
     [db.workouts, data.workouts], [db.workoutSets, data.workoutSets], [db.routines, data.routines],
-    [db.challenges, data.challenges],
+    [db.challenges, data.challenges], [db.checkins, data.checkins],
   ].map(([table, list]) => [table as unknown as Table<Record<string, unknown>, string | number>, list as Backup[keyof Backup]])
 
   let count = 0

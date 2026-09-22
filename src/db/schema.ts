@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Food, FoodLog,
   BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
-  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete,
+  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
@@ -21,6 +21,7 @@ export class SoloLevelingDB extends Dexie {
   routines!:       Table<Routine,         string>
   challenges!:     Table<Challenge,       string>
   pendingDeletes!: Table<PendingDelete,   string>
+  checkins!:       Table<Checkin,         string>
 
   constructor() {
     super('SoloLevelingDB')
@@ -63,5 +64,8 @@ export class SoloLevelingDB extends Dexie {
       challenges:     'uuid, endDate',
       pendingDeletes: 'key, table',
     }) // workouts return (routines, plan, challenges) + sync tombstones
+    this.version(11).stores({
+      checkins: 'uuid, date, key',
+    }) // daily check-ins (creatine); Settings gains creatineEnabled
   }
 }

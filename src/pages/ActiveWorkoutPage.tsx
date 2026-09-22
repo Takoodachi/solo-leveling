@@ -15,6 +15,7 @@ import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
 import RestBanner from '@/features/workouts/components/RestBanner'
 import FinishWorkoutDialog from '@/features/workouts/components/FinishWorkoutDialog'
 import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
+import { useRanks } from '@/features/ranks/useRanks'
 import type { Exercise } from '@/types'
 
 export default function ActiveWorkoutPage() {
@@ -28,6 +29,7 @@ export default function ActiveWorkoutPage() {
   const [finishOpen, setFinishOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [info, setInfo] = useState<Exercise | null>(null)
+  const ranks = useRanks()
 
   // Keep the screen on for the whole session.
   useWakeLock(!!draft)
@@ -39,6 +41,8 @@ export default function ActiveWorkoutPage() {
   const allSets = draft.blocks.flatMap(b => b.sets)
   const doneSets = allSets.filter(s => s.done).length
   const elapsedMin = Math.round(elapsed.seconds / 60)
+  const rankOf = new Map(ranks?.lifts.map(l => [l.exerciseId, l.rank]))
+  const rankContext = ranks?.sex && ranks.bodyKg ? { sex: ranks.sex, bodyKg: ranks.bodyKg } : null
 
   async function handleAddExercise(exercise: Exercise) {
     const lastSets = await lastSessionSets(exercise.uuid)
@@ -105,6 +109,8 @@ export default function ActiveWorkoutPage() {
             isLast={idx === draft.blocks.length - 1}
             onSetDone={handleSetDone}
             onShowInfo={() => setInfo(block.exercise)}
+            liftRank={rankOf.get(block.exercise.uuid)}
+            rankContext={rankContext}
           />
         ))}
 

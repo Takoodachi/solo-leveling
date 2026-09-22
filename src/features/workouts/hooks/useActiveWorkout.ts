@@ -9,6 +9,7 @@ import { updateStreak } from '@/lib/streak'
 import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { estimateKcal, metFor, metForExercises, setModeFor } from '@/lib/workoutMath'
+import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { useWorkoutStore } from '../store'
 import { emptySet, type BlockDraft, type SetDraft } from '../types'
 import { findNewBests, getWorkoutWithSets, lastSessionSets, type NewBest } from './useWorkoutHistory'
@@ -24,6 +25,7 @@ export interface FinishResult {
   celebrate: true
   xp: number
   newBests: NewBest[]
+  rankUps: RankUp[]
 }
 
 function num(v: string): number | undefined {
@@ -136,9 +138,10 @@ export function useActiveWorkout() {
 
     const saved = await getWorkoutWithSets(workoutUuid)
     const newBests = saved ? await findNewBests(saved) : []
+    const rankUps = saved ? await findRankUps(saved) : []
 
     await updateStreak()
-    const xp = XP.WORKOUT + sets.length * XP.PER_SET + newBests.length * XP.NEW_BEST
+    const xp = XP.WORKOUT + sets.length * XP.PER_SET + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
     const xpResult = await grantXp(xp)
     const achievements = await evaluateAchievements()
     requestSync()
@@ -146,7 +149,7 @@ export function useActiveWorkout() {
     if (xpResult?.leveledUp) toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' })
     for (const a of achievements) toast.success(`Achievement unlocked: ${a.title}`, { icon: a.icon })
 
-    const result: FinishResult = { celebrate: true, xp, newBests }
+    const result: FinishResult = { celebrate: true, xp, newBests, rankUps }
     navigate(`/workouts/summary/${workoutUuid}`, { replace: true, state: result })
   }
 

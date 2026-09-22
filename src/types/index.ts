@@ -89,6 +89,7 @@ export interface Settings {
   reminderEnabled?: boolean
   reminderTime?: string // HH:mm
   reminderDays?: ReminderDays
+  creatineEnabled?: boolean // creatine check on Home (unset = shown)
   updatedAt?: number
   syncPending?: boolean
 }
@@ -191,6 +192,20 @@ export interface Challenge {
   startDate: string // YYYY-MM-DD, inclusive
   endDate: string // YYYY-MM-DD, inclusive
   createdAt: number
+  updatedAt: number
+  syncPending?: boolean
+}
+
+// ── Daily check-ins ───────────────────────────────────────────────────────────
+
+export type CheckinKey = 'creatine'
+
+/** One row per habit per day (id `creatine-YYYY-MM-DD`); unticking sets done = false. */
+export interface Checkin {
+  uuid: string
+  date: string // YYYY-MM-DD
+  key: CheckinKey
+  done: boolean
   updatedAt: number
   syncPending?: boolean
 }

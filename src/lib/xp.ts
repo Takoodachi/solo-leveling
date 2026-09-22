@@ -4,6 +4,8 @@ export const XP = {
   WORKOUT: 50,
   PER_SET: 2,
   NEW_BEST: 25,
+  RANK_UP: 30, // per division a lift climbs
+  OVERALL_RANK_UP: 75, // per overall division (and on first earning one)
   KCAL_TARGET_HIT: 30,
   PROTEIN_TARGET_HIT: 20,
   WEEKLY_RECAP: 25,

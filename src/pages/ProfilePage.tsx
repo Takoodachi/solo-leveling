@@ -6,12 +6,15 @@ import BodyGoalsCard from '@/features/settings/components/BodyGoalsCard'
 import TargetsCard from '@/features/settings/components/TargetsCard'
 import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
+import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
+import CheckinsCard from '@/features/settings/components/CheckinsCard'
 
 export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Profile" />
       <ProfileCard />
+      <RankSummaryCard />
       <AccountCard />
       <AchievementsGrid />
 
@@ -23,6 +26,11 @@ export default function ProfilePage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Daily targets</h2>
         <TargetsCard />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Daily check-ins</h2>
+        <CheckinsCard />
       </section>
 
       <section className="flex flex-col gap-3">

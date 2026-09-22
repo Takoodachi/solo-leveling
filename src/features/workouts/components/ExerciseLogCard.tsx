@@ -1,9 +1,13 @@
 import { Plus, Minus, ArrowUp, ArrowDown, X, Info } from 'lucide-react'
+import { toast } from 'sonner'
 import { setModeFor } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
 import type { BlockDraft } from '../types'
 import SetRow from './SetRow'
 import { SET_COLUMNS } from '../setColumns'
+import type { RankInfo } from '@/features/ranks/tiers'
+import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
+import RankBadge from '@/features/ranks/components/RankBadge'
 
 interface Props {
   block: BlockDraft
@@ -12,15 +16,34 @@ interface Props {
   isLast: boolean
   onSetDone: (restSec: number) => void
   onShowInfo: () => void
+  /** Best rank so far on this lift (from history), if it's a ranked lift. */
+  liftRank?: RankInfo
+  rankContext: RankContext | null
 }
 
-export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo }: Props) {
+export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, liftRank, rankContext }: Props) {
   const { addSet, removeSet, updateSet, toggleDone, removeBlock, moveBlock } = useWorkoutStore()
   const mode = setModeFor(block.exercise)
   const done = block.sets.filter(s => s.done).length
+  const rank = rankContext && mode === 'load'
+    ? liveRank(block.exercise.uuid, block.sets.filter(s => s.done), liftRank, rankContext)
+    : liftRank
 
   function handleToggle(setIdx: number) {
-    if (toggleDone(blockIdx, setIdx)) onSetDone(block.restSec)
+    if (!toggleDone(blockIdx, setIdx)) return
+    onSetDone(block.restSec)
+    announceRankUp(setIdx)
+  }
+
+  function announceRankUp(setIdx: number) {
+    if (!rankContext || mode !== 'load') return
+    const others = block.sets.filter((s, i) => s.done && i !== setIdx)
+    const up = rankUpFromSet(block.exercise.uuid, block.sets[setIdx], others, liftRank, rankContext)
+    if (!up) return
+    toast(up.from ? `Rank up! ${up.to.label}` : `Ranked ${up.to.label}`, {
+      description: up.from ? `${block.exercise.name} · was ${up.from.label}` : block.exercise.name,
+      icon: <RankBadge tier={up.to.tier.key} size={28} />,
+    })
   }
 
   function copyLast(setIdx: number) {
@@ -42,8 +65,13 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
             <span className="truncate">{block.exercise.name}</span>
             <Info size={14} className="shrink-0 text-muted-foreground" />
           </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
             {done}/{block.sets.length} sets · rest {block.restSec}s
+            {rank && (
+              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: rank.tier.color }}>
+                <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
+              </span>
+            )}
           </p>
         </button>
         <button type="button" className={iconBtn} disabled={isFirst} onClick={() => moveBlock(blockIdx, -1)} aria-label="Move up">

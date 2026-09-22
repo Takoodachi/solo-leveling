@@ -18,6 +18,8 @@ npm run dev
 1. **Schema**: open Supabase → SQL Editor, paste `supabase/migrations/20260921000000_sync_v2.sql`, and run it.
    It's idempotent (safe on an existing project and safe to re-run). It creates/updates every synced table
    and adds row-level security, so each user only ever sees their own rows.
+   Then run each later migration in that folder in filename order (e.g. `20260922000000_checkins.sql`
+   for the daily creatine check). Until a migration is run, only the tables it adds fail to sync.
 2. **Auth** → *Sign In / Providers* → Email: keep enabled. **Turn off "Allow new users to sign up".**
 3. **Auth** → *Users* → **Add user → Create new user** for each person (email + password,
    tick *Auto Confirm User*). No email service is needed for this.
