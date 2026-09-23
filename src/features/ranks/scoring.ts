@@ -22,12 +22,14 @@ const MAX_REPS = 20
 export interface RatableSet {
   weight?: number
   reps?: number
+  duration?: number // minutes (holds)
 }
 
 /** The five level thresholds at this lifter's bodyweight, in the standard's unit. */
 export function thresholdsFor(std: Standard, sex: Sex, bodyKg: number): number[] {
   const ratio = Math.min(180, Math.max(35, bodyKg)) / REFERENCE_BODY_KG[sex]
   const levels = std[sex]
+  if (std.kind === 'hold') return [...levels]
   if (std.kind === 'load') return levels.map((v, i) => v * Math.pow(ratio, LOAD_EXPONENT[sex][i]))
   const f = ratio > 1 ? Math.pow(1 / ratio, REPS_EXPONENT[sex]) : 1
   return levels.map(v => (v > 0 ? v * f : v))
@@ -36,9 +38,10 @@ export function thresholdsFor(std: Standard, sex: Sex, bodyKg: number): number[]
 /**
  * A set's strength in the standard's unit: estimated 1RM (kg) for load lifts,
  * bodyweight-equivalent reps for bodyweight moves (added weight → extra reps,
- * assistance → fewer). Null when the set can't be rated.
+ * assistance → fewer), seconds for holds. Null when the set can't be rated.
  */
 export function performanceOf(std: Standard, set: RatableSet, bodyKg: number): number | null {
+  if (std.kind === 'hold') return set.duration && set.duration > 0 ? set.duration * 60 : null
   const reps = set.reps ?? 0
   const weight = set.weight ?? 0
   if (reps <= 0) return null
@@ -54,7 +57,7 @@ export function performanceOf(std: Standard, set: RatableSet, bodyKg: number): n
 }
 
 function curve(std: Standard, t: number[]): [number, number][] {
-  const floor = std.kind === 'load' ? 0 : REPS_FLOOR
+  const floor = std.kind === 'reps' ? REPS_FLOOR : 0
   return [
     [floor, 0],
     ...t.map((v, i): [number, number] => [v, LEVEL_RATINGS[i]]),

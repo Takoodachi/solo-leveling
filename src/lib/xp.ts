@@ -3,6 +3,7 @@ import { db } from '@/db'
 export const XP = {
   WORKOUT: 50,
   PER_SET: 2,
+  PER_CARDIO_MIN: 1, // cardio is one entry, so it earns by the minute instead
   NEW_BEST: 25,
   RANK_UP: 30, // per division a lift climbs
   OVERALL_RANK_UP: 75, // per overall division (and on first earning one)

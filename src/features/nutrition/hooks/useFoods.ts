@@ -57,16 +57,25 @@ export async function saveScannedFood(scan: {
   return food
 }
 
+/** Lowercase without diacritics (Vietnamese đ → d) for forgiving search. */
+function foldAccents(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim()
+}
+
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
   // Booleans aren't indexable in IndexedDB, so filter instead of where().
   const favorites = useLiveQuery(() => db.foods.filter(f => f.isFavorite).toArray(), [])
 
+  /** Every word must match; accents don't matter, so "pho bo" finds "Phở bò". */
   function searchFoods(query: string): Food[] {
     if (!foods) return []
-    const q = query.toLowerCase().trim()
-    if (!q) return foods
-    return foods.filter(f => f.name.toLowerCase().includes(q))
+    const words = foldAccents(query).split(/\s+/).filter(Boolean)
+    if (words.length === 0) return foods
+    return foods.filter(f => {
+      const name = foldAccents(f.name)
+      return words.every(w => name.includes(w))
+    })
   }
 
   async function toggleFavorite(foodUuid: string): Promise<void> {

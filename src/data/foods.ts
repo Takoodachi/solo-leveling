@@ -1,4 +1,5 @@
 import type { Food } from '@/types'
+import { MORE_FOODS } from './foodsMore'
 
 const NOW = 0
 
@@ -157,4 +158,5 @@ export const BUILT_IN_FOODS: Food[] = [
   { uuid: 'food-instant-ramen',     name: 'Instant Ramen (1 pack)',      kcalPerServing: 380, protein: 8,    carbs: 52,   fat: 14,   servingSize: 85,  servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },
   { uuid: 'food-french-fries',      name: 'French Fries (medium)',       kcalPerServing: 365, protein: 4,    carbs: 48,   fat: 17,   servingSize: 117, servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },
   { uuid: 'food-scrambled-eggs',    name: 'Scrambled Eggs (2 eggs)',     kcalPerServing: 200, protein: 14,   carbs: 1.8,  fat: 15,   servingSize: 120, servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },
+  ...MORE_FOODS,
 ]

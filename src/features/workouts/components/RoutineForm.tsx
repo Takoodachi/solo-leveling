@@ -3,12 +3,18 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { Routine, RoutineExercise } from '@/types'
+import type { Exercise, Routine, RoutineExercise } from '@/types'
 import { cn } from '@/lib/utils'
 import { CATEGORIES, CATEGORY_META, LEVELS, LEVEL_META, WEEKDAY_SHORT, WEEK_ORDER } from '../categories'
 import { useExerciseMap } from '../hooks/useExercises'
 import ExercisePickerSheet from './ExercisePickerSheet'
 import RoutineExerciseEditor from './RoutineExerciseEditor'
+
+/** Defaults for a newly added exercise: cardio is one 20-minute entry, timed holds 3 × 1 min, lifts 3 × 10. */
+function newRoutineExercise(ex: Exercise): RoutineExercise {
+  if (ex.type === 'cardio') return { exerciseId: ex.uuid, sets: 1, reps: 20, restSec: 0 }
+  return { exerciseId: ex.uuid, sets: 3, reps: ex.defaultUnit === 'min' ? 1 : 10, restSec: 90 }
+}
 
 export type RoutineDraft = Omit<Routine, 'updatedAt' | 'syncPending'>
 
@@ -117,7 +123,7 @@ export default function RoutineForm({ initial, onSave, onDelete }: Props) {
       <ExercisePickerSheet
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={ex => patch({ exercises: [...r.exercises, { exerciseId: ex.uuid, sets: 3, reps: ex.defaultUnit === 'min' ? 5 : 10, restSec: 90 }] })}
+        onSelect={ex => patch({ exercises: [...r.exercises, newRoutineExercise(ex)] })}
       />
     </form>
   )

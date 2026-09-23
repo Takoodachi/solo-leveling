@@ -12,7 +12,8 @@ interface Props {
 /** Exercise row on the routine detail screen, with a media placeholder thumbnail. */
 export default function RoutineExerciseCard({ index, item, exercise, onOpen }: Props) {
   const minutes = Math.max(1, Math.round(exerciseMinutes(item, exercise)))
-  const unit = exercise && setModeFor(exercise) === 'time' ? ' min' : ''
+  const mode = exercise ? setModeFor(exercise) : 'load'
+  const target = mode === 'cardio' ? 'Cardio' : `${item.reps}${mode === 'time' ? ' min' : ''}×${item.sets}`
   return (
     <button
       type="button"
@@ -24,7 +25,7 @@ export default function RoutineExerciseCard({ index, item, exercise, onOpen }: P
         <p className="mt-3 truncate text-base font-semibold">{exercise?.name ?? 'Unknown exercise'}</p>
         <div className="mt-2 flex items-center gap-4 text-sm text-foreground/85">
           <span className="flex items-center gap-1.5"><Clock size={16} className="text-foreground/70" /> {minutes} min</span>
-          <span className="flex items-center gap-1.5"><Dumbbell size={16} className="text-foreground/70" /> {item.reps}{unit}×{item.sets}</span>
+          <span className="flex items-center gap-1.5"><Dumbbell size={16} className="text-foreground/70" /> {target}</span>
         </div>
       </div>
       {/* Media placeholder — exercise videos aren't bundled (keeps the app free and offline). */}

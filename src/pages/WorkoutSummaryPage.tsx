@@ -8,13 +8,19 @@ import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
-import { useWorkoutDetail, findNewBests, deleteWorkout, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
+import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
+import { formatKm, formatPace, INTENSITIES, intensityFromRpe } from '@/lib/cardio'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
 import { findRankUps, type RankUp } from '@/features/ranks/computeRanks'
 import RankUpsSection from '@/features/ranks/components/RankUpsSection'
 import type { WorkoutSetWithExercise } from '@/types'
 
 function describeSet(s: WorkoutSetWithExercise): string {
+  if (s.exercise.type === 'cardio') {
+    const effort = INTENSITIES.find(i => i.value === intensityFromRpe(s.rpe))?.label
+    return [s.duration ? `${s.duration} min` : '', s.distanceKm ? formatKm(s.distanceKm) : '', formatPace(s.exerciseId, s) ?? '', s.rpe ? effort : '']
+      .filter(Boolean).join(' · ') || '—'
+  }
   if (s.weight && s.reps) return `${s.weight}×${s.reps}`
   if (s.reps) return `${s.reps} reps`
   const parts = [s.duration ? `${s.duration} min` : '', s.distanceKm ? `${s.distanceKm} km` : ''].filter(Boolean)
@@ -92,12 +98,15 @@ export default function WorkoutSummaryPage() {
         <section className="rounded-3xl bg-card p-5">
           <h2 className="mb-3 flex items-center gap-2 font-semibold"><Trophy size={18} className="text-primary" /> New bests</h2>
           <ul className="flex flex-col gap-2 text-sm">
-            {bests.map(b => (
-              <li key={b.exerciseId} className="flex justify-between gap-3">
-                <span className="truncate">{b.exerciseName}</span>
-                <span className="shrink-0 text-muted-foreground">est. 1RM {b.previous} → <span className="font-semibold text-foreground">{b.est1RM} kg</span></span>
-              </li>
-            ))}
+            {bests.map(b => {
+              const d = describeBest(b)
+              return (
+                <li key={`${b.exerciseId}-${b.kind ?? '1rm'}`} className="flex justify-between gap-3">
+                  <span className="truncate">{b.exerciseName}</span>
+                  <span className="shrink-0 text-muted-foreground">{d.label} {d.from} → <span className="font-semibold text-foreground">{d.to}</span></span>
+                </li>
+              )
+            })}
           </ul>
         </section>
       )}

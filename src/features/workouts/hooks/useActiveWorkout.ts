@@ -8,10 +8,11 @@ import { today } from '@/lib/date'
 import { updateStreak } from '@/lib/streak'
 import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
-import { estimateKcal, metFor, metForExercises, setModeFor } from '@/lib/workoutMath'
+import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
+import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { useWorkoutStore } from '../store'
-import { emptySet, type BlockDraft, type SetDraft } from '../types'
+import { emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { findNewBests, getWorkoutWithSets, lastSessionSets, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
@@ -28,22 +29,23 @@ export interface FinishResult {
   rankUps: RankUp[]
 }
 
-function num(v: string): number | undefined {
-  const n = Number(v.replace(',', '.'))
-  return v.trim() !== '' && Number.isFinite(n) && n > 0 ? n : undefined
-}
+const num = parsePositive
+const str = (n: number | undefined) => (n != null ? String(n) : '')
+
+/** XP for cardio: 1 per minute, capped per entry (sets earn XP.PER_SET). */
+const CARDIO_XP_CAP = 120
 
 function prefillSet(block: Pick<BlockDraft, 'exercise' | 'lastSets'>, index: number, targetReps: number): SetDraft {
   const last = block.lastSets?.[index] ?? block.lastSets?.at(-1)
-  const str = (n: number | undefined) => (n != null ? String(n) : '')
-  switch (setModeFor(block.exercise)) {
-    case 'load':
-      return emptySet({ weight: str(last?.weight), reps: String(targetReps) })
-    case 'time':
-      return emptySet({ duration: String(targetReps), distanceKm: str(last?.distanceKm) })
-    case 'distance':
-      return emptySet({ distanceKm: str(last?.distanceKm), duration: str(last?.duration) })
-  }
+  return setModeFor(block.exercise) === 'time'
+    ? emptySet({ duration: String(targetReps) })
+    : emptySet({ weight: str(last?.weight), reps: String(targetReps) })
+}
+
+/** Cardio from a routine: one entry with the target minutes (sets × minutes for older routines). */
+function prefillCardio(block: Pick<BlockDraft, 'lastSets'>, minutes: number): SetDraft {
+  const last = block.lastSets?.[0]
+  return emptySet({ duration: String(minutes), distanceKm: str(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
 }
 
 export function useActiveWorkout() {
@@ -65,12 +67,15 @@ export function useActiveWorkout() {
       if (!exercise) continue
       const lastSets = await lastSessionSets(exercise.uuid)
       const base = { exercise, lastSets }
+      const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
         exercise,
-        restSec: re.restSec,
+        restSec: cardio ? 0 : re.restSec,
         targetReps: re.reps,
         lastSets,
-        sets: Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),
+        sets: cardio
+          ? [prefillCardio(base, Math.max(1, re.sets) * re.reps)]
+          : Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),
       })
     }
     useWorkoutStore.getState().start({
@@ -97,6 +102,7 @@ export function useActiveWorkout() {
 
     const now = Date.now()
     const workoutUuid = crypto.randomUUID()
+    const cardioIds = new Set(draft.blocks.filter(b => setModeFor(b.exercise) === 'cardio').map(b => b.exercise.uuid))
     const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) =>
       block.sets
         .filter(s => s.done)
@@ -109,13 +115,20 @@ export function useActiveWorkout() {
           weight: num(s.weight),
           duration: num(s.duration),
           distanceKm: num(s.distanceKm),
+          rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : undefined,
           updatedAt: now,
           syncPending: true,
         })),
     )
 
     const latestWeight = await db.bodyMetrics.orderBy('date').last()
-    const met = draft.category ? metFor(draft.category) : metForExercises(draft.blocks.map(b => b.exercise))
+    const cardioSets = sets.filter(s => cardioIds.has(s.exerciseId))
+    const kcalEst = estimateWorkoutKcal({
+      durationMin: opts.durationMin,
+      bodyKg: latestWeight?.weightKg,
+      liftMet: liftMetFor(draft.category, draft.blocks.map(b => b.exercise)),
+      cardio: cardioSets,
+    })
 
     await db.transaction('rw', db.workouts, db.workoutSets, async () => {
       await db.workouts.add({
@@ -128,7 +141,7 @@ export function useActiveWorkout() {
         startedAt: draft.startedAt,
         createdAt: draft.startedAt,
         avgHeartRate: opts.avgHeartRate,
-        kcalEst: estimateKcal(met, latestWeight?.weightKg, opts.durationMin),
+        kcalEst,
         updatedAt: now,
         syncPending: true,
       })
@@ -141,7 +154,8 @@ export function useActiveWorkout() {
     const rankUps = saved ? await findRankUps(saved) : []
 
     await updateStreak()
-    const xp = XP.WORKOUT + sets.length * XP.PER_SET + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
+    const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
+    const xp = XP.WORKOUT + (sets.length - cardioSets.length) * XP.PER_SET + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
     const xpResult = await grantXp(xp)
     const achievements = await evaluateAchievements()
     requestSync()

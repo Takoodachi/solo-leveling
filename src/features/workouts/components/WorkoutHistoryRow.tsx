@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { ChevronRight } from 'lucide-react'
+import { formatKm } from '@/lib/cardio'
 import type { WorkoutSummary } from '../hooks/useWorkoutHistory'
 
 export default function WorkoutHistoryRow({ workout }: { workout: WorkoutSummary }) {
@@ -17,7 +18,12 @@ export default function WorkoutHistoryRow({ workout }: { workout: WorkoutSummary
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{workout.name ?? 'Workout'}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {workout.exerciseNames.length} exercises · {workout.setCount} sets · {workout.durationMin} min
+          {[
+            workout.exerciseNames.length === 1 ? workout.exerciseNames[0] : `${workout.exerciseNames.length} exercises`,
+            workout.liftSetCount > 0 ? `${workout.liftSetCount} sets` : null,
+            workout.distanceKm > 0 ? formatKm(workout.distanceKm) : null,
+            `${workout.durationMin} min`,
+          ].filter(Boolean).join(' · ')}
         </p>
       </div>
       <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
