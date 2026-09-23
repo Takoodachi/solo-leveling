@@ -22,8 +22,9 @@ export default function RankLadder() {
         <li>Each tier has three divisions (III → II → I). A lift’s rank is its <b>best set ever</b>, so ranks never drop.</li>
         <li>Each lift ranks the <b>muscles it trains most</b> (a deadlift ranks lower back, glutes and hamstrings). A muscle takes its best lift, and a group takes its best muscle. Train every muscle to fill in the bodygraph.</li>
         <li>Your <b>overall rank</b> blends the six groups (legs and back count most) once three are ranked.</li>
-        <li>Dumbbell lifts use the weight of <b>one</b> dumbbell. For pull-ups, dips and push-ups, enter only <b>added</b> weight (or assistance for assisted versions). Planks and hangs are rated by hold time. Cardio isn’t ranked.</li>
-        <li>Standards are based on public strength data and rounded, so treat ranks as motivation, not a lab test.</li>
+        <li>Dumbbell lifts use the weight of <b>one</b> dumbbell. For pull-ups, dips and push-ups, enter only <b>added</b> weight (or assistance for assisted versions). Planks and hangs are rated by hold time.</li>
+        <li><b>Running</b> has its own rank (not part of overall): every run of 5 km+ is converted to the 5K time it’s worth (Riegel’s formula) and compared with runners of your sex. A longer run at a steady pace is worth more than a short one at the same pace.</li>
+        <li>Standards are based on public strength and running data and rounded, so treat ranks as motivation, not a lab test.</li>
       </ul>
     </div>
   )

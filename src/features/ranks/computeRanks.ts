@@ -9,6 +9,7 @@ import {
   type MuscleGroup, type MuscleRegion, type Sex,
 } from './standards'
 import { bodyweightLookup, performanceFor, rateSet, thresholdsFor } from './scoring'
+import { RUN_EXERCISE_IDS, equivalent5k, isRunExercise, rateRun, type RunRank } from './running'
 
 export interface LiftRank {
   exerciseId: string
@@ -50,6 +51,8 @@ export interface RanksSnapshot {
   regions: RegionRank[]
   groups: GroupRank[]
   overall: RankInfo | null
+  /** Best run of 5 km+, as a 5K-equivalent. Separate from the strength overall. */
+  running: RunRank | null
 }
 
 /** Overall rank needs this many ranked muscle groups. */
@@ -64,10 +67,18 @@ interface RatedSet {
   duration?: number
 }
 
+interface RatedRun {
+  workout: Workout
+  rating: number
+  distanceKm: number
+  duration: number
+}
+
 interface RankInputs {
   sex: Sex
   bodyKg: number
   rated: RatedSet[]
+  runs: RatedRun[]
   names: Map<string, string>
 }
 
@@ -81,14 +92,20 @@ async function loadInputs(): Promise<Loaded> {
   if (!sex) return { status: 'needs-sex', sex, bodyKg: latest?.weightKg ?? null }
   if (!latest) return { status: 'needs-weight', sex, bodyKg: null }
 
-  const sets = await db.workoutSets.where('exerciseId').anyOf([...RANKED_EXERCISE_IDS]).toArray()
+  const sets = await db.workoutSets.where('exerciseId').anyOf([...RANKED_EXERCISE_IDS, ...RUN_EXERCISE_IDS]).toArray()
   const workouts = await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))])
   const workoutOf = new Map(workouts.flatMap(w => (w ? [[w.uuid, w] as const] : [])))
   const bodyOn = bodyweightLookup(weights)
 
   const rated: RatedSet[] = []
+  const runs: RatedRun[] = []
   for (const s of sets) {
     const workout = workoutOf.get(s.workoutId)
+    if (workout && isRunExercise(s.exerciseId)) {
+      const rating = rateRun(sex, s.distanceKm, s.duration)
+      if (rating > 0) runs.push({ workout, rating, distanceKm: s.distanceKm!, duration: s.duration! })
+      continue
+    }
     const std = standardFor(s.exerciseId)
     if (!workout || !std) continue
     const rating = rateSet(std, s, sex, bodyOn(workout.date) ?? latest.weightKg)
@@ -96,7 +113,7 @@ async function loadInputs(): Promise<Loaded> {
   }
   const exercises = await db.exercises.bulkGet([...new Set(rated.map(r => r.exerciseId))])
   const names = new Map(exercises.flatMap(e => (e ? [[e.uuid, e.name] as const] : [])))
-  return { status: 'ready', inputs: { sex, bodyKg: latest.weightKg, rated, names } }
+  return { status: 'ready', inputs: { sex, bodyKg: latest.weightKg, rated, runs, names } }
 }
 
 function regionRanks(lifts: LiftRank[]): RegionRank[] {
@@ -131,7 +148,7 @@ function overallRank(groups: GroupRank[]): RankInfo | null {
 
 function emptySnapshot(status: RankStatus, sex: Sex | null, bodyKg: number | null): RanksSnapshot {
   const regions = regionRanks([])
-  return { status, sex, bodyKg, lifts: [], regions, groups: groupRanks(regions), overall: null }
+  return { status, sex, bodyKg, lifts: [], regions, groups: groupRanks(regions), overall: null, running: null }
 }
 
 /** Ranks from the workouts `include` accepts. Ranks are floors: a lift keeps its best set. */
@@ -154,7 +171,16 @@ function buildSnapshot(inputs: RankInputs, include: (w: Workout) => boolean = ()
 
   const regions = regionRanks(lifts)
   const groups = groupRanks(regions)
-  return { status: 'ready', sex: inputs.sex, bodyKg: inputs.bodyKg, lifts, regions, groups, overall: overallRank(groups) }
+  return { status: 'ready', sex: inputs.sex, bodyKg: inputs.bodyKg, lifts, regions, groups, overall: overallRank(groups), running: runningRank(inputs.runs, include) }
+}
+
+function runningRank(runs: RatedRun[], include: (w: Workout) => boolean): RunRank | null {
+  const best = runs.reduce<RatedRun | null>((a, r) => (include(r.workout) && (!a || r.rating > a.rating) ? r : a), null)
+  if (!best) return null
+  return {
+    rank: rankFor(best.rating),
+    best: { distanceKm: best.distanceKm, duration: best.duration, date: best.workout.date, equivalent5k: equivalent5k(best.distanceKm, best.duration)! },
+  }
 }
 
 export async function computeRanks(include?: (w: Workout) => boolean): Promise<RanksSnapshot> {
@@ -163,7 +189,7 @@ export async function computeRanks(include?: (w: Workout) => boolean): Promise<R
 }
 
 export interface RankUp {
-  /** Exercise id, or "overall". */
+  /** Exercise id, "overall" or "running". */
   id: string
   name: string
   from: RankInfo | null
@@ -182,6 +208,9 @@ export async function findRankUps(workout: Pick<Workout, 'uuid' | 'createdAt'>):
   if (after.overall && (!before.overall || after.overall.step > before.overall.step)) {
     ups.push({ id: 'overall', name: 'Overall', from: before.overall, to: after.overall })
   }
+  if (after.running && (!before.running || after.running.rank.step > before.running.rank.step)) {
+    ups.push({ id: 'running', name: 'Running', from: before.running?.rank ?? null, to: after.running.rank })
+  }
   const previous = new Map(before.lifts.map(l => [l.exerciseId, l.rank]))
   for (const lift of after.lifts) {
     const from = previous.get(lift.exerciseId) ?? null
@@ -195,9 +224,10 @@ export interface RankHistoryPoint {
   date: string
   overall: number | null
   groups: Record<MuscleGroup, number | null>
+  running: number | null
 }
 
-/** Weekly ratings (overall and per group) as they stood at the end of each of the last `weeks` weeks. */
+/** Weekly ratings (overall, per group and running) as they stood at the end of each of the last `weeks` weeks. */
 export async function rankHistory(weeks: number): Promise<RankHistoryPoint[]> {
   const loaded = await loadInputs()
   if (loaded.status !== 'ready') return []
@@ -206,7 +236,7 @@ export async function rankHistory(weeks: number): Promise<RankHistoryPoint[]> {
     const date = toDateStr(subWeeks(end, weeks - 1 - i))
     const snap = buildSnapshot(loaded.inputs, w => w.date <= date)
     const groups = Object.fromEntries(snap.groups.map(g => [g.key, g.rank?.rating ?? null])) as Record<MuscleGroup, number | null>
-    return { date, overall: snap.overall?.rating ?? null, groups }
+    return { date, overall: snap.overall?.rating ?? null, groups, running: snap.running?.rank.rating ?? null }
   })
 }
 
