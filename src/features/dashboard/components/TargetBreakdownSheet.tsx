@@ -17,7 +17,7 @@ export default function TargetBreakdownSheet({ open, onClose, targets, breakdown
 
   return (
     <Sheet open={open} onOpenChange={o => !o && onClose()}>
-      <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle>Today's target breakdown</SheetTitle>
         </SheetHeader>

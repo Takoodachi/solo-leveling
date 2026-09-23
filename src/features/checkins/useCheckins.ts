@@ -20,6 +20,21 @@ export async function toggleCheckin(key: CheckinKey, date: string): Promise<bool
   return done
 }
 
+/** Water drunk on a day, in ml. */
+export function useWater(date: string): number {
+  return useLiveQuery(() => db.checkins.get(idFor('water', date)), [date])?.amount ?? 0
+}
+
+/** Set the day's water total (clamped at 0). Returns the new total. */
+export async function setWater(date: string, update: (currentMl: number) => number): Promise<number> {
+  const uuid = idFor('water', date)
+  const current = (await db.checkins.get(uuid))?.amount ?? 0
+  const amount = Math.max(0, Math.round(update(current)))
+  await db.checkins.put({ uuid, date, key: 'water', done: amount > 0, amount, updatedAt: Date.now(), syncPending: true })
+  requestSync()
+  return amount
+}
+
 /** Consecutive days ticked, ending today (or yesterday while today is still open). */
 export function useCheckinStreak(key: CheckinKey, today: string): number {
   return useLiveQuery(async () => {

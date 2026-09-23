@@ -32,7 +32,7 @@ export default function RoutineDetailPage() {
   if (data === undefined) return null
   if (data === null) {
     return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
         <p className="text-muted-foreground">This routine doesn’t exist anymore.</p>
         <Button onClick={() => navigate('/workouts', { replace: true })}>Back to workouts</Button>
       </div>
@@ -51,7 +51,7 @@ export default function RoutineDetailPage() {
   }
 
   return (
-    <div className="h-dvh overflow-y-auto overscroll-contain bg-background">
+    <div className="min-h-dvh overflow-x-clip bg-background pl-safe pr-safe">
       {/* Hero */}
       <div className="relative h-72 pt-safe">
         <RoutineArt category={routine.category} fade="bottom" />

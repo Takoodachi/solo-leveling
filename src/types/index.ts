@@ -75,6 +75,8 @@ export interface Achievement {
 
 export type ReminderDays = 'daily' | 'workout-days'
 
+export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'streak'
+
 export interface Settings {
   id: 1
   displayName?: string
@@ -89,7 +91,10 @@ export interface Settings {
   reminderEnabled?: boolean
   reminderTime?: string // HH:mm
   reminderDays?: ReminderDays
-  creatineEnabled?: boolean // creatine check on Home (unset = shown)
+  creatineEnabled?: boolean // legacy (before homeWidgets): false hid the creatine card
+  homeWidgets?: HomeWidgetId[] // Home cards in display order (unset = all, default order)
+  waterGoalMl?: number
+  waterGlassMl?: number
   updatedAt?: number
   syncPending?: boolean
 }
@@ -198,14 +203,18 @@ export interface Challenge {
 
 // ── Daily check-ins ───────────────────────────────────────────────────────────
 
-export type CheckinKey = 'creatine'
+export type CheckinKey = 'creatine' | 'water'
 
-/** One row per habit per day (id `creatine-YYYY-MM-DD`); unticking sets done = false. */
+/**
+ * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).
+ * Unticking sets done = false; water keeps a running `amount` in ml.
+ */
 export interface Checkin {
   uuid: string
   date: string // YYYY-MM-DD
   key: CheckinKey
   done: boolean
+  amount?: number
   updatedAt: number
   syncPending?: boolean
 }
