@@ -7,7 +7,7 @@ import TargetsCard from '@/features/settings/components/TargetsCard'
 import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
-import CheckinsCard from '@/features/settings/components/CheckinsCard'
+import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 
 export default function ProfilePage() {
   return (
@@ -29,8 +29,8 @@ export default function ProfilePage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Daily check-ins</h2>
-        <CheckinsCard />
+        <h2 className="text-lg font-semibold">Home screen</h2>
+        <HomeLayoutCard />
       </section>
 
       <section className="flex flex-col gap-3">

@@ -97,7 +97,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'checkins',
     table: () => t(db.checkins),
-    columns: ['uuid', 'date', 'key', 'done', 'updatedAt'],
+    columns: ['uuid', 'date', 'key', 'done', 'amount', 'updatedAt'],
   },
 ]
 
@@ -119,7 +119,7 @@ const SINGLETONS: SingletonSpec[] = [
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays',
-      'creatineEnabled', 'updatedAt',
+      'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'updatedAt',
     ],
   },
 ]

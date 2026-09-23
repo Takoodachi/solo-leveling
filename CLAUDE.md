@@ -48,14 +48,14 @@ src/
     workouts/       # routines, active-workout store (persisted), logger components, history, plan
     challenges/     # personal challenges (progress computed from local data)
     ranks/          # strength ranks: standards, scoring, badges, Ranks screen, rank-ups
-    checkins/       # daily check-ins (creatine tick on Home)
+    checkins/       # daily check-ins: creatine tick, water counter
     nutrition/      # food logging, daily totals, targets
-    dashboard/      # Home widgets: week strip, activity cards, weekly overview, dynamic-target hooks
+    dashboard/      # Home: widget registry (homeWidgets.ts), customize sheet, week strip, activity cards, weekly overview, dynamic-target hooks
     analytics/      # volume, 1RM, macro adherence, weight, steps charts
     gamification/   # achievements, XP/levels
     bodyMetrics/    # body weight logging + trend
     settings/       # Profile page cards, useSettings, export/import
-  db/               # Dexie schema (versions 1–11), seed + wipe
+  db/               # Dexie schema (versions 1–12), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, …
   data/             # Static seed data: foods, exercises (158), routine templates
   pages/            # Route-level components
@@ -73,28 +73,30 @@ Keep feature code colocated. A workout-specific hook lives in `features/workouts
 
 ## Navigation & screens
 
-Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
+Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps, log water. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
 
-- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral), today's scheduled routine, steps + calories cards, macros, creatine check, active challenge, strength rank, streak/level
+- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral). *Today's Plan* shows the cards the user picked, in their order (`settings.homeWidgets`; unset = all): today's workout, steps, calories, water, creatine, macros, challenge, strength rank, streak/level. Tiles (steps, calories, water, creatine) pair two per row; a lone tile spans the row. **Customize** (Home header or Profile) edits the list. Add a new card in `features/dashboard/homeWidgets.ts` + `TodayWidgets.tsx`
 - **Workouts**: category chips, my routines, templates (in code, never synced), recent history; **Plan** (weekly schedule, frequency goal, rest timer, reminder prefs)
 - **Routine detail / editor**, **active logger** (full screen, wake lock, rest timer, "Previous" column), **summary** (completion screen / history detail)
 - **Analytics**: weekly volume, est. 1RM progression, macro adherence, body weight, steps
-- **Profile**: name, level/XP, strength rank, account & sync status, achievements, body & goals, daily targets, daily check-ins, backup
+- **Profile**: name, level/XP, strength rank, account & sync status, achievements, body & goals, daily targets, home screen (customize), backup
 - **Ranks** (`/ranks`): overall rank, muscle-group ranks, every ranked lift with its next-division target, how ranks work
 
 Full-screen routes (no nav) use `components/FullScreen`. All screens must respect safe areas (`pt-safe`, `pb-safe`, `env(safe-area-inset-*)`).
+
+**Screens scroll the document**, never a fixed-height inner container: use `min-h-dvh`, not `h-dvh` + `overflow-y-auto`. iOS Safari (browser and home-screen app) mis-sizes fixed-height shells and can hide the bottom nav behind its toolbar. Sticky headers carry their own `pt-safe`; a global scrim covers the status bar; `ScrollToTop` resets scroll on navigation; bottom sheets are capped to the screen height in `ui/sheet.tsx`.
 
 ---
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`, currently at **version 11**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 12**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
 
 ```ts
 // Synced collections (key: uuid string)
 foods, foodLog, bodyMetrics, dailyActivity, achievements,
 exercises (built-ins seeded, only custom ones sync), workouts, workoutSets, routines, challenges,
-checkins (daily habit ticks, id `creatine-YYYY-MM-DD`, unticking sets done = false)
+checkins (daily habits: `creatine-YYYY-MM-DD` tick, unticking sets done = false; `water-YYYY-MM-DD` with `amount` in ml)
 // Synced singletons (id = 1)
 userStats, targets, settings
 // Local-only
@@ -213,6 +215,6 @@ Setup of Supabase, Cloudflare Pages and the keep-alive job is in `README.md`.
 ## Current Status
 
 **Phase:** Redesign + infrastructure fix (September 2026).
-**Working:** offline-first logging (workouts, food, weight, steps), routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics, streaks/XP/achievements, strength ranks, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
-**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; run `20260922000000_checkins.sql` in Supabase. (v2 migration: done.)
+**Working:** offline-first logging (workouts, food, weight, steps, water), customizable Home, routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics, streaks/XP/achievements, strength ranks, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
+**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; run `20260923000000_home_water.sql` in Supabase **before** deploying the Home customization / water build (checkins + settings pushes fail until then). (v2 and checkins migrations: done.)
 **Future ideas (not started):** reminder push delivery, shared challenges, adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).

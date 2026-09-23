@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Dumbbell, Utensils, Scale, Footprints, ChevronRight, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Utensils, Scale, Footprints, GlassWater, ChevronRight, type LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import LogStepsSheet from '@/features/dashboard/components/LogStepsSheet'
+import WaterSheet from '@/features/checkins/components/WaterSheet'
+import { useNow } from '@/hooks/useNow'
+import { toDateStr } from '@/lib/date'
 import { db } from '@/db'
 
 interface Props {
@@ -14,6 +17,8 @@ interface Props {
 export default function QuickAddSheet({ open, onOpenChange }: Props) {
   const navigate = useNavigate()
   const [stepsOpen, setStepsOpen] = useState(false)
+  const [waterOpen, setWaterOpen] = useState(false)
+  const todayStr = toDateStr(useNow())
   const hasDraft = useLiveQuery(async () => !!(await db.workoutDrafts.get(1)), [])
 
   const actions: { label: string; hint: string; Icon: LucideIcon; run: () => void }[] = [
@@ -26,12 +31,13 @@ export default function QuickAddSheet({ open, onOpenChange }: Props) {
     { label: 'Log food', hint: 'Add to today’s meals', Icon: Utensils, run: () => navigate('/nutrition?add=1') },
     { label: 'Log weight', hint: 'Track your body weight', Icon: Scale, run: () => navigate('/analytics/weight') },
     { label: 'Log steps', hint: 'Feeds your activity targets', Icon: Footprints, run: () => setStepsOpen(true) },
+    { label: 'Log water', hint: 'Add a glass or set today’s total', Icon: GlassWater, run: () => setWaterOpen(true) },
   ]
 
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="px-4">
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto px-4">
           <SheetHeader className="mb-2 text-left">
             <SheetTitle className="text-xl">Quick add</SheetTitle>
             <SheetDescription>What do you want to log?</SheetDescription>
@@ -58,6 +64,7 @@ export default function QuickAddSheet({ open, onOpenChange }: Props) {
         </SheetContent>
       </Sheet>
       <LogStepsSheet open={stepsOpen} onOpenChange={setStepsOpen} />
+      <WaterSheet open={waterOpen} onOpenChange={setWaterOpen} date={todayStr} today={todayStr} />
     </>
   )
 }

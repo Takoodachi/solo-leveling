@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useLayoutEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
 import { useAuthInit } from '@/features/auth/useAuthInit'
@@ -22,10 +22,25 @@ const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
 
 function Spinner() {
   return (
-    <div className="flex h-dvh items-center justify-center bg-background">
+    <div className="flex min-h-dvh items-center justify-center bg-background">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
   )
+}
+
+/** Screens scroll the document, so start each new screen at the top. */
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  // Block body: newer browsers return a Promise from scrollTo, which must not become the effect's cleanup.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
+/** Opaque band behind the status bar / Dynamic Island so scrolled content never runs under the clock. */
+function StatusBarScrim() {
+  return <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[45] h-[env(safe-area-inset-top)] bg-background/90 backdrop-blur-xl" />
 }
 
 function AppRoutes() {
@@ -78,6 +93,8 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
+      <StatusBarScrim />
       <AppRoutes />
       <Toaster
         position="top-center"
