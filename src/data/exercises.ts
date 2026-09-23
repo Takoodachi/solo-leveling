@@ -1,4 +1,5 @@
 import type { Exercise } from '@/types'
+import { MORE_EXERCISES } from './exerciseVariations'
 
 const NOW = 0
 
@@ -171,11 +172,12 @@ export const BUILT_IN_EXERCISES: Exercise[] = [
   { uuid: 'ex-elliptical',               name: 'Elliptical',               category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Quadriceps', 'Glutes'], musclesSecondary: ['Hamstrings', 'Calves'], instructions: "Step onto the pedals and pump the arms and legs together. Adjust resistance and incline for difficulty. Lower-impact alternative to running." },
   { uuid: 'ex-stair-climber',            name: 'Stair Climber',            category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Glutes', 'Quadriceps'], musclesSecondary: ['Calves', 'Hamstrings'], instructions: "Climb the rotating steps at a steady pace. Keep the torso upright and let go of the rails to make it harder. Glute-dominant cardio." },
   { uuid: 'ex-battle-ropes',             name: 'Battle Ropes',             category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Shoulders', 'Core'], musclesSecondary: ['Arms', 'Back'], instructions: "Hold the ends of the battle ropes. Slam, wave, or alternate the ropes in short, hard bursts (typically 20–40 seconds on, 30–60 off)." },
-  { uuid: 'ex-burpee',                   name: 'Burpees',                  category: 'Cardio', type: 'cardio',    defaultUnit: 'reps', isCustom: false, updatedAt: NOW,                muscles: ['Chest', 'Quadriceps', 'Core'], musclesSecondary: ['Shoulders', 'Triceps', 'Glutes'], instructions: "Drop into a push-up, perform a push-up, jump the feet back in, and explode up into a jump. Full-body conditioning staple." },
+  { uuid: 'ex-burpee',                   name: 'Burpees',                  category: 'Cardio', type: 'bodyweight', defaultUnit: 'reps', isCustom: false, updatedAt: NOW,                muscles: ['Chest', 'Quadriceps', 'Core'], musclesSecondary: ['Shoulders', 'Triceps', 'Glutes'], instructions: "Drop into a push-up, perform a push-up, jump the feet back in, and explode up into a jump. Full-body conditioning staple." },
   { uuid: 'ex-swimming',                 name: 'Swimming',                 category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Lats', 'Chest', 'Shoulders'], musclesSecondary: ['Core', 'Legs'], instructions: "Swim laps with a chosen stroke. Maintain a steady, efficient rhythm and breathe in sync with the stroke. Full-body, zero-impact." },
   { uuid: 'ex-hiking',                   name: 'Hiking',                   category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Quadriceps', 'Glutes', 'Calves'], musclesSecondary: ['Hamstrings', 'Core'], instructions: "Walk on uneven, outdoor terrain (trails, hills). Carry a small pack for added load. Low-impact endurance + glute work from the inclines." },
+  ...MORE_EXERCISES,
 ]
 
 export const EXERCISE_CATEGORIES = [
-  'Back', 'Chest', 'Shoulders', 'Arms', 'Lower Body', 'Core', 'Cardio',
+  'Back', 'Chest', 'Shoulders', 'Arms', 'Lower Body', 'Core', 'Full Body', 'Cardio', 'Mobility',
 ] as const
