@@ -1,10 +1,9 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { SetMode } from '@/lib/workoutMath'
-import type { SetDraft, LastSet } from '../types'
-import { SET_COLUMNS, type SetField } from '../setColumns'
+import { sanitizeNumeric as sanitize, type SetDraft, type LastSet } from '../types'
+import { SET_COLUMNS, SET_GRID, type SetField, type SetRowMode } from '../setColumns'
 
-function describeLast(s: LastSet | undefined, mode: SetMode): string {
+function describeLast(s: LastSet | undefined, mode: SetRowMode): string {
   if (!s) return '—'
   if (mode === 'load') {
     if (s.weight != null && s.reps != null) return `${s.weight}×${s.reps}`
@@ -17,17 +16,10 @@ function describeLast(s: LastSet | undefined, mode: SetMode): string {
   return parts.join(' · ') || '—'
 }
 
-/** Accept "12", "12.5" and "12,5" while typing. */
-function sanitize(v: string): string {
-  const cleaned = v.replace(',', '.').replace(/[^\d.]/g, '')
-  const [int, ...rest] = cleaned.split('.')
-  return rest.length ? `${int}.${rest.join('')}` : int
-}
-
 interface Props {
   index: number
   set: SetDraft
-  mode: SetMode
+  mode: SetRowMode
   last?: LastSet
   onChange: (field: SetField, value: string) => void
   onToggleDone: () => void
@@ -38,9 +30,10 @@ export default function SetRow({ index, set, mode, last, onChange, onToggleDone,
   return (
     <div
       className={cn(
-        'grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_4.5rem_2.75rem] items-center gap-2 rounded-2xl px-1 py-1 transition-colors',
+        'grid items-center gap-2 rounded-2xl px-1 py-1 transition-colors',
         set.done && 'bg-primary/10',
       )}
+      style={{ gridTemplateColumns: SET_GRID[mode] }}
     >
       <span className={cn('text-center text-sm font-semibold', set.done ? 'text-primary' : 'text-muted-foreground')}>
         {index + 1}

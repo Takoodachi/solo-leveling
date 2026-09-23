@@ -44,13 +44,13 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
         <DialogHeader className="text-left">
           <DialogTitle className="text-xl">Finish workout?</DialogTitle>
           <DialogDescription>
-            {doneSets} of {totalSets} sets checked off. Only checked sets are saved.
+            {doneSets} of {totalSets} checked off. Only checked sets and cardio are saved.
           </DialogDescription>
         </DialogHeader>
 
         {doneSets < totalSets && (
           <Button type="button" variant="secondary" onClick={onMarkAllDone}>
-            Mark all sets done
+            Mark everything done
           </Button>
         )}
 

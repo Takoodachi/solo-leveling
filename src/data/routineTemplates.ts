@@ -75,8 +75,8 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     level: 'intermediate',
     notes: 'Mixed conditioning: steady rowing, rope work and intervals.',
     exercises: [
-      ex('ex-rowing-machine', 1, 10, 60),
-      ex('ex-jump-rope', 3, 2, 60),
+      ex('ex-rowing-machine', 1, 10, 0),
+      ex('ex-jump-rope', 1, 6, 0),
       ex('ex-burpee', 3, 10, 60),
       ex('ex-mountain-climber', 3, 1, 45),
       ex('ex-stationary-bike', 1, 15, 0),

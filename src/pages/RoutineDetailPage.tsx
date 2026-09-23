@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import StatTile from '@/components/StatTile'
 import { db } from '@/db'
 import type { Exercise } from '@/types'
-import { estimateKcal, metFor } from '@/lib/workoutMath'
+import { estimateKcal, routineMet } from '@/lib/workoutMath'
 import { CATEGORY_META, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
 import { useRoutineOrTemplate, copyTemplate } from '@/features/workouts/hooks/useRoutines'
 import { useExerciseMap, useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
@@ -42,7 +42,7 @@ export default function RoutineDetailPage() {
   const { routine, kind } = data
   const cat = CATEGORY_META[routine.category]
   const minutes = minutesFor(routine)
-  const kcal = estimateKcal(metFor(routine.category), latestWeight?.weightKg, minutes)
+  const kcal = estimateKcal(routineMet(routine.exercises, id => exerciseMap.get(id), routine.category), latestWeight?.weightKg, minutes)
 
   async function saveTemplate() {
     const newId = await copyTemplate(data!.routine)

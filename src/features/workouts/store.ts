@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { db } from '@/db'
 import type { Exercise } from '@/types'
+import { intensityFromRpe } from '@/lib/cardio'
 import { type WorkoutDraft, type SetDraft, type LastSet, emptySet, setHasValue } from './types'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
@@ -43,10 +44,11 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     set(s => {
       if (!s.draft) return s
       const last = opts?.lastSets?.[0]
-      const first = emptySet({
-        weight: last?.weight != null ? String(last.weight) : '',
-        reps: last?.reps != null ? String(last.reps) : '',
-      })
+      const str = (n: number | undefined) => (n != null ? String(n) : '')
+      // Cardio is one entry (time + distance + effort); everything else starts from last session's first set.
+      const first = exercise.type === 'cardio'
+        ? emptySet({ duration: str(last?.duration), distanceKm: str(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
+        : emptySet({ weight: str(last?.weight), reps: str(last?.reps) })
       return {
         draft: {
           ...s.draft,

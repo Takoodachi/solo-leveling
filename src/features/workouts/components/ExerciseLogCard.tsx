@@ -1,10 +1,11 @@
-import { Plus, Minus, ArrowUp, ArrowDown, X, Info } from 'lucide-react'
+import { Plus, Minus } from 'lucide-react'
 import { toast } from 'sonner'
 import { setModeFor } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
 import type { BlockDraft } from '../types'
 import SetRow from './SetRow'
-import { SET_COLUMNS } from '../setColumns'
+import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
+import BlockHeader from './BlockHeader'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
 import RankBadge from '@/features/ranks/components/RankBadge'
@@ -22,12 +23,11 @@ interface Props {
 }
 
 export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, liftRank, rankContext }: Props) {
-  const { addSet, removeSet, updateSet, toggleDone, removeBlock, moveBlock } = useWorkoutStore()
-  const mode = setModeFor(block.exercise)
+  const { addSet, removeSet, updateSet, toggleDone } = useWorkoutStore()
+  // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
+  const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
   const done = block.sets.filter(s => s.done).length
-  const rank = rankContext && mode === 'load'
-    ? liveRank(block.exercise.uuid, block.sets.filter(s => s.done), liftRank, rankContext)
-    : liftRank
+  const rank = rankContext ? liveRank(block.exercise.uuid, block.sets.filter(s => s.done), liftRank, rankContext) : liftRank
 
   function handleToggle(setIdx: number) {
     if (!toggleDone(blockIdx, setIdx)) return
@@ -36,7 +36,7 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
   }
 
   function announceRankUp(setIdx: number) {
-    if (!rankContext || mode !== 'load') return
+    if (!rankContext) return
     const others = block.sets.filter((s, i) => s.done && i !== setIdx)
     const up = rankUpFromSet(block.exercise.uuid, block.sets[setIdx], others, liftRank, rankContext)
     if (!up) return
@@ -55,37 +55,27 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
     if (last.distanceKm != null) updateSet(blockIdx, setIdx, 'distanceKm', String(last.distanceKm))
   }
 
-  const iconBtn = 'flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent disabled:opacity-30'
-
   return (
     <section className="rounded-3xl bg-card p-4">
-      <header className="mb-3 flex items-start gap-2">
-        <button type="button" onClick={onShowInfo} className="min-w-0 flex-1 text-left">
-          <h3 className="flex items-center gap-1.5 text-base font-semibold leading-tight">
-            <span className="truncate">{block.exercise.name}</span>
-            <Info size={14} className="shrink-0 text-muted-foreground" />
-          </h3>
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+      <BlockHeader
+        name={block.exercise.name}
+        blockIdx={blockIdx}
+        isFirst={isFirst}
+        isLast={isLast}
+        onShowInfo={onShowInfo}
+        subtitle={
+          <>
             {done}/{block.sets.length} sets · rest {block.restSec}s
             {rank && (
               <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: rank.tier.color }}>
                 <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
               </span>
             )}
-          </p>
-        </button>
-        <button type="button" className={iconBtn} disabled={isFirst} onClick={() => moveBlock(blockIdx, -1)} aria-label="Move up">
-          <ArrowUp size={16} />
-        </button>
-        <button type="button" className={iconBtn} disabled={isLast} onClick={() => moveBlock(blockIdx, 1)} aria-label="Move down">
-          <ArrowDown size={16} />
-        </button>
-        <button type="button" className={iconBtn} onClick={() => removeBlock(blockIdx)} aria-label="Remove exercise">
-          <X size={16} />
-        </button>
-      </header>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_4.5rem_2.75rem] gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="grid gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" style={{ gridTemplateColumns: SET_GRID[mode] }}>
         <span className="text-center">Set</span>
         <span>Previous</span>
         {SET_COLUMNS[mode].map(([field, label]) => <span key={field} className="text-center">{label}</span>)}

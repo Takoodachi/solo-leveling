@@ -10,8 +10,8 @@ import { createCustomExercise } from '../hooks/useExercises'
 const TRACKING = [
   { key: 'load',       label: 'Weight × reps', type: 'strength',   unit: 'kg' },
   { key: 'bodyweight', label: 'Reps',          type: 'bodyweight', unit: 'reps' },
-  { key: 'time',       label: 'Time',          type: 'cardio',     unit: 'min' },
-  { key: 'distance',   label: 'Distance',      type: 'cardio',     unit: 'km' },
+  { key: 'hold',       label: 'Timed sets',    type: 'bodyweight', unit: 'min' },
+  { key: 'cardio',     label: 'Cardio',        type: 'cardio',     unit: 'min' },
 ] as const
 
 interface Props {

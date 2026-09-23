@@ -10,6 +10,9 @@ import { useWakeLock } from '@/features/workouts/hooks/useWakeLock'
 import { useElapsed } from '@/features/workouts/hooks/useElapsed'
 import { lastSessionSets } from '@/features/workouts/hooks/useWorkoutHistory'
 import ExerciseLogCard from '@/features/workouts/components/ExerciseLogCard'
+import CardioLogCard from '@/features/workouts/components/CardioLogCard'
+import { parsePositive } from '@/features/workouts/types'
+import { setModeFor } from '@/lib/workoutMath'
 import ExercisePickerSheet from '@/features/workouts/components/ExercisePickerSheet'
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
 import RestBanner from '@/features/workouts/components/RestBanner'
@@ -41,6 +44,11 @@ export default function ActiveWorkoutPage() {
   const allSets = draft.blocks.flatMap(b => b.sets)
   const doneSets = allSets.filter(s => s.done).length
   const elapsedMin = Math.round(elapsed.seconds / 60)
+  // A run logged after the fact can be longer than the session timer: default the duration to at least that.
+  const cardioMin = Math.round(draft.blocks
+    .filter(b => setModeFor(b.exercise) === 'cardio')
+    .flatMap(b => b.sets.filter(s => s.done))
+    .reduce((sum, s) => sum + (parsePositive(s.duration) ?? 0), 0))
   const rankOf = new Map(ranks?.lifts.map(l => [l.exerciseId, l.rank]))
   const rankContext = ranks?.sex && ranks.bodyKg ? { sex: ranks.sex, bodyKg: ranks.bodyKg } : null
 
@@ -100,7 +108,17 @@ export default function ActiveWorkoutPage() {
           </div>
         )}
 
-        {draft.blocks.map((block, idx) => (
+        {draft.blocks.map((block, idx) => setModeFor(block.exercise) === 'cardio' ? (
+          <CardioLogCard
+            key={`${block.exercise.uuid}-${idx}`}
+            block={block}
+            blockIdx={idx}
+            isFirst={idx === 0}
+            isLast={idx === draft.blocks.length - 1}
+            onShowInfo={() => setInfo(block.exercise)}
+            bodyKg={ranks?.bodyKg ?? undefined}
+          />
+        ) : (
           <ExerciseLogCard
             key={`${block.exercise.uuid}-${idx}`}
             block={block}
@@ -133,7 +151,7 @@ export default function ActiveWorkoutPage() {
       <FinishWorkoutDialog
         open={finishOpen}
         onOpenChange={setFinishOpen}
-        elapsedMin={elapsedMin}
+        elapsedMin={Math.max(elapsedMin, cardioMin)}
         doneSets={doneSets}
         totalSets={allSets.length}
         onMarkAllDone={markAllFilledDone}
