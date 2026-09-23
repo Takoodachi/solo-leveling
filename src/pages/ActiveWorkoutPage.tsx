@@ -117,6 +117,8 @@ export default function ActiveWorkoutPage() {
             isLast={idx === draft.blocks.length - 1}
             onShowInfo={() => setInfo(block.exercise)}
             bodyKg={ranks?.bodyKg ?? undefined}
+            runRank={ranks?.running?.rank}
+            sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
           />
         ) : (
           <ExerciseLogCard

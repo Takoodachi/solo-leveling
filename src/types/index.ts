@@ -77,6 +77,12 @@ export type ReminderDays = 'daily' | 'workout-days'
 
 export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'streak'
 
+export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
+export type VolumeMuscle =
+  | 'chest' | 'shoulders' | 'triceps' | 'biceps' | 'forearms' | 'abs'
+  | 'quads' | 'adductors' | 'abductors' | 'glutes' | 'hamstrings' | 'calves'
+  | 'lower-back' | 'traps' | 'lats'
+
 export interface Settings {
   id: 1
   displayName?: string
@@ -95,6 +101,8 @@ export interface Settings {
   homeWidgets?: HomeWidgetId[] // Home cards in display order (unset = all, default order)
   waterGoalMl?: number
   waterGlassMl?: number
+  trainingLevel?: TrainingLevel // weekly set-volume targets (unset = intermediate)
+  radarMuscles?: VolumeMuscle[] // muscles on the volume radar (unset = default twelve)
   updatedAt?: number
   syncPending?: boolean
 }

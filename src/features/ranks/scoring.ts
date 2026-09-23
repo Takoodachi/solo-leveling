@@ -56,8 +56,7 @@ export function performanceOf(std: Standard, set: RatableSet, bodyKg: number): n
   return 30 * ((moved * (1 + Math.min(reps, 100) / 30)) / base - 1)
 }
 
-function curve(std: Standard, t: number[]): [number, number][] {
-  const floor = std.kind === 'reps' ? REPS_FLOOR : 0
+function curve(t: readonly number[], floor: number): [number, number][] {
   return [
     [floor, 0],
     ...t.map((v, i): [number, number] => [v, LEVEL_RATINGS[i]]),
@@ -65,9 +64,9 @@ function curve(std: Standard, t: number[]): [number, number][] {
   ]
 }
 
-/** Piecewise-linear rating (0 = unrated, 1–1000). */
-export function ratingFor(std: Standard, perf: number, t: number[]): number {
-  const pts = curve(std, t)
+/** Piecewise-linear rating (0 = unrated, 1–1000) through the five level thresholds. */
+export function curveRating(perf: number, t: readonly number[], floor = 0): number {
+  const pts = curve(t, floor)
   if (perf <= pts[0][0]) return 0
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
@@ -77,15 +76,25 @@ export function ratingFor(std: Standard, perf: number, t: number[]): number {
   return MAX_RATING
 }
 
-/** Inverse of ratingFor: the performance needed to reach a rating. */
-export function performanceFor(std: Standard, rating: number, t: number[]): number {
-  const pts = curve(std, t)
+/** Inverse of curveRating: the performance needed to reach a rating. */
+export function curvePerformance(rating: number, t: readonly number[], floor = 0): number {
+  const pts = curve(t, floor)
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
     const [x1, y1] = pts[i]
     if (rating <= y1) return x0 + ((x1 - x0) * (rating - y0)) / (y1 - y0)
   }
   return pts[pts.length - 1][0]
+}
+
+const floorOf = (std: Standard) => (std.kind === 'reps' ? REPS_FLOOR : 0)
+
+export function ratingFor(std: Standard, perf: number, t: number[]): number {
+  return curveRating(perf, t, floorOf(std))
+}
+
+export function performanceFor(std: Standard, rating: number, t: number[]): number {
+  return curvePerformance(rating, t, floorOf(std))
 }
 
 export function rateSet(std: Standard, set: RatableSet, sex: Sex, bodyKg: number): number {

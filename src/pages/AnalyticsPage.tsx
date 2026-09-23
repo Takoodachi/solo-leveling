@@ -6,6 +6,7 @@ import MacroAdherenceChart from '@/features/analytics/components/MacroAdherenceC
 import ChartCard from '@/features/analytics/components/ChartCard'
 import { WeeklyVolumeCard, OneRmCard } from '@/features/analytics/components/TrainingCharts'
 import { WeightTrendCard, StepsCard } from '@/features/analytics/components/BodyCharts'
+import SetVolumeCard from '@/features/analytics/components/SetVolumeCard'
 
 type MacroView = 'week' | 'month'
 
@@ -17,6 +18,7 @@ export default function AnalyticsPage() {
     <div className="flex flex-col gap-4">
       <PageHeader title="Analytics" />
 
+      <SetVolumeCard />
       <WeeklyVolumeCard />
       <OneRmCard />
 

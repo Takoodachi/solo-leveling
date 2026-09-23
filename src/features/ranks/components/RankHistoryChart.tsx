@@ -9,17 +9,21 @@ import { MUSCLE_GROUPS, type MuscleGroup } from '../standards'
 import { TIERS, rankFor } from '../tiers'
 
 const WEEKS = 12
-type Series = 'overall' | MuscleGroup
-const SERIES: { key: Series; label: string }[] = [{ key: 'overall', label: 'Overall' }, ...MUSCLE_GROUPS.map(g => ({ key: g.key, label: g.label }))]
+type Series = 'overall' | MuscleGroup | 'running'
+const SERIES: { key: Series; label: string }[] = [
+  { key: 'overall', label: 'Overall' },
+  ...MUSCLE_GROUPS.map(g => ({ key: g.key, label: g.label })),
+  { key: 'running', label: 'Running' },
+]
 
-/** Weekly rating (overall or one muscle group), with the y-axis marked in tiers. */
+/** Weekly rating (overall, one muscle group or running), with the y-axis marked in tiers. */
 export default function RankHistoryChart() {
   const history = useLiveQuery(() => rankHistory(WEEKS), [])
   const [series, setSeries] = useState<Series>('overall')
 
   const data = (history ?? []).map(p => ({
     label: formatShortDate(p.date),
-    value: series === 'overall' ? p.overall : p.groups[series],
+    value: series === 'overall' ? p.overall : series === 'running' ? p.running : p.groups[series],
   }))
   const values = data.flatMap(d => (d.value != null ? [d.value] : []))
   // Zoom to the tiers the line actually crosses, so progress within a tier is visible.
@@ -43,7 +47,9 @@ export default function RankHistoryChart() {
       </div>
       {values.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          {series === 'overall' ? 'Your overall rank will chart here once three muscle groups are ranked.' : 'Rank a lift in this group to start its line.'}
+          {series === 'overall'
+            ? 'Your overall rank will chart here once three muscle groups are ranked.'
+            : series === 'running' ? 'Log a run of 5 km or more to start this line.' : 'Rank a lift in this group to start its line.'}
         </p>
       ) : (
         <div className="h-52">

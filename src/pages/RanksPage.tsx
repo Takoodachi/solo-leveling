@@ -9,6 +9,7 @@ import Bodygraph from '@/features/ranks/components/Bodygraph'
 import RegionDetail from '@/features/ranks/components/RegionDetail'
 import MuscleRankings from '@/features/ranks/components/MuscleRankings'
 import RankHistoryChart from '@/features/ranks/components/RankHistoryChart'
+import RunningRankCard from '@/features/ranks/components/RunningRankCard'
 import LiftRankList from '@/features/ranks/components/LiftRankList'
 import RankLadder from '@/features/ranks/components/RankLadder'
 
@@ -18,7 +19,7 @@ export default function RanksPage() {
 
   return (
     <FullScreen className="flex flex-col gap-6">
-      <PageHeader back="/profile" title="Strength ranks" />
+      <PageHeader back="/profile" title="Ranks" />
       {ranks && (ranks.status === 'ready' ? (
         <>
           <RankHero ranks={ranks} />
@@ -31,6 +32,12 @@ export default function RanksPage() {
             <h2 className="text-lg font-semibold">Muscle rankings</h2>
             <MuscleRankings groups={ranks.groups} selected={selected} onSelect={setSelected} />
           </section>
+          {ranks.sex && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-lg font-semibold">Running rank</h2>
+              <RunningRankCard running={ranks.running} sex={ranks.sex} />
+            </section>
+          )}
           <RankHistoryChart />
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Lifts</h2>
