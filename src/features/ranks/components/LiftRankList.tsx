@@ -3,8 +3,12 @@ import { nextRankTarget, type RanksSnapshot } from '../computeRanks'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
 
-function describeBest(b: { weight?: number; reps?: number }): string {
+function describeBest(b: { weight?: number; reps?: number; duration?: number }): string {
   if (b.weight && b.reps) return `${b.weight} kg × ${b.reps}`
+  if (b.duration && !b.reps) {
+    const sec = Math.round(b.duration * 60)
+    return sec < 60 ? `${sec} s hold` : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')} hold`
+  }
   return `${b.reps ?? 0} reps`
 }
 

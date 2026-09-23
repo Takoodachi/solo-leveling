@@ -1,14 +1,20 @@
+import { useState } from 'react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import { useRanks } from '@/features/ranks/useRanks'
+import type { MuscleRegion } from '@/features/ranks/standards'
 import RankHero from '@/features/ranks/components/RankHero'
 import RankSetupCard from '@/features/ranks/components/RankSetupCard'
-import MuscleGroupGrid from '@/features/ranks/components/MuscleGroupGrid'
+import Bodygraph from '@/features/ranks/components/Bodygraph'
+import RegionDetail from '@/features/ranks/components/RegionDetail'
+import MuscleRankings from '@/features/ranks/components/MuscleRankings'
+import RankHistoryChart from '@/features/ranks/components/RankHistoryChart'
 import LiftRankList from '@/features/ranks/components/LiftRankList'
 import RankLadder from '@/features/ranks/components/RankLadder'
 
 export default function RanksPage() {
   const ranks = useRanks()
+  const [selected, setSelected] = useState<MuscleRegion | null>(null)
 
   return (
     <FullScreen className="flex flex-col gap-6">
@@ -17,9 +23,15 @@ export default function RanksPage() {
         <>
           <RankHero ranks={ranks} />
           <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Muscle groups</h2>
-            <MuscleGroupGrid groups={ranks.groups} />
+            <h2 className="text-lg font-semibold">Ranked bodygraph</h2>
+            <Bodygraph regions={ranks.regions} selected={selected} onSelect={setSelected} />
+            <RegionDetail region={ranks.regions.find(r => r.key === selected) ?? null} />
           </section>
+          <section className="flex flex-col gap-3">
+            <h2 className="text-lg font-semibold">Muscle rankings</h2>
+            <MuscleRankings groups={ranks.groups} selected={selected} onSelect={setSelected} />
+          </section>
+          <RankHistoryChart />
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Lifts</h2>
             <LiftRankList ranks={ranks} />

@@ -10,6 +10,7 @@ export interface RankContext {
 interface DraftSet {
   weight: string
   reps: string
+  duration: string
 }
 
 function parse(v: string): number | undefined {
@@ -19,7 +20,7 @@ function parse(v: string): number | undefined {
 
 function rateDraft(exerciseId: string, s: DraftSet, ctx: RankContext): number {
   const std = standardFor(exerciseId)
-  return std ? rateSet(std, { weight: parse(s.weight), reps: parse(s.reps) }, ctx.sex, ctx.bodyKg) : 0
+  return std ? rateSet(std, { weight: parse(s.weight), reps: parse(s.reps), duration: parse(s.duration) }, ctx.sex, ctx.bodyKg) : 0
 }
 
 /** The lift's rank including sets completed this session. */
