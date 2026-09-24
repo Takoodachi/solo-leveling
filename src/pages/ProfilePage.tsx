@@ -8,6 +8,8 @@ import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
 import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
+import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
+import ShareCard from '@/features/leaderboard/components/ShareCard'
 
 export default function ProfilePage() {
   return (
@@ -15,6 +17,10 @@ export default function ProfilePage() {
       <PageHeader title="Profile" />
       <ProfileCard />
       <RankSummaryCard />
+      <section className="flex flex-col gap-3">
+        <LeaderboardCard />
+        <ShareCard />
+      </section>
       <AccountCard />
       <AchievementsGrid />
 

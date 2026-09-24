@@ -9,7 +9,7 @@ This file gives AI assistants the context needed to work productively on this pr
 **Name:** Solo Leveling
 **Type:** Personal workout + nutrition tracker with gamification
 **Platform:** Progressive Web App (PWA), installed on Android (owner) and iOS/Safari (friends)
-**Scope:** A small private group: the owner plus friends (6–7 users expected). **Each user's data is private.** There's no sharing and no social features (yet). Offline-first, with **optional per-user cloud sync** (the owner uses a phone + laptop). No app store deployment planned. **Infrastructure must stay on free tiers.**
+**Scope:** A small private group: the owner plus friends (6–7 users expected). **Each user's data is private**, except the **friends leaderboard**: every account publishes one snapshot (ranks, bodygraph, best lifts, level, streak, this week's training; never food, weight or notes) that all signed-in users can read. Sharing is on by default and can be switched off in Profile. Offline-first, with **optional per-user cloud sync** (the owner uses a phone + laptop). No app store deployment planned. **Infrastructure must stay on free tiers.**
 
 > **History:** Started as a workout logger + calorie tracker. Workouts were removed in June 2026, then **reintroduced in September 2026** at the owner's request, together with a redesign (dark charcoal + orange/coral, mobile-first) based on reference mockups. Nutrition, body weight and steps remain first-class.
 
@@ -49,13 +49,14 @@ src/
     challenges/     # personal challenges (progress computed from local data)
     ranks/          # strength ranks: standards, scoring, badges, Ranks screen, rank-ups
     checkins/       # daily check-ins: creatine tick, water counter
+    leaderboard/    # friends leaderboard: snapshot builder, publish/fetch (Supabase `leaderboard` table), boards, friend profile parts
     nutrition/      # food logging, daily totals, targets
     dashboard/      # Home: widget registry (homeWidgets.ts), customize sheet, week strip, activity cards, weekly overview, dynamic-target hooks
     analytics/      # weekly set-volume radar (volume.ts), tonnage, 1RM, macro adherence, weight, steps charts
     gamification/   # achievements, XP/levels
     bodyMetrics/    # body weight logging + trend
     settings/       # Profile page cards, useSettings, export/import
-  db/               # Dexie schema (versions 1–13), seed + wipe
+  db/               # Dexie schema (versions 1–14), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, …
   data/             # Static seed data: foods (~285, incl. Vietnamese dishes; foodsMore.ts), exercises (288; exerciseVariations.ts), routine templates
   pages/            # Route-level components
@@ -75,13 +76,14 @@ Keep feature code colocated. A workout-specific hook lives in `features/workouts
 
 Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps, log water. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
 
-- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral). *Today's Plan* shows the cards the user picked, in their order (`settings.homeWidgets`; unset = all): today's workout, steps, calories, water, creatine, macros, challenge, strength rank, streak/level. Tiles (steps, calories, water, creatine) pair two per row; a lone tile spans the row. **Customize** (Home header or Profile) edits the list. Add a new card in `features/dashboard/homeWidgets.ts` + `TodayWidgets.tsx`
+- **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral). *Today's Plan* shows the cards the user picked, in their order (`settings.homeWidgets`; unset = all): today's workout, steps, calories, water, creatine, macros, challenge, strength rank, leaderboard, streak/level. Tiles (steps, calories, water, creatine) pair two per row; a lone tile spans the row. **Customize** (Home header or Profile) edits the list. Add a new card in `features/dashboard/homeWidgets.ts` + `TodayWidgets.tsx`
 - **Workouts**: category chips, my routines, templates (in code, never synced), recent history; **Plan** (weekly schedule, frequency goal, rest timer, reminder prefs)
 - **Routine detail / editor**, **active logger** (full screen, wake lock, rest timer, "Previous" column), **summary** (completion screen / history detail)
 - **Cardio is not sets.** Exercises with `type: 'cardio'` are logged as one entry: time, optional distance, effort (Easy/Moderate/Hard, saved in `rpe`). Pace and kcal update live. Routine editor asks for a duration only; routine time uses that duration. kcal = each cardio entry's MET (by speed when distance is logged, else by effort; `lib/cardio.ts`) + the rest of the session at the lifting MET. Summary shows cardio time/distance/pace; new bests include longest distance and fastest pace. Timed holds (plank, `defaultUnit: 'min'`, not cardio) stay as sets with one "min" column.
 - **Analytics**: **Weekly analysis / set volume** radar (sets per muscle for a Mon–Sun week vs. RP volume landmarks: yellow below MEV, orange growing, green sweet spot = MAV, pink overreaching; training-level toggle scales the targets; "Customize radar" picks the muscles, min 3; "i" opens the MEV/MAV/MRV guidelines; list with a bar per muscle), weekly tonnage, est. 1RM progression, macro adherence, body weight, steps. A set counts 1 for each primary muscle and ½ for each secondary (`features/analytics/volume.ts`; secondary "Core" and front delts don't count)
 - **Profile**: name, level/XP, strength rank, account & sync status, achievements, body & goals, daily targets, home screen (customize), backup
-- **Ranks** (`/ranks`): overall rank, ranked **Bodygraph** (anatomical front/back wireframe, ~30 muscle shapes per side mapped to the 16 ranked regions; ranked muscles glow in their tier colour, tap for detail; shapes in `bodygraphShapes.ts`, half-figure mirrored), muscle rankings (6 groups, "2/3 ranked"), **running rank**, weekly rank-progress chart (overall, groups, running), every ranked lift with its next-division target, how ranks work
+- **Ranks** (`/ranks`): overall rank, ranked **Bodygraph** (anatomical front/back wireframe, ~30 muscle shapes per side mapped to the 16 ranked regions; ranked muscles glow in their tier colour, tap for detail; shapes in `bodygraphShapes.ts`, half-figure mirrored), muscle rankings (6 groups, "2/3 ranked"), **running rank**, weekly rank-progress chart (overall, groups, running), every ranked lift with its next-division target, how ranks work. Trophy button → leaderboard
+- **Leaderboard** (`/leaderboard`, from Profile, the Home card and Ranks): boards for Strength (overall rating), Running (5K-equivalent), This week (workouts, then minutes; resets Monday) and Level (XP), top three on a podium; **muscle crowns** (who holds the top rank in each group + running); recent highlights (new bests from the last 14 days). `/leaderboard/:id` (or `me`) is a friend's profile: overall badge, level, streak, their Bodygraph, **head to head** with you, both rating lines over 12 weeks, this week, best lifts. Your own entry is always built live from local data; friends' come from the server (cached in localStorage for offline)
 
 Full-screen routes (no nav) use `components/FullScreen`. All screens must respect safe areas (`pt-safe`, `pb-safe`, `env(safe-area-inset-*)`).
 
@@ -91,7 +93,7 @@ Full-screen routes (no nav) use `components/FullScreen`. All screens must respec
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`, currently at **version 13**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 14**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
 
 ```ts
 // Synced collections (key: uuid string)
@@ -121,6 +123,7 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 - **Accounts:** data on a device belongs to one account (`solo:localOwner`). Signing in as a different account wipes local data first; signing out wipes it too (with a warning if changes are unsynced). Local-only data is adopted by the first account that signs in.
 - **Auth:** email + password (magic links don't work inside iOS home-screen apps, and Supabase's built-in mailer only reaches org members). Accounts are created in the Supabase dashboard; public sign-up is disabled.
 - **Keep-alive:** a GitHub Action pings the DB every ~3 days so the free project doesn't pause.
+- **Leaderboard** (`supabase/migrations/20260925000000_leaderboard.sql`): not a synced collection. Table `leaderboard` has one row per user (`displayName`, `visible`, `snapshot` jsonb, `updatedAt`); RLS lets every signed-in user read visible rows and only the owner write theirs. `useLeaderboardPublisher` (mounted in App) rebuilds the snapshot after each successful sync and upserts it only when it changed. Sharing off (`settings.shareOnLeaderboard === false`) publishes `visible = false` with an empty snapshot. Snapshots are versioned (`v: 1`); readers must tolerate missing fields.
 
 ---
 
@@ -130,7 +133,7 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 2. **XP & Levels**: workout finished +50, +2 per set, +25 per new best (est. 1RM), rank-ups (see 5); daily kcal target within ±10% +30; protein target +20. Level curve: `xpForLevel(n) = 100 * n^1.5` (`lib/xp.ts`).
 3. **Achievements**: declarative in `features/gamification/achievements.ts`, evaluated in `lib/achievementEval.ts` (first/10/50 workouts, 100 sets, streaks, levels, first food log, protein streak, first weigh-in, Gold/Diamond lift, overall Gold).
 4. **Personal challenges**: user-set target + deadline (workouts, steps, volume, food-logged days, protein days); progress computed from local data. **Personal only.** Shared challenges are a possible future feature.
-5. **Strength ranks** (inspired by LiftOff): every set gets a 1–1000 rating from its est. 1RM (Epley, reps capped at 20), bodyweight reps, or hold time, against standards for the lifter's **sex and bodyweight on that day** (`features/ranks/standards.ts`, `scoring.ts`). Nine tiers (Wood → Olympian, 100-pt bands from 200) × three divisions. A lift's rank is its best set ever (ranks never drop). Each standard lists the **muscle regions** it ranks (16 regions in 6 groups: chest, shoulders, arms, back, core, legs); a region takes its best lift, a group its best region, overall = weighted mean once 3 groups are ranked. Ranks are absolute (vs. standards, not vs. other users), so they work the same for any number of users. Derived on-device, nothing stored or synced. Rank-ups toast live in the logger, show on the summary, and give XP (+30 per lift division, +75 per overall division). Needs `settings.sex` + one weigh-in. Only built-in exercises with a standard are ranked; add more in `standards.ts` (own data or `like` + factor). **Running rank** (`running.ts`, separate from overall): every Running / Treadmill Run entry of 5 km+ becomes a 5K-equivalent time (Riegel, exponent 1.06), rated on the same curve against Running Level's 5K standards by sex; longer runs at a steady pace rank higher. Live in the cardio card ("Worth a 23:01 5K"), toasts, rank-ups on the summary.
+5. **Strength ranks** (inspired by LiftOff): every set gets a 1–1000 rating from its est. 1RM (Epley, reps capped at 20), bodyweight reps, or hold time, against standards for the lifter's **sex and bodyweight on that day** (`features/ranks/standards.ts`, `scoring.ts`). Nine tiers (Wood → Olympian, 100-pt bands from 200) × three divisions. The five reference levels rate beginner 200, novice 350, intermediate 500 (Platinum, the median lifter), advanced 700 (Champion), elite 900 (Olympian, top 5%); past elite, one more advanced→elite gap reaches 1000 (`LIFT_LEVELS` in `scoring.ts`). A lift's rank is its best set ever (ranks never drop). Each standard lists the **muscle regions** it ranks (16 regions in 6 groups: chest, shoulders, arms, back, core, legs); a region takes its best lift, a group its best region, overall = weighted mean once 3 groups are ranked. Ranks are absolute (vs. standards, not vs. other users), so they work the same for any number of users. Derived on-device, nothing stored or synced. Rank-ups toast live in the logger, show on the summary, and give XP (+30 per lift division, +75 per overall division). Needs `settings.sex` + one weigh-in. Only built-in exercises with a standard are ranked; add more in `standards.ts` (own data or `like` + factor). **Running rank** (`running.ts`, separate from overall), scored for active adults, not competitive runners: every Running / Treadmill Run entry of 5 km+ at running pace (≥ 7 km/h) scores its pace as a 5K-equivalent (Riegel, exponent 1.06) on a 5K scale by sex, **plus a distance bonus** (+90 per doubling past 5 km: 10K +90, half +187, marathon +250, capped). Calibrated so a 6:00 /km half marathon is Diamond (men) and outstanding runs reach Olympian. The same score **ranks the legs** (`LEG_CREDIT`: calves 100%, quads 95%, hamstrings 85%, glutes 80%) whenever it beats the muscle's best lift (region `topLift` = "Running"). Live in the cardio card ("Pace like a 27:31 5K, +187 for 21.1 km"), toasts, rank-ups on the summary.
 
 ### Dynamic activity-driven targets
 
@@ -177,7 +180,7 @@ When `settings.dynamicTargetsEnabled` is on, the daily target is the baseline pl
 
 ## What NOT to Do
 
-- Don't add **sharing or social** features (friends' data visible to each other, leaderboards) without being asked. Every user's data stays private (RLS).
+- Don't widen **sharing** beyond the leaderboard snapshot without being asked. Food, body weight, notes and raw logs stay private (RLS). Anything new in the snapshot must be something a friend would reasonably expect to see.
 - Don't add ads, analytics, telemetry, or third-party trackers.
 - Don't add paid services or anything that breaks the $0 budget. Flag it instead.
 - Don't add guilt mechanics or aggressive notifications (no red ✗ for missed days, no shame UI).
@@ -216,6 +219,6 @@ Setup of Supabase, Cloudflare Pages and the keep-alive job is in `README.md`.
 ## Current Status
 
 **Phase:** Redesign + infrastructure fix (September 2026).
-**Working:** offline-first logging (workouts, food, weight, steps, water), customizable Home, routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics incl. weekly set-volume radar, streaks/XP/achievements, strength + running ranks with an anatomical Bodygraph, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
-**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260923000000_home_water.sql`: done. `20260924000000_volume_radar.sql`: run it before deploying the volume radar.)
-**Future ideas (not started):** reminder push delivery, shared challenges, adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).
+**Working:** offline-first logging (workouts, food, weight, steps, water), customizable Home, routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics incl. weekly set-volume radar, streaks/XP/achievements, strength + running ranks with an anatomical Bodygraph, friends leaderboard, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
+**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260924000000_volume_radar.sql`: done. `20260925000000_leaderboard.sql`: run it before deploying the leaderboard.)
+**Future ideas (not started):** reminder push delivery, shared challenges (the leaderboard table could carry them), adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).

@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
 import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
+import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
 const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
@@ -18,6 +19,8 @@ const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ChallengesPage = lazy(() => import('@/pages/ChallengesPage'))
 const RanksPage = lazy(() => import('@/pages/RanksPage'))
+const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
+const FriendPage = lazy(() => import('@/pages/FriendPage'))
 const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
 
 function Spinner() {
@@ -45,6 +48,7 @@ function StatusBarScrim() {
 
 function AppRoutes() {
   useAuthInit()
+  useLeaderboardPublisher()
   const session = useAuthStore(s => s.session)
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)
@@ -78,6 +82,8 @@ function AppRoutes() {
         <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
         <Route path="challenges" element={<ChallengesPage />} />
         <Route path="ranks" element={<RanksPage />} />
+        <Route path="leaderboard" element={<LeaderboardPage />} />
+        <Route path="leaderboard/:id" element={<FriendPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
         <Route path="login" element={session ? <Navigate to="/profile" replace /> : <LoginPage embedded />} />
         {/* Old URLs from the previous layout */}

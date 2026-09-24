@@ -19,7 +19,7 @@ npm run dev
    It's idempotent (safe on an existing project and safe to re-run). It creates/updates every synced table
    and adds row-level security, so each user only ever sees their own rows.
    Then run each later migration in that folder in filename order (`20260922000000_checkins.sql`,
-   `20260923000000_home_water.sql`, `20260924000000_volume_radar.sql`, …). Run a migration **before** deploying the code that needs it:
+   `20260923000000_home_water.sql`, `20260924000000_volume_radar.sql`, `20260925000000_leaderboard.sql`, …). Run a migration **before** deploying the code that needs it:
    until then, the tables/columns it adds fail to sync.
 2. **Auth** → *Sign In / Providers* → Email: keep enabled. **Turn off "Allow new users to sign up".**
 3. **Auth** → *Users* → **Add user → Create new user** for each person (email + password,

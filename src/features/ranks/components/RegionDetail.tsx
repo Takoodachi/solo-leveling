@@ -4,8 +4,8 @@ import { MUSCLE_GROUPS, exercisesForRegion } from '../standards'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
 
-/** The tapped muscle: its rank and the lift behind it, or which lifts would rank it. */
-export default function RegionDetail({ region }: { region: RegionRank | null }) {
+/** The tapped muscle: its rank and the lift behind it, or (with `suggest`) which lifts would rank it. */
+export default function RegionDetail({ region, suggest = true }: { region: RegionRank | null; suggest?: boolean }) {
   const exerciseMap = useExerciseMap()
 
   if (!region) {
@@ -36,7 +36,7 @@ export default function RegionDetail({ region }: { region: RegionRank | null }) 
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Unranked. {suggestions.length > 0 && <>Rank it with {suggestions.join(', ')}.</>}
+            Unranked. {suggest && suggestions.length > 0 && <>Rank it with {suggestions.join(', ')}.</>}
           </p>
         )}
       </div>

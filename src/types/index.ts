@@ -75,7 +75,7 @@ export interface Achievement {
 
 export type ReminderDays = 'daily' | 'workout-days'
 
-export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'streak'
+export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
 
 export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
 export type VolumeMuscle =
@@ -103,6 +103,7 @@ export interface Settings {
   waterGlassMl?: number
   trainingLevel?: TrainingLevel // weekly set-volume targets (unset = intermediate)
   radarMuscles?: VolumeMuscle[] // muscles on the volume radar (unset = default twelve)
+  shareOnLeaderboard?: boolean // friends leaderboard (unset = shared)
   updatedAt?: number
   syncPending?: boolean
 }
