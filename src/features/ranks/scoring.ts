@@ -1,7 +1,7 @@
 import { MAX_RATING } from './tiers'
 import { REFERENCE_BODY_KG, type Sex, type Standard } from './standards'
 
-type Five = readonly [number, number, number, number, number]
+export type Five = readonly [number, number, number, number, number]
 
 // How each level's threshold grows with bodyweight, fitted to the source tables:
 // strength grows slower than bodyweight, and more so at the elite end.
@@ -12,8 +12,12 @@ const LOAD_EXPONENT: Record<Sex, Five> = {
 // Heavier lifters manage fewer bodyweight reps.
 const REPS_EXPONENT: Record<Sex, number> = { male: 0.75, female: 1.1 }
 
-/** Ratings at the five reference levels (beginner → elite). Olympian (900+) lies beyond elite. */
-const LEVEL_RATINGS: Five = [150, 300, 450, 650, 850]
+/**
+ * Lifting ratings at the five reference levels (beginner → elite): intermediate
+ * (the median lifter) is Platinum, advanced is Champion, and elite (top 5%)
+ * starts Olympian.
+ */
+const LIFT_LEVELS: Five = [200, 350, 500, 700, 900]
 /** Bodyweight moves rate from ~30% of bodyweight (heavily assisted); load lifts from 0 kg. */
 const REPS_FLOOR = -21
 /** Epley reps cap: past this a set measures endurance more than strength. */
@@ -56,17 +60,17 @@ export function performanceOf(std: Standard, set: RatableSet, bodyKg: number): n
   return 30 * ((moved * (1 + Math.min(reps, 100) / 30)) / base - 1)
 }
 
-function curve(t: readonly number[], floor: number): [number, number][] {
+function curve(t: readonly number[], floor: number, levels: Five): [number, number][] {
   return [
     [floor, 0],
-    ...t.map((v, i): [number, number] => [v, LEVEL_RATINGS[i]]),
-    [t[4] + (t[4] - t[3]), MAX_RATING], // past elite, keep the advanced→elite pace
+    ...t.map((v, i): [number, number] => [v, levels[i]]),
+    [t[4] + (t[4] - t[3]), MAX_RATING], // past elite, one more advanced→elite gap reaches the top
   ]
 }
 
 /** Piecewise-linear rating (0 = unrated, 1–1000) through the five level thresholds. */
-export function curveRating(perf: number, t: readonly number[], floor = 0): number {
-  const pts = curve(t, floor)
+export function curveRating(perf: number, t: readonly number[], floor = 0, levels: Five = LIFT_LEVELS): number {
+  const pts = curve(t, floor, levels)
   if (perf <= pts[0][0]) return 0
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
@@ -77,8 +81,8 @@ export function curveRating(perf: number, t: readonly number[], floor = 0): numb
 }
 
 /** Inverse of curveRating: the performance needed to reach a rating. */
-export function curvePerformance(rating: number, t: readonly number[], floor = 0): number {
-  const pts = curve(t, floor)
+export function curvePerformance(rating: number, t: readonly number[], floor = 0, levels: Five = LIFT_LEVELS): number {
+  const pts = curve(t, floor, levels)
   for (let i = 1; i < pts.length; i++) {
     const [x0, y0] = pts[i - 1]
     const [x1, y1] = pts[i]

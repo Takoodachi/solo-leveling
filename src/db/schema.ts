@@ -69,5 +69,6 @@ export class SoloLevelingDB extends Dexie {
     }) // daily check-ins (creatine); Settings gains creatineEnabled
     this.version(12).stores({}) // Checkin gains amount (water); Settings gains homeWidgets, waterGoalMl, waterGlassMl (no index changes)
     this.version(13).stores({}) // Settings gains trainingLevel, radarMuscles (volume radar; no index changes)
+    this.version(14).stores({}) // Settings gains shareOnLeaderboard (no index changes)
   }
 }

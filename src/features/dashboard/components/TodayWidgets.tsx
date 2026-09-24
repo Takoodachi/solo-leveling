@@ -8,6 +8,7 @@ import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSet
 import { useChallenges } from '@/features/challenges/hooks/useChallenges'
 import ChallengeCard from '@/features/challenges/components/ChallengeCard'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
+import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
 import CreatineCard from '@/features/checkins/components/CreatineCard'
 import WaterCard from '@/features/checkins/components/WaterCard'
 import type { EffectiveTargets } from '../hooks/useEffectiveTargets'
@@ -68,6 +69,8 @@ export default function TodayWidgets({ selected, today, steps, targets, dynamic,
         )
       case 'rank':
         return <RankSummaryCard />
+      case 'leaderboard':
+        return <LeaderboardCard />
       case 'streak':
         return <StreakLevelCard />
     }

@@ -18,12 +18,13 @@ export default function RankLadder() {
       </div>
       <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-foreground/85">
         <li>Every set gets a <b>1–1000 strength rating</b> from its estimated 1RM (Epley, reps capped at 20), compared with lifters of your sex at your bodyweight on that day.</li>
-        <li>Roughly: 150 = beginner, 300 = novice, 450 = intermediate (median gym-goer), 650 = advanced, 850 = elite. Olympian is beyond elite.</li>
+        <li>For lifts, roughly: 200 = beginner, 350 = novice, 500 = intermediate (the median gym-goer, Platinum), 700 = advanced (Champion), 900 = elite, the top 5% of lifters (Olympian).</li>
         <li>Each tier has three divisions (III → II → I). A lift’s rank is its <b>best set ever</b>, so ranks never drop.</li>
         <li>Each lift ranks the <b>muscles it trains most</b> (a deadlift ranks lower back, glutes and hamstrings). A muscle takes its best lift, and a group takes its best muscle. Train every muscle to fill in the bodygraph.</li>
         <li>Your <b>overall rank</b> blends the six groups (legs and back count most) once three are ranked.</li>
         <li>Dumbbell lifts use the weight of <b>one</b> dumbbell. For pull-ups, dips and push-ups, enter only <b>added</b> weight (or assistance for assisted versions). Planks and hangs are rated by hold time.</li>
-        <li><b>Running</b> has its own rank (not part of overall): every run of 5 km+ is converted to the 5K time it’s worth (Riegel’s formula) and compared with runners of your sex. A longer run at a steady pace is worth more than a short one at the same pace.</li>
+        <li><b>Running</b> has its own rank (not part of overall), scored for active adults rather than competitive runners: every run of 5 km+ scores its pace as the 5K time it’s worth (Riegel’s formula) plus a bonus for distance (+90 for 10K, +187 for a half marathon, +250 for a marathon).</li>
+        <li>Running also <b>ranks your legs</b> with the same score: 100% for calves, 95% for quads, 85% for hamstrings and 80% for glutes, whenever that beats your lifts. A 6:00 /km half marathon is Diamond; outstanding runs reach Olympian.</li>
         <li>Standards are based on public strength and running data and rounded, so treat ranks as motivation, not a lab test.</li>
       </ul>
     </div>

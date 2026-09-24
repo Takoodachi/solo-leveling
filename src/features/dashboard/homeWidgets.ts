@@ -1,4 +1,4 @@
-import { Dumbbell, Footprints, Flame, GlassWater, Pill, PieChart, Trophy, Medal, Star, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Footprints, Flame, GlassWater, Pill, PieChart, Trophy, Medal, Star, Users, type LucideIcon } from 'lucide-react'
 import type { HomeWidgetId, Settings } from '@/types'
 
 export interface HomeWidgetDef {
@@ -20,6 +20,7 @@ export const HOME_WIDGETS: HomeWidgetDef[] = [
   { id: 'macros',    label: 'Macros',          description: 'Protein, carbs and fat',                icon: PieChart },
   { id: 'challenge', label: 'Challenge',       description: 'Your active personal challenge',        icon: Trophy },
   { id: 'rank',      label: 'Strength rank',   description: 'Overall rank and progress',             icon: Medal },
+  { id: 'leaderboard', label: 'Leaderboard',   description: 'Where you stand among friends',         icon: Users },
   { id: 'streak',    label: 'Streak & level',  description: 'Day streak and XP',                     icon: Star },
 ]
 
