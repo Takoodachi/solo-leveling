@@ -9,7 +9,7 @@ import { parsePositive, sanitizeNumeric, type BlockDraft, type LastSet } from '.
 import BlockHeader from './BlockHeader'
 import type { RankInfo } from '@/features/ranks/tiers'
 import type { Sex } from '@/features/ranks/standards'
-import { equivalent5k, formatRunTime, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
+import { describeRunScore, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
 import RankBadge from '@/features/ranks/components/RankBadge'
 
 interface Props {
@@ -95,7 +95,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
           const entry = { ...entries[setIdx], rpe: rpeFor(set.intensity ?? 'moderate') }
           const pace = formatPace(id, entry)
           const kcal = Math.round(cardioKcal(id, entry, resolveBodyKg(bodyKg)))
-          const fiveK = ranked ? equivalent5k(entry.distanceKm, entry.duration) : null
+          const score = ranked && entry.distanceKm && entry.duration && entry.distanceKm > 5.05 ? describeRunScore(entry.distanceKm, entry.duration) : null
           return (
             <div key={set.uuid} className={cn('flex flex-col gap-3 rounded-2xl transition-colors', set.done && '-m-2 bg-primary/10 p-2')}>
               <div className={cn('grid gap-2', distance ? 'grid-cols-2' : 'grid-cols-1')}>
@@ -112,7 +112,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
               <div className="flex items-center gap-3">
                 <p className="min-w-0 flex-1 text-sm text-muted-foreground">
                   {[pace, kcal > 0 ? `≈ ${kcal} kcal` : null].filter(Boolean).join(' · ') || 'Enter your time to see calories'}
-                  {fiveK != null && entry.distanceKm! > 5.05 && <span className="block text-xs">Worth a {formatRunTime(fiveK)} 5K</span>}
+                  {score && <span className="block text-xs">{score}</span>}
                 </p>
                 <button
                   type="button"

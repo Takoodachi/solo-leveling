@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Trophy } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import { useRanks } from '@/features/ranks/useRanks'
@@ -19,7 +21,15 @@ export default function RanksPage() {
 
   return (
     <FullScreen className="flex flex-col gap-6">
-      <PageHeader back="/profile" title="Ranks" />
+      <PageHeader
+        back="/profile"
+        title="Ranks"
+        action={
+          <Link to="/leaderboard" className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent" aria-label="Leaderboard">
+            <Trophy size={20} />
+          </Link>
+        }
+      />
       {ranks && (ranks.status === 'ready' ? (
         <>
           <RankHero ranks={ranks} />
@@ -35,7 +45,7 @@ export default function RanksPage() {
           {ranks.sex && (
             <section className="flex flex-col gap-3">
               <h2 className="text-lg font-semibold">Running rank</h2>
-              <RunningRankCard running={ranks.running} sex={ranks.sex} />
+              <RunningRankCard running={ranks.running} sex={ranks.sex} regions={ranks.regions} />
             </section>
           )}
           <RankHistoryChart />

@@ -9,7 +9,7 @@ import {
   type MuscleGroup, type MuscleRegion, type Sex,
 } from './standards'
 import { bodyweightLookup, performanceFor, rateSet, thresholdsFor } from './scoring'
-import { RUN_EXERCISE_IDS, equivalent5k, isRunExercise, rateRun, type RunRank } from './running'
+import { LEG_CREDIT, RUN_EXERCISE_IDS, equivalent5k, isRunExercise, rateRun, type RunRank } from './running'
 
 export interface LiftRank {
   exerciseId: string
@@ -69,6 +69,7 @@ interface RatedSet {
 
 interface RatedRun {
   workout: Workout
+  /** Running score: pace as a 5K-equivalent plus a distance bonus. */
   rating: number
   distanceKm: number
   duration: number
@@ -116,11 +117,17 @@ async function loadInputs(): Promise<Loaded> {
   return { status: 'ready', inputs: { sex, bodyKg: latest.weightKg, rated, runs, names } }
 }
 
-function regionRanks(lifts: LiftRank[]): RegionRank[] {
+/** Name shown as a leg muscle's top "lift" when running ranks it. */
+export const RUNNING_SOURCE = 'Running'
+
+function regionRanks(lifts: LiftRank[], legRating = 0): RegionRank[] {
   // Lifts are sorted strongest first, so the first match is the region's best.
   return (Object.keys(REGION_LABEL) as MuscleRegion[]).map(key => {
     const top = lifts.find(l => l.regions.includes(key))
-    return { key, label: REGION_LABEL[key], group: groupOfRegion(key), rank: top?.rank ?? null, topLift: top?.name ?? null }
+    const base = { key, label: REGION_LABEL[key], group: groupOfRegion(key) }
+    const fromRunning = legRating * (LEG_CREDIT[key] ?? 0)
+    if (fromRunning >= 1 && fromRunning > (top?.rank.rating ?? 0)) return { ...base, rank: rankFor(fromRunning), topLift: RUNNING_SOURCE }
+    return { ...base, rank: top?.rank ?? null, topLift: top?.name ?? null }
   })
 }
 
@@ -169,13 +176,15 @@ function buildSnapshot(inputs: RankInputs, include: (w: Workout) => boolean = ()
     }]
   }).sort((a, b) => b.rank.rating - a.rank.rating)
 
-  const regions = regionRanks(lifts)
+  const runs = inputs.runs.filter(r => include(r.workout))
+  const legRating = Math.max(0, ...runs.map(r => r.rating))
+  const regions = regionRanks(lifts, legRating)
   const groups = groupRanks(regions)
-  return { status: 'ready', sex: inputs.sex, bodyKg: inputs.bodyKg, lifts, regions, groups, overall: overallRank(groups), running: runningRank(inputs.runs, include) }
+  return { status: 'ready', sex: inputs.sex, bodyKg: inputs.bodyKg, lifts, regions, groups, overall: overallRank(groups), running: runningRank(runs) }
 }
 
-function runningRank(runs: RatedRun[], include: (w: Workout) => boolean): RunRank | null {
-  const best = runs.reduce<RatedRun | null>((a, r) => (include(r.workout) && (!a || r.rating > a.rating) ? r : a), null)
+function runningRank(runs: RatedRun[]): RunRank | null {
+  const best = runs.reduce<RatedRun | null>((a, r) => (!a || r.rating > a.rating ? r : a), null)
   if (!best) return null
   return {
     rank: rankFor(best.rating),
@@ -246,6 +255,16 @@ export function rankUpXp(ups: RankUp[]): number {
     if (u.id === 'overall') return sum + XP.OVERALL_RANK_UP * (u.from ? u.to.step - u.from.step : 1)
     return sum + (u.from ? XP.RANK_UP * (u.to.step - u.from.step) : 0)
   }, 0)
+}
+
+/** A lift's best set: "100 kg × 5", "12 reps" or "1:30 hold". */
+export function describeBest(b: { weight?: number; reps?: number; duration?: number }): string {
+  if (b.weight && b.reps) return `${b.weight} kg × ${b.reps}`
+  if (b.duration && !b.reps) {
+    const sec = Math.round(b.duration * 60)
+    return sec < 60 ? `${sec} s hold` : `${clock(sec)} hold`
+  }
+  return `${b.reps ?? 0} reps`
 }
 
 function clock(seconds: number): string {

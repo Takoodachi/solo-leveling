@@ -1,15 +1,23 @@
 import { formatShortDate } from '@/lib/date'
 import { formatKm } from '@/lib/cardio'
 import type { Sex } from '../standards'
+import { RUNNING_SOURCE, type RegionRank } from '../computeRanks'
 import { TIERS } from '../tiers'
-import { MIN_RUN_KM, fiveKTimeFor, formatRunTime, timeOver, type RunRank } from '../running'
+import { MIN_RUN_KM, describeRunScore, fiveKTimeFor, formatRunTime, timeFor, type RunRank } from '../running'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
 
-/** Running rank (best run as a 5K-equivalent), what the next division takes, and the 5K time for each tier. */
-export default function RunningRankCard({ running, sex }: { running: RunRank | null; sex: Sex }) {
+interface Props {
+  running: RunRank | null
+  sex: Sex
+  regions: RegionRank[]
+}
+
+/** Running rank (best run as a 5K-equivalent), what the next division takes, the leg muscles it ranks, and the 5K time for each tier. */
+export default function RunningRankCard({ running, sex, regions }: Props) {
   const rank = running?.rank
-  const next = rank?.nextAt != null ? fiveKTimeFor(sex, rank.nextAt) : null
+  const next = rank?.nextAt ?? null
+  const legs = regions.filter(r => r.topLift === RUNNING_SOURCE && r.rank)
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl bg-card p-4">
@@ -26,7 +34,7 @@ export default function RunningRankCard({ running, sex }: { running: RunRank | n
                 Best {formatKm(running.best.distanceKm)} in {formatRunTime(running.best.duration)} · {formatShortDate(running.best.date)}
               </p>
               <p className="text-xs text-muted-foreground tabular-nums">
-                Worth a <span className="text-foreground">{formatRunTime(running.best.equivalent5k)}</span> 5K · {rank.rating} pts
+                {describeRunScore(running.best.distanceKm, running.best.duration)} · {rank.rating} pts
               </p>
               <RankProgress rank={rank} showLabel={false} className="mt-2" />
             </>
@@ -36,9 +44,22 @@ export default function RunningRankCard({ running, sex }: { running: RunRank | n
         </div>
       </div>
 
+      {legs.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Also ranks your legs:{' '}
+          {legs.map((r, i) => (
+            <span key={r.key}>
+              {i > 0 && ' · '}
+              {r.label} <span className="font-semibold" style={{ color: r.rank!.tier.color }}>{r.rank!.label}</span>
+            </span>
+          ))}
+        </p>
+      )}
+
       {rank && next != null && (
         <p className="text-xs text-muted-foreground">
-          Next: <span className="text-foreground">{rank.nextLabel}</span> at a {formatRunTime(next)} 5K, or {formatRunTime(timeOver(10, next))} for 10K
+          Next: <span className="text-foreground">{rank.nextLabel}</span> at a {formatRunTime(timeFor(sex, next, 5))} 5K, {formatRunTime(timeFor(sex, next, 10))} 10K
+          or {formatRunTime(timeFor(sex, next, 21.1))} half marathon
         </p>
       )}
 
@@ -56,7 +77,7 @@ export default function RunningRankCard({ running, sex }: { running: RunRank | n
         })}
       </div>
       <p className="-mt-2 text-xs text-muted-foreground">
-        5K time where each tier starts. Longer runs count too: they’re converted to the 5K they’re worth, so holding a pace for longer ranks higher.
+        5K time where each tier starts. Longer runs score their pace (as a 5K) plus a distance bonus: +90 for 10K, +187 for a half, +250 for a marathon.
       </p>
     </div>
   )
