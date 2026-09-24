@@ -32,6 +32,16 @@ export interface FoodLog {
   syncPending?: boolean
 }
 
+/** A named set of foods logged together in one tap ("My usual breakfast"). */
+export interface SavedMeal {
+  uuid: string
+  name: string
+  items: { foodId: string; servings: number }[]
+  mealType?: MealType // the meal it was saved from; listed first there
+  updatedAt: number
+  syncPending?: boolean
+}
+
 export interface BodyMetric {
   uuid: string
   date: string // YYYY-MM-DD
@@ -89,8 +99,8 @@ export interface Settings {
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
-  dynamicTargetsEnabled?: boolean
-  activityWindowDays?: number // 3-7
+  dynamicTargetsEnabled?: boolean // subtract step calories from what was eaten (unset = on; `countsSteps`)
+  activityWindowDays?: number // legacy (rolling-average activity targets), unused
   dailyStepGoal?: number
   weeklyWorkoutGoal?: number
   defaultRestSeconds?: number

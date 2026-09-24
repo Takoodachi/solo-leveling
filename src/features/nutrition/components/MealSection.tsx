@@ -1,19 +1,16 @@
 import { useState } from 'react'
-import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, History, Bookmark } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import FoodLogRow from './FoodLogRow'
 import AddFoodDialog from './AddFoodDialog'
+import MealOptionRow from './MealOptionRow'
+import MealsSheet from './MealsSheet'
 import { useFoods } from '../hooks/useFoods'
+import { useRecentMeals, pastDayLabel } from '../hooks/useMeals'
+import { logMealItems, toastLogged, itemCount, MEAL_LABELS } from '../logFoods'
 import { formatKcal } from '@/lib/format'
 import type { FoodLogWithFood, MealType } from '@/types'
-
-const MEAL_LABELS: Record<MealType, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  snack: 'Snack',
-}
 
 interface Props {
   mealType: MealType
@@ -24,9 +21,18 @@ interface Props {
 export default function MealSection({ mealType, entries, date }: Props) {
   const [open, setOpen] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [showMeals, setShowMeals] = useState(false)
   const { removeFoodLog } = useFoods()
+  const recent = useRecentMeals(mealType, date) ?? []
+  const last = recent[0]
 
   const mealKcal = entries.reduce((sum, e) => sum + e.food.kcalPerServing * e.servings, 0)
+
+  async function repeatLast() {
+    if (!last) return
+    const uuids = await logMealItems(last.items, date, mealType)
+    toastLogged(`Added ${itemCount(uuids.length)} to ${MEAL_LABELS[mealType].toLowerCase()}`, uuids)
+  }
 
   return (
     <div className="rounded-3xl bg-card">
@@ -56,15 +62,26 @@ export default function MealSection({ mealType, entries, date }: Props) {
             />
           ))}
 
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full mt-2 gap-1.5"
-            onClick={() => setShowAdd(true)}
-          >
-            <Plus size={14} />
-            Add food
-          </Button>
+          {/* Nothing logged here yet: offer the last time's meal in one tap */}
+          {entries.length === 0 && last && (
+            <MealOptionRow
+              icon={<History size={16} className="shrink-0 text-primary" />}
+              title={`Same as ${pastDayLabel(last.date, date)}`}
+              subtitle={`${formatKcal(last.kcal)} cal · ${last.names}`}
+              onAdd={() => void repeatLast()}
+            />
+          )}
+
+          <div className="mt-2 flex gap-2">
+            <Button variant="secondary" size="sm" className="flex-1 gap-1.5" onClick={() => setShowAdd(true)}>
+              <Plus size={14} />
+              Add food
+            </Button>
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowMeals(true)}>
+              <Bookmark size={14} />
+              Meals
+            </Button>
+          </div>
         </div>
       )}
 
@@ -74,6 +91,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
         date={date}
         mealType={mealType}
       />
+      <MealsSheet open={showMeals} onOpenChange={setShowMeals} mealType={mealType} date={date} entries={entries} recent={recent} />
     </div>
   )
 }

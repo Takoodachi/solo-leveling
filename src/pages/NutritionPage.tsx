@@ -4,14 +4,14 @@ import { addDays, subDays, parseISO, format } from 'date-fns'
 import PageHeader from '@/components/PageHeader'
 import { useNutritionStore } from '@/features/nutrition/store'
 import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
-import { useEffectiveTargets } from '@/features/dashboard/hooks/useEffectiveTargets'
-import MacroBar from '@/features/nutrition/components/MacroBar'
+import { useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
+import CalorieSummary from '@/features/nutrition/components/CalorieSummary'
 import FavoriteFoods from '@/features/nutrition/components/FavoriteFoods'
+import CopyDayCard from '@/features/nutrition/components/CopyDayCard'
 import MealSection from '@/features/nutrition/components/MealSection'
 import AddFoodDialog from '@/features/nutrition/components/AddFoodDialog'
 import { formatDisplayDate } from '@/lib/date'
 import { useNow } from '@/hooks/useNow'
-import { formatKcal } from '@/lib/format'
 import type { MealType } from '@/types'
 
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -26,8 +26,8 @@ function mealForNow(hour: number): MealType {
 
 export default function NutritionPage() {
   const { selectedDate, setDate } = useNutritionStore()
-  const { totals, byMeal } = useDailyLog(selectedDate)
-  const { targets } = useEffectiveTargets(selectedDate)
+  const { logs, totals, byMeal } = useDailyLog(selectedDate)
+  const budget = useCalorieBudget(selectedDate)
   const [params, setParams] = useSearchParams()
   const quickAdd = params.get('add') === '1'
   const now = useNow()
@@ -36,8 +36,6 @@ export default function NutritionPage() {
     const current = parseISO(selectedDate)
     setDate(format(direction === 1 ? addDays(current, 1) : subDays(current, 1), 'yyyy-MM-dd'))
   }
-
-  const pct = targets.kcal > 0 ? Math.min(1, totals.kcal / targets.kcal) : 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -53,20 +51,11 @@ export default function NutritionPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-3xl bg-card p-5">
-        <div className="flex items-baseline justify-between">
-          <span className="font-heading text-3xl font-bold tabular-nums">{formatKcal(totals.kcal)}</span>
-          <span className="text-sm text-muted-foreground">/ {formatKcal(targets.kcal)} kcal</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
-        </div>
-        <MacroBar label="Protein" value={totals.protein} target={targets.protein} colorClass="text-primary" />
-        <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} colorClass="text-sky-400" />
-        <MacroBar label="Fat" value={totals.fat} target={targets.fat} colorClass="text-amber-300" />
-      </div>
+      <CalorieSummary totals={totals} budget={budget} />
 
-      <FavoriteFoods date={selectedDate} mealType="snack" />
+      {logs.length === 0 && <CopyDayCard date={selectedDate} />}
+
+      <FavoriteFoods date={selectedDate} mealType={mealForNow(now.getHours())} />
 
       {MEAL_ORDER.map(meal => (
         <MealSection key={meal} mealType={meal} entries={byMeal[meal] ?? []} date={selectedDate} />

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { db } from '@/db'
 import { today, formatDisplayDate } from '@/lib/date'
+import { loadBody, stepBurn } from '@/lib/stepCalories'
 import { logSteps } from '../hooks/useDailyActivity'
 
 interface Props {
@@ -20,6 +21,9 @@ export default function LogStepsSheet({ open, onOpenChange, date }: Props) {
   // Draft is keyed by the open session so reopening starts from the saved value.
   const [draft, setDraft] = useState<string | null>(null)
   const value = draft ?? (entry?.steps != null ? String(entry.steps) : '')
+  const body = useLiveQuery(() => loadBody(day), [day])
+  const steps = Math.round(Number(value))
+  const burn = body?.counting && steps > 0 ? stepBurn(steps, body) : null
 
   async function save() {
     const n = Math.round(Number(value))
@@ -39,7 +43,9 @@ export default function LogStepsSheet({ open, onOpenChange, date }: Props) {
       <SheetContent side="bottom" className="px-4">
         <SheetHeader className="mb-2 text-left">
           <SheetTitle className="text-xl">Steps · {formatDisplayDate(day)}</SheetTitle>
-          <SheetDescription>From your phone’s health app or watch.</SheetDescription>
+          <SheetDescription>
+            {burn ? `≈ ${burn.kcal.toLocaleString()} kcal at ${burn.weightKg} kg, taken off what you ate.` : 'From your phone’s health app or watch.'}
+          </SheetDescription>
         </SheetHeader>
         <form
           className="flex flex-col gap-3"

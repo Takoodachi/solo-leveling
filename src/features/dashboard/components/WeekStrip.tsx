@@ -8,7 +8,8 @@ interface Props {
   days: DaySummary[]
   selected: string
   today: string
-  kcalTarget: number
+  /** The selected day's net calories as a share of the target. */
+  kcalProgress: number
   scheduledWeekdays: Set<number>
   onSelect: (date: string) => void
 }
@@ -17,7 +18,7 @@ interface Props {
  * Mon–Sun day selector. A white check = trained that day; the selected day shows
  * its calorie progress as an orange arc. Missed days stay neutral (no guilt marks).
  */
-export default function WeekStrip({ days, selected, today, kcalTarget, scheduledWeekdays, onSelect }: Props) {
+export default function WeekStrip({ days, selected, today, kcalProgress, scheduledWeekdays, onSelect }: Props) {
   return (
     <div className="grid grid-cols-7 gap-1">
       {days.map(d => {
@@ -42,7 +43,7 @@ export default function WeekStrip({ days, selected, today, kcalTarget, scheduled
                 <Check size={22} strokeWidth={3} />
               </span>
             ) : isSelected ? (
-              <ProgressRing value={kcalTarget > 0 ? d.kcal / kcalTarget : 0} size={44} stroke={3} trackColor="hsl(var(--muted-foreground) / 0.35)" className="rounded-full bg-card" />
+              <ProgressRing value={kcalProgress} size={44} stroke={3} trackColor="hsl(var(--muted-foreground) / 0.35)" className="rounded-full bg-card" />
             ) : (
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-card">
                 {planned && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}

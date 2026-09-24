@@ -7,6 +7,7 @@ import Segmented from '@/components/Segmented'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 import { useTargets } from '@/features/nutrition/hooks/useTargets'
 import { cn } from '@/lib/utils'
+import { countsSteps } from '@/lib/stepCalories'
 import type { Settings } from '@/types'
 import { useSettings } from '../hooks/useSettings'
 
@@ -26,10 +27,12 @@ function bmiCategory(bmi: number) {
   return { label: 'Obese', color: 'text-red-400' }
 }
 
-// Mifflin-St Jeor with a moderate activity factor (unchanged from the previous Settings page).
-function suggestedTargets(weightKg: number, heightCm: number, sex: Sex, goal: GoalType) {
+// Mifflin-St Jeor × an activity factor. When step calories are subtracted, walking is
+// counted day by day, so the target only covers resting, training and daily life:
+// "lightly active" (×1.375) instead of "moderately active" (×1.55), or walking counts twice.
+function suggestedTargets(weightKg: number, heightCm: number, sex: Sex, goal: GoalType, stepsCounted: boolean) {
   const bmr = 10 * weightKg + 6.25 * heightCm - 5 * 30 + (sex === 'male' ? 5 : -161)
-  const tdee = Math.round(bmr * 1.55)
+  const tdee = Math.round(bmr * (stepsCounted ? 1.375 : 1.55))
   const offsets: Record<GoalType, number> = { cut: -500, maintain: 0, bulk: 300 }
   const proteinPer: Record<GoalType, number> = { cut: 2.2, maintain: 1.8, bulk: 1.6 }
   const fatPer: Record<GoalType, number> = { cut: 0.8, maintain: 1.0, bulk: 1.0 }
@@ -52,7 +55,7 @@ export default function BodyGoalsCard() {
 
   async function apply() {
     if (!weight || !heightCm || !sex || !goalType) return
-    await updateTargets(suggestedTargets(weight, heightCm, sex, goalType))
+    await updateTargets(suggestedTargets(weight, heightCm, sex, goalType, countsSteps(settings)))
     toast.success('Targets updated from your profile')
   }
 
@@ -77,7 +80,10 @@ export default function BodyGoalsCard() {
         <Segmented size="sm" value={goalType ?? ('' as GoalType)} options={GOALS} onChange={v => void updateSettings({ goalType: v })} className="bg-secondary" />
       </div>
       {weight && heightCm && sex && goalType ? (
-        <Button variant="secondary" onClick={() => void apply()}>Apply suggested targets for {goalType}</Button>
+        <div className="flex flex-col gap-2">
+          <Button variant="secondary" onClick={() => void apply()}>Apply suggested targets for {goalType}</Button>
+          {countsSteps(settings) && <p className="text-xs text-muted-foreground">Leaves walking out, since your steps are subtracted day by day.</p>}
+        </div>
       ) : (
         <p className="text-xs text-muted-foreground">
           {!weight ? 'Log your weight (Analytics → Body weight) to get target suggestions.' : 'Fill in height, sex and goal to get target suggestions.'}

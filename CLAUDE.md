@@ -50,13 +50,13 @@ src/
     ranks/          # strength ranks: standards, scoring, badges, Ranks screen, rank-ups
     checkins/       # daily check-ins: creatine tick, water counter
     leaderboard/    # friends leaderboard: snapshot builder, publish/fetch (Supabase `leaderboard` table), boards, friend profile parts
-    nutrition/      # food logging, daily totals, targets
-    dashboard/      # Home: widget registry (homeWidgets.ts), customize sheet, week strip, activity cards, weekly overview, dynamic-target hooks
+    nutrition/      # food logging (logFoods.ts: bulk log + undo), saved/recent meals (useMeals), daily totals, targets
+    dashboard/      # Home: widget registry (homeWidgets.ts), customize sheet, week strip, activity cards, weekly overview, calorie budget (step calories) hook
     analytics/      # weekly set-volume radar (volume.ts), tonnage, 1RM, macro adherence, weight, steps charts
     gamification/   # achievements, XP/levels
     bodyMetrics/    # body weight logging + trend
     settings/       # Profile page cards, useSettings, export/import
-  db/               # Dexie schema (versions 1–14), seed + wipe
+  db/               # Dexie schema (versions 1–15), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, …
   data/             # Static seed data: foods (~285, incl. Vietnamese dishes; foodsMore.ts), exercises (289; exerciseVariations.ts), routine templates
   pages/            # Route-level components
@@ -76,6 +76,8 @@ Keep feature code colocated. A workout-specific hook lives in `features/workouts
 
 Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps, log water. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
 
+**Fast food logging** (Nutrition): each meal offers **"Same as yesterday"** (its most recent version from the last 14 days) in one tap when empty, and a **Meals** sheet with saved meals (named sets of foods, `savedMeals`), recent versions of that meal, and "save this meal". An empty day offers **copy the day before**. The add-food dialog **stays open** after each add (running "N added · kcal" bar with Undo and Done), starts each food at **the amount logged last time**, gives recent foods a one-tap **+** at that amount, and lists matching saved meals first. Favorites go into the current meal at their last amount. One-tap adds toast with **Undo** (`toastLogged`). Log through `logFoods` / `logMealItems` (`features/nutrition/logFoods.ts`), which run streak, XP and achievements once per batch.
+
 - **Home**: greeting, *Today's Plan / Weekly Stats* toggle, Mon–Sun week strip (✓ = trained; missed days stay neutral). *Today's Plan* shows the cards the user picked, in their order (`settings.homeWidgets`; unset = all): today's workout, steps, calories, water, creatine, macros, challenge, strength rank, leaderboard, streak/level. Tiles (steps, calories, water, creatine) pair two per row; a lone tile spans the row. **Customize** (Home header or Profile) edits the list. Add a new card in `features/dashboard/homeWidgets.ts` + `TodayWidgets.tsx`
 - **Workouts**: category chips, my routines, templates (in code, never synced), recent history; **Plan** (weekly schedule, frequency goal, rest timer, reminder prefs)
 - **Routine detail / editor**, **active logger** (full screen, wake lock, rest timer, "Previous" column), **summary** (completion screen / history detail)
@@ -93,11 +95,11 @@ Full-screen routes (no nav) use `components/FullScreen`. All screens must respec
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`, currently at **version 14**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 15**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
 
 ```ts
 // Synced collections (key: uuid string)
-foods, foodLog, bodyMetrics, dailyActivity, achievements,
+foods, foodLog, bodyMetrics, dailyActivity, achievements, savedMeals (remote `saved_meals`: name, items [{foodId, servings}], mealType),
 exercises (built-ins seeded, only custom ones sync), workouts, workoutSets, routines, challenges,
 checkins (daily habits: `creatine-YYYY-MM-DD` tick, unticking sets done = false; `water-YYYY-MM-DD` with `amount` in ml)
 // Synced singletons (id = 1)
@@ -135,9 +137,9 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 4. **Personal challenges**: user-set target + deadline (workouts, steps, volume, food-logged days, protein days); progress computed from local data. **Personal only.** Shared challenges are a possible future feature.
 5. **Strength ranks** (inspired by LiftOff): every set gets a 1–1000 rating from its est. 1RM (Epley, reps capped at 20), bodyweight reps, or hold time, against standards for the lifter's **sex and bodyweight on that day** (`features/ranks/standards.ts`, `scoring.ts`). Nine tiers (Wood → Olympian, 100-pt bands from 200) × three divisions. The five reference levels rate beginner 200, novice 350, intermediate 500 (Platinum, the median lifter), advanced 700 (Champion), elite 900 (Olympian, top 5%); past elite, one more advanced→elite gap reaches 1000 (`LIFT_LEVELS` in `scoring.ts`). A lift's rank is its best set ever (ranks never drop). Each standard lists the **muscle regions** it ranks (19 regions in 6 groups: chest, shoulders, arms, back (lats, upper back, traps, lower back), core, legs (quads, hamstrings, glutes, adductors, outer hips = glute med/min + TFL, calves)); a region takes its best lift, a group its best region, overall = weighted mean once 3 groups are ranked. Ranks are absolute (vs. standards, not vs. other users), so they work the same for any number of users. Derived on-device, nothing stored or synced. Rank-ups toast live in the logger, show on the summary, and give XP (+30 per lift division, +75 per overall division). Needs `settings.sex` + one weigh-in. Only built-in exercises with a standard are ranked; add more in `standards.ts` (own data or `like` + factor). Weight conventions the standards assume: dumbbells/kettlebells = one bell; barbells include the bar; stack machines = the pin number; cables = effective weight (halve on 2:1 pulleys). "Chest-Supported Machine Row" (`ex-chest-supported-row`) is the machine; the dumbbell version is `ex-chest-supported-dumbbell-row`. **Running rank** (`running.ts`, separate from overall), scored for active adults, not competitive runners: every Running / Treadmill Run entry of 5 km+ at running pace (≥ 7 km/h) scores its pace as a 5K-equivalent (Riegel, exponent 1.06) on a 5K scale by sex, **plus a distance bonus** (+90 per doubling past 5 km: 10K +90, half +187, marathon +250, capped). Calibrated so a 6:00 /km half marathon is Diamond (men) and outstanding runs reach Olympian. The same score **ranks the legs** (`LEG_CREDIT`: calves 100%, quads 95%, hamstrings 85%, glutes 80%) whenever it beats the muscle's best lift (region `topLift` = "Running"). Live in the cardio card ("Pace like a 27:31 5K, +187 for 21.1 km"), toasts, rank-ups on the summary.
 
-### Dynamic activity-driven targets
+### Step calories
 
-When `settings.dynamicTargetsEnabled` is on, the daily target is the baseline plus an **activity bonus** from steps (`lib/macroTargets.ts`): `steps × bodyWeightKg × KCAL_PER_STEP_PER_KG`, averaged over `activityWindowDays`. Extra kcal goes to carbs and fat in the baseline ratio. Protein stays fixed. Everywhere a target is shown, use `useEffectiveTargets` (dashboard hooks). Don't read the raw baseline.
+Steps come off the calories eaten: **net kcal = eaten − step burn**, shown against the baseline kcal target (Home calories tile, Nutrition header, week strip ring, Analytics dots, kcal-target XP). On by default; Profile → Daily targets switches it off (stored in the legacy `settings.dynamicTargetsEnabled`: unset = on, read it with `countsSteps`). Burn (`lib/stepCalories.ts`) is the **net** cost of walking, since the target already covers resting: 0.5 kcal × body kg × km (ACSM walking equation; measured ≈ 0.53 and independent of BMI/body fat), km = steps × 0.414 × height. Weight = the weigh-in on or before that day (else the first one after, else 70 kg); height from Profile (else 170 cm). 10,000 steps ≈ 245 kcal at 70 kg / 170 cm. Carbs and fat targets grow by the burn in the baseline ratio; protein stays (`lib/macroTargets.ts`). Suggested targets use ×1.375 instead of ×1.55 while steps are subtracted, so walking isn't counted twice. **Workouts are never subtracted** (no reliable way to measure them; owner's call). Everywhere a target is shown, use `useCalorieBudget` (dashboard hooks) and `netKcal`. Don't read the raw baseline.
 
 ### What the web platform can't do (don't promise it)
 
@@ -220,5 +222,5 @@ Setup of Supabase, Cloudflare Pages and the keep-alive job is in `README.md`.
 
 **Phase:** Redesign + infrastructure fix (September 2026).
 **Working:** offline-first logging (workouts, food, weight, steps, water), customizable Home, routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics incl. weekly set-volume radar, streaks/XP/achievements, strength + running ranks with an anatomical Bodygraph, friends leaderboard, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
-**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260924000000_volume_radar.sql`: done. `20260925000000_leaderboard.sql`: run it before deploying the leaderboard.)
+**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260924000000_volume_radar.sql`: done. `20260925000000_leaderboard.sql`: done. `20260926000000_saved_meals.sql`: run it so saved meals sync; until then sync reports an error for that table only.)
 **Future ideas (not started):** reminder push delivery, shared challenges (the leaderboard table could carry them), adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).
