@@ -21,9 +21,9 @@ export type MuscleRegion =
   | 'chest'
   | 'front-delts' | 'side-delts' | 'rear-delts'
   | 'biceps' | 'triceps' | 'forearms'
-  | 'lats' | 'traps' | 'lower-back'
+  | 'lats' | 'upper-back' | 'traps' | 'lower-back'
   | 'abs' | 'obliques'
-  | 'quads' | 'hamstrings' | 'glutes' | 'calves'
+  | 'quads' | 'hamstrings' | 'glutes' | 'adductors' | 'abductors' | 'calves'
 
 export type MuscleGroup = 'chest' | 'shoulders' | 'arms' | 'back' | 'core' | 'legs'
 
@@ -47,18 +47,18 @@ export const MUSCLE_GROUPS: { key: MuscleGroup; label: string; weight: number; r
   { key: 'chest',     label: 'Chest',     weight: 0.2,  regions: ['chest'] },
   { key: 'shoulders', label: 'Shoulders', weight: 0.15, regions: ['front-delts', 'side-delts', 'rear-delts'] },
   { key: 'arms',      label: 'Arms',      weight: 0.15, regions: ['biceps', 'triceps', 'forearms'] },
-  { key: 'back',      label: 'Back',      weight: 0.25, regions: ['lats', 'traps', 'lower-back'] },
+  { key: 'back',      label: 'Back',      weight: 0.25, regions: ['lats', 'upper-back', 'traps', 'lower-back'] },
   { key: 'core',      label: 'Core',      weight: 0.1,  regions: ['abs', 'obliques'] },
-  { key: 'legs',      label: 'Legs',      weight: 0.25, regions: ['quads', 'hamstrings', 'glutes', 'calves'] },
+  { key: 'legs',      label: 'Legs',      weight: 0.25, regions: ['quads', 'hamstrings', 'glutes', 'adductors', 'abductors', 'calves'] },
 ]
 
 export const REGION_LABEL: Record<MuscleRegion, string> = {
   chest: 'Chest',
   'front-delts': 'Front delts', 'side-delts': 'Side delts', 'rear-delts': 'Rear delts',
   biceps: 'Biceps', triceps: 'Triceps', forearms: 'Forearms',
-  lats: 'Lats & upper back', traps: 'Traps', 'lower-back': 'Lower back',
+  lats: 'Lats', 'upper-back': 'Upper back', traps: 'Traps', 'lower-back': 'Lower back',
   abs: 'Abs', obliques: 'Obliques',
-  quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', calves: 'Calves',
+  quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', adductors: 'Adductors', abductors: 'Outer hips', calves: 'Calves',
 }
 
 export function groupOfRegion(region: MuscleRegion): MuscleGroup {
@@ -75,8 +75,13 @@ const BENCH = load(['chest'], [56, 75, 98, 124, 151], [19, 31, 47, 66, 88])
 const SQUAT = load(['quads', 'glutes'], [75, 101, 132, 168, 206], [32, 49, 72, 99, 129])
 const DEADLIFT = load(['lower-back', 'glutes', 'hamstrings'], [89, 119, 155, 196, 239], [40, 60, 86, 116, 149])
 const OHP = load(['front-delts'], [33, 46, 62, 81, 101], [12, 20, 31, 43, 57])
-const ROW = load(['lats'], [48, 66, 88, 114, 141], [18, 29, 43, 59, 78])
+const ROW = load(['upper-back', 'lats'], [48, 66, 88, 114, 141], [18, 29, 43, 59, 78])
 const PULLDOWN = load(['lats'], [47, 64, 85, 108, 133], [23, 33, 46, 60, 76])
+const CABLE_ROW = load(['upper-back', 'lats'], [47, 65, 87, 112, 140], [21, 32, 45, 62, 79])
+const MACHINE_ROW = load(['upper-back', 'lats'], [47, 72, 104, 142, 184], [21, 34, 51, 72, 96])
+const CS_DB_ROW = load(['upper-back', 'lats'], [14, 24, 37, 53, 71], [7, 13, 20, 30, 40])
+const HIP_ADDUCTION = load(['adductors'], [41, 67, 102, 145, 192], [22, 40, 64, 94, 127])
+const HIP_ABDUCTION = load(['abductors'], [38, 63, 95, 135, 179], [26, 45, 69, 99, 132])
 const DB_BENCH = load(['chest'], [19, 28, 40, 53, 68], [7, 12, 19, 28, 38])
 const DB_CURL = load(['biceps'], [8, 14, 22, 32, 42], [4, 7, 12, 18, 24])
 const PUSHDOWN = load(['triceps'], [22, 36, 56, 80, 107], [9, 17, 28, 42, 59])
@@ -110,6 +115,10 @@ const BASE: Record<string, Standard> = {
   'ex-conventional-deadlift': DEADLIFT,
   'ex-barbell-row': ROW,
   'ex-lat-pulldown': PULLDOWN,
+  'ex-cable-row': CABLE_ROW,
+  'ex-machine-row': MACHINE_ROW,
+  'ex-chest-supported-row': MACHINE_ROW, // the machine; dumbbells have their own entry
+  'ex-chest-supported-dumbbell-row': CS_DB_ROW,
   'ex-pull-up': PULL_UP,
   'ex-wide-grip-pull-up': PULL_UP,
   'ex-neutral-grip-pull-up': PULL_UP,
@@ -143,7 +152,7 @@ const BASE: Record<string, Standard> = {
   'ex-dumbbell-side-bend': SIDE_BEND,
   'ex-plank': hold(['abs'], [15, 45, 90, 180, 300], [15, 40, 80, 150, 270]),
   'ex-side-plank': hold(['obliques'], [10, 30, 60, 90, 150], [10, 25, 50, 80, 130]),
-  'ex-copenhagen-plank': hold(['obliques'], [5, 15, 30, 45, 60], [5, 12, 25, 40, 55]),
+  'ex-copenhagen-plank': hold(['adductors', 'obliques'], [5, 15, 30, 45, 60], [5, 12, 25, 40, 55]),
   'ex-hollow-hold': hold(['abs'], [10, 20, 40, 60, 90], [10, 20, 35, 55, 80]),
   'ex-l-sit': hold(['abs'], [3, 8, 15, 25, 40], [2, 6, 12, 20, 32]),
   'ex-hanging-leg-raise': reps(['abs'], 0.35, [1, 6, 12, 20, 30], [1, 4, 9, 15, 24]),
@@ -157,6 +166,8 @@ const BASE: Record<string, Standard> = {
   'ex-hanging-windshield-wiper': reps(['obliques', 'abs'], 0.4, [1, 4, 10, 16, 24], [1, 3, 6, 11, 18]),
   // Legs
   'ex-barbell-back-squat': SQUAT,
+  'ex-adductor-machine': HIP_ADDUCTION,
+  'ex-abductor-machine': HIP_ABDUCTION,
   'ex-leg-press': LEG_PRESS,
   'ex-barbell-hip-thrust': HIP_THRUST,
   'ex-leg-extension': LEG_EXT,
@@ -186,7 +197,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-decline-dumbbell-press':  { like: 'ex-dumbbell-bench-press', factor: 1 },
   'ex-dumbbell-floor-press':    { like: 'ex-dumbbell-bench-press', factor: 0.9 },
   // Back
-  'ex-sumo-deadlift':           { like: 'ex-conventional-deadlift', factor: 1, regions: ['glutes', 'quads', 'lower-back'] },
+  'ex-sumo-deadlift':           { like: 'ex-conventional-deadlift', factor: 1, regions: ['glutes', 'quads', 'lower-back', 'adductors'] },
   'ex-trap-bar-deadlift':       { like: 'ex-conventional-deadlift', factor: 1.08, regions: ['quads', 'glutes', 'lower-back'] },
   'ex-deficit-deadlift':        { like: 'ex-conventional-deadlift', factor: 0.92 },
   'ex-rack-pull':               { like: 'ex-conventional-deadlift', factor: 1.15, regions: ['traps', 'lower-back'] },
@@ -201,11 +212,8 @@ const DERIVED: Record<string, Derived> = {
   'ex-dumbbell-row':            { like: 'ex-barbell-row', factor: 0.48 },
   'ex-single-arm-dumbbell-row': { like: 'ex-barbell-row', factor: 0.48 },
   'ex-kroc-row':                { like: 'ex-barbell-row', factor: 0.55 },
-  'ex-chest-supported-row':     { like: 'ex-barbell-row', factor: 0.4 },
-  'ex-cable-row':               { like: 'ex-lat-pulldown', factor: 1 },
-  'ex-wide-grip-cable-row':     { like: 'ex-lat-pulldown', factor: 0.9, regions: ['lats', 'rear-delts'] },
-  'ex-single-arm-cable-row':    { like: 'ex-lat-pulldown', factor: 0.55 },
-  'ex-machine-row':             { like: 'ex-lat-pulldown', factor: 1 },
+  'ex-wide-grip-cable-row':     { like: 'ex-cable-row', factor: 0.9, regions: ['upper-back', 'rear-delts'] },
+  'ex-single-arm-cable-row':    { like: 'ex-cable-row', factor: 0.55 },
   'ex-wide-grip-lat-pulldown':  { like: 'ex-lat-pulldown', factor: 0.95 },
   'ex-close-grip-lat-pulldown': { like: 'ex-lat-pulldown', factor: 1 },
   'ex-neutral-grip-lat-pulldown': { like: 'ex-lat-pulldown', factor: 1 },
@@ -233,7 +241,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-rear-delt-fly':           { like: 'ex-lateral-raise', factor: 0.85, regions: ['rear-delts'] },
   'ex-cable-rear-delt-fly':     { like: 'ex-lateral-raise', factor: 0.6, regions: ['rear-delts'] },
   'ex-rear-delt-row':           { like: 'ex-lateral-raise', factor: 1.3, regions: ['rear-delts'] },
-  'ex-face-pull':               { like: 'ex-tricep-pushdown', factor: 0.85, regions: ['rear-delts'] },
+  'ex-face-pull':               { like: 'ex-tricep-pushdown', factor: 0.85, regions: ['rear-delts', 'upper-back'] },
   // Arms
   'ex-barbell-curl':            { like: 'ex-dumbbell-curl', factor: 2.1 },
   'ex-ez-bar-curl':             { like: 'ex-dumbbell-curl', factor: 2 },
