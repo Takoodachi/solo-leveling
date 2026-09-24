@@ -68,7 +68,7 @@ export default function RoutineExerciseEditor({ item, exercise, isFirst, isLast,
                   item.restSec === s ? 'bg-foreground text-background' : 'bg-secondary text-foreground/80',
                 )}
               >
-                {s === 0 ? 'None' : s < 60 ? `${s}s` : `${s / 60}${s % 60 ? '.5' : ''}m`}
+                {s === 0 ? 'None' : s < 60 ? `${s}s` : `${s / 60}m`}
               </button>
             ))}
           </div>
