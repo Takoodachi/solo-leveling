@@ -32,6 +32,16 @@ export interface FoodLog {
   syncPending?: boolean
 }
 
+/** A named set of foods logged together in one tap ("My usual breakfast"). */
+export interface SavedMeal {
+  uuid: string
+  name: string
+  items: { foodId: string; servings: number }[]
+  mealType?: MealType // the meal it was saved from; listed first there
+  updatedAt: number
+  syncPending?: boolean
+}
+
 export interface BodyMetric {
   uuid: string
   date: string // YYYY-MM-DD

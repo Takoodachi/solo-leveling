@@ -7,6 +7,7 @@ import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
 import { useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
 import CalorieSummary from '@/features/nutrition/components/CalorieSummary'
 import FavoriteFoods from '@/features/nutrition/components/FavoriteFoods'
+import CopyDayCard from '@/features/nutrition/components/CopyDayCard'
 import MealSection from '@/features/nutrition/components/MealSection'
 import AddFoodDialog from '@/features/nutrition/components/AddFoodDialog'
 import { formatDisplayDate } from '@/lib/date'
@@ -25,7 +26,7 @@ function mealForNow(hour: number): MealType {
 
 export default function NutritionPage() {
   const { selectedDate, setDate } = useNutritionStore()
-  const { totals, byMeal } = useDailyLog(selectedDate)
+  const { logs, totals, byMeal } = useDailyLog(selectedDate)
   const budget = useCalorieBudget(selectedDate)
   const [params, setParams] = useSearchParams()
   const quickAdd = params.get('add') === '1'
@@ -52,7 +53,9 @@ export default function NutritionPage() {
 
       <CalorieSummary totals={totals} budget={budget} />
 
-      <FavoriteFoods date={selectedDate} mealType="snack" />
+      {logs.length === 0 && <CopyDayCard date={selectedDate} />}
+
+      <FavoriteFoods date={selectedDate} mealType={mealForNow(now.getHours())} />
 
       {MEAL_ORDER.map(meal => (
         <MealSection key={meal} mealType={meal} entries={byMeal[meal] ?? []} date={selectedDate} />

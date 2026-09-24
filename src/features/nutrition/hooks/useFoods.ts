@@ -1,12 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
-import type { Food, MealType } from '@/types'
-import { requestSync, deleteSynced } from '@/lib/sync'
-import { toast } from 'sonner'
-import { today } from '@/lib/date'
-import { updateStreak } from '@/lib/streak'
-import { evaluateAchievements } from '@/lib/achievementEval'
-import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
+import type { Food } from '@/types'
+import { requestSync } from '@/lib/sync'
+import { logFoods, unlogFoods, type NewFoodLog } from '../logFoods'
 
 /** Barcode foods use a stable id, so re-scanning a product finds (and can correct) the saved entry. */
 export function barcodeFoodId(barcode: string): string {
@@ -102,38 +98,14 @@ export function useFoods() {
     return food
   }
 
-  async function addFoodLog(params: {
-    date: string
-    foodId: string
-    servings: number
-    mealType: MealType
-  }): Promise<void> {
-    await db.foodLog.add({
-      uuid: crypto.randomUUID(),
-      ...params,
-      updatedAt: Date.now(),
-      syncPending: true,
-    })
-
-    // Streak only updates when the user actually logged for today.
-    if (params.date === today()) {
-      await updateStreak()
-      const hits = await checkDailyTargetsAndGrant(params.date)
-      for (const label of hits) {
-        toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
-      }
-    }
-
-    const newAchievements = await evaluateAchievements()
-    for (const ach of newAchievements) {
-      toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
-    }
-
-    requestSync()
+  /** Log one food; returns the new log id (for undo). */
+  async function addFoodLog(params: NewFoodLog): Promise<string> {
+    const [uuid] = await logFoods([params])
+    return uuid
   }
 
   async function removeFoodLog(logUuid: string): Promise<void> {
-    await deleteSynced(db.foodLog, 'food_log', [logUuid])
+    await unlogFoods([logUuid])
   }
 
   return {

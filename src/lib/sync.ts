@@ -99,6 +99,12 @@ const COLLECTIONS: CollectionSpec[] = [
     table: () => t(db.checkins),
     columns: ['uuid', 'date', 'key', 'done', 'amount', 'updatedAt'],
   },
+  {
+    remote: 'saved_meals',
+    table: () => t(db.savedMeals),
+    columns: ['uuid', 'name', 'items', 'mealType', 'updatedAt'],
+    normalize: row => ({ ...row, items: row.items ?? [] }),
+  },
 ]
 
 const SINGLETONS: SingletonSpec[] = [

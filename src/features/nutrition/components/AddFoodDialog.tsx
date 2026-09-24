@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, subDays } from 'date-fns'
-import { Search, Star, ScanLine, Sparkles, Loader2 } from 'lucide-react'
+import { Search, ScanLine, Sparkles, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/db'
 import {
@@ -22,6 +22,9 @@ import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
 import ScannedFoodReview, { type ReviewedFood } from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
+import FoodResults, { type RecentUse } from './FoodResults'
+import { useSavedMeals, type SavedMealWithSummary } from '../hooks/useMeals'
+import { logMealItems, unlogFoods, amountLabel } from '../logFoods'
 import NumberStepper from '@/components/NumberStepper'
 import type { Food, MealType } from '@/types'
 
@@ -53,6 +56,13 @@ function daysAgoIso(days: number): string {
   return format(subDays(new Date(), days), 'yyyy-MM-dd')
 }
 
+/** What's been added since the dialog opened (it stays open to add several things). */
+interface Added {
+  label: string
+  kcal: number
+  uuids: string[]
+}
+
 export default function AddFoodDialog({ open, onClose, date, mealType }: Props) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Food | null>(null)
@@ -64,30 +74,35 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
   const [aiText, setAiText] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
+  const [added, setAdded] = useState<Added[]>([])
+  const savedMeals = useSavedMeals()
   const { searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
   const barcode = useBarcodeLookup()
   const userId = useAuthStore(s => s.userId)
   // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
   const aiAvailable = AI_FOOD_ENABLED && isSupabaseConfigured && !!userId
 
-  // Map of foodUuid → most-recent-log timestamp within the recent window.
+  // Map of foodUuid → most recent log (when, and how much) within the recent window.
   const recentMapRaw = useLiveQuery(async () => {
     const since = daysAgoIso(RECENT_WINDOW_DAYS)
     const logs = await db.foodLog.where('date').aboveOrEqual(since).toArray()
-    const m = new Map<string, number>()
+    const m = new Map<string, RecentUse>()
     for (const log of logs) {
-      const cur = m.get(log.foodId) ?? 0
-      if (log.updatedAt > cur) m.set(log.foodId, log.updatedAt)
+      if (log.updatedAt > (m.get(log.foodId)?.at ?? 0)) m.set(log.foodId, { at: log.updatedAt, servings: log.servings })
     }
     return m
   }, [])
-  const recentMap = useMemo(() => recentMapRaw ?? new Map<string, number>(), [recentMapRaw])
+  const recentMap = useMemo(() => recentMapRaw ?? new Map<string, RecentUse>(), [recentMapRaw])
+  const mealResults = useMemo(() => {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    return (savedMeals ?? []).filter(m => words.every(w => m.name.toLowerCase().includes(w)))
+  }, [savedMeals, query])
 
   const baseResults = searchFoods(query)
   const results = useMemo(() => {
     return [...baseResults].sort((a, b) => {
-      const ra = recentMap.get(a.uuid) ?? 0
-      const rb = recentMap.get(b.uuid) ?? 0
+      const ra = recentMap.get(a.uuid)?.at ?? 0
+      const rb = recentMap.get(b.uuid)?.at ?? 0
       if (ra && !rb) return -1
       if (rb && !ra) return 1
       if (ra && rb) return rb - ra
@@ -105,16 +120,38 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
 
   const macros = selected ? computeMacros(selected, getEffectiveServings()) : null
 
-  async function handleAdd() {
-    if (!selected) return
-    await addFoodLog({ date, foodId: selected.uuid, servings: getEffectiveServings(), mealType })
-    handleClose()
+  async function logFood(food: Food, n: number) {
+    const uuid = await addFoodLog({ date, foodId: food.uuid, servings: n, mealType })
+    setAdded(a => [...a, { label: `${food.name}, ${amountLabel(food, n)}`, kcal: food.kcalPerServing * n, uuids: [uuid] }])
   }
 
+  // Stay open after adding, back on the list, so a whole meal can go in one visit.
+  async function handleAdd() {
+    if (!selected) return
+    await logFood(selected, getEffectiveServings())
+    setSelected(null)
+    setQuery('')
+  }
+
+  async function handleAddMeal(meal: SavedMealWithSummary) {
+    const uuids = await logMealItems(meal.items, date, mealType)
+    setAdded(a => [...a, { label: meal.name, kcal: meal.kcal, uuids }])
+    setQuery('')
+  }
+
+  async function undoLast() {
+    const last = added.at(-1)
+    if (!last) return
+    await unlogFoods(last.uuids)
+    setAdded(a => a.slice(0, -1))
+  }
+
+  // Starts from the amount logged last time, so a repeat is select → Add.
   function handleFoodSelect(food: Food) {
+    const n = recentMap.get(food.uuid)?.servings ?? 1
     setSelected(food)
-    setServings('1')
-    setGrams(String(food.servingSize))
+    setServings(String(n))
+    setGrams(String(Math.round(n * food.servingSize)))
     setInputMode(usesGrams(food) ? 'grams' : 'servings')
   }
 
@@ -129,6 +166,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
     setAiText('')
     setAiLoading(false)
     setAiResult(null)
+    setAdded([])
     barcode.clear()
     onClose()
   }
@@ -275,7 +313,8 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={open => !open && handleClose()}>
-      <DialogContent className="max-w-sm p-0 gap-0">
+      {/* minmax(0,1fr): long names truncate instead of widening the dialog past the screen */}
+      <DialogContent className="max-w-sm grid-cols-[minmax(0,1fr)] p-0 gap-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle>Add Food — {mealType}</DialogTitle>
         </DialogHeader>
@@ -415,49 +454,32 @@ export default function AddFoodDialog({ open, onClose, date, mealType }: Props) 
                 <ScanLine size={18} />
               </Button>
             </div>
-            <ScrollArea className={aiAvailable ? 'h-[200px]' : 'h-[300px]'}>
+            <ScrollArea className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', '[&_[data-radix-scroll-area-viewport]>div]:!block')}>
               <div className="px-2 pb-2">
-                {results.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">No foods found</p>
-                )}
-                {results.map(food => {
-                  const isRecent = recentMap.has(food.uuid)
-                  return (
-                    // Row + favorite star are sibling buttons (a button can't contain a button).
-                    <div key={food.uuid} className="flex items-center gap-1 rounded-xl pr-1 transition-colors hover:bg-accent">
-                      <button
-                        type="button"
-                        onClick={() => handleFoodSelect(food)}
-                        className="min-w-0 flex-1 px-3 py-2.5 text-left"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm truncate">{food.name}</p>
-                          {isRecent && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium shrink-0">
-                              Recent
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {food.kcalPerServing} cal / {food.servingSize}{food.servingUnit}
-                        </p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void toggleFavorite(food.uuid)}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                        aria-label={food.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        <Star
-                          size={16}
-                          className={food.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
-                        />
-                      </button>
-                    </div>
-                  )
-                })}
+                <FoodResults
+                  foods={results}
+                  meals={mealResults}
+                  recent={recentMap}
+                  onSelect={handleFoodSelect}
+                  onQuickAdd={(food, n) => void logFood(food, n)}
+                  onAddMeal={meal => void handleAddMeal(meal)}
+                  onToggleFavorite={food => void toggleFavorite(food.uuid)}
+                />
               </div>
             </ScrollArea>
+            {added.length > 0 && (
+              <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl bg-primary/10 py-1.5 pl-3 pr-1.5">
+                <Check size={16} className="shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="block truncate">{added[added.length - 1].label}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {added.length} added · {Math.round(added.reduce((sum, a) => sum + a.kcal, 0)).toLocaleString()} cal
+                  </span>
+                </span>
+                <button type="button" onClick={() => void undoLast()} className="h-10 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground">Undo</button>
+                <Button size="sm" className="shrink-0" onClick={handleClose}>Done</Button>
+              </div>
+            )}
             <div className="px-4 pb-4">
               <Button
                 variant="ghost"

@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Food, FoodLog,
   BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
-  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin,
+  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin, SavedMeal,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
@@ -22,6 +22,7 @@ export class SoloLevelingDB extends Dexie {
   challenges!:     Table<Challenge,       string>
   pendingDeletes!: Table<PendingDelete,   string>
   checkins!:       Table<Checkin,         string>
+  savedMeals!:     Table<SavedMeal,       string>
 
   constructor() {
     super('SoloLevelingDB')
@@ -70,5 +71,8 @@ export class SoloLevelingDB extends Dexie {
     this.version(12).stores({}) // Checkin gains amount (water); Settings gains homeWidgets, waterGoalMl, waterGlassMl (no index changes)
     this.version(13).stores({}) // Settings gains trainingLevel, radarMuscles (volume radar; no index changes)
     this.version(14).stores({}) // Settings gains shareOnLeaderboard (no index changes)
+    this.version(15).stores({
+      savedMeals: 'uuid, name',
+    }) // saved meals (one-tap food logging)
   }
 }
