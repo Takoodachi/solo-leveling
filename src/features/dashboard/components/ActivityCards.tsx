@@ -34,14 +34,16 @@ export function StepsCard({ date, steps, goal }: StepsProps) {
 }
 
 interface CaloriesProps {
-  kcal: number
+  eaten: number
+  /** What steps burned (subtracted from what was eaten). */
+  burned: number
   target: number
   macros: { protein: number; carbs: number; fat: number }
   macroTargets: { protein: number; carbs: number; fat: number }
 }
 
-/** Takes the "heart rate" slot from the design: calories in vs target with mini macro bars. */
-export function CaloriesCard({ kcal, target, macros, macroTargets }: CaloriesProps) {
+/** Takes the "heart rate" slot from the design: net calories (eaten − steps) vs target with mini macro bars. */
+export function CaloriesCard({ eaten, burned, target, macros, macroTargets }: CaloriesProps) {
   const bars = [
     { key: 'P', v: macros.protein / (macroTargets.protein || 1) },
     { key: 'C', v: macros.carbs / (macroTargets.carbs || 1) },
@@ -64,7 +66,8 @@ export function CaloriesCard({ kcal, target, macros, macroTargets }: CaloriesPro
       </div>
       <div>
         <p className="font-semibold">Calories</p>
-        <p className="text-sm text-muted-foreground tabular-nums">{Math.round(kcal).toLocaleString()} / {target.toLocaleString()} kcal</p>
+        <p className="text-sm text-muted-foreground tabular-nums">{Math.round(eaten - burned).toLocaleString()} / {target.toLocaleString()} kcal</p>
+        {burned > 0 && <p className="text-xs text-muted-foreground tabular-nums">incl. −{burned.toLocaleString()} from steps</p>}
       </div>
     </Link>
   )

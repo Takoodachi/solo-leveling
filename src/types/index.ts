@@ -89,8 +89,8 @@ export interface Settings {
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
-  dynamicTargetsEnabled?: boolean
-  activityWindowDays?: number // 3-7
+  dynamicTargetsEnabled?: boolean // subtract step calories from what was eaten (unset = on; `countsSteps`)
+  activityWindowDays?: number // legacy (rolling-average activity targets), unused
   dailyStepGoal?: number
   weeklyWorkoutGoal?: number
   defaultRestSeconds?: number

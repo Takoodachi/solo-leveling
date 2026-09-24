@@ -5,11 +5,16 @@ import {
   macroAdherenceByDate, lastNDates,
   type MacroPoint,
 } from '@/lib/analytics'
-import { computeDynamicTargets } from '@/lib/macroTargets'
-import { subDays, format, parseISO } from 'date-fns'
+import { loadStepBurns } from '@/lib/stepCalories'
+
+export interface MacroDay extends MacroPoint {
+  stepKcal: number
+  /** Eaten minus steps, on days with both food and steps (null otherwise). */
+  netKcal: number | null
+}
 
 interface MacroResult {
-  rows: MacroPoint[]
+  rows: MacroDay[]
   targetKcal: number
   hasData: boolean
 }
@@ -20,38 +25,20 @@ export function useMacroAdherence(rangeDays: number): MacroResult {
     const earliest = dates[0]
     const logs = await db.foodLog.where('date').aboveOrEqual(earliest).toArray()
     const foodIds = [...new Set(logs.map(l => l.foodId))]
-    const foods = await db.foods.bulkGet(foodIds)
+    const [foods, baseline, burns] = await Promise.all([
+      db.foods.bulkGet(foodIds),
+      db.targets.get(1),
+      loadStepBurns(dates),
+    ])
     const foodMap = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
 
-    const baseline = await db.targets.get(1)
-    const settings = await db.settings.get(1)
-    let targetKcal = baseline?.dailyKcal ?? 2000
-
-    if (baseline && settings?.dynamicTargetsEnabled) {
-      const windowDays = settings.activityWindowDays ?? 7
-      const todayDate = parseISO(today())
-      const windowDates = Array.from({ length: windowDays }, (_, i) =>
-        format(subDays(todayDate, i), 'yyyy-MM-dd'),
-      )
-      const windowEarliest = windowDates[windowDates.length - 1]
-      const [activity, latestWeight] = await Promise.all([
-        db.dailyActivity.where('date').aboveOrEqual(windowEarliest).toArray(),
-        db.bodyMetrics.orderBy('date').reverse().first(),
-      ])
-      const dyn = computeDynamicTargets({
-        baseline,
-        windowDays,
-        bodyKg: latestWeight?.weightKg,
-        dailyActivity: activity,
-        windowDates,
-      })
-      targetKcal = dyn.targets.kcal
-    }
-
-    const rows = macroAdherenceByDate(logs, foodMap, dates)
+    const rows = macroAdherenceByDate(logs, foodMap, dates).map(p => {
+      const stepKcal = burns.get(p.date)?.kcal ?? 0
+      return { ...p, stepKcal, netKcal: stepKcal > 0 && p.totalKcal > 0 ? p.totalKcal - stepKcal : null }
+    })
     return {
       rows,
-      targetKcal,
+      targetKcal: baseline?.dailyKcal ?? 2000,
       hasData: logs.length > 0,
     }
   }, [rangeDays])

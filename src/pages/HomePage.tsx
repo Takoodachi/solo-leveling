@@ -8,7 +8,7 @@ import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
-import { useEffectiveTargets } from '@/features/dashboard/hooks/useEffectiveTargets'
+import { netKcal, useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
 import { useWeekSummary } from '@/features/dashboard/hooks/useWeekSummary'
 import HomeHeader from '@/features/dashboard/components/HomeHeader'
 import WeekStrip from '@/features/dashboard/components/WeekStrip'
@@ -33,13 +33,14 @@ export default function HomePage() {
   const routines = useRoutines()
   const workouts = useWorkoutList(30)
   const { settings } = useSettings()
-  const { targets, dynamic } = useEffectiveTargets(selected)
+  const budget = useCalorieBudget(selected)
 
   const day = days?.find(d => d.date === selected)
   const weekday = parseISO(selected).getDay()
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const routine = routines.find(r => r.scheduleDays.includes(weekday))
   const completed = (workouts ?? []).filter(w => w.date === selected)
+  const kcalProgress = budget.targets.kcal > 0 ? netKcal(day?.kcal ?? 0, budget.burn) / budget.targets.kcal : 0
 
   return (
     <div className="flex flex-col gap-5">
@@ -51,7 +52,7 @@ export default function HomePage() {
           days={days}
           selected={selected}
           today={todayStr}
-          kcalTarget={targets.kcal}
+          kcalProgress={kcalProgress}
           scheduledWeekdays={scheduled}
           onSelect={setPicked}
         />
@@ -65,8 +66,7 @@ export default function HomePage() {
             selected={selected}
             today={todayStr}
             steps={day?.steps ?? 0}
-            targets={targets}
-            dynamic={dynamic}
+            budget={budget}
             routine={routine}
             completed={completed}
             onCustomize={() => setCustomizing(true)}

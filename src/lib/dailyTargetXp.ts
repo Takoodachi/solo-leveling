@@ -1,9 +1,10 @@
 import { db } from '@/db'
 import { grantXp, XP } from './xp'
+import { loadStepBurns } from './stepCalories'
 
 const KCAL_KEY = 'solo:xp:kcal'
 const PROTEIN_KEY = 'solo:xp:protein'
-const KCAL_TOLERANCE = 0.1 // within ±10% of target counts as "hit"
+const KCAL_TOLERANCE = 0.1 // net kcal (eaten − steps) within ±10% of target counts as "hit"
 
 /**
  * Check today's totals and grant kcal/protein-target XP once per local day.
@@ -30,6 +31,7 @@ export async function checkDailyTargetsAndGrant(date: string): Promise<string[]>
     protein += food.protein * log.servings
   }
 
+  kcal -= (await loadStepBurns([date])).get(date)?.kcal ?? 0
   const hits: string[] = []
 
   if (targets.dailyKcal > 0) {

@@ -24,7 +24,7 @@ export default function AnalyticsPage() {
 
       <ChartCard
         title="Macro adherence"
-        subtitle={`Stacked kcal vs. today’s target (${macro.targetKcal} kcal)`}
+        subtitle={`Stacked kcal eaten vs. your target (${macro.targetKcal} kcal)`}
         action={
           <Segmented
             size="sm"

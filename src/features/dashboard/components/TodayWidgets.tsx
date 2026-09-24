@@ -11,8 +11,7 @@ import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
 import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
 import CreatineCard from '@/features/checkins/components/CreatineCard'
 import WaterCard from '@/features/checkins/components/WaterCard'
-import type { EffectiveTargets } from '../hooks/useEffectiveTargets'
-import type { UseDynamicTargetsResult } from '../hooks/useDynamicTargets'
+import type { CalorieBudget } from '../hooks/useCalorieBudget'
 import { homeRows, homeWidgetsFrom } from '../homeWidgets'
 import TodayWorkoutCard from './TodayWorkoutCard'
 import { StepsCard, CaloriesCard } from './ActivityCards'
@@ -23,15 +22,14 @@ interface Props {
   selected: string
   today: string
   steps: number
-  targets: EffectiveTargets
-  dynamic: UseDynamicTargetsResult
+  budget: CalorieBudget
   routine?: Routine
   completed: { uuid: string; name?: string }[]
   onCustomize: () => void
 }
 
 /** "Today's Plan": the cards the user picked, in their order (tiles pair up two per row). */
-export default function TodayWidgets({ selected, today, steps, targets, dynamic, routine, completed, onCustomize }: Props) {
+export default function TodayWidgets({ selected, today, steps, budget, routine, completed, onCustomize }: Props) {
   const { settings } = useSettings()
   const { totals } = useDailyLog(selected)
   const challenges = useChallenges()
@@ -47,13 +45,13 @@ export default function TodayWidgets({ selected, today, steps, targets, dynamic,
       case 'steps':
         return <StepsCard date={selected} steps={steps} goal={settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL} />
       case 'calories':
-        return <CaloriesCard kcal={totals.kcal} target={targets.kcal} macros={totals} macroTargets={targets} />
+        return <CaloriesCard eaten={totals.kcal} burned={budget.burn?.kcal ?? 0} target={budget.targets.kcal} macros={totals} macroTargets={budget.targets} />
       case 'water':
         return <WaterCard date={selected} today={today} />
       case 'creatine':
         return <CreatineCard date={selected} today={today} />
       case 'macros':
-        return <MacrosCard totals={totals} targets={targets} dynamic={dynamic} />
+        return <MacrosCard totals={totals} budget={budget} />
       case 'challenge':
         return (
           <section className="flex flex-col gap-3">

@@ -1,13 +1,12 @@
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import NumberStepper from '@/components/NumberStepper'
-import Segmented from '@/components/Segmented'
+import { AVERAGE_BODY_KG, countsSteps } from '@/lib/stepCalories'
 import { useSettings, DEFAULT_STEP_GOAL } from '../hooks/useSettings'
 import TargetForm from './TargetForm'
 
 export default function TargetsCard() {
   const { settings, updateSettings } = useSettings()
-  const dynamicOn = settings?.dynamicTargetsEnabled ?? false
 
   return (
     <div className="flex flex-col gap-4">
@@ -18,23 +17,14 @@ export default function TargetsCard() {
       <div className="flex flex-col gap-4 rounded-3xl bg-card p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <Label className="text-sm">Activity-driven targets</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">Adds carbs and fat based on your recent steps. Protein stays where you set it.</p>
+            <Label className="text-sm">Subtract step calories</Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              What your steps burn comes off the calories you ate, worked out from your weight and height ({AVERAGE_BODY_KG} kg until you log a weight).
+              Carbs and fat targets grow to match; protein stays. Workouts aren’t counted.
+            </p>
           </div>
-          <Switch checked={dynamicOn} onCheckedChange={v => void updateSettings({ dynamicTargetsEnabled: v })} aria-label="Activity-driven targets" />
+          <Switch checked={countsSteps(settings)} onCheckedChange={v => void updateSettings({ dynamicTargetsEnabled: v })} aria-label="Subtract step calories" />
         </div>
-        {dynamicOn && (
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Rolling window</Label>
-            <Segmented
-              size="sm"
-              className="bg-secondary"
-              value={String(settings?.activityWindowDays ?? 7) as '3' | '5' | '7'}
-              options={[{ value: '3', label: '3 days' }, { value: '5', label: '5 days' }, { value: '7', label: '7 days' }]}
-              onChange={v => void updateSettings({ activityWindowDays: Number(v) })}
-            />
-          </div>
-        )}
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-muted-foreground">Daily step goal</Label>
           <NumberStepper
