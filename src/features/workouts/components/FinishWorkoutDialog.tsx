@@ -13,12 +13,14 @@ interface Props {
   totalSets: number
   onFinish: (opts: FinishOptions) => Promise<void>
   onMarkAllDone: () => void
+  /** Editing a saved workout: its heart rate and notes start filled in. */
+  editing?: { avgHeartRate?: number; notes: string }
 }
 
-export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, doneSets, totalSets, onFinish, onMarkAllDone }: Props) {
+export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, doneSets, totalSets, onFinish, onMarkAllDone, editing }: Props) {
   const [duration, setDuration] = useState<string | null>(null)
-  const [heartRate, setHeartRate] = useState('')
-  const [notes, setNotes] = useState('')
+  const [heartRate, setHeartRate] = useState(editing?.avgHeartRate ? String(editing.avgHeartRate) : '')
+  const [notes, setNotes] = useState(editing?.notes ?? '')
   const [saving, setSaving] = useState(false)
 
   const durationValue = duration ?? String(Math.max(1, elapsedMin))
@@ -42,9 +44,10 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader className="text-left">
-          <DialogTitle className="text-xl">Finish workout?</DialogTitle>
+          <DialogTitle className="text-xl">{editing ? 'Save changes?' : 'Finish workout?'}</DialogTitle>
           <DialogDescription>
-            {doneSets} of {totalSets} checked off. Only checked sets and cardio are saved.
+            {doneSets} of {totalSets} checked off.{' '}
+            {editing ? 'Unchecked sets are removed. Edits don’t change XP.' : 'Only checked sets and cardio are saved.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -70,7 +73,7 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
             <Input id="fw-notes" placeholder="How did it feel?" value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
           <Button type="submit" size="lg" disabled={saving || doneSets === 0}>
-            {saving ? 'Saving…' : 'Save workout'}
+            {saving ? 'Saving…' : editing ? 'Save changes' : 'Save workout'}
           </Button>
         </form>
       </DialogContent>
