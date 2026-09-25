@@ -57,7 +57,11 @@ export function performanceOf(std: Standard, set: RatableSet, bodyKg: number): n
   const base = bodyKg * std.bodyShare
   const moved = std.assisted ? base - weight : base + weight
   if (moved <= 0) return null
-  return 30 * ((moved * (1 + Math.min(reps, 100) / 30)) / base - 1)
+  if (std.assisted || weight <= 0) return 30 * ((moved * (1 + Math.min(reps, 100) / 30)) / base - 1)
+  // Added weight: credit it through a capped Epley 1RM like load lifts, or long
+  // weighted sets snowball (32 kg × 35 back extensions ≈ 78 bodyweight reps).
+  // A weighted set is still worth at least its reps.
+  return Math.max(Math.min(reps, 100), 30 * ((moved * (1 + Math.min(reps, MAX_REPS) / 30)) / base - 1))
 }
 
 function curve(t: readonly number[], floor: number, levels: Five): [number, number][] {
