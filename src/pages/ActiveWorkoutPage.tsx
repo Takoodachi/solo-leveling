@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { Plus, X, Timer } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { Plus, X, Timer, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
+import { useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
 import { useRestTimer, requestNotificationPermission } from '@/features/workouts/hooks/useRestTimer'
 import { useWakeLock } from '@/features/workouts/hooks/useWakeLock'
 import { useElapsed } from '@/features/workouts/hooks/useElapsed'
@@ -17,6 +18,7 @@ import ExercisePickerSheet from '@/features/workouts/components/ExercisePickerSh
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
 import RestBanner from '@/features/workouts/components/RestBanner'
 import FinishWorkoutDialog from '@/features/workouts/components/FinishWorkoutDialog'
+import DiscardWorkoutDialog from '@/features/workouts/components/DiscardWorkoutDialog'
 import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useRanks } from '@/features/ranks/useRanks'
 import type { Exercise } from '@/types'
@@ -25,20 +27,26 @@ export default function ActiveWorkoutPage() {
   const navigate = useNavigate()
   const { draft, restored, addBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
   const { finish } = useActiveWorkout()
+  const { saveEdits, cancelEditing } = useEditWorkout()
   const { settings } = useSettings()
-  const elapsed = useElapsed(draft?.startedAt ?? null)
+  const editing = draft?.editing
+  // Editing a saved workout: no session clock, rest timer or wake lock.
+  const elapsed = useElapsed(draft && !editing ? draft.startedAt : null)
   const rest = useRestTimer()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [info, setInfo] = useState<Exercise | null>(null)
+  // Set before saving/cancelling an edit, which navigates on its own: the store
+  // clears synchronously, before the router's (transition) navigation lands.
+  const [leaving, setLeaving] = useState(false)
   const ranks = useRanks()
 
   // Keep the screen on for the whole session.
-  useWakeLock(!!draft)
+  useWakeLock(!!draft && !editing)
 
   if (!restored) return null
-  if (!draft) return <Navigate to="/workouts" replace />
+  if (!draft) return leaving ? null : <Navigate to="/workouts" replace />
 
   const defaultRest = settings?.defaultRestSeconds ?? DEFAULT_REST_SECONDS
   const allSets = draft.blocks.flatMap(b => b.sets)
@@ -58,12 +66,18 @@ export default function ActiveWorkoutPage() {
   }
 
   function handleSetDone(restSec: number) {
+    if (editing) return
     requestNotificationPermission() // inside the tap, as iOS requires
     rest.start(restSec || defaultRest)
   }
 
   function handleDiscard() {
     rest.stop()
+    if (editing) {
+      setLeaving(true)
+      cancelEditing()
+      return
+    }
     discard()
     navigate('/workouts', { replace: true })
   }
@@ -77,7 +91,7 @@ export default function ActiveWorkoutPage() {
             type="button"
             onClick={() => setDiscardOpen(true)}
             className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-            aria-label="Discard workout"
+            aria-label={editing ? 'Discard changes' : 'Discard workout'}
           >
             <X size={22} />
           </button>
@@ -89,13 +103,22 @@ export default function ActiveWorkoutPage() {
               aria-label="Workout name"
             />
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Timer size={12} className="text-primary" />
-              <span className="tabular-nums">{elapsed.label}</span>
+              {editing ? (
+                <>
+                  <Pencil size={12} className="text-primary" />
+                  <span>Editing · {format(parseISO(editing.date), 'EEE d MMM')}</span>
+                </>
+              ) : (
+                <>
+                  <Timer size={12} className="text-primary" />
+                  <span className="tabular-nums">{elapsed.label}</span>
+                </>
+              )}
               <span>· {doneSets}/{allSets.length} sets</span>
             </p>
           </div>
           <Button size="sm" onClick={() => setFinishOpen(true)} disabled={draft.blocks.length === 0}>
-            Finish
+            {editing ? 'Save' : 'Finish'}
           </Button>
         </div>
       </div>
@@ -153,28 +176,20 @@ export default function ActiveWorkoutPage() {
       <FinishWorkoutDialog
         open={finishOpen}
         onOpenChange={setFinishOpen}
-        elapsedMin={Math.max(elapsedMin, cardioMin)}
+        elapsedMin={editing ? editing.durationMin : Math.max(elapsedMin, cardioMin)}
         doneSets={doneSets}
         totalSets={allSets.length}
         onMarkAllDone={markAllFilledDone}
+        editing={editing && { avgHeartRate: editing.avgHeartRate, notes: draft.notes }}
         onFinish={async opts => {
           rest.stop()
-          await finish(opts)
+          if (!editing) return finish(opts)
+          setLeaving(true)
+          await saveEdits(opts)
         }}
       />
 
-      <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader className="text-left">
-            <DialogTitle>Discard workout?</DialogTitle>
-            <DialogDescription>Nothing from this session will be saved.</DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={() => setDiscardOpen(false)}>Keep going</Button>
-            <Button variant="destructive" className="flex-1" onClick={handleDiscard}>Discard</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DiscardWorkoutDialog open={discardOpen} onOpenChange={setDiscardOpen} editing={!!editing} onDiscard={handleDiscard} />
     </div>
   )
 }

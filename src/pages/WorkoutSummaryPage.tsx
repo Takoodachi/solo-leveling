@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { Trophy, Trash2 } from 'lucide-react'
+import { Trophy, Trash2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
 import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
+import { canEditWorkout, EDIT_WINDOW_DAYS, useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
+import { useNow } from '@/hooks/useNow'
 import { formatKm, formatPace, INTENSITIES, intensityFromRpe } from '@/lib/cardio'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
 import { findRankUps, type RankUp } from '@/features/ranks/computeRanks'
@@ -42,6 +44,8 @@ export default function WorkoutSummaryPage() {
   const navigate = useNavigate()
   const state = useLocation().state as FinishResult | null
   const workout = useWorkoutDetail(id)
+  const { startEditing } = useEditWorkout()
+  const now = useNow()
   const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
   const celebrate = state?.celebrate === true
 
@@ -65,6 +69,7 @@ export default function WorkoutSummaryPage() {
     )
   }
 
+  const editable = canEditWorkout(workout.date, now)
   const bests = celebrate ? state.newBests : (computed?.bests ?? [])
   // Older router state (before ranks existed) has no rankUps.
   const rankUps = celebrate ? (state.rankUps ?? []) : (computed?.rankUps ?? [])
@@ -125,12 +130,19 @@ export default function WorkoutSummaryPage() {
       </section>
 
       <div className="flex flex-col gap-2">
-        {celebrate ? (
-          <Button size="lg" onClick={() => navigate('/home', { replace: true })}>Done</Button>
-        ) : (
-          <Button variant="ghost" className="gap-2 text-destructive hover:text-destructive" onClick={() => void handleDelete()}>
-            <Trash2 size={16} /> Delete workout
+        {celebrate && <Button size="lg" onClick={() => navigate('/home', { replace: true })}>Done</Button>}
+        {editable && (
+          <Button variant={celebrate ? 'ghost' : 'secondary'} size={celebrate ? 'default' : 'lg'} className="gap-2" onClick={() => void startEditing(workout.uuid)}>
+            <Pencil size={16} /> Edit workout
           </Button>
+        )}
+        {!celebrate && (
+          <>
+            <Button variant="ghost" className="gap-2 text-destructive hover:text-destructive" onClick={() => void handleDelete()}>
+              <Trash2 size={16} /> Delete workout
+            </Button>
+            {!editable && <p className="text-center text-xs text-muted-foreground">Workouts can be edited for {EDIT_WINDOW_DAYS} days.</p>}
+          </>
         )}
       </div>
     </FullScreen>

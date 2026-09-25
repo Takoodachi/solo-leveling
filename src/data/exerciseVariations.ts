@@ -53,6 +53,7 @@ export const MORE_EXERCISES: Exercise[] = [
   ex('ex-deficit-deadlift', 'Deficit Deadlift', 'Back', 'strength', 'kg', ['Lower Back', 'Glutes', 'Hamstrings'], ['Quadriceps', 'Traps'], 'Stand on a 3–7 cm plate or platform and deadlift from there. The extra range builds strength off the floor, so keep the back flat through the deeper start.'),
   ex('ex-dumbbell-deadlift', 'Dumbbell Deadlift', 'Back', 'strength', 'kg', ['Glutes', 'Hamstrings', 'Lower Back'], ['Quadriceps', 'Forearms'], 'Hold a dumbbell in each hand outside your shins. Hinge and bend the knees to lower them, then stand tall by driving through the floor.'),
   ex('ex-reverse-hyperextension', 'Reverse Hyperextension', 'Back', 'strength', 'kg', ['Glutes', 'Lower Back'], ['Hamstrings'], 'Lie face-down on a reverse hyper machine or high bench with your legs hanging. Swing your straight legs up to hip height by squeezing the glutes, then lower with control.'),
+  ex('ex-machine-back-extension', 'Machine Back Extension', 'Back', 'strength', 'kg', ['Lower Back'], ['Glutes', 'Hamstrings'], 'Sit in the back extension machine with your feet on the platform and the pad across your upper back. Extend back against the pad until your torso is upright or slightly past, pause, then return slowly.'),
   ex('ex-superman', 'Superman', 'Back', 'bodyweight', 'reps', ['Lower Back'], ['Glutes', 'Rear Deltoid'], 'Lie face-down with arms overhead. Lift your arms, chest and legs a few centimetres off the floor, hold for a second, then lower.'),
 
   // ── Shoulders ────────────────────────────────────────────────────

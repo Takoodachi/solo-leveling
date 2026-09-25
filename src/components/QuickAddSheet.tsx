@@ -8,6 +8,7 @@ import WaterSheet from '@/features/checkins/components/WaterSheet'
 import { useNow } from '@/hooks/useNow'
 import { toDateStr } from '@/lib/date'
 import { db } from '@/db'
+import { useWorkoutStore } from '@/features/workouts/store'
 
 interface Props {
   open: boolean
@@ -20,11 +21,12 @@ export default function QuickAddSheet({ open, onOpenChange }: Props) {
   const [waterOpen, setWaterOpen] = useState(false)
   const todayStr = toDateStr(useNow())
   const hasDraft = useLiveQuery(async () => !!(await db.workoutDrafts.get(1)), [])
+  const editing = useWorkoutStore(s => !!s.draft?.editing)
 
   const actions: { label: string; hint: string; Icon: LucideIcon; run: () => void }[] = [
     {
-      label: hasDraft ? 'Resume workout' : 'Start workout',
-      hint: hasDraft ? 'Pick up where you left off' : 'Empty session or pick a routine',
+      label: editing ? 'Resume editing' : hasDraft ? 'Resume workout' : 'Start workout',
+      hint: editing ? 'Finish editing a saved workout' : hasDraft ? 'Pick up where you left off' : 'Empty session or pick a routine',
       Icon: Dumbbell,
       run: () => navigate(hasDraft ? '/workouts/active' : '/workouts?start=1'),
     },

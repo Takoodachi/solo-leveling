@@ -101,6 +101,10 @@ const REAR_DELT_MACHINE = load(['rear-delts'], [20, 35, 55, 80, 105], [10, 18, 2
 const CABLE_CRUNCH = load(['abs'], [25, 40, 60, 85, 110], [12, 22, 35, 50, 65])
 const WOOD_CHOP = load(['obliques'], [10, 18, 28, 40, 52], [5, 10, 16, 23, 30])
 const SIDE_BEND = load(['obliques'], [16, 26, 38, 50, 65], [8, 14, 20, 28, 36])
+// Median gym lifter ≈ 28 bodyweight reps (men) / 24 (women), per Strength Level.
+const BACK_EXTENSION = reps(['lower-back', 'glutes'], 0.6, [4, 14, 28, 45, 62], [3, 12, 24, 38, 53])
+// Seated stack machine, rated by the pin number.
+const BACK_EXTENSION_MACHINE = load(['lower-back'], [25, 45, 75, 110, 150], [12, 25, 43, 65, 90])
 const CHIN_UP = { ...PULL_UP, regions: ['lats', 'biceps'] } satisfies RepsStandard
 
 const BASE: Record<string, Standard> = {
@@ -128,7 +132,8 @@ const BASE: Record<string, Standard> = {
   'ex-inverted-row': reps(['lats'], 0.6, [3, 8, 15, 22, 30], [1, 5, 10, 16, 24]),
   'ex-ring-row': reps(['lats'], 0.6, [3, 8, 15, 22, 30], [1, 5, 10, 16, 24]),
   'ex-barbell-shrug': SHRUG,
-  'ex-hyperextension': reps(['lower-back', 'glutes'], 0.6, [5, 15, 25, 40, 55], [3, 10, 20, 32, 45]),
+  'ex-hyperextension': BACK_EXTENSION,
+  'ex-machine-back-extension': BACK_EXTENSION_MACHINE,
   // Shoulders
   'ex-overhead-press': OHP,
   'ex-lateral-raise': LATERAL,

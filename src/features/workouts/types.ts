@@ -30,6 +30,16 @@ export type BlockDraft = {
   lastSets?: LastSet[]
 }
 
+/** A saved workout being edited in the logger (instead of a live session). */
+export type EditingInfo = {
+  workoutId: string
+  date: string // YYYY-MM-DD
+  durationMin: number
+  avgHeartRate?: number
+  /** Sets loaded into the editor; only these can be deleted on save. */
+  setIds: string[]
+}
+
 export type WorkoutDraft = {
   startedAt: number
   name: string
@@ -37,6 +47,7 @@ export type WorkoutDraft = {
   category?: RoutineCategory
   notes: string
   blocks: BlockDraft[]
+  editing?: EditingInfo
 }
 
 export function emptySet(prefill?: Partial<SetDraft>): SetDraft {

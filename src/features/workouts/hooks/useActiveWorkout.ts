@@ -52,8 +52,10 @@ export function useActiveWorkout() {
   const navigate = useNavigate()
 
   function guardExistingDraft(): boolean {
-    if (!useWorkoutStore.getState().draft) return false
-    toast('You have a workout in progress', { description: 'Finish or discard it before starting another.' })
+    const draft = useWorkoutStore.getState().draft
+    if (!draft) return false
+    if (draft.editing) toast('You’re editing a workout', { description: 'Save or discard the changes before starting another.' })
+    else toast('You have a workout in progress', { description: 'Finish or discard it before starting another.' })
     navigate('/workouts/active')
     return true
   }
