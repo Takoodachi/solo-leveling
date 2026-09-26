@@ -4,13 +4,15 @@ import type { MuscleRegion } from '../standards'
 import { TIERS, type Tier } from '../tiers'
 import { BACK, CENTER_BACK, CENTER_FRONT, FRONT, MIRROR, VIEWBOX, type Shape } from './bodygraphShapes'
 
-// Wireframe look: thin outlines in the text colour (light on dark themes, dark on
-// light ones); ranked muscles fill with their tier.
-const line = (alpha: number) => `hsl(var(--foreground) / ${alpha})`
-const BODY_LINE = line(0.3)
+// Wireframe look: outlines in the text colour, faint on dark themes and dark and
+// solid on light ones (strengths in index.css); ranked muscles fill with their tier.
+const line = (alpha: number | string) => `hsl(var(--foreground) / ${alpha})`
+const BODY_LINE = line('var(--body-line)')
 const BODY_FILL = line(0.02)
-const MUSCLE_LINE = line(0.55)
+const MUSCLE_LINE = line('var(--muscle-line)')
 const MUSCLE_FILL = line(0.05)
+/** A ranked muscle's border: its tier colour on dark themes, the text colour on light ones. */
+const tierLine = (color: string) => `color-mix(in oklab, ${color} var(--tier-line, 100%), hsl(var(--foreground)))`
 const HALVES = [undefined, MIRROR] as const
 
 interface Props {
@@ -48,13 +50,13 @@ function Figure({ label, shapes, center, tierOf, gradient, selected, onSelect }:
         {lit.map(({ tier: t, shapes: own }) => (
           <g key={t.key} style={{ filter: `drop-shadow(0 0 2.5px ${t.color}88)` }}>
             {both(() => own.map((s, i) => (
-              <path key={i} d={s.d} fill={gradient(t)} stroke={t.color} strokeWidth={0.7} strokeLinejoin="round" />
+              <path key={i} d={s.d} fill={gradient(t)} stroke={tierLine(t.color)} strokeWidth={0.7} strokeLinejoin="round" />
             )))}
           </g>
         ))}
         <g fill="none" strokeWidth={0.45} strokeLinecap="round" pointerEvents="none">
           {[...center, ...shapes].filter(s => s.detail).map((s, i) => {
-            const stroke = tier(s) ? line(0.35) : line(0.18)
+            const stroke = tier(s) ? line('var(--detail-line-ranked)') : line('var(--detail-line)')
             return center.includes(s)
               ? <path key={i} d={s.detail} stroke={stroke} />
               : <g key={i}>{both(() => <path d={s.detail} stroke={stroke} />)}</g>
