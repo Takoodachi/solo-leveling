@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import PageHeader from '@/components/PageHeader'
+import Logo from '@/components/Logo'
 import { useAuthStore } from '@/features/auth/authStore'
 import AccountCard from '@/features/settings/components/AccountCard'
 import ThemePicker from '@/features/settings/components/ThemePicker'
@@ -51,7 +52,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
-      <p className="text-center text-xs text-muted-foreground">Solo Leveling · v{APP_VERSION}</p>
+      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <Logo size={16} /> Solo Leveling · v{APP_VERSION}
+      </p>
     </div>
   )
 }

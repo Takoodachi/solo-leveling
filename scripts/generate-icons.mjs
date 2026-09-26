@@ -1,3 +1,6 @@
+// Regenerates the PWA / home-screen icons in public/icons from the "Ascent" mark
+// (three stacked chevrons, the top one orange) on the app's near-black.
+// Run: node scripts/generate-icons.mjs   (keep in step with src/components/Logo.tsx and public/favicon.svg)
 import sharp from 'sharp'
 import { mkdir } from 'fs/promises'
 import { fileURLToPath } from 'url'
@@ -8,91 +11,32 @@ const outDir = join(__dirname, '..', 'public', 'icons')
 
 await mkdir(outDir, { recursive: true })
 
-function hexPoints(cx, cy, r) {
-  // Flat-top hexagon: 6 points starting from the top-right
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 180) * (60 * i - 30)
-    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`
-  }).join(' ')
-}
+const BACKGROUND = '#0a0a0b'
+const ACCENT = '#ff5f1a'
+const chevron = y => `M50,${y} L80,${y + 30} L67,${y + 30} L50,${y + 13} L33,${y + 30} L20,${y + 30} Z`
 
-function svgIcon(size, borderRadius = 0) {
-  const cx = size / 2
-  const cy = size / 2
-
-  const hexR = size * 0.43
-  const hex = hexPoints(cx, cy, hexR)
-
-  // Dumbbell geometry
-  const barH = size * 0.09
-  const barW = size * 0.36
-  const plateW = size * 0.095
-  const plateH = size * 0.27
-  const barX = cx - barW / 2
-  const barY = cy - barH / 2
-  const lPlateX = barX - plateW
-  const rPlateX = barX + barW
-  const plateY = cy - plateH / 2
-  const plateRx = size * 0.018
-
-  // Gold arrow: centered bottom-right of the dumbbell
-  const arrowX = cx + size * 0.26
-  const arrowY = cy + size * 0.26
-  const arrowSize = size * 0.13
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <defs>
-    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff8a3d"/>
-      <stop offset="100%" stop-color="#e8421a"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="${size * 0.025}" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-
-  <!-- Background -->
-  <rect width="${size}" height="${size}" rx="${borderRadius}" fill="#0a0a0b"/>
-
-  <!-- Hexagon -->
-  <polygon points="${hex}" fill="url(#hg)" filter="url(#glow)"/>
-
-  <!-- Dumbbell bar -->
-  <rect x="${barX}" y="${barY}" width="${barW}" height="${barH}" rx="${barH / 2}" fill="#ffffff"/>
-
-  <!-- Left plate -->
-  <rect x="${lPlateX}" y="${plateY}" width="${plateW}" height="${plateH}" rx="${plateRx}" fill="#ffffff"/>
-
-  <!-- Right plate -->
-  <rect x="${rPlateX}" y="${plateY}" width="${plateW}" height="${plateH}" rx="${plateRx}" fill="#ffffff"/>
-
-  <!-- Level-up arrow -->
-  <text
-    x="${arrowX}" y="${arrowY}"
-    font-family="system-ui, -apple-system, sans-serif"
-    font-size="${arrowSize}"
-    font-weight="900"
-    fill="#ffffff"
-    text-anchor="middle"
-    dominant-baseline="central"
-  >↑</text>
+/** `radius` and `scale` are on the 100-unit artboard; the mark is centred. */
+function svgIcon(size, radius, scale) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="${radius}" fill="${BACKGROUND}"/>
+  <g transform="translate(50 50) scale(${scale}) translate(-50 -48)">
+    <path d="${chevron(12)}" fill="${ACCENT}"/>
+    <path d="${chevron(33)} ${chevron(54)}" fill="#ffffff"/>
+  </g>
 </svg>`
 }
 
 const configs = [
-  { name: 'icon-192.png',         size: 192, radius: 32 },
-  { name: 'icon-512.png',         size: 512, radius: 80 },
-  { name: 'icon-maskable-512.png', size: 512, radius: 0  },
+  { name: 'icon-192.png', size: 192, radius: 16.7, scale: 0.72 },
+  { name: 'icon-512.png', size: 512, radius: 15.6, scale: 0.72 },
+  // Maskable: launchers crop to a circle or squircle, so keep the mark inside the central 80%
+  { name: 'icon-maskable-512.png', size: 512, radius: 0, scale: 0.6 },
   // iOS home screen: opaque, square (iOS applies its own rounded mask)
-  { name: 'apple-touch-icon.png',  size: 180, radius: 0  },
+  { name: 'apple-touch-icon.png', size: 180, radius: 0, scale: 0.66 },
 ]
 
-for (const { name, size, radius } of configs) {
-  const svg = svgIcon(size, radius)
-  await sharp(Buffer.from(svg))
-    .png()
-    .toFile(join(outDir, name))
+for (const { name, size, radius, scale } of configs) {
+  await sharp(Buffer.from(svgIcon(size, radius, scale))).png().toFile(join(outDir, name))
   console.log(`Generated ${name}`)
 }
 
