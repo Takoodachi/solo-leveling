@@ -15,6 +15,7 @@ export function WeightTrendCard() {
 
   return (
     <ChartCard
+      id="body-weight"
       title="Body weight"
       subtitle={latest ? `${latest.weightKg} kg · ${formatShortDate(latest.date)}` : 'Not logged yet'}
       action={
@@ -56,7 +57,7 @@ export function StepsCard() {
   const avg = logged.length ? Math.round(logged.reduce((n, d) => n + d.steps, 0) / logged.length) : 0
 
   return (
-    <ChartCard title="Steps" subtitle={logged.length ? `Avg ${avg.toLocaleString()} on logged days · last 14 days` : 'Last 14 days'}>
+    <ChartCard id="steps" title="Steps" subtitle={logged.length ? `Avg ${avg.toLocaleString()} on logged days · last 14 days` : 'Last 14 days'}>
       <div className="h-36">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>

@@ -34,23 +34,23 @@ export default function RanksPage() {
       {ranks && (ranks.status === 'ready' ? (
         <>
           <RankHero ranks={ranks} />
-          <section className="flex flex-col gap-3">
+          <section id="bodygraph" className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Ranked bodygraph</h2>
             <Bodygraph regions={ranks.regions} selected={selected} onSelect={setSelected} />
             <RegionDetail region={ranks.regions.find(r => r.key === selected) ?? null} />
           </section>
-          <section className="flex flex-col gap-3">
+          <section id="muscle-rankings" className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Muscle rankings</h2>
             <MuscleRankings groups={ranks.groups} selected={selected} onSelect={setSelected} />
           </section>
           {ranks.sex && (
-            <section className="flex flex-col gap-3">
+            <section id="running-rank" className="flex flex-col gap-3">
               <h2 className="text-lg font-semibold">Running rank</h2>
               <RunningRankCard running={ranks.running} sex={ranks.sex} regions={ranks.regions} />
             </section>
           )}
           <RankHistoryChart />
-          <section className="flex flex-col gap-3">
+          <section id="lifts" className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Lifts</h2>
             <LiftRankList ranks={ranks} />
           </section>
@@ -58,7 +58,7 @@ export default function RanksPage() {
       ) : (
         <RankSetupCard ranks={ranks} />
       ))}
-      <section className="flex flex-col gap-3">
+      <section id="how-ranks-work" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">How ranks work</h2>
         <RankLadder />
       </section>

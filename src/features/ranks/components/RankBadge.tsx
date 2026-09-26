@@ -37,7 +37,7 @@ function Piece({ layer: l, pal }: { layer: Layer; pal: Palette }) {
   )
 }
 
-/** Tier emblem: a different helmet per tier, from a plain nasal helm to a winged, haloed divine helm. */
+/** Tier emblem: a different helmet per tier, from a plain nasal helm to a haloed divine helm. */
 export default function RankBadge({ tier, size = 48, locked = false, className }: Props) {
   const { pal, layers } = BADGES[tier]
   return (

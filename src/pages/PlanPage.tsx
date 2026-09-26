@@ -39,7 +39,7 @@ export default function PlanPage() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-3">
+      <section id="schedule" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Schedule</h2>
         <div className="overflow-hidden rounded-3xl bg-card">
           {WEEK_ORDER.map(d => {
@@ -62,7 +62,7 @@ export default function PlanPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section id="frequency" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Frequency of training</h2>
         <div className="rounded-3xl bg-card p-4">
           <div className="flex items-start justify-between px-1">
@@ -87,7 +87,7 @@ export default function PlanPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section id="rest-timer" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Rest timer</h2>
         <div className="rounded-3xl bg-card p-4">
           <p className="mb-2 px-1 text-sm text-muted-foreground">Default rest between sets (seconds)</p>
@@ -96,7 +96,7 @@ export default function PlanPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section id="reminders" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Reminders</h2>
         <ReminderSettings settings={settings} />
       </section>

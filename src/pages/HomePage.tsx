@@ -16,6 +16,7 @@ import TodayWidgets from '@/features/dashboard/components/TodayWidgets'
 import CustomizeHomeSheet from '@/features/dashboard/components/CustomizeHomeSheet'
 import WeeklyOverviewCard from '@/features/dashboard/components/WeeklyOverviewCard'
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
+import HomeSearch from '@/features/search/components/HomeSearch'
 
 type Tab = 'today' | 'week'
 const TABS = [{ value: 'today', label: 'Today’s Plan' }, { value: 'week', label: 'Weekly Stats' }] as const
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [tab, setTab] = useState<Tab>('today')
   const [picked, setPicked] = useState<string | null>(null)
   const [customizing, setCustomizing] = useState(false)
+  const [searching, setSearching] = useState(false)
   const week = weekDates(now)
   const selected = picked && week.includes(picked) ? picked : todayStr
 
@@ -40,50 +42,58 @@ export default function HomePage() {
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const routine = routines.find(r => r.scheduleDays.includes(weekday))
   const completed = (workouts ?? []).filter(w => w.date === selected)
+  const showSearch = settings?.showSearch !== false
   const kcalProgress = budget.targets.kcal > 0 ? netKcal(day?.kcal ?? 0, budget.burn) / budget.targets.kcal : 0
 
   return (
     <div className="flex flex-col gap-5">
       <HomeHeader />
-      <Segmented value={tab} options={TABS} onChange={setTab} className="mt-2" />
-
-      {days && (
-        <WeekStrip
-          days={days}
-          selected={selected}
-          today={todayStr}
-          kcalProgress={kcalProgress}
-          scheduledWeekdays={scheduled}
-          onSelect={setPicked}
-        />
+      {showSearch && (
+        <HomeSearch open={searching} onOpenChange={setSearching} onCustomize={() => setCustomizing(true)} />
       )}
-
-      {tab === 'today' ? (
+      <CustomizeHomeSheet open={customizing} onOpenChange={setCustomizing} />
+      {!searching && (
         <>
-          <ResumeBanner />
-          <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>{formatDisplayDate(selected)}</SectionHeader>
-          <TodayWidgets
-            selected={selected}
-            today={todayStr}
-            steps={day?.steps ?? 0}
-            budget={budget}
-            routine={routine}
-            completed={completed}
-            onCustomize={() => setCustomizing(true)}
-          />
-          <CustomizeHomeSheet open={customizing} onOpenChange={setCustomizing} />
-        </>
-      ) : (
-        days && (
-          <>
-            <WeeklyOverviewCard days={days} today={todayStr} />
-            <WeeklyStatsGrid
+          <Segmented value={tab} options={TABS} onChange={setTab} className={showSearch ? undefined : 'mt-2'} />
+
+          {days && (
+            <WeekStrip
               days={days}
-              elapsedDays={week.filter(d => d <= todayStr).length}
-              workoutGoal={settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)}
+              selected={selected}
+              today={todayStr}
+              kcalProgress={kcalProgress}
+              scheduledWeekdays={scheduled}
+              onSelect={setPicked}
             />
-          </>
-        )
+          )}
+
+          {tab === 'today' ? (
+            <>
+              <ResumeBanner />
+              <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>{formatDisplayDate(selected)}</SectionHeader>
+              <TodayWidgets
+                selected={selected}
+                today={todayStr}
+                steps={day?.steps ?? 0}
+                budget={budget}
+                routine={routine}
+                completed={completed}
+                onCustomize={() => setCustomizing(true)}
+              />
+            </>
+          ) : (
+            days && (
+              <>
+                <WeeklyOverviewCard days={days} today={todayStr} />
+                <WeeklyStatsGrid
+                  days={days}
+                  elapsedDays={week.filter(d => d <= todayStr).length}
+                  workoutGoal={settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)}
+                />
+              </>
+            )
+          )}
+        </>
       )}
     </div>
   )

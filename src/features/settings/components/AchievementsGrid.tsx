@@ -11,7 +11,7 @@ export default function AchievementsGrid() {
   const unlocked = sorted.filter(a => a.unlocked).length
 
   return (
-    <section className="flex flex-col gap-3">
+    <section id="achievements" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
         <h2 className="text-lg font-semibold">Achievements</h2>
         <span className="text-sm text-muted-foreground">{unlocked} / {sorted.length}</span>

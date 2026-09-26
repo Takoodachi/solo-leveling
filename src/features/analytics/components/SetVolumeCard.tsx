@@ -42,7 +42,7 @@ export default function SetVolumeCard() {
   const focus = axes.find(a => a.key === active)
 
   return (
-    <section className="rounded-3xl bg-card p-5">
+    <section id="set-volume" className="rounded-3xl bg-card p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="eyebrow text-primary">Weekly analysis</p>
