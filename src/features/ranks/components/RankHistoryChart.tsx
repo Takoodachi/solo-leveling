@@ -32,7 +32,7 @@ export default function RankHistoryChart() {
   const ticks = TIERS.map(t => t.min).filter(v => v >= lo && v <= hi)
 
   return (
-    <ChartCard title="Rank progress" subtitle={`Rating at the end of each week · last ${WEEKS} weeks`}>
+    <ChartCard id="rank-progress" title="Rank progress" subtitle={`Rating at the end of each week · last ${WEEKS} weeks`}>
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
         {SERIES.map(s => (
           <button

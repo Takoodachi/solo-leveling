@@ -64,6 +64,9 @@ export default function NutritionPage() {
       ))}
 
       <AddFoodDialog
+        // Search on Home opens a food with ?q=<name>; a new query starts a fresh dialog.
+        key={params.get('q') ?? ''}
+        initialQuery={params.get('q') ?? ''}
         open={quickAdd}
         onClose={() => setParams({}, { replace: true })}
         date={selectedDate}

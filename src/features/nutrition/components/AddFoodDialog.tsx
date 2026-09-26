@@ -33,6 +33,8 @@ interface Props {
   onClose: () => void
   date: string
   mealType: MealType
+  /** Pre-filled search (from search on Home). */
+  initialQuery?: string
 }
 
 function computeMacros(food: Food, servings: number) {
@@ -63,8 +65,8 @@ interface Added {
   uuids: string[]
 }
 
-export default function AddFoodDialog({ open, onClose, date, mealType }: Props) {
-  const [query, setQuery] = useState('')
+export default function AddFoodDialog({ open, onClose, date, mealType, initialQuery = '' }: Props) {
+  const [query, setQuery] = useState(initialQuery)
   const [selected, setSelected] = useState<Food | null>(null)
   const [servings, setServings] = useState('1')
   const [grams, setGrams] = useState('')

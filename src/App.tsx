@@ -6,6 +6,7 @@ import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
+import { useHashScroll } from '@/hooks/useHashScroll'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
 const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
@@ -52,6 +53,7 @@ function AppRoutes() {
   useAuthInit()
   useLeaderboardPublisher()
   useThemeSync()
+  useHashScroll()
   const session = useAuthStore(s => s.session)
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)

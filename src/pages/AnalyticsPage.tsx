@@ -25,6 +25,7 @@ export default function AnalyticsPage() {
       <OneRmCard />
 
       <ChartCard
+        id="macro-adherence"
         title="Macro adherence"
         subtitle={`Stacked kcal eaten vs. your target (${macro.targetKcal} kcal)`}
         action={

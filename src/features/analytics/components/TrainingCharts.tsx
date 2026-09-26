@@ -1,17 +1,19 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { formatShortDate } from '@/lib/date'
 import { formatVolume } from '@/lib/workoutMath'
 import { useWeeklyVolume, useLiftedExercises, useOneRmHistory } from '../hooks/useTrainingAnalytics'
 import { tooltipStyle, axisTick, compactNumber } from '../chartStyles'
 import ChartCard from './ChartCard'
+import LiftPicker from './LiftPicker'
 
 export function WeeklyVolumeCard() {
   const weeks = useWeeklyVolume(8)
   const total = weeks?.reduce((n, w) => n + w.workouts, 0) ?? 0
 
   return (
-    <ChartCard title="Training volume" subtitle={`Last 8 weeks · ${total} workouts`}>
+    <ChartCard id="training-volume" title="Training volume" subtitle={`Last 8 weeks · ${total} workouts`}>
       {!weeks || total === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Finish a workout to see your weekly volume.</p>
       ) : (
@@ -43,28 +45,19 @@ export function WeeklyVolumeCard() {
 
 export function OneRmCard() {
   const lifts = useLiftedExercises()
-  const [picked, setPicked] = useState<string | null>(null)
-  const exerciseId = picked ?? lifts?.[0]?.exercise.uuid
+  // Search on Home links here with ?lift=<exercise id>
+  const [params] = useSearchParams()
+  const [picked, setPicked] = useState<string | null>(() => params.get('lift'))
+  const exerciseId = picked && lifts?.some(l => l.exercise.uuid === picked) ? picked : lifts?.[0]?.exercise.uuid
   const points = useOneRmHistory(exerciseId)
 
   return (
-    <ChartCard title="Strength progress" subtitle="Best estimated 1RM per session">
-      {!lifts || lifts.length === 0 ? (
+    <ChartCard id="strength-progress" title="Strength progress" subtitle="Best estimated 1RM per session">
+      {!lifts || lifts.length === 0 || !exerciseId ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Log weighted sets to track your strength.</p>
       ) : (
         <>
-          <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5">
-            {lifts.slice(0, 12).map(({ exercise }) => (
-              <button
-                key={exercise.uuid}
-                type="button"
-                onClick={() => setPicked(exercise.uuid)}
-                className={`h-9 shrink-0 rounded-full px-3.5 text-sm font-medium ${exercise.uuid === exerciseId ? 'bg-foreground text-background' : 'bg-secondary text-foreground/80'}`}
-              >
-                {exercise.name}
-              </button>
-            ))}
-          </div>
+          <LiftPicker lifts={lifts} selectedId={exerciseId} onSelect={setPicked} />
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={(points ?? []).map(p => ({ ...p, label: formatShortDate(p.date) }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>

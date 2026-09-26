@@ -12,9 +12,9 @@ import ShareCard from '@/features/leaderboard/components/ShareCard'
 
 const APP_VERSION = '0.3.0'
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section id={id} className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </section>
@@ -28,22 +28,22 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Settings" />
-      <AccountCard />
+      <div id="account"><AccountCard /></div>
       {signedIn && (
-        <Section title="Leaderboard">
+        <Section id="sharing" title="Leaderboard">
           <ShareCard />
         </Section>
       )}
-      <Section title="Theme">
+      <Section id="theme" title="Theme">
         <ThemePicker />
       </Section>
-      <Section title="Bottom bar">
+      <Section id="bottom-bar" title="Bottom bar">
         <NavBarCard />
       </Section>
-      <Section title="Home screen">
+      <Section id="home-screen" title="Home screen">
         <HomeLayoutCard />
       </Section>
-      <Section title="Backup">
+      <Section id="backup" title="Backup">
         <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
           <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
           <div className="flex gap-2">

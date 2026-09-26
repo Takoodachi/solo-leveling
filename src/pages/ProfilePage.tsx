@@ -21,12 +21,12 @@ export default function ProfilePage() {
       <LeaderboardCard />
       <AchievementsGrid />
 
-      <section className="flex flex-col gap-3">
+      <section id="body-goals" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Body & goals</h2>
         <BodyGoalsCard />
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section id="targets" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Daily targets</h2>
         <TargetsCard />
       </section>

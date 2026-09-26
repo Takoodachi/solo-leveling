@@ -95,6 +95,10 @@
     /* No rubber-band scroll of the whole app shell (iOS/Android). */
     overscroll-behavior: none;
   }
+  /* Search links land on #sections: keep them clear of the status bar. */
+  [id] {
+    scroll-margin-top: calc(env(safe-area-inset-top) + 1rem);
+  }
   body {
     @apply text-foreground;
     margin: 0;
