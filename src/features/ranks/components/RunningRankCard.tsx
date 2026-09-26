@@ -6,6 +6,7 @@ import { TIERS } from '../tiers'
 import { MIN_RUN_KM, describeRunScore, fiveKTimeFor, formatRunTime, timeFor, type RunRank } from '../running'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
+import { ink } from '@/lib/colors'
 
 interface Props {
   running: RunRank | null
@@ -26,7 +27,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
         <div className="min-w-0 flex-1">
           <p className="flex items-baseline justify-between gap-2">
             <span className="font-semibold">Running</span>
-            {rank && <span className="shrink-0 text-sm font-semibold" style={{ color: rank.tier.color }}>{rank.label}</span>}
+            {rank && <span className="shrink-0 text-sm font-semibold" style={{ color: ink(rank.tier.color) }}>{rank.label}</span>}
           </p>
           {running && rank ? (
             <>
@@ -50,7 +51,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
           {legs.map((r, i) => (
             <span key={r.key}>
               {i > 0 && ' · '}
-              {r.label} <span className="font-semibold" style={{ color: r.rank!.tier.color }}>{r.rank!.label}</span>
+              {r.label} <span className="font-semibold" style={{ color: ink(r.rank!.tier.color) }}>{r.rank!.label}</span>
             </span>
           ))}
         </p>
@@ -70,7 +71,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
           return (
             <div key={t.key} className="flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-2xl bg-secondary/60 py-2">
               <RankBadge tier={t.key} size={30} locked={!reached} />
-              <span className="text-[10px] font-bold uppercase" style={{ color: t.color }}>{t.name}</span>
+              <span className="text-[10px] font-bold uppercase" style={{ color: ink(t.color) }}>{t.name}</span>
               <span className="text-xs tabular-nums">{formatRunTime(fiveKTimeFor(sex, t.min))}</span>
             </div>
           )

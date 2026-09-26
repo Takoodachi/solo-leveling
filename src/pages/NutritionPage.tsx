@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { addDays, subDays, parseISO, format } from 'date-fns'
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import { useNutritionStore } from '@/features/nutrition/store'
 import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
 import { useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
@@ -31,6 +32,7 @@ export default function NutritionPage() {
   const [params, setParams] = useSearchParams()
   const quickAdd = params.get('add') === '1'
   const now = useNow()
+  const isTab = useIsNavTab('/nutrition')
 
   function shift(direction: 1 | -1) {
     const current = parseISO(selectedDate)
@@ -39,7 +41,7 @@ export default function NutritionPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader back="/home" title="Nutrition" />
+      <PageHeader back={isTab ? undefined : '/home'} title="Nutrition" />
 
       <div className="flex items-center justify-between rounded-full bg-card p-1">
         <button type="button" onClick={() => shift(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Previous day">

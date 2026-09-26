@@ -15,20 +15,20 @@ export default function ResumeBanner() {
   return (
     <Link
       to="/workouts/active"
-      className="bg-brand-gradient flex items-center gap-3 rounded-3xl p-4 text-white shadow-lg shadow-primary/25 active:scale-[0.99]"
+      className="bg-brand-gradient flex items-center gap-3 rounded-3xl p-4 text-primary-foreground shadow-lg shadow-primary/25 active:scale-[0.99]"
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
-        <Play size={20} className="ml-0.5 fill-white" />
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-foreground/20">
+        <Play size={20} className="ml-0.5 fill-primary-foreground" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{draft.name}</p>
-        <p className="text-sm text-white/80">
+        <p className="text-sm text-primary-foreground/80">
           {editing
             ? `Editing ${format(parseISO(editing.date), 'EEE d MMM')} · ${done} sets`
             : <><span className="tabular-nums">{elapsed.label}</span> · {done} sets done</>}
         </p>
       </div>
-      <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black">Resume</span>
+      <span className="rounded-full bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary">Resume</span>
     </Link>
   )
 }

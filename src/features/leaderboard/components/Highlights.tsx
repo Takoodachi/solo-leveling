@@ -4,6 +4,7 @@ import RankBadge from '@/features/ranks/components/RankBadge'
 import { rankFor } from '@/features/ranks/tiers'
 import { ago, profileLink } from '../boards'
 import type { LeaderboardEntry } from '../types'
+import { ink } from '@/lib/colors'
 
 const MAX = 8
 
@@ -20,7 +21,7 @@ export default function Highlights({ entries }: { entries: LeaderboardEntry[] })
   }
 
   return (
-    <ul className="flex flex-col divide-y divide-white/5 rounded-3xl bg-card px-4">
+    <ul className="flex flex-col divide-y divide-foreground/5 rounded-3xl bg-card px-4">
       {items.map((h, i) => {
         const rank = rankFor(h.rating)
         return (
@@ -32,7 +33,7 @@ export default function Highlights({ entries }: { entries: LeaderboardEntry[] })
                   <b>{h.who.me ? 'You' : h.who.name}</b> · {h.name}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {h.detail} · <span style={{ color: rank.tier.color }}>{rank.label}</span>
+                  {h.detail} · <span style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
                 </span>
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">{ago(h.date, now)}</span>

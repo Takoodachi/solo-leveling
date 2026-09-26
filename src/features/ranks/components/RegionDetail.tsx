@@ -3,6 +3,7 @@ import type { RegionRank } from '../computeRanks'
 import { MUSCLE_GROUPS, exercisesForRegion } from '../standards'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
+import { ink } from '@/lib/colors'
 
 /** The tapped muscle: its rank and the lift behind it, or (with `suggest`) which lifts would rank it. */
 export default function RegionDetail({ region, suggest = true }: { region: RegionRank | null; suggest?: boolean }) {
@@ -29,7 +30,7 @@ export default function RegionDetail({ region, suggest = true }: { region: Regio
         {region.rank ? (
           <>
             <p className="text-sm">
-              <span className="font-semibold" style={{ color: region.rank.tier.color }}>{region.rank.label}</span>
+              <span className="font-semibold" style={{ color: ink(region.rank.tier.color) }}>{region.rank.label}</span>
               <span className="text-muted-foreground"> · {region.rank.rating} pts via {region.topLift}</span>
             </p>
             <RankProgress rank={region.rank} className="mt-2" />

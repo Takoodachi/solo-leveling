@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { Check } from 'lucide-react'
+import { hslToHex } from '@/features/settings/themes'
 
 /** "Training complete!" burst from the design, with a one-shot confetti pop. */
 export default function CompletionHero({ xp }: { xp: number }) {
@@ -9,7 +10,10 @@ export default function CompletionHero({ xp }: { xp: number }) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) return
     const t = setTimeout(() => {
-      void confetti({ particleCount: 90, spread: 75, origin: { y: 0.3 }, colors: ['#ff5f1a', '#ff8a3d', '#ffffff', '#e8421a'] })
+      // In the theme's colours (confetti wants hex)
+      const css = getComputedStyle(document.documentElement)
+      const hex = (token: string) => hslToHex(css.getPropertyValue(token).trim())
+      void confetti({ particleCount: 90, spread: 75, origin: { y: 0.3 }, colors: [hex('--brand-from'), hex('--primary'), hex('--foreground'), hex('--brand-to')] })
     }, 350)
     return () => clearTimeout(t)
   }, [])
@@ -32,7 +36,7 @@ export default function CompletionHero({ xp }: { xp: number }) {
         transition={{ type: 'spring', damping: 12, stiffness: 180 }}
         className="relative flex h-28 w-28 items-center justify-center rounded-full bg-primary shadow-[0_0_60px_hsl(var(--primary)/0.55)]"
       >
-        <Check size={56} strokeWidth={3} className="text-white" />
+        <Check size={56} strokeWidth={3} className="text-primary-foreground" />
       </motion.div>
       <h1 className="relative mt-8 text-3xl font-bold">Training complete!</h1>
       <p className="relative mt-2 text-muted-foreground">Great job! You crushed today’s session.</p>

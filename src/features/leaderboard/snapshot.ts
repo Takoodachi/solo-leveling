@@ -37,7 +37,9 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
 export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnapshot> {
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const since = toDateStr(subDays(now, HIGHLIGHT_DAYS))
-  const [ranks, history, stats, week] = await Promise.all([computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart)])
+  const [ranks, history, stats, week, settings] = await Promise.all([
+    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1),
+  ])
 
   const run = ranks.running
   const highlights: Highlight[] = ranks.lifts
@@ -69,5 +71,6 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
     history: history.map(p => ({ d: p.date, o: p.overall, r: p.running })),
     week,
     highlights: highlights.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
+    ...(settings?.avatar ? { avatar: settings.avatar } : {}),
   }
 }

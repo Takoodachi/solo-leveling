@@ -1,27 +1,24 @@
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import ProfileCard from '@/features/settings/components/ProfileCard'
+import ShortcutsCard from '@/features/settings/components/ShortcutsCard'
 import AchievementsGrid from '@/features/settings/components/AchievementsGrid'
-import AccountCard from '@/features/settings/components/AccountCard'
 import BodyGoalsCard from '@/features/settings/components/BodyGoalsCard'
 import TargetsCard from '@/features/settings/components/TargetsCard'
-import ExportButton from '@/features/settings/components/ExportButton'
-import ImportButton from '@/features/settings/components/ImportButton'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
-import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
-import ShareCard from '@/features/leaderboard/components/ShareCard'
 
+/** You: name and photo, level, ranks, achievements, body and goals. App settings are on the Settings tab. */
 export default function ProfilePage() {
+  const isTab = useIsNavTab('/profile')
+
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Profile" />
+      <PageHeader back={isTab ? undefined : '/home'} title="Profile" />
       <ProfileCard />
+      <ShortcutsCard />
       <RankSummaryCard />
-      <section className="flex flex-col gap-3">
-        <LeaderboardCard />
-        <ShareCard />
-      </section>
-      <AccountCard />
+      <LeaderboardCard />
       <AchievementsGrid />
 
       <section className="flex flex-col gap-3">
@@ -33,24 +30,6 @@ export default function ProfilePage() {
         <h2 className="text-lg font-semibold">Daily targets</h2>
         <TargetsCard />
       </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Home screen</h2>
-        <HomeLayoutCard />
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Backup</h2>
-        <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
-          <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
-          <div className="flex gap-2">
-            <ExportButton />
-            <ImportButton />
-          </div>
-        </div>
-      </section>
-
-      <p className="text-center text-xs text-muted-foreground">Solo Leveling · v0.2.0</p>
     </div>
   )
 }

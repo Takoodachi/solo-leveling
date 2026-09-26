@@ -25,6 +25,8 @@ export interface LeaderboardSnapshot {
   week: { start: string; workouts: number; sets: number; minutes: number; runKm: number }
   /** New bests from the last two weeks, newest first. */
   highlights: Highlight[]
+  /** Profile photo: a small JPEG data URL (absent = initials). Check with safeAvatar before drawing. */
+  avatar?: string
 }
 
 export interface SharedLift {

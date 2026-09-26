@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { startOfWeek } from 'date-fns'
 import { EyeOff, RefreshCw, Users } from 'lucide-react'
-import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import Segmented from '@/components/Segmented'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ export default function LeaderboardPage() {
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const [board, setBoard] = useState<BoardKey>('strength')
   const lb = useLeaderboard()
+  const isTab = useIsNavTab('/leaderboard')
   const friends = lb.entries.filter(e => !e.me).length
 
   const refresh = (
@@ -37,8 +38,8 @@ export default function LeaderboardPage() {
   )
 
   return (
-    <FullScreen className="flex flex-col gap-6">
-      <PageHeader back="/profile" title="Leaderboard" action={lb.signedIn ? refresh : undefined} />
+    <div className="flex flex-col gap-6">
+      <PageHeader back={isTab ? undefined : '/home'} title="Leaderboard" action={lb.signedIn ? refresh : undefined} />
 
       {!lb.signedIn ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl bg-card p-6 text-center">
@@ -80,6 +81,6 @@ export default function LeaderboardPage() {
           </section>
         </>
       )}
-    </FullScreen>
+    </div>
   )
 }

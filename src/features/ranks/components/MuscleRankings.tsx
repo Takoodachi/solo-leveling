@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import type { GroupRank } from '../computeRanks'
 import type { MuscleRegion } from '../standards'
 import RankBadge from './RankBadge'
+import { ink } from '@/lib/colors'
 
 interface Props {
   groups: GroupRank[]
@@ -32,7 +33,7 @@ export default function MuscleRankings({ groups, selected, onSelect }: Props) {
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{g.label}</span>
                 <span className="block text-xs">
-                  {g.rank && <span className="font-semibold" style={{ color: g.rank.tier.color }}>{g.rank.label} · </span>}
+                  {g.rank && <span className="font-semibold" style={{ color: ink(g.rank.tier.color) }}>{g.rank.label} · </span>}
                   <span className="text-muted-foreground">{complete ? 'All muscles ranked' : `${g.ranked}/${total} ranked`}</span>
                 </span>
               </span>
@@ -45,14 +46,14 @@ export default function MuscleRankings({ groups, selected, onSelect }: Props) {
                     <button
                       type="button"
                       onClick={() => onSelect(r.key)}
-                      className={cn('flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left', selected === r.key ? 'bg-white/10' : 'hover:bg-white/5')}
+                      className={cn('flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left', selected === r.key ? 'bg-foreground/10' : 'hover:bg-foreground/5')}
                     >
                       <RankBadge tier={r.rank?.tier.key ?? 'wood'} size={30} locked={!r.rank} />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium">{r.label}</span>
                         <span className="block truncate text-xs text-muted-foreground">{r.topLift ?? 'Not trained yet'}</span>
                       </span>
-                      <span className="shrink-0 text-xs font-semibold" style={r.rank ? { color: r.rank.tier.color } : undefined}>
+                      <span className="shrink-0 text-xs font-semibold" style={r.rank ? { color: ink(r.rank.tier.color) } : undefined}>
                         {r.rank?.label ?? <span className="font-normal text-muted-foreground">Unranked</span>}
                       </span>
                     </button>

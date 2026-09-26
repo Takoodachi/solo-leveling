@@ -36,7 +36,7 @@ export default function CreatineCard({ date, today }: { date: string; today: str
           transition={{ type: 'spring', damping: 11, stiffness: 300 }}
           className={cn(
             'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-colors',
-            done ? 'border-primary bg-primary text-white' : 'border-white/20 text-transparent',
+            done ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/20 text-transparent',
           )}
         >
           <Check size={22} strokeWidth={3} />

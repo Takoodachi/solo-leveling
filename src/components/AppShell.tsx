@@ -1,13 +1,13 @@
 import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useNavTabs } from '@/hooks/useNavTabs'
 import BottomNav from './BottomNav'
 
-const TAB_ORDER = ['/home', '/workouts', '/nutrition', '/analytics', '/profile']
-
-function getTabIndex(pathname: string) {
-  const i = TAB_ORDER.findIndex(t => pathname.startsWith(t))
-  return i === -1 ? 0 : i
+/** Position for the slide direction: bar tabs in bar order, other pages just past them. */
+function getTabIndex(order: string[], pathname: string) {
+  const i = order.findIndex(t => pathname.startsWith(t))
+  return i === -1 ? order.length : i
 }
 
 /**
@@ -17,7 +17,8 @@ function getTabIndex(pathname: string) {
  */
 export default function AppShell() {
   const location = useLocation()
-  const currentIdx = getTabIndex(location.pathname)
+  const tabs = useNavTabs()
+  const currentIdx = getTabIndex(tabs.map(t => t.to), location.pathname)
 
   // Slide direction comes from the previous tab (React's "store info from previous renders" pattern).
   const [nav, setNav] = useState({ idx: currentIdx, dir: 1 })

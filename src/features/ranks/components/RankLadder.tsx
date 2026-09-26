@@ -1,5 +1,6 @@
 import { TIERS, MAX_RATING } from '../tiers'
 import RankBadge from './RankBadge'
+import { ink } from '@/lib/colors'
 
 /** The nine tiers plus a plain-language explanation of the rating. */
 export default function RankLadder() {
@@ -9,7 +10,7 @@ export default function RankLadder() {
         {TIERS.map((t, i) => (
           <div key={t.key} className="flex flex-col items-center gap-1 rounded-2xl bg-secondary/60 px-1 py-3">
             <RankBadge tier={t.key} size={48} />
-            <p className="text-xs font-bold uppercase tracking-wide" style={{ color: t.color }}>{t.name}</p>
+            <p className="text-xs font-bold uppercase tracking-wide" style={{ color: ink(t.color) }}>{t.name}</p>
             <p className="text-[11px] text-muted-foreground tabular-nums">
               {t.min}–{i < TIERS.length - 1 ? TIERS[i + 1].min - 1 : MAX_RATING}
             </p>

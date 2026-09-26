@@ -70,7 +70,7 @@ export default function IngredientPicker({ open, onClose, onSelect, excludeUuid 
                 placeholder="100"
               />
               {selected.servingUnit !== 'g' && selected.servingUnit !== 'ml' && (
-                <p className="text-[11px] text-amber-400/80">
+                <p className="text-[11px] text-amber-700 dark:text-amber-400/80">
                   This source is per {selected.servingUnit}, not grams. Grams will be treated as servings of the source.
                 </p>
               )}

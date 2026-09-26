@@ -42,7 +42,7 @@ export default function WaterSheet({ open, onOpenChange, date, today }: Props) {
           </p>
           <p className="text-sm text-muted-foreground">of {goal.toLocaleString()} ml goal</p>
           <div className="mt-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-secondary">
-            <div className="h-full rounded-full bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
+            <div className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
           </div>
         </div>
 

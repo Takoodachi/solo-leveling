@@ -114,9 +114,9 @@ export default function ScannedFoodReview({ scan, onBack, onRecheck, onSave }: P
       </div>
 
       {warnings.length > 0 && (
-        <div className="flex flex-col gap-1.5 rounded-2xl bg-amber-400/10 p-3 text-sm text-amber-200">
+        <div className="flex flex-col gap-1.5 rounded-2xl bg-amber-400/10 p-3 text-sm text-amber-800 dark:text-amber-200">
           {warnings.map(w => (
-            <p key={w} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-400" />{w}</p>
+            <p key={w} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />{w}</p>
           ))}
         </div>
       )}

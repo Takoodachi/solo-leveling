@@ -31,10 +31,10 @@ export default function ChallengeCard({ challenge: c, onClick }: Props) {
     <Root type={onClick ? 'button' : undefined} onClick={onClick} className="relative block w-full overflow-hidden rounded-3xl bg-card p-5 text-left active:scale-[0.99]">
       {/* Decorative glow + ghost icon in place of the design's photo */}
       <div aria-hidden="true" className="absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(120%_100%_at_100%_0%,hsl(var(--primary)/0.35),transparent_65%)]" />
-      <meta.Icon aria-hidden="true" className="absolute -right-4 -top-4 h-32 w-32 rotate-12 text-white/[0.06]" strokeWidth={1.2} />
+      <meta.Icon aria-hidden="true" className="absolute -right-4 -top-4 h-32 w-32 rotate-12 text-foreground/[0.06]" strokeWidth={1.2} />
 
       <div className="relative">
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-2 py-1 text-sm font-medium text-amber-400">
+        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-2 py-1 text-sm font-medium text-amber-700 dark:text-amber-400">
           <Trophy size={14} className="fill-amber-400" /> Challenge
         </span>
         <p className="mt-5 text-base font-semibold">{c.title}</p>

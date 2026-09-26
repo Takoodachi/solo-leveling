@@ -6,7 +6,10 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark is the app's default (index.html sets class="dark"); these light values are a fallback. */
+  /*
+   * Themes (features/settings/themes.ts) set these on <html> at startup; the values
+   * here are fallbacks. Dark is the default (index.html sets class="dark").
+   */
   :root {
     --background: 0 0% 98%;
     --foreground: 240 6% 8%;
@@ -28,6 +31,12 @@
     --input: 240 6% 88%;
     --ring: 18 100% 55%;
     --radius: 1.25rem;
+    --carbs: 200 98% 39%;
+    --fat: 32 95% 44%;
+    --brand-from: 24 100% 55%;
+    --brand-to: 8 88% 50%;
+    --ink: 55%; /* how much of a rank tier's own colour its text keeps (tierInk) */
+    --art-glow: 0.45; /* strength of the routine-card glow (RoutineArt) */
   }
 
   .dark {
@@ -51,6 +60,12 @@
     --border: 240 4% 15%;
     --input: 240 4% 18%;
     --ring: 18 100% 55%;
+    --carbs: 199 89% 60%;
+    --fat: 45 96% 64%;
+    --brand-from: 24 100% 58%;
+    --brand-to: 8 88% 52%;
+    --ink: 100%;
+    --art-glow: 1;
   }
 }
 
@@ -112,6 +127,6 @@
     @apply text-[11px] font-semibold uppercase tracking-[0.14em];
   }
   .bg-brand-gradient {
-    background-image: linear-gradient(135deg, hsl(24 100% 58%), hsl(8 88% 52%));
+    background-image: linear-gradient(135deg, hsl(var(--brand-from)), hsl(var(--brand-to)));
   }
 }

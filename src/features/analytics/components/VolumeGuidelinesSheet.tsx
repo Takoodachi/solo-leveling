@@ -40,7 +40,7 @@ export default function VolumeGuidelinesSheet({ open, onOpenChange }: Props) {
           <thead>
             <tr><th className={`${th} text-left`} /><th className={th}>MEV</th><th className={th}>MAV</th><th className={th}>MRV</th></tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-foreground/5">
             {LEVEL_GUIDE.map(l => (
               <tr key={l.label}><td className="py-2">{l.label}</td><td className={td}>{l.mev}</td><td className={tdMav}>{l.mav}</td><td className={td}>{l.mrv}</td></tr>
             ))}
@@ -53,7 +53,7 @@ export default function VolumeGuidelinesSheet({ open, onOpenChange }: Props) {
           <thead>
             <tr><th className={`${th} text-left`} /><th className={th}>MEV</th><th className={th}>MAV</th><th className={th}>MRV</th></tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-foreground/5">
             {VOLUME_MUSCLES.map(m => (
               <tr key={m.key}>
                 <td className="py-2">{m.label}{m.estimate && <span className="text-muted-foreground">*</span>}</td>

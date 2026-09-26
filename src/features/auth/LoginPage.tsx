@@ -9,7 +9,7 @@ import { useAuthStore } from './authStore'
 
 type Mode = 'password' | 'link' | 'link-sent'
 
-/** `embedded`: opened from Profile while using the app locally (shows a back button, no "continue offline"). */
+/** `embedded`: opened from Settings while using the app locally (shows a back button, no "continue offline"). */
 export default function LoginPage({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate()
   const { signInWithPassword, sendSignInLink, continueWithoutAccount } = useAuth()
@@ -30,7 +30,7 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
     setBusy(false)
     if (error) setError(error)
     else if (mode === 'link') setMode('link-sent')
-    else if (embedded) navigate('/profile', { replace: true })
+    else if (embedded) navigate('/settings', { replace: true })
   }
 
   return (
@@ -43,7 +43,7 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-6 py-10">
         <div className="flex flex-col items-center gap-4 text-center">
           <span className="bg-brand-gradient flex h-20 w-20 items-center justify-center rounded-[28px] shadow-xl shadow-primary/30">
-            <Dumbbell size={40} className="text-white" />
+            <Dumbbell size={40} className="text-primary-foreground" />
           </span>
           <div>
             <h1 className="text-3xl font-bold">Solo Leveling</h1>
@@ -52,8 +52,8 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
         </div>
 
         {linkError && mode !== 'link-sent' && (
-          <div role="alert" className="flex gap-2.5 rounded-2xl bg-amber-400/10 p-3.5 text-sm text-amber-200">
-            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-400" />
+          <div role="alert" className="flex gap-2.5 rounded-2xl bg-amber-400/10 p-3.5 text-sm text-amber-800 dark:text-amber-200">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <p>{linkError}</p>
           </div>
         )}
@@ -64,7 +64,7 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
             <p className="font-semibold">Check your email</p>
             <p className="text-sm text-muted-foreground">
               We sent a sign-in link to <strong className="text-foreground">{email}</strong>. It works once and expires after about an hour.
-              On iPhone it opens in Safari, not the home-screen app, so set a password in Profile afterwards and sign in with that in the app.
+              On iPhone it opens in Safari, not the home-screen app, so set a password in Settings afterwards and sign in with that in the app.
             </p>
             <Button variant="secondary" onClick={() => setMode('password')}>Back</Button>
           </div>
@@ -95,7 +95,7 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
         )}
 
         {!embedded && (
-          <div className="flex flex-col items-center gap-2 border-t border-white/5 pt-6 text-center">
+          <div className="flex flex-col items-center gap-2 border-t border-foreground/5 pt-6 text-center">
             <Button variant="ghost" onClick={continueWithoutAccount}>Continue without an account</Button>
             <p className="text-xs text-muted-foreground">Everything works offline. Your data stays on this device until you sign in.</p>
           </div>

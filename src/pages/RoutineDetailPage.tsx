@@ -59,12 +59,12 @@ export default function RoutineDetailPage() {
           <button
             type="button"
             onClick={goBack}
-            className="flex h-11 items-center gap-1 rounded-full pl-2 pr-4 text-lg font-medium text-white"
+            className="flex h-11 items-center gap-1 rounded-full pl-2 pr-4 text-lg font-medium text-foreground"
           >
             <ChevronLeft size={26} /> Back
           </button>
           {kind === 'routine' && (
-            <Link to={`/workouts/routine/${routine.uuid}/edit`} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur" aria-label="Edit routine">
+            <Link to={`/workouts/routine/${routine.uuid}/edit`} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Edit routine">
               <Pencil size={18} />
             </Link>
           )}
@@ -74,7 +74,7 @@ export default function RoutineDetailPage() {
       <div className="relative -mt-16 rounded-t-[32px] bg-background">
         <div className="mx-auto flex max-w-md flex-col gap-5 px-4 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <Badge variant="tag" className="gap-1.5 bg-primary/90 text-white"><cat.Icon size={13} />{cat.label}</Badge>
+            <Badge variant="tag" className="gap-1.5 bg-primary/90 text-primary-foreground"><cat.Icon size={13} />{cat.label}</Badge>
             <h1 className="text-balance text-3xl font-bold">{routine.name}</h1>
             {routine.notes && <p className="text-balance text-muted-foreground">{routine.notes}</p>}
             {routine.scheduleDays.length > 0 && (

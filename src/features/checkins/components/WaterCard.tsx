@@ -31,7 +31,7 @@ export default function WaterCard({ date, today }: { date: string; today: string
             onClick={() => void addGlass()}
             disabled={future}
             aria-label={`Add a glass of water (${glass} ml)`}
-            className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-sky-400/15 text-sky-300 transition-transform active:scale-90 disabled:opacity-40"
+            className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-sky-400/15 text-sky-600 dark:text-sky-300 transition-transform active:scale-90 disabled:opacity-40"
           >
             <Plus size={22} strokeWidth={2.4} />
           </button>
@@ -42,7 +42,7 @@ export default function WaterCard({ date, today }: { date: string; today: string
           <p className="text-sm text-muted-foreground tabular-nums">{ml.toLocaleString()} / {goal.toLocaleString()} ml</p>
         </button>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-          <div className="h-full rounded-full bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
+          <div className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
         </div>
       </div>
       <WaterSheet open={open} onOpenChange={setOpen} date={date} today={today} />

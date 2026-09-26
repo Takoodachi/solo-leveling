@@ -14,6 +14,7 @@ import VolumeRadar from './VolumeRadar'
 import VolumeBreakdown from './VolumeBreakdown'
 import VolumeGuidelinesSheet from './VolumeGuidelinesSheet'
 import CustomizeRadarSheet from './CustomizeRadarSheet'
+import { ink } from '@/lib/colors'
 
 const navBtn = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground disabled:opacity-30'
 
@@ -89,7 +90,7 @@ export default function SetVolumeCard() {
       <div className="mt-3 min-h-11 rounded-2xl bg-secondary/60 px-4 py-2.5 text-center text-sm">
         {focus ? (
           <>
-            <p><b>{focus.name}</b>: {formatSets(focus.sets)} sets · <span style={{ color: STATUS[focus.status].color }}>{STATUS[focus.status].label}</span></p>
+            <p><b>{focus.name}</b>: {formatSets(focus.sets)} sets · <span style={{ color: ink(STATUS[focus.status].color) }}>{STATUS[focus.status].label}</span></p>
             <p className="text-xs text-muted-foreground tabular-nums">MEV {focus.t.mev} · MAV {focus.t.mavLow}–{focus.t.mavHigh} · MRV {focus.t.mrv} sets / week</p>
           </>
         ) : volume && volume.totalSets > 0 ? (

@@ -59,7 +59,7 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
             {challenge ? (
               <Link to="/challenges" className="block"><ChallengeCard challenge={challenge} /></Link>
             ) : (
-              <Link to="/challenges" className="flex items-center gap-3 rounded-3xl border border-dashed border-white/10 p-5 text-muted-foreground">
+              <Link to="/challenges" className="flex items-center gap-3 rounded-3xl border border-dashed border-foreground/10 p-5 text-muted-foreground">
                 <Plus size={20} /> Set yourself a personal challenge
               </Link>
             )}
@@ -76,7 +76,7 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
 
   if (ids.length === 0) {
     return (
-      <button type="button" onClick={onCustomize} className="flex items-center gap-3 rounded-3xl border border-dashed border-white/10 p-5 text-left text-muted-foreground">
+      <button type="button" onClick={onCustomize} className="flex items-center gap-3 rounded-3xl border border-dashed border-foreground/10 p-5 text-left text-muted-foreground">
         <SlidersHorizontal size={20} /> Your Home is empty. Tap to choose what to show.
       </button>
     )

@@ -4,6 +4,7 @@ import { MUSCLE_GROUPS, type MuscleGroup } from '@/features/ranks/standards'
 import { rankFor } from '@/features/ranks/tiers'
 import { profileLink } from '../boards'
 import type { LeaderboardEntry } from '../types'
+import { ink } from '@/lib/colors'
 
 type Territory = MuscleGroup | 'running'
 const TERRITORIES: { key: Territory; label: string }[] = [
@@ -28,11 +29,11 @@ export default function MuscleCrowns({ entries }: { entries: LeaderboardEntry[] 
           <>
             <span className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.label}</span>
-              <Crown size={16} style={rank ? { color: rank.tier.color } : undefined} className={rank ? undefined : 'text-muted-foreground/40'} />
+              <Crown size={16} style={rank ? { color: ink(rank.tier.color) } : undefined} className={rank ? undefined : 'text-muted-foreground/40'} />
             </span>
             <span className="mt-1 block truncate font-semibold">{holder ? (holder.me ? 'You' : holder.name) : 'Unclaimed'}</span>
             {rank ? (
-              <span className="block text-xs font-semibold" style={{ color: rank.tier.color }}>{rank.label}</span>
+              <span className="block text-xs font-semibold" style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
             ) : (
               <span className="block text-xs text-muted-foreground">Nobody ranked yet</span>
             )}

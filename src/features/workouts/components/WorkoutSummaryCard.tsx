@@ -37,7 +37,7 @@ export default function WorkoutSummaryCard({ workout }: { workout: WorkoutWithSe
   }
 
   return (
-    <section className="rounded-3xl bg-black/60 p-5 ring-1 ring-white/5">
+    <section className="rounded-3xl bg-card p-5 ring-1 ring-foreground/5 dark:bg-black/60">
       <h2 className="mb-5 text-center text-xl font-semibold">Workout Summary</h2>
       <div className="grid grid-cols-2 gap-x-6 gap-y-5">
         {stats.map(([label, value]) => <Stat key={label} label={label} value={value} />)}

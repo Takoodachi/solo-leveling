@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import Segmented from '@/components/Segmented'
 import { useMacroAdherence } from '@/features/analytics/hooks/useAnalyticsData'
 import MacroAdherenceChart from '@/features/analytics/components/MacroAdherenceChart'
@@ -11,12 +12,13 @@ import SetVolumeCard from '@/features/analytics/components/SetVolumeCard'
 type MacroView = 'week' | 'month'
 
 export default function AnalyticsPage() {
+  const isTab = useIsNavTab('/analytics')
   const [macroView, setMacroView] = useState<MacroView>('week')
   const macro = useMacroAdherence(macroView === 'week' ? 7 : 30)
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Analytics" />
+      <PageHeader back={isTab ? undefined : '/home'} title="Analytics" />
 
       <SetVolumeCard />
       <WeeklyVolumeCard />

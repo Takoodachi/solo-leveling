@@ -25,7 +25,7 @@ export default function RestBanner({ secondsLeft, totalSeconds, onAdjust, onSkip
           role="timer"
           aria-live="polite"
         >
-          <div className="mx-auto max-w-md overflow-hidden rounded-3xl border border-white/10 bg-popover/95 shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto max-w-md overflow-hidden rounded-3xl border border-foreground/10 bg-popover/95 shadow-2xl backdrop-blur-xl">
             <div className="h-1 bg-secondary">
               <div className="h-full bg-primary transition-[width] duration-300 ease-linear" style={{ width: `${pct * 100}%` }} />
             </div>

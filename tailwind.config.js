@@ -50,6 +50,9 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Macro colours (protein is primary); set per theme.
+        carbs: 'hsl(var(--carbs))',
+        fat: 'hsl(var(--fat))',
       },
       borderRadius: {
         lg: 'var(--radius)',

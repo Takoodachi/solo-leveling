@@ -9,6 +9,7 @@ import BlockHeader from './BlockHeader'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
 import RankBadge from '@/features/ranks/components/RankBadge'
+import { ink } from '@/lib/colors'
 
 interface Props {
   block: BlockDraft
@@ -67,7 +68,7 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
           <>
             {done}/{block.sets.length} sets · rest {block.restSec}s
             {rank && (
-              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: rank.tier.color }}>
+              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
                 <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
               </span>
             )}

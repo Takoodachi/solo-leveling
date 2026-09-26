@@ -4,6 +4,10 @@ import { seedDatabase } from '@/db/seed'
 import { restoreDraftFromStorage } from '@/features/workouts/store'
 import App from './App'
 import './index.css'
+import { applyTheme, cachedThemeId } from '@/features/settings/themes'
+
+// Paint the last-used theme before the first render, so launches don't flash the default.
+applyTheme(cachedThemeId())
 
 // Ask the browser not to evict our IndexedDB under storage pressure (best-effort;
 // installed home-screen apps on iOS are already exempt from Safari's 7-day cap).

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Trophy } from 'lucide-react'
-import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import { useRanks } from '@/features/ranks/useRanks'
 import type { MuscleRegion } from '@/features/ranks/standards'
 import RankHero from '@/features/ranks/components/RankHero'
@@ -18,11 +18,12 @@ import RankLadder from '@/features/ranks/components/RankLadder'
 export default function RanksPage() {
   const ranks = useRanks()
   const [selected, setSelected] = useState<MuscleRegion | null>(null)
+  const isTab = useIsNavTab('/ranks')
 
   return (
-    <FullScreen className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
-        back="/profile"
+        back={isTab ? undefined : '/home'}
         title="Ranks"
         action={
           <Link to="/leaderboard" className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent" aria-label="Leaderboard">
@@ -61,6 +62,6 @@ export default function RanksPage() {
         <h2 className="text-lg font-semibold">How ranks work</h2>
         <RankLadder />
       </section>
-    </FullScreen>
+    </div>
   )
 }
