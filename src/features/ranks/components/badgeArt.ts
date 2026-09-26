@@ -31,6 +31,8 @@ export interface Layer {
 // ── Path helpers ──────────────────────────────────────────────────────────────
 const circle = (cx: number, cy: number, r: number) =>
   `M${cx - r},${cy} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 Z`
+const ellipse = (cx: number, cy: number, rx: number, ry: number) =>
+  `M${cx - rx},${cy} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 Z`
 
 /** Thin rays around (50, 50), as one path. */
 function rays(count: number, inner: number, outer: number, halfWidthDeg: number, start = 0): string {
@@ -192,8 +194,8 @@ const sparkle = (x: number, y: number, r: number) =>
   `M${x},${y - r} L${x + r * 0.22},${y - r * 0.22} L${x + r},${y} L${x + r * 0.22},${y + r * 0.22} L${x},${y + r} L${x - r * 0.22},${y + r * 0.22} L${x - r},${y} L${x - r * 0.22},${y - r * 0.22} Z`
 
 const OLYMPIAN: Layer[] = [
-  // Celestial helm: a faceted pearl mask crowned like One Above All: twin crest pillars with a
-  // gem between them, a glowing heart gem on the brow, stepped crystal blades, chevron gorget
+  // Celestial helm: a faceted pearl mask under a floating gold halo (Titan wears horns), a glowing
+  // heart gem on the brow, stepped crystal blades, chevron gorget
   { d: rays(8, 32, 54, 1.1, 22.5), fill: 'a0', stroke: 'none', o: 0.7 },
   { d: 'M50,97 L12,66 L19,66 L50,91 Z', fill: 'a1', fillR: 'a2', mirror: true, w: 0.9 },
   { d: 'M50,89.5 L22,67 L28,67 L50,84.5 Z', fill: 'hi', fillR: 'dk', mirror: true, w: 0.9 },
@@ -201,11 +203,11 @@ const OLYMPIAN: Layer[] = [
   { d: 'M36,29 L7,52 L19.5,52 L19.5,64 L31,73 L33.5,49 Z', fill: 'lt', fillR: 'dk', mirror: true, w: 1.3 },
   { d: 'M34,32.5 L13,49.5 L17,49.5 L35.5,34.5 Z', fill: 'a1', fillR: 'a2', mirror: true, stroke: 'none' },
   { d: 'M7,52 L33.5,57 M19.5,64 L32,62 M33,40 L26,50', fill: 'none', stroke: 'hi', mirror: true, w: 0.7, o: 0.6 },
-  // Crest pillars and the small gem between them
-  { d: 'M45.5,1 L37,9.5 L37,34 L42.5,36 L42.5,12.5 L45.5,9.5 Z', fill: 'hi', fillR: 'lt', mirror: true, w: 1.2 },
-  { d: 'M39.7,12 L39.7,33', fill: 'none', stroke: 'a1', mirror: true, w: 1.2 },
-  { d: 'M50,6.5 L54,10 L54,17.5 L50,21 L46,17.5 L46,10 Z', fill: 'lt', w: 1.1 },
-  { d: 'M50,6.5 L46,10 L46,17.5 L50,21 Z', fill: 'hi', stroke: 'none', o: 0.9 },
+  // Halo floating over the helm, light falling from it
+  { d: 'M34,13 L66,13 L60,24 L40,24 Z', fill: 'lt', stroke: 'none', o: 0.22 },
+  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'rim', w: 6.4 },
+  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'a1', w: 4.2 },
+  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'a0', w: 1.3 },
   // The helm
   { d: 'M50,22 L41,24 L35,31 L33,42 L33,58 L37,68 L44,76 L50,80 Z', ...shade, w: 2.2 },
   { d: 'M50,22 L41,24 L37.5,29 L50,33 Z', fill: 'hi', stroke: 'none', o: 0.8 },
@@ -223,7 +225,7 @@ const OLYMPIAN: Layer[] = [
   { d: 'M50,28 L52.3,30.2 L52.3,35.8 L50,38 L47.7,35.8 L47.7,30.2 Z', fill: 'eye', stroke: 'a2', w: 0.8 },
   { d: sparkle(50, 33, 5.5), fill: 'core', stroke: 'none' },
   // Glints
-  { d: `${sparkle(26, 31, 3)} ${sparkle(71, 60, 2.4)} ${sparkle(60, 9.5, 2.2)}`, fill: 'core', stroke: 'none' },
+  { d: `${sparkle(26, 31, 3)} ${sparkle(71, 60, 2.4)} ${sparkle(79, 20, 2.4)}`, fill: 'core', stroke: 'none' },
 ]
 
 export interface BadgeArt {

@@ -64,7 +64,7 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings', keywords: 'privacy share visible hide', Icon: Eye, to: '/settings#sharing' },
   { id: 'theme', title: 'Theme', subtitle: 'Settings', keywords: `dark light mode colours colors palette appearance ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
   { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs', Icon: PanelBottom, to: '/settings#bottom-bar' },
-  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings', keywords: 'widgets cards customize home', Icon: LayoutGrid, to: '/settings#home-screen' },
+  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings', keywords: 'widgets cards customize home search bar hide show', Icon: LayoutGrid, to: '/settings#home-screen' },
   { id: 'backup', title: 'Backup', subtitle: 'Settings', keywords: 'export import json data restore', Icon: DatabaseBackup, to: '/settings#backup' },
 ]
 

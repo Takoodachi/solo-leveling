@@ -42,16 +42,19 @@ export default function HomePage() {
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const routine = routines.find(r => r.scheduleDays.includes(weekday))
   const completed = (workouts ?? []).filter(w => w.date === selected)
+  const showSearch = settings?.showSearch !== false
   const kcalProgress = budget.targets.kcal > 0 ? netKcal(day?.kcal ?? 0, budget.burn) / budget.targets.kcal : 0
 
   return (
     <div className="flex flex-col gap-5">
       <HomeHeader />
-      <HomeSearch open={searching} onOpenChange={setSearching} onCustomize={() => setCustomizing(true)} />
+      {showSearch && (
+        <HomeSearch open={searching} onOpenChange={setSearching} onCustomize={() => setCustomizing(true)} />
+      )}
       <CustomizeHomeSheet open={customizing} onOpenChange={setCustomizing} />
       {!searching && (
         <>
-          <Segmented value={tab} options={TABS} onChange={setTab} />
+          <Segmented value={tab} options={TABS} onChange={setTab} className={showSearch ? undefined : 'mt-2'} />
 
           {days && (
             <WeekStrip

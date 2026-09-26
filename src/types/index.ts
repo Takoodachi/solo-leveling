@@ -120,6 +120,7 @@ export interface Settings {
   theme?: string // colour palette id (features/settings/themes.ts; unset = the default dark theme)
   navTabs?: NavTabId[] // the two bottom-bar slots beside + (unset = workouts, analytics)
   avatar?: string // profile photo: a small JPEG data URL (≈10 KB), shared on the leaderboard
+  showSearch?: boolean // search bar on Home (unset = shown)
   updatedAt?: number
   syncPending?: boolean
 }
