@@ -87,6 +87,9 @@ export type ReminderDays = 'daily' | 'workout-days'
 
 export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
 
+/** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
+export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'
+
 export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
 export type VolumeMuscle =
   | 'chest' | 'shoulders' | 'triceps' | 'biceps' | 'forearms' | 'abs'
@@ -114,6 +117,9 @@ export interface Settings {
   trainingLevel?: TrainingLevel // weekly set-volume targets (unset = intermediate)
   radarMuscles?: VolumeMuscle[] // muscles on the volume radar (unset = default twelve)
   shareOnLeaderboard?: boolean // friends leaderboard (unset = shared)
+  theme?: string // colour palette id (features/settings/themes.ts; unset = the default dark theme)
+  navTabs?: NavTabId[] // the two bottom-bar slots beside + (unset = workouts, analytics)
+  avatar?: string // profile photo: a small JPEG data URL (≈10 KB), shared on the leaderboard
   updatedAt?: number
   syncPending?: boolean
 }

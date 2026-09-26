@@ -3,12 +3,13 @@ import type { RanksSnapshot } from '../computeRanks'
 import { MIN_GROUPS_FOR_OVERALL } from '../computeRanks'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
+import { ink } from '@/lib/colors'
 
 /** Big overall emblem at the top of the ranks screen. */
 export default function RankHero({ ranks }: { ranks: RanksSnapshot }) {
   const overall = ranks.overall
   const ranked = ranks.groups.filter(g => g.rank).length
-  const color = overall?.tier.color ?? 'hsl(var(--muted-foreground))'
+  const color = overall ? ink(overall.tier.color) : 'hsl(var(--muted-foreground))'
 
   return (
     <section

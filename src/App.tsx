@@ -5,6 +5,7 @@ import AppShell from '@/components/AppShell'
 import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
+import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
 const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
@@ -17,6 +18,7 @@ const PlanPage = lazy(() => import('@/pages/PlanPage'))
 const NutritionPage = lazy(() => import('@/pages/NutritionPage'))
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const ChallengesPage = lazy(() => import('@/pages/ChallengesPage'))
 const RanksPage = lazy(() => import('@/pages/RanksPage'))
 const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
@@ -49,6 +51,7 @@ function StatusBarScrim() {
 function AppRoutes() {
   useAuthInit()
   useLeaderboardPublisher()
+  useThemeSync()
   const session = useAuthStore(s => s.session)
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)
@@ -71,6 +74,10 @@ function AppRoutes() {
           <Route path="nutrition" element={<NutritionPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          {/* Can be bottom-bar tabs (Settings → Bottom bar), so they keep the bar */}
+          <Route path="ranks" element={<RanksPage />} />
+          <Route path="leaderboard" element={<LeaderboardPage />} />
         </Route>
         {/* Full-screen — outside AppShell, no bottom nav */}
         <Route path="workouts/active" element={<ActiveWorkoutPage />} />
@@ -81,14 +88,11 @@ function AppRoutes() {
         <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />
         <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
         <Route path="challenges" element={<ChallengesPage />} />
-        <Route path="ranks" element={<RanksPage />} />
-        <Route path="leaderboard" element={<LeaderboardPage />} />
         <Route path="leaderboard/:id" element={<FriendPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
-        <Route path="login" element={session ? <Navigate to="/profile" replace /> : <LoginPage embedded />} />
+        <Route path="login" element={session ? <Navigate to="/settings" replace /> : <LoginPage embedded />} />
         {/* Old URLs from the previous layout */}
         <Route path="dashboard" element={<Navigate to="/home" replace />} />
-        <Route path="settings" element={<Navigate to="/profile" replace />} />
         <Route path="stats/*" element={<Navigate to="/analytics" replace />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>

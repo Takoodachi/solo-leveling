@@ -21,10 +21,10 @@ const GOALS: { value: GoalType; label: string }[] = [
 ]
 
 function bmiCategory(bmi: number) {
-  if (bmi < 18.5) return { label: 'Underweight', color: 'text-sky-400' }
-  if (bmi < 25) return { label: 'Normal', color: 'text-emerald-400' }
-  if (bmi < 30) return { label: 'Overweight', color: 'text-amber-300' }
-  return { label: 'Obese', color: 'text-red-400' }
+  if (bmi < 18.5) return { label: 'Underweight', color: 'text-sky-600 dark:text-sky-400' }
+  if (bmi < 25) return { label: 'Normal', color: 'text-emerald-600 dark:text-emerald-400' }
+  if (bmi < 30) return { label: 'Overweight', color: 'text-amber-600 dark:text-amber-300' }
+  return { label: 'Obese', color: 'text-red-600 dark:text-red-400' }
 }
 
 // Mifflin-St Jeor × an activity factor. When step calories are subtracted, walking is

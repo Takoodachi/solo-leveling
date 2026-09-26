@@ -118,7 +118,7 @@ export default function WorkoutSummaryPage() {
 
       <section className="rounded-3xl bg-card p-5">
         <h2 className="mb-3 font-semibold">Exercises</h2>
-        <ul className="flex flex-col divide-y divide-white/5">
+        <ul className="flex flex-col divide-y divide-foreground/5">
           {groupByExercise(workout.sets).map(g => (
             <li key={g.name} className="py-3 first:pt-0 last:pb-0">
               <p className="font-medium">{g.name}</p>

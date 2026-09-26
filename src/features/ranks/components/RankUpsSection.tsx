@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { TrendingUp } from 'lucide-react'
 import type { RankUp } from '../computeRanks'
 import RankBadge from './RankBadge'
+import { ink } from '@/lib/colors'
 
 /** "Rank ups" block on the workout summary; badges pop in when celebrating. */
 export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]; animate?: boolean }) {
@@ -40,7 +41,7 @@ export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {u.from ? <>{u.from.label} → </> : 'Ranked '}
-                  <span className="font-semibold" style={{ color: u.to.tier.color }}>{u.to.label}</span>
+                  <span className="font-semibold" style={{ color: ink(u.to.tier.color) }}>{u.to.label}</span>
                 </p>
               </div>
             </motion.li>

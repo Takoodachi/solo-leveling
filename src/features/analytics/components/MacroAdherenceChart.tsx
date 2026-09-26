@@ -61,8 +61,8 @@ export default function MacroAdherenceChart({ data, targetKcal }: Props) {
           <Tooltip content={<CustomTooltip />} cursor={false} />
           {/* Same palette as the MacroBar rows on Home: protein = accent, carbs = sky, fat = amber */}
           <Bar dataKey="proteinKcal" stackId="kcal" fill="hsl(var(--primary))" />
-          <Bar dataKey="carbsKcal"   stackId="kcal" fill="#38bdf8" />
-          <Bar dataKey="fatKcal"     stackId="kcal" fill="#fcd34d" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="carbsKcal"   stackId="kcal" fill="hsl(var(--carbs))" />
+          <Bar dataKey="fatKcal"     stackId="kcal" fill="hsl(var(--fat))" radius={[4, 4, 0, 0]} />
           {/* Net after steps: a dot per day, no line (days are independent) */}
           {hasNet && (
             <Line
@@ -89,8 +89,8 @@ export default function MacroAdherenceChart({ data, targetKcal }: Props) {
 
       <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-primary" /> Protein</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-400" /> Carbs</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-300" /> Fat</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-carbs" /> Carbs</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-fat" /> Fat</span>
         {hasNet && <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-foreground" /> Net after steps</span>}
       </div>
     </div>

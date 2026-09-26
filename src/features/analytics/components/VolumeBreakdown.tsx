@@ -27,7 +27,7 @@ export default function VolumeBreakdown({ axes, active, onActive }: Props) {
             <button
               type="button"
               onClick={() => onActive(a.key === active ? null : a.key)}
-              className={cn('flex w-full flex-col gap-1.5 rounded-2xl px-2 py-2.5 text-left', a.key === active && 'bg-white/5')}
+              className={cn('flex w-full flex-col gap-1.5 rounded-2xl px-2 py-2.5 text-left', a.key === active && 'bg-foreground/5')}
             >
               <span className="flex w-full items-baseline gap-2">
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{a.name}</span>

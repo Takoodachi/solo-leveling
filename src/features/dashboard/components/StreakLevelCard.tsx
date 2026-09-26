@@ -10,7 +10,7 @@ export default function StreakLevelCard() {
 
   return (
     <Link to="/profile" className="grid grid-cols-[auto_1fr] items-center gap-4 rounded-3xl bg-card p-4">
-      <div className="flex items-center gap-2 border-r border-white/5 pr-4">
+      <div className="flex items-center gap-2 border-r border-foreground/5 pr-4">
         <Flame size={22} className={currentStreak > 0 ? 'fill-primary text-primary' : 'text-muted-foreground'} />
         <div>
           <p className="text-lg font-bold leading-none">{currentStreak}</p>
@@ -19,7 +19,7 @@ export default function StreakLevelCard() {
       </div>
       <div className="min-w-0">
         <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-1.5 font-semibold"><Star size={15} className="fill-amber-300 text-amber-300" />Level {level}</span>
+          <span className="flex items-center gap-1.5 font-semibold"><Star size={15} className="fill-amber-400 text-amber-500 dark:fill-amber-300 dark:text-amber-300" />Level {level}</span>
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">

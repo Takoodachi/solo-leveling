@@ -11,6 +11,7 @@ import type { RankInfo } from '@/features/ranks/tiers'
 import type { Sex } from '@/features/ranks/standards'
 import { describeRunScore, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
 import RankBadge from '@/features/ranks/components/RankBadge'
+import { ink } from '@/lib/colors'
 
 interface Props {
   block: BlockDraft
@@ -83,7 +84,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
           <>
             Cardio{lastText && <> · last time {lastText}</>}
             {rank && (
-              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: rank.tier.color }}>
+              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
                 <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
               </span>
             )}

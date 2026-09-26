@@ -32,7 +32,7 @@ export default function StepCaloriesSheet({ open, onClose, eaten, burn, target }
               <span>{r.value}</span>
             </div>
           ))}
-          <div className="mt-1 flex justify-between gap-3 border-t border-white/10 pt-3 font-semibold">
+          <div className="mt-1 flex justify-between gap-3 border-t border-foreground/10 pt-3 font-semibold">
             <span>Net</span>
             <span>{formatKcal(eaten - burn.kcal)} / {formatKcal(target)} kcal</span>
           </div>

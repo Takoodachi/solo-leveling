@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
-import Avatar from '@/components/Avatar'
 import { Input } from '@/components/ui/input'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { useAuthStore } from '@/features/auth/authStore'
 import { clampPercent } from '@/lib/format'
 import { useSettings } from '../hooks/useSettings'
+import AvatarPicker from './AvatarPicker'
 
 export default function ProfileCard() {
   const { settings, updateSettings } = useSettings()
@@ -25,7 +25,7 @@ export default function ProfileCard() {
   return (
     <section className="rounded-3xl bg-card p-5">
       <div className="flex items-center gap-4">
-        <Avatar name={name} size={72} />
+        <AvatarPicker name={name} src={settings?.avatar} size={72} />
         <div className="min-w-0 flex-1">
           {editing ? (
             <form onSubmit={e => { e.preventDefault(); void saveName() }} className="flex items-center gap-2">
@@ -41,12 +41,17 @@ export default function ProfileCard() {
             </button>
           )}
           <p className="truncate text-sm text-muted-foreground">{email ?? 'Data stays on this device'}</p>
+          {settings?.avatar && (
+            <button type="button" onClick={() => void updateSettings({ avatar: undefined })} className="-my-1 py-1 text-xs text-muted-foreground hover:text-foreground">
+              Remove photo
+            </button>
+          )}
         </div>
       </div>
 
       <div className="mt-5">
         <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-1.5 font-semibold"><Star size={15} className="fill-amber-300 text-amber-300" />Level {level}</span>
+          <span className="flex items-center gap-1.5 font-semibold"><Star size={15} className="fill-amber-400 text-amber-500 dark:fill-amber-300 dark:text-amber-300" />Level {level}</span>
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
@@ -66,7 +71,7 @@ export default function ProfileCard() {
           <p className="text-[11px] text-muted-foreground">Best</p>
         </div>
         <div className="rounded-2xl bg-secondary py-3">
-          <ShieldCheck size={18} className="mx-auto text-sky-400" />
+          <ShieldCheck size={18} className="mx-auto text-sky-500 dark:text-sky-400" />
           <p className="mt-1 font-semibold">{streakFreezes}</p>
           <p className="text-[11px] text-muted-foreground">Freezes</p>
         </div>

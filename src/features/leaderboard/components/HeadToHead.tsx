@@ -1,6 +1,7 @@
 import { MUSCLE_GROUPS } from '@/features/ranks/standards'
 import { rankFor } from '@/features/ranks/tiers'
 import type { LeaderboardSnapshot } from '../types'
+import { ink } from '@/lib/colors'
 
 interface Props {
   me: LeaderboardSnapshot
@@ -15,7 +16,7 @@ function Side({ rating, win, align }: { rating: number | null; win: boolean; ali
   const rank = rating ? rankFor(rating) : null
   return (
     <div className={align === 'left' ? 'flex flex-col items-end gap-1' : 'flex flex-col items-start gap-1'}>
-      <span className="text-xs font-semibold tabular-nums" style={rank ? { color: rank.tier.color } : undefined}>
+      <span className="text-xs font-semibold tabular-nums" style={rank ? { color: ink(rank.tier.color) } : undefined}>
         {rank?.label ?? <span className="font-normal text-muted-foreground">–</span>}
       </span>
       <span className={align === 'left' ? 'flex h-1.5 w-full justify-end rounded-full bg-secondary' : 'flex h-1.5 w-full rounded-full bg-secondary'}>

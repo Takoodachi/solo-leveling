@@ -15,8 +15,10 @@ import RegionDetail from '@/features/ranks/components/RegionDetail'
 import { useLeaderboard } from '@/features/leaderboard/useLeaderboard'
 import { ago, regionsOf } from '@/features/leaderboard/boards'
 import HeadToHead from '@/features/leaderboard/components/HeadToHead'
+import Avatar from '@/features/leaderboard/components/Avatar'
 import CompareChart from '@/features/leaderboard/components/CompareChart'
 import { TopLifts, WeekTiles } from '@/features/leaderboard/components/FriendStats'
+import { ink } from '@/lib/colors'
 
 /** A friend's shared profile (or your own, as friends see it). */
 export default function FriendPage() {
@@ -45,7 +47,9 @@ export default function FriendPage() {
 
   return (
     <FullScreen className="flex flex-col gap-6">
-      <PageHeader back="/leaderboard" eyebrow={self ? 'What friends see' : undefined} title={self ? 'Your profile' : entry.name} />
+      <PageHeader back="/leaderboard" eyebrow={self ? 'What friends see' : undefined} title={self ? 'Your profile' : entry.name}
+        action={<Avatar name={entry.name} src={s.avatar} me={self} size={44} />}
+      />
 
       <section
         className="-mx-4 flex flex-col items-center px-6 text-center"
@@ -54,7 +58,7 @@ export default function FriendPage() {
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 14, stiffness: 160 }}>
           <RankBadge tier={overall?.tier.key ?? 'wood'} size={120} locked={!overall} />
         </motion.div>
-        <h2 className="font-heading text-2xl font-bold uppercase tracking-wide" style={overall ? { color: overall.tier.color } : undefined}>
+        <h2 className="font-heading text-2xl font-bold uppercase tracking-wide" style={overall ? { color: ink(overall.tier.color) } : undefined}>
           {overall?.label ?? 'Unranked'}
         </h2>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">

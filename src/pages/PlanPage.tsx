@@ -50,7 +50,7 @@ export default function PlanPage() {
                 key={d}
                 type="button"
                 onClick={() => setEditingDay(d)}
-                className="flex w-full items-center gap-3 border-b border-white/5 px-4 py-3.5 text-left last:border-0 hover:bg-accent/50"
+                className="flex w-full items-center gap-3 border-b border-foreground/5 px-4 py-3.5 text-left last:border-0 hover:bg-accent/50"
               >
                 <span className="w-10 text-sm font-semibold text-muted-foreground">{WEEKDAY_SHORT[d]}</span>
                 <Icon size={18} className={r ? 'text-primary' : 'text-muted-foreground'} />

@@ -1,11 +1,13 @@
 import { Toaster as Sonner } from "sonner"
+import { useActiveTheme } from "@/features/settings/hooks/useTheme"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { mode } = useActiveTheme()
   return (
     <Sonner
-      theme="dark"
+      theme={mode}
       className="toaster group"
       toastOptions={{
         classNames: {

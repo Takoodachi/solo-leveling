@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Plus } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
+import { useIsNavTab } from '@/hooks/useNavTabs'
 import SectionHeader from '@/components/SectionHeader'
 import { Button } from '@/components/ui/button'
 import type { RoutineCategory } from '@/types'
@@ -34,11 +35,13 @@ export default function WorkoutsPage() {
     category ? list.filter(r => r.category === category) : list
   const myRoutines = byCategory(routines)
   const templates = byCategory(ROUTINE_TEMPLATES)
+  const isTab = useIsNavTab('/workouts')
   const todayRoutine = routines.find(r => r.scheduleDays.includes(new Date().getDay()))
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        back={isTab ? undefined : '/home'}
         title="Workouts"
         action={
           <Link to="/workouts/plan" className="flex h-11 items-center gap-2 rounded-2xl bg-card px-3.5 text-sm font-semibold" aria-label="Weekly plan">

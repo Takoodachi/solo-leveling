@@ -29,7 +29,7 @@ export default function RoutineExerciseCard({ index, item, exercise, onOpen }: P
         </div>
       </div>
       {/* Media placeholder — exercise videos aren't bundled (keeps the app free and offline). */}
-      <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-secondary to-black">
+      <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-secondary to-foreground/25 dark:to-black">
         <span className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,hsl(var(--primary)/0.35),transparent_60%)]" />
         <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white text-black shadow-lg">
           <Play size={18} className="ml-0.5 fill-black" />

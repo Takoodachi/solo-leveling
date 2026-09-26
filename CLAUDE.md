@@ -41,7 +41,7 @@ This file gives AI assistants the context needed to work productively on this pr
 ```
 src/
   app shell: App.tsx (routes), main.tsx, sw.ts, index.css (theme tokens)
-  components/       # Reusable UI (PascalCase): AppShell, BottomNav, QuickAddSheet, PageHeader, Segmented, ProgressRing, …
+  components/       # Reusable UI (PascalCase): AppShell, BottomNav (+ navTabs.ts registry), QuickAddSheet, PageHeader, Segmented, ProgressRing, …
     ui/             # shadcn primitives (restyled: white pill buttons, rounded-3xl cards)
   features/
     auth/           # authStore, useAuthInit (single auth subscription + sync triggers), useAuth, LoginPage
@@ -55,12 +55,12 @@ src/
     analytics/      # weekly set-volume radar (volume.ts), tonnage, 1RM, macro adherence, weight, steps charts
     gamification/   # achievements, XP/levels
     bodyMetrics/    # body weight logging + trend
-    settings/       # Profile page cards, useSettings, export/import
-  db/               # Dexie schema (versions 1–15), seed + wipe
+    settings/       # Profile + Settings page cards, useSettings, export/import, themes.ts (palettes) + useTheme, avatar.ts (profile photo)
+  db/               # Dexie schema (versions 1–16), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, …
   data/             # Static seed data: foods (~285, incl. Vietnamese dishes; foodsMore.ts), exercises (290; exerciseVariations.ts), routine templates
   pages/            # Route-level components
-  hooks/            # Cross-feature hooks (useNow, useGoBack)
+  hooks/            # Cross-feature hooks (useNow, useGoBack, useNavTabs)
   types/            # Shared types
 supabase/
   migrations/       # SQL to run in the Supabase SQL editor (idempotent)
@@ -74,7 +74,13 @@ Keep feature code colocated. A workout-specific hook lives in `features/workouts
 
 ## Navigation & screens
 
-Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps, log water. Nutrition has no tab. It's reached from the Home calories card and the + sheet.
+Bottom nav: **Home · [chosen] · (+) · [chosen] · Settings**. Home and Settings are fixed; the two middle slots are picked in Settings → Bottom bar (`settings.navTabs`, default Workouts + Analytics; choices: Workouts, Nutrition, Analytics, Strength = `/ranks`, Leaderboard, Profile; registry `components/navTabs.ts`, hook `useNavTabs`, cached in localStorage so launches don't flicker). Pages that can be tabs render inside `AppShell` (so `/ranks` and `/leaderboard` keep the bar) and show a back button only when they aren't in the bar (`useIsNavTab`). Profile lists every page that isn't in the bar (`ShortcutsCard`), so nothing is unreachable. The **+** opens a quick-add sheet: start/resume workout, log food, log weight, log steps, log water.
+
+**Themes**: 10 preset palettes, 5 dark (Ember = default, Shadow Monarch, Abyss, Verdant, Blood Moon) and 5 light (Daylight, Glacier, Matcha, Sakura, Iris), in `features/settings/themes.ts`. A theme sets the CSS variables on `<html>` (plus `carbs`/`fat` macro colours, `brand-from`/`brand-to` gradient, `ink`), toggles the `dark` class, and updates the browser theme-color. `settings.theme` syncs; `main.tsx` paints the last-used theme from localStorage before React renders; `useThemeSync` (App) follows the setting. **Colour rules so light themes work:** no raw `white`/`black` on app surfaces (use `foreground/NN` for hairlines and overlays, `primary-foreground` on `bg-primary`/`bg-brand-gradient`); macros use `text-carbs`/`text-fat`; tier or status colours as text go through `ink()` (`lib/colors.ts`); other fixed palette colours need a `dark:` pair (e.g. `text-amber-700 dark:text-amber-400`). Charts use `hsl(var(--token))`.
+
+**Avatar**: tap the Profile avatar to pick a photo; it's centre-cropped to a 160 px JPEG data URL (≈10 KB, `features/settings/avatar.ts`), stored in `settings.avatar` (synced) and shared in the leaderboard snapshot (`avatar`). No storage bucket. Anything drawn from a friend goes through `safeAvatar` (small raster data URLs only).
+
+**Settings** tab (`/settings`): account & sync, leaderboard sharing, theme, bottom bar, home screen, backup, version (`APP_VERSION` in `SettingsPage.tsx`, now v0.3.0). **Profile** (`/profile`, from the Home header's profile button): name + photo, level/XP, shortcuts, strength rank, leaderboard, achievements, body & goals, daily targets.
 
 **Fast food logging** (Nutrition): each meal offers **"Same as yesterday"** (its most recent version from the last 14 days) in one tap when empty, and a **Meals** sheet with saved meals (named sets of foods, `savedMeals`), recent versions of that meal, and "save this meal". An empty day offers **copy the day before**. The add-food dialog **stays open** after each add (running "N added · kcal" bar with Undo and Done), starts each food at **the amount logged last time**, gives recent foods a one-tap **+** at that amount, and lists matching saved meals first. Favorites go into the current meal at their last amount. One-tap adds toast with **Undo** (`toastLogged`). Log through `logFoods` / `logMealItems` (`features/nutrition/logFoods.ts`), which run streak, XP and achievements once per batch.
 
@@ -84,7 +90,6 @@ Bottom nav: **Home · Workouts · (+) · Analytics · Profile**. The **+** opens
 - **Editing past workouts**: the summary offers **Edit workout** for 7 days after the workout's date (`EDIT_WINDOW_DAYS`, `features/workouts/hooks/useEditWorkout.ts`). It reopens the logger with `draft.editing` set (no timer, rest timer or wake lock; sets load checked, Previous = the session before it). Save updates the workout and its sets in place, deletes unchecked/removed ones with `deleteSynced`, and recomputes kcal. It doesn't change XP (no farming), date or streak. The edit uses the draft slot, so it blocks starting a workout until saved or discarded.
 - **Cardio is not sets.** Exercises with `type: 'cardio'` are logged as one entry: time, optional distance, effort (Easy/Moderate/Hard, saved in `rpe`). Pace and kcal update live. Routine editor asks for a duration only; routine time uses that duration. kcal = each cardio entry's MET (by speed when distance is logged, else by effort; `lib/cardio.ts`) + the rest of the session at the lifting MET. Summary shows cardio time/distance/pace; new bests include longest distance and fastest pace. Timed holds (plank, `defaultUnit: 'min'`, not cardio) stay as sets with one "min" column.
 - **Analytics**: **Weekly analysis / set volume** radar (sets per muscle for a Mon–Sun week vs. RP volume landmarks: yellow below MEV, orange growing, green sweet spot = MAV, pink overreaching; training-level toggle scales the targets; "Customize radar" picks the muscles, min 3; "i" opens the MEV/MAV/MRV guidelines; list with a bar per muscle), weekly tonnage, est. 1RM progression, macro adherence, body weight, steps. A set counts 1 for each primary muscle and ½ for each secondary (`features/analytics/volume.ts`; secondary "Core" and front delts don't count)
-- **Profile**: name, level/XP, strength rank, account & sync status, achievements, body & goals, daily targets, home screen (customize), backup
 - **Ranks** (`/ranks`): overall rank, ranked **Bodygraph** (anatomical front/back wireframe, ~30 muscle shapes per side mapped to the 19 ranked regions; ranked muscles glow in their tier colour, tap for detail; shapes in `bodygraphShapes.ts`, half-figure mirrored), muscle rankings (6 groups, "2/3 ranked"), **running rank**, weekly rank-progress chart (overall, groups, running), every ranked lift with its next-division target, how ranks work. Trophy button → leaderboard
 - **Leaderboard** (`/leaderboard`, from Profile, the Home card and Ranks): boards for Strength (overall rating), Running (5K-equivalent), This week (workouts, then minutes; resets Monday) and Level (XP), top three on a podium; **muscle crowns** (who holds the top rank in each group + running); recent highlights (new bests from the last 14 days). `/leaderboard/:id` (or `me`) is a friend's profile: overall badge, level, streak, their Bodygraph, **head to head** with you, both rating lines over 12 weeks, this week, best lifts. Your own entry is always built live from local data; friends' come from the server (cached in localStorage for offline)
 
@@ -96,7 +101,7 @@ Full-screen routes (no nav) use `components/FullScreen`. All screens must respec
 
 ## Data Model (Dexie schema)
 
-Defined in `src/db/schema.ts`, currently at **version 15**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
+Defined in `src/db/schema.ts`, currently at **version 16**. When changing it, bump the version and write a migration (`.stores({ table: null })` to drop a table). Never silently mutate the schema.
 
 ```ts
 // Synced collections (key: uuid string)
@@ -126,7 +131,7 @@ workoutDrafts (id = 1, the in-progress workout), pendingDeletes (sync tombstones
 - **Accounts:** data on a device belongs to one account (`solo:localOwner`). Signing in as a different account wipes local data first; signing out wipes it too (with a warning if changes are unsynced). Local-only data is adopted by the first account that signs in.
 - **Auth:** email + password (magic links don't work inside iOS home-screen apps, and Supabase's built-in mailer only reaches org members). Accounts are created in the Supabase dashboard; public sign-up is disabled.
 - **Keep-alive:** a GitHub Action pings the DB every ~3 days so the free project doesn't pause.
-- **Leaderboard** (`supabase/migrations/20260925000000_leaderboard.sql`): not a synced collection. Table `leaderboard` has one row per user (`displayName`, `visible`, `snapshot` jsonb, `updatedAt`); RLS lets every signed-in user read visible rows and only the owner write theirs. `useLeaderboardPublisher` (mounted in App) rebuilds the snapshot after each successful sync and upserts it only when it changed. Sharing off (`settings.shareOnLeaderboard === false`) publishes `visible = false` with an empty snapshot. Snapshots are versioned (`v: 1`); readers must tolerate missing fields.
+- **Leaderboard** (`supabase/migrations/20260925000000_leaderboard.sql`): not a synced collection. Table `leaderboard` has one row per user (`displayName`, `visible`, `snapshot` jsonb, `updatedAt`); RLS lets every signed-in user read visible rows and only the owner write theirs. `useLeaderboardPublisher` (mounted in App) rebuilds the snapshot after each successful sync and upserts it only when it changed. Sharing off (`settings.shareOnLeaderboard === false`) publishes `visible = false` with an empty snapshot. Snapshots are versioned (`v: 1`); readers must tolerate missing fields. The snapshot carries the profile photo (`avatar`), so photos need no leaderboard column.
 
 ---
 
@@ -162,9 +167,9 @@ Steps come off the calories eaten: **net kcal = eaten − step burn**, shown aga
 **State**: persistent data flows through Dexie via hooks backed by `useLiveQuery`. Zustand holds UI/session state only (the active-workout draft is mirrored to Dexie for crash safety).
 
 **Styling**
-- Tailwind + theme tokens in `index.css` (`bg-card`, `text-muted-foreground`, `primary` = orange accent). Primary buttons are white pills (`Button` default); orange is for accents, progress, and active states.
+- Tailwind + theme tokens in `index.css` (`bg-card`, `text-muted-foreground`, `primary` = the theme accent, orange in Ember). Primary buttons are `foreground` pills (`Button` default: white on dark themes, near-black on light); the accent is for highlights, progress, and active states.
 - Mobile-first (~390px). Touch targets ≥ 44px. Inputs must be ≥ 16px font (iOS zooms otherwise).
-- Dark mode is the default and the design target.
+- Dark (Ember) is the default theme and the design target, but every screen must also read on the light themes: follow the colour rules under **Themes** (no raw white/black on surfaces, `ink()` for tier text, `dark:` pairs for fixed palette colours).
 
 **Naming**: components `PascalCase.tsx`, hooks `useThing.ts`, utilities `camelCase.ts`.
 
@@ -223,5 +228,5 @@ Setup of Supabase, Cloudflare Pages and the keep-alive job is in `README.md`.
 
 **Phase:** Redesign + infrastructure fix (September 2026).
 **Working:** offline-first logging (workouts, food, weight, steps, water), editing workouts for 7 days, customizable Home, routines + templates + weekly plan, live logger with rest timer, completion summary with new bests, personal challenges, analytics incl. weekly set-volume radar, streaks/XP/achievements, strength + running ranks with an anatomical Bodygraph, friends leaderboard, creatine check-in, v2 sync (tombstones, server cursor, per-user keys), password auth + local-only mode.
-**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260924000000_volume_radar.sql`: done. `20260925000000_leaderboard.sql`: done. `20260926000000_saved_meals.sql`: run it so saved meals sync; until then sync reports an error for that table only.)
+**Next steps:** create the three accounts; finish the move to Cloudflare (Workers) and retire Netlify once the owner's phone has synced; add the keep-alive secrets; create accounts for the new friends (Supabase dashboard). (Migrations through `20260924000000_volume_radar.sql`: done. `20260925000000_leaderboard.sql`: done. `20260926000000_saved_meals.sql`: done. `20260927000000_theme_nav_avatar.sql` (settings `theme`, `navTabs`, `avatar`): run it **before** deploying v0.3.0, or settings stop syncing until it runs.)
 **Future ideas (not started):** reminder push delivery, shared challenges (the leaderboard table could carry them), adaptive TDEE, bodyweight goals + projection, faster food logging (templates / "copy yesterday"), AI workout builder (explicitly deferred).

@@ -2,6 +2,7 @@ import { formatShortDate } from '@/lib/date'
 import { describeBest, nextRankTarget, type RanksSnapshot } from '../computeRanks'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
+import { ink } from '@/lib/colors'
 
 /** Every ranked lift, strongest first, with what it takes to reach the next division. */
 export default function LiftRankList({ ranks }: { ranks: RanksSnapshot }) {
@@ -10,7 +11,7 @@ export default function LiftRankList({ ranks }: { ranks: RanksSnapshot }) {
   }
 
   return (
-    <ul className="flex flex-col divide-y divide-white/5 rounded-3xl bg-card px-4">
+    <ul className="flex flex-col divide-y divide-foreground/5 rounded-3xl bg-card px-4">
       {ranks.lifts.map(l => {
         const target = ranks.sex && ranks.bodyKg ? nextRankTarget(l.exerciseId, l.rank, ranks.sex, ranks.bodyKg) : null
         return (
@@ -19,7 +20,7 @@ export default function LiftRankList({ ranks }: { ranks: RanksSnapshot }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="truncate font-semibold">{l.name}</p>
-                <p className="shrink-0 text-sm font-semibold tabular-nums" style={{ color: l.rank.tier.color }}>{l.rank.label}</p>
+                <p className="shrink-0 text-sm font-semibold tabular-nums" style={{ color: ink(l.rank.tier.color) }}>{l.rank.label}</p>
               </div>
               <p className="text-xs text-muted-foreground">
                 Best {describeBest(l.best)} · {formatShortDate(l.best.date)} · {l.rank.rating} pts

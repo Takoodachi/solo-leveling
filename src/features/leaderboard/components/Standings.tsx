@@ -36,7 +36,7 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
             return (
               <Link key={p.place} to={profileLink(r.entry)} className="flex min-w-0 flex-col items-center gap-1 text-center">
                 <span className="relative">
-                  <Avatar name={r.entry.name} me={r.entry.me} size={p.avatar} />
+                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={p.avatar} />
                   {tier && <RankBadge tier={tier} size={24} className="absolute -bottom-1 -right-2" />}
                 </span>
                 <span className="w-full truncate text-sm font-semibold">{r.entry.me ? 'You' : r.entry.name}</span>
@@ -56,7 +56,7 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
       )}
 
       {rest.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 rounded-3xl bg-card px-4">
+        <ul className="flex flex-col divide-y divide-foreground/5 rounded-3xl bg-card px-4">
           {rest.map((r, i) => {
             const tier = board.tier?.(r.entry.snapshot)
             return (
@@ -65,7 +65,7 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
                   <span className="w-5 shrink-0 text-center text-sm font-semibold text-muted-foreground tabular-nums">
                     {r.score != null ? podium.length + i + 1 : '–'}
                   </span>
-                  <Avatar name={r.entry.name} me={r.entry.me} size={36} />
+                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={36} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{r.entry.me ? `${r.entry.name} (you)` : r.entry.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">{board.detail(r.entry.snapshot, weekStart)}</span>

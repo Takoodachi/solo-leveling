@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
-import { Settings } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import Avatar from '@/components/Avatar'
 import { useNow } from '@/hooks/useNow'
 import { useSettings } from '@/features/settings/hooks/useSettings'
@@ -15,7 +15,7 @@ export default function HomeHeader() {
 
   return (
     <header className="flex items-center gap-4 pt-3">
-      <Avatar name={name} size={60} />
+      <Avatar name={name} src={settings?.avatar} size={60} />
       <div className="min-w-0 flex-1">
         <p className="eyebrow text-muted-foreground">{format(now, 'EEEE, d MMMM')}</p>
         <h1 className="truncate text-[28px] font-bold leading-tight">
@@ -24,10 +24,10 @@ export default function HomeHeader() {
       </div>
       <Link
         to="/profile"
-        aria-label="Profile and settings"
+        aria-label="Profile"
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card transition-colors hover:bg-accent"
       >
-        <Settings size={22} />
+        <UserRound size={22} />
       </Link>
     </header>
   )

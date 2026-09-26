@@ -29,7 +29,7 @@ export default function ReminderSettings({ settings }: { settings: Settings | un
             type="time"
             value={time}
             onChange={e => void updateSettings({ reminderTime: e.target.value })}
-            className="w-full min-w-0 bg-transparent font-medium outline-none [color-scheme:dark]"
+            className="w-full min-w-0 bg-transparent font-medium outline-none"
             aria-label="Reminder time"
           />
         </label>

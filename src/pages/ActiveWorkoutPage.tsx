@@ -85,7 +85,7 @@ export default function ActiveWorkoutPage() {
   return (
     <div className="min-h-dvh overflow-x-clip bg-background pl-safe pr-safe">
       {/* Header (its own safe-area padding keeps it clear of the status bar while stuck) */}
-      <div className="sticky top-0 z-30 border-b border-white/5 bg-background/90 pt-safe backdrop-blur-xl">
+      <div className="sticky top-0 z-30 border-b border-foreground/5 bg-background/90 pt-safe backdrop-blur-xl">
         <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
           <button
             type="button"

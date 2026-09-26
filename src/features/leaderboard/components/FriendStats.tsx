@@ -2,12 +2,13 @@ import { formatShortDate } from '@/lib/date'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { rankFor } from '@/features/ranks/tiers'
 import type { LeaderboardSnapshot } from '../types'
+import { ink } from '@/lib/colors'
 
 /** Their strongest ranked lifts. */
 export function TopLifts({ s }: { s: LeaderboardSnapshot }) {
   if (!s.lifts?.length) return <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">No ranked lifts yet.</p>
   return (
-    <ul className="flex flex-col divide-y divide-white/5 rounded-3xl bg-card px-4">
+    <ul className="flex flex-col divide-y divide-foreground/5 rounded-3xl bg-card px-4">
       {s.lifts.map(l => {
         const rank = rankFor(l.rating)
         return (
@@ -17,7 +18,7 @@ export function TopLifts({ s }: { s: LeaderboardSnapshot }) {
               <span className="block truncate font-medium">{l.name}</span>
               <span className="block text-xs text-muted-foreground">{l.best} · {formatShortDate(l.date)}</span>
             </span>
-            <span className="shrink-0 text-sm font-semibold" style={{ color: rank.tier.color }}>{rank.label}</span>
+            <span className="shrink-0 text-sm font-semibold" style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
           </li>
         )
       })}

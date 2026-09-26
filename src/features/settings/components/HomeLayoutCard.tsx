@@ -4,7 +4,7 @@ import { HOME_WIDGETS, homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
 import CustomizeHomeSheet from '@/features/dashboard/components/CustomizeHomeSheet'
 import { useSettings } from '../hooks/useSettings'
 
-/** Profile entry point for choosing the Home screen cards. */
+/** Settings entry point for choosing the Home screen cards. */
 export default function HomeLayoutCard() {
   const { settings } = useSettings()
   const [open, setOpen] = useState(false)

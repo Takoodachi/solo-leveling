@@ -74,5 +74,6 @@ export class SoloLevelingDB extends Dexie {
     this.version(15).stores({
       savedMeals: 'uuid, name',
     }) // saved meals (one-tap food logging)
+    this.version(16).stores({}) // Settings gains theme, navTabs, avatar (no index changes)
   }
 }
