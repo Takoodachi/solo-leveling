@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Mail, ChevronLeft, AlertTriangle } from 'lucide-react'
+import { Mail, ChevronLeft, AlertTriangle } from 'lucide-react'
+import Logo from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,9 +43,7 @@ export default function LoginPage({ embedded = false }: { embedded?: boolean }) 
       )}
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-6 py-10">
         <div className="flex flex-col items-center gap-4 text-center">
-          <span className="bg-brand-gradient flex h-20 w-20 items-center justify-center rounded-[28px] shadow-xl shadow-primary/30">
-            <Dumbbell size={40} className="text-primary-foreground" />
-          </span>
+          <Logo size={80} className="text-foreground drop-shadow-[0_0_24px_hsl(var(--primary)/0.35)]" />
           <div>
             <h1 className="text-3xl font-bold">Solo Leveling</h1>
             <p className="mt-1 text-muted-foreground">Sign in to sync across your devices</p>

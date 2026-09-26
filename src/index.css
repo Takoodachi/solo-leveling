@@ -37,6 +37,15 @@
     --brand-to: 8 88% 50%;
     --ink: 55%; /* how much of a rank tier's own colour its text keeps (tierInk) */
     --art-glow: 0.45; /* strength of the routine-card glow (RoutineArt) */
+    /* Bodygraph outlines (alpha of the text colour); light themes draw them dark and solid */
+    --body-line: 0.8;
+    --muscle-line: 0.95;
+    --detail-line: 0.4;
+    --detail-line-ranked: 0.55;
+    --tier-line: 0%; /* ranked muscles: 0% = outlined in the text colour, 100% = in their tier colour */
+    /* Rank emblem halo (RankBadge): light themes need it stronger and wider to show */
+    --badge-glow: 100%;
+    --badge-glow-outer: 70%;
   }
 
   .dark {
@@ -66,6 +75,13 @@
     --brand-to: 8 88% 52%;
     --ink: 100%;
     --art-glow: 1;
+    --body-line: 0.3;
+    --muscle-line: 0.55;
+    --detail-line: 0.18;
+    --detail-line-ranked: 0.35;
+    --tier-line: 100%;
+    --badge-glow: 60%;
+    --badge-glow-outer: 0%;
   }
 }
 
