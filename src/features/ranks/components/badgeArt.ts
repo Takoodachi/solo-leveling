@@ -2,8 +2,8 @@ import type { TierKey } from '../tiers'
 
 /**
  * Rank emblems: a different helmet per tier, more elaborate the higher it goes
- * (nasal helm → Corinthian → great helm → plumed centurion → kabuto → winged
- * helm → crowned royal helm → horned demon helm → divine helm).
+ * (nasal helm → Corinthian → great helm → plumed centurion → crystal warden →
+ * kabuto → war king → dread lord → winged sun helm).
  *
  * Flat-shaded on a 100×100 artboard. Most shapes are drawn as their left half
  * with `mirror`: the left copy takes `fill` (lit) and the mirrored right copy
@@ -31,14 +31,12 @@ export interface Layer {
 // ── Path helpers ──────────────────────────────────────────────────────────────
 const circle = (cx: number, cy: number, r: number) =>
   `M${cx - r},${cy} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 Z`
-const ellipse = (cx: number, cy: number, rx: number, ry: number) =>
-  `M${cx - rx},${cy} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 Z`
 
-/** Thin rays around (50, 50), as one path. */
-function rays(count: number, inner: number, outer: number, halfWidthDeg: number, start = 0): string {
+/** Thin rays around (cx, cy), as one path. */
+function rays(count: number, inner: number, outer: number, halfWidthDeg: number, start = 0, cx = 50, cy = 50): string {
   const pt = (deg: number, r: number) => {
     const a = (deg * Math.PI) / 180
-    return `${(50 + r * Math.sin(a)).toFixed(2)},${(50 - r * Math.cos(a)).toFixed(2)}`
+    return `${(cx + r * Math.sin(a)).toFixed(2)},${(cy - r * Math.cos(a)).toFixed(2)}`
   }
   return Array.from({ length: count }, (_, i) => {
     const deg = start + (360 / count) * i
@@ -193,39 +191,84 @@ const TITAN: Layer[] = [
 const sparkle = (x: number, y: number, r: number) =>
   `M${x},${y - r} L${x + r * 0.22},${y - r * 0.22} L${x + r},${y} L${x + r * 0.22},${y + r * 0.22} L${x},${y + r} L${x - r * 0.22},${y + r * 0.22} L${x - r},${y} L${x - r * 0.22},${y - r * 0.22} Z`
 
+/** A star with `points` points around (cx, cy). */
+function star(cx: number, cy: number, rOut: number, rIn: number, points: number, rot = 0): string {
+  return `M${Array.from({ length: points * 2 }, (_, i) => {
+    const r = i % 2 ? rIn : rOut
+    const a = ((rot + (180 / points) * i) * Math.PI) / 180
+    return `${(cx + r * Math.sin(a)).toFixed(2)},${(cy - r * Math.cos(a)).toFixed(2)}`
+  }).join(' L')} Z`
+}
+
+/** A curved feather from its quill (bx, by) to its tip, `w` wide and bowed `bow` to one side. */
+function plume(bx: number, by: number, tx: number, ty: number, w: number, bow: number): string {
+  const dx = tx - bx
+  const dy = ty - by
+  const len = Math.hypot(dx, dy)
+  const P = (u: number, v: number) =>
+    `${(bx + dx * u - (dy / len) * v).toFixed(2)},${(by + dy * u + (dx / len) * v).toFixed(2)}`
+  return `M${P(0, 0)} C${P(0.3, bow + w)} ${P(0.78, bow + w * 0.85)} ${P(1, 0)} C${P(0.82, bow - w * 0.15)} ${P(0.35, bow - w * 0.35)} ${P(0, 0)} Z`
+}
+
+// Left wing: [quill x, quill y, tip x, tip y, width, bow]. Seven long primaries (lowest at the
+// back), four secondaries over them and three coverts along the leading edge.
+const OLY_PRIMARIES: [number, number, number, number, number, number][] = [
+  [27.9, 70, 21.9, 65, -2.8, -0.6],
+  [27.5, 66.6, 16.9, 59, -3.4, -1],
+  [27.3, 62, 12.3, 51.6, -3.8, -1.4],
+  [27.5, 56.6, 9.1, 42, -4, -1.8],
+  [28.1, 51, 8.3, 30.6, -4, -2.2],
+  [28.9, 46, 9.3, 19.8, -4, -2.6],
+  [29.9, 42, 12.3, 9, -3.8, -3],
+]
+const OLY_SECONDARIES: [number, number, number, number, number, number][] = [
+  [29.3, 64, 20.5, 58.4, -2.8, -0.6],
+  [29.3, 59, 16.7, 48.8, -3.2, -1],
+  [29.5, 53.6, 15.1, 38, -3.4, -1.4],
+  [29.9, 48, 15.9, 26.4, -3.4, -1.8],
+]
+const OLY_COVERTS: [number, number, number, number, number, number][] = [
+  [29.9, 57, 23.1, 51, -2.4, -0.4],
+  [30.1, 51.6, 21.9, 42, -2.6, -0.6],
+  [30.3, 46, 22.5, 32.6, -2.8, -0.8],
+]
+const featherRow = (row: [number, number, number, number, number, number][], fill: 'hi' | 'lt', fillR: 'lt' | 'dk'): Layer[] =>
+  row.flatMap(([bx, by, tx, ty, w, bow]): Layer[] => [
+    { d: plume(bx, by, tx, ty, w, bow), fill, fillR, mirror: true, w: 0.7 },
+    { d: `M${bx + (tx - bx) * 0.15},${by + (ty - by) * 0.15} L${bx + (tx - bx) * 0.85},${by + (ty - by) * 0.85}`, fill: 'none', stroke: 'dk', mirror: true, w: 0.55 },
+    { d: `M${bx + (tx - bx) * 0.25 - 1},${by + (ty - by) * 0.25} L${bx + (tx - bx) * 0.82 - 1.2},${by + (ty - by) * 0.82}`, fill: 'none', stroke: 'hi', mirror: true, w: 0.55, o: 0.8 },
+  ])
+
 const OLYMPIAN: Layer[] = [
-  // Celestial helm: a faceted pearl mask under a floating gold halo (Titan wears horns), a glowing
-  // heart gem on the brow, stepped crystal blades, chevron gorget
-  { d: rays(8, 32, 54, 1.1, 22.5), fill: 'a0', stroke: 'none', o: 0.7 },
-  { d: 'M50,97 L12,66 L19,66 L50,91 Z', fill: 'a1', fillR: 'a2', mirror: true, w: 0.9 },
-  { d: 'M50,89.5 L22,67 L28,67 L50,84.5 Z', fill: 'hi', fillR: 'dk', mirror: true, w: 0.9 },
-  // Stepped crystal blades at the temples
-  { d: 'M36,29 L7,52 L19.5,52 L19.5,64 L31,73 L33.5,49 Z', fill: 'lt', fillR: 'dk', mirror: true, w: 1.3 },
-  { d: 'M34,32.5 L13,49.5 L17,49.5 L35.5,34.5 Z', fill: 'a1', fillR: 'a2', mirror: true, stroke: 'none' },
-  { d: 'M7,52 L33.5,57 M19.5,64 L32,62 M33,40 L26,50', fill: 'none', stroke: 'hi', mirror: true, w: 0.7, o: 0.6 },
-  // Halo floating over the helm, light falling from it
-  { d: 'M34,13 L66,13 L60,24 L40,24 Z', fill: 'lt', stroke: 'none', o: 0.22 },
-  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'rim', w: 6.4 },
-  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'a1', w: 4.2 },
-  { d: ellipse(50, 10, 19, 5.4), fill: 'none', stroke: 'a0', w: 1.3 },
-  // The helm
-  { d: 'M50,22 L41,24 L35,31 L33,42 L33,58 L37,68 L44,76 L50,80 Z', ...shade, w: 2.2 },
-  { d: 'M50,22 L41,24 L37.5,29 L50,33 Z', fill: 'hi', stroke: 'none', o: 0.8 },
-  { d: 'M41,24 L43.5,35 L33,42 M33,58 L41,56.5 L44,76', fill: 'none', mirror: true, w: 0.9, o: 0.45 },
-  { d: 'M34.5,57 L38,66.5 L44.5,73.5', fill: 'none', stroke: 'a1', mirror: true, w: 1.1 },
-  // Visor and faceplate
-  { d: 'M34.5,47.5 L50,51.5 L65.5,47.5 L64.5,54.5 L50,58.5 L35.5,54.5 Z', fill: 'rim', w: 1 },
-  { d: 'M37.5,50 L47,52.5 L46.6,55 L38,52.8 Z', fill: 'eye', mirror: true, stroke: 'none' },
-  { d: 'M40.5,61.5 L59.5,61.5 L57.5,67.5 L53.5,67.5 L50,75.5 L46.5,67.5 L42.5,67.5 Z', fill: 'dk', w: 1.2 },
-  { d: 'M50,61.5 L50,75.5', fill: 'none', w: 1, o: 0.7 },
-  // Heart gem on the brow, glowing from within
-  { d: 'M50,20 L57,26 L57,40 L50,46 L43,40 L43,26 Z', fill: 'a2', w: 1.3 },
-  { d: 'M50,23 L54.5,27 L54.5,39 L50,43 L45.5,39 L45.5,27 Z', fill: 'a1', w: 0.9 },
-  { d: 'M50,23 L45.5,27 L45.5,39 L50,43 Z', fill: 'a0', stroke: 'none', o: 0.85 },
-  { d: 'M50,28 L52.3,30.2 L52.3,35.8 L50,38 L47.7,35.8 L47.7,30.2 Z', fill: 'eye', stroke: 'a2', w: 0.8 },
-  { d: sparkle(50, 33, 5.5), fill: 'core', stroke: 'none' },
-  // Glints
-  { d: `${sparkle(26, 31, 3)} ${sparkle(71, 60, 2.4)} ${sparkle(79, 20, 2.4)}`, fill: 'core', stroke: 'none' },
+  // Winged sun helm: a faceted crystal helm with a sun on the brow, great feathered wings, a halo and a sunburst
+  { d: rays(8, 20, 48, 4, 0, 50, 45), fill: 'a0', stroke: 'none' },
+  { d: rays(8, 20, 37, 4.4, 22.5, 50, 45), fill: 'a0', stroke: 'none', o: 0.85 },
+  { d: rays(8, 20, 46, 1.2, 0, 50, 45), fill: 'core', stroke: 'none' },
+  { d: circle(50, 42.5, 25.5), fill: 'none', stroke: 'a0', w: 4.6 },
+  { d: circle(50, 42.5, 25.5), fill: 'none', stroke: 'core', w: 1.8 },
+  // Wings, behind the helm
+  { d: 'M30.1,41 L27.1,33.6 L22.7,24.4 L18.1,16.6 L14.1,10.8 L12.1,8.6 L10.5,12.4 L8.9,19.6 L8.1,28 L8.5,36.6 L10.3,44.6 L13.5,52 L17.9,58.6 L22.5,64 L26.5,68.6 L28.1,70.4 L29.1,60 L29.5,50 Z', fill: 'dk', mirror: true, w: 1.2 },
+  ...featherRow(OLY_PRIMARIES, 'lt', 'dk'),
+  ...featherRow(OLY_SECONDARIES, 'hi', 'lt'),
+  ...featherRow(OLY_COVERTS, 'hi', 'lt'),
+  // The helm: a crystal dome cut in a few broad facets, crystal cheek plates, a T visor with glowing eyes
+  { d: 'M50,26.6 L43.5,27.2 L37.8,30.3 L32.5,33.9 L27.6,39 L23.5,44.1 L26.2,51.9 L29.4,58.7 L31.1,56.7 L34.7,53.8 L45.2,51.6 L48.1,55 L50,55 Z', ...shade, w: 2.2 },
+  { d: 'M50,26.6 L43.5,27.2 L37.8,30.3 L32.5,33.9 L43.5,39.7 L50,39.7 Z', fill: 'hi', stroke: 'none', o: 0.85 },
+  { d: 'M43.5,27.2 L43.5,39.7 L39.3,44.4 L32.5,33.9 M39.3,44.4 L23.5,44.1 M39.3,44.4 L34.7,53.8', fill: 'none', mirror: true, w: 0.9, o: 0.5 },
+  { d: 'M47.5,29.2 L43.9,29.7 L38.9,32.4 L34.3,35.6 L30,40.1 L26.6,44.4 L28.8,50.9', fill: 'none', stroke: 'a1', mirror: true, w: 1 },
+  { d: 'M30.8,59.9 L29.8,70.6 L36.1,77.9 L44.4,86.6 L46.9,78.4 L44.9,67.2 L41.2,58.9 L35.7,58.7 L32.2,59 Z', ...shade, w: 2 },
+  { d: 'M30.8,59.9 L29.8,70.6 L36.1,77.9 L41.2,58.9 L35.7,58.7 L32.2,59 Z', fill: 'hi', stroke: 'none', o: 0.55 },
+  { d: 'M29.8,70.6 L41.2,58.9', fill: 'none', mirror: true, w: 0.9, o: 0.5 },
+  { d: 'M31.1,56.7 L34.7,53.8 L45.2,51.6 L48.1,55 L48.8,62.6 L50,74 L50,84.7 L46.3,85 L46.9,78.4 L44.9,67.2 L41.2,58.9 L35.7,58.7 L32.2,59 Z', fill: 'rim', mirror: true, stroke: 'none' },
+  { d: 'M34.8,55.6 L44.6,53.3 L46,55.6 L36,57.4 Z', fill: 'eye', mirror: true, stroke: 'none' },
+  { d: 'M48.1,55 L50,55 L50,74 L48.8,62.6 Z', ...shade, w: 0.9 },
+  { d: 'M50,83.2 L46.4,79.8 L46.8,83 L50,86.6 Z', fill: 'a1', fillR: 'a2', mirror: true, w: 0.9 },
+  // Sun on the brow
+  { d: circle(50, 45, 8.5), fill: 'a0', stroke: 'none', o: 0.55 },
+  { d: star(50, 45, 11, 2.8, 8), fill: 'a1', stroke: 'a2', w: 0.7 },
+  { d: star(50, 45, 6.8, 2.6, 8, 22.5), fill: 'a0', stroke: 'a2', w: 0.5 },
+  { d: circle(50, 45, 3.9), fill: 'core', stroke: 'a1', w: 0.8 },
+  { d: `${sparkle(36.5, 33.5, 2)} ${sparkle(10.6, 11, 1.6)}`, fill: 'core', stroke: 'none' },
 ]
 
 export interface BadgeArt {
