@@ -86,6 +86,48 @@ async function runImport(): Promise<number> {
   return updated
 }
 
+const APP_NAMES: Record<string, string> = {
+  'com.sec.android.app.shealth': 'Samsung Health',
+  'com.samsung.android.wear.shealth': 'Galaxy Watch',
+  'com.google.android.apps.fitness': 'Google Fit',
+  'com.google.android.apps.healthdata': 'Health Connect',
+}
+
+export interface StepsDiagnosis {
+  /** Health Connect's daily totals (every app, without double counting), newest first. */
+  days: { date: string; steps: number }[]
+  /** The raw step entries over the same days, by the app that wrote them. */
+  sources: { app: string; steps: number; lastAt: number }[]
+}
+
+/**
+ * What Health Connect holds for the last `days` days, for Settings → Steps. Tells "Samsung
+ * Health isn't sharing steps" (no entries at all) apart from an import problem.
+ */
+export async function diagnose(days = 3): Promise<StepsDiagnosis> {
+  const today = startOfDay(new Date())
+  const range = { startDate: subDays(today, days - 1).toISOString(), endDate: addDays(today, 1).toISOString() }
+  const [{ aggregatedData }, { records }] = await Promise.all([
+    Health.queryAggregated({ ...range, dataType: 'steps', bucket: 'day' }),
+    Health.queryRecords({ ...range, dataType: 'steps' }),
+  ])
+  const bySource = new Map<string, { steps: number; lastAt: number }>()
+  for (const r of records) {
+    const s = bySource.get(r.sourceBundleId) ?? { steps: 0, lastAt: 0 }
+    s.steps += Number(r.value) || 0
+    s.lastAt = Math.max(s.lastAt, Date.parse(r.endDate) || 0)
+    bySource.set(r.sourceBundleId, s)
+  }
+  return {
+    days: aggregatedData
+      .map(d => ({ date: String(d.startDate).slice(0, 10), steps: Math.round(Number(d.value) || 0) }))
+      .reverse(),
+    sources: [...bySource]
+      .map(([id, s]) => ({ app: APP_NAMES[id] ?? id, steps: Math.round(s.steps), lastAt: s.lastAt }))
+      .sort((a, b) => b.steps - a.steps),
+  }
+}
+
 export function lastImportAt(): number | null {
   try {
     const v = Number(localStorage.getItem(LAST_IMPORT_KEY))

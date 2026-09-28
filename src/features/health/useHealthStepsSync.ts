@@ -15,10 +15,13 @@ export function useHealthStepsSync(ready: boolean): void {
     if (!ready || !isAndroidApp()) return
     const run = () => {
       if (document.visibilityState !== 'visible' || Date.now() - lastRun < MIN_GAP_MS) return
-      lastRun = Date.now()
       void import('./healthSteps')
         .then(async h => {
-          if ((await h.getStatus()) === 'connected') await h.importSteps()
+          // The cooldown only starts once step access is granted, so access given in Health
+          // Connect's own screen is picked up as soon as you're back
+          if ((await h.getStatus()) !== 'connected') return
+          lastRun = Date.now()
+          await h.importSteps()
         })
         .catch(err => console.warn('Health Connect step import failed', err))
     }
