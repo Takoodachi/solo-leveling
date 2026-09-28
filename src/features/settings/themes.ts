@@ -9,6 +9,8 @@
  *   in the foreground so pale tiers (Silver, Gold) stay readable (tierInk)
  */
 
+import { setSystemBarStyle } from '@/lib/native'
+
 export type ThemeMode = 'dark' | 'light'
 
 type Token =
@@ -149,6 +151,7 @@ export function applyTheme(id: string | undefined | null): void {
   root.dataset.theme = t.id
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hslToHex(t.vars.background))
   document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', t.mode)
+  setSystemBarStyle(t.mode)
   try {
     localStorage.setItem(THEME_KEY, t.id)
   } catch {

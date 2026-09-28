@@ -6,6 +6,7 @@ import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
+import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
@@ -58,6 +59,7 @@ function AppRoutes() {
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)
   const localMode = useAuthStore(s => s.localMode)
+  useHealthStepsSync(!loading && (!!userId || localMode))
 
   // Wait for the session check (and any account-switch wipe) before rendering data.
   if (loading || (session && !userId)) return <Spinner />

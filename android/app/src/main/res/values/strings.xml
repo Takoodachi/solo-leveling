@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Solo Leveling</string>
+    <string name="title_activity_main">Solo Leveling</string>
+    <string name="package_name">io.github.takoodachi.sololeveling</string>
+    <string name="custom_url_scheme">io.github.takoodachi.sololeveling</string>
+    <!-- Opened by Health Connect's "privacy policy" link (capacitor-health's PermissionsRationaleActivity) -->
+    <string name="privacy_policy_url">https://solo-leveling.luongdtran06.workers.dev/health-privacy.html</string>
+</resources>

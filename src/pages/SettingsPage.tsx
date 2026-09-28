@@ -9,6 +9,8 @@ import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
 import ShareCard from '@/features/leaderboard/components/ShareCard'
+import HealthStepsCard from '@/features/health/components/HealthStepsCard'
+import { isAndroidApp } from '@/lib/native'
 
 const APP_VERSION = '0.3.0'
 
@@ -32,6 +34,11 @@ export default function SettingsPage() {
       {signedIn && (
         <Section id="sharing" title="Leaderboard">
           <ShareCard />
+        </Section>
+      )}
+      {isAndroidApp() && (
+        <Section id="steps" title="Steps">
+          <HealthStepsCard />
         </Section>
       )}
       <Section id="theme" title="Theme">
