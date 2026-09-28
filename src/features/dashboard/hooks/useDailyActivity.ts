@@ -3,7 +3,8 @@ import { db } from '@/db'
 import type { DailyActivity } from '@/types'
 import { requestSync } from '@/lib/sync'
 
-export async function logSteps(date: string, steps: number): Promise<void> {
+/** Set a day's steps without starting a sync (for batches; call requestSync after). */
+export async function writeSteps(date: string, steps: number): Promise<void> {
   const existing = await db.dailyActivity.where('date').equals(date).first()
   const now = Date.now()
   if (existing) {
@@ -18,6 +19,10 @@ export async function logSteps(date: string, steps: number): Promise<void> {
     }
     await db.dailyActivity.put(row)
   }
+}
+
+export async function logSteps(date: string, steps: number): Promise<void> {
+  await writeSteps(date, steps)
   requestSync()
 }
 

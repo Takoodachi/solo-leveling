@@ -60,6 +60,33 @@ Workers & Pages → Create → *Import a repository* → this repo. Settings:
 - **iPhone (Safari)**: open the site → Share → *Add to Home Screen*. Sign in **inside the installed app**.
   iOS keeps the home-screen app's storage separate from Safari.
 
+## Android app (Samsung Health steps)
+
+An optional Android app for the owner's phone. It's the same site in a Capacitor shell
+(`capacitor.config.ts`) that loads the live URL, so every deploy reaches it just like the web app.
+It adds one thing: daily steps imported from Samsung Health through Health Connect
+(Settings → Steps, only shown in the app). iOS and browsers are unaffected.
+
+**Build** (needs Android Studio for the SDK; the script uses its bundled JDK 21):
+
+```bash
+npm run android
+```
+
+This writes `solo-leveling.apk`. Only rebuild after **native** changes (plugins, permissions,
+icons, `capacitor.config.ts`); web changes just need the usual deploy.
+
+**Install**: copy the APK to the phone and open it (allow *Install unknown apps* for the app you
+open it with when Android asks), or connect by USB with developer mode on and run
+`npm run android -- --install`. Updating = installing a newer APK over it; data is kept.
+
+**First run**: sign in (the app has its own storage, separate from Chrome's home-screen app),
+then Settings → Steps → **Connect** and allow *Steps*. In Samsung Health, turn on
+Settings → Health Connect and let it share steps. Steps then import whenever the app is opened.
+
+**Dev**: `CAP_SERVER_URL=http://10.0.2.2:5174 npm run android` builds an APK that loads a local
+dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulator.
+
 ## How sync works (short version)
 
 - Every write goes to IndexedDB first (`updatedAt`, `syncPending: true`), then a background sync runs.

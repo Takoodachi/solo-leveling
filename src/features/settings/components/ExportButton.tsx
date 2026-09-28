@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { db } from '@/db'
 import { format } from 'date-fns'
+import { isAndroidApp } from '@/lib/native'
 
 const BACKUP_VERSION = 2
 
@@ -11,6 +12,14 @@ export default function ExportButton() {
   const [exporting, setExporting] = useState(false)
 
   async function handleExport() {
+    // The Android app's WebView drops downloads (no download handler), so don't pretend it worked
+    if (isAndroidApp()) {
+      toast('Backups download in a browser', {
+        description: 'Open the site in Chrome, sign in, and export there. Your synced data is the same.',
+        duration: 8000,
+      })
+      return
+    }
     setExporting(true)
     try {
       const [
