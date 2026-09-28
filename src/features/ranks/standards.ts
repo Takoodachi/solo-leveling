@@ -89,6 +89,7 @@ const LATERAL = load(['side-delts'], [5, 10, 16, 25, 34], [3, 6, 9, 13, 17])
 const LEG_PRESS = load(['quads'], [109, 162, 230, 309, 395], [49, 87, 140, 204, 277])
 const HIP_THRUST = load(['glutes'], [56, 96, 149, 213, 285], [35, 63, 100, 147, 199])
 const LEG_EXT = load(['quads'], [48, 72, 103, 140, 180], [22, 38, 59, 86, 115])
+const PEC_DECK = load(['chest'], [42, 63, 89, 119, 152], [10, 18, 30, 44, 60]) // Strength Level "Machine Chest Fly"
 const PULL_UP = reps(['lats'], 1, [-3, 6, 13, 21, 29], [-9, -3, 6, 13, 21])
 const DIP = reps(['triceps', 'chest'], 0.95, [4, 10, 20, 31, 42], [-4, 1, 9, 19, 30])
 const PUSH_UP = reps(['chest'], 0.65, [6, 20, 38, 60, 83], [-5, 7, 18, 31, 47])
@@ -115,6 +116,7 @@ const BASE: Record<string, Standard> = {
   'ex-ring-dip': DIP,
   'ex-kneeling-push-up': reps(['chest'], 0.5, [8, 20, 35, 50, 70], [3, 12, 25, 40, 55]),
   'ex-archer-push-up': reps(['chest'], 0.8, [1, 4, 10, 16, 24], [1, 2, 5, 10, 15]),
+  'ex-pec-deck': PEC_DECK,
   // Back
   'ex-conventional-deadlift': DEADLIFT,
   'ex-barbell-row': ROW,
