@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useNow } from '@/hooks/useNow'
 import type { HealthStatus } from '../healthSteps'
+import HealthStepsDiagnosis from './HealthStepsDiagnosis'
 
 const load = () => import('../healthSteps')
 
@@ -23,6 +24,7 @@ export default function HealthStepsCard() {
   const [status, setStatus] = useState<Status>('checking')
   const [lastImport, setLastImport] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
+  const [checks, setChecks] = useState(0) // bumps the Health Connect readout on each status check
   const now = useNow()
 
   const refresh = useCallback(
@@ -32,6 +34,7 @@ export default function HealthStepsCard() {
           const next = await h.getStatus()
           setStatus(next)
           setLastImport(h.lastImportAt())
+          setChecks(c => c + 1)
         })
         .catch(() => setStatus('error')),
     [],
@@ -122,11 +125,7 @@ export default function HealthStepsCard() {
           </Button>
         </div>
       )}
-      {status === 'connected' && (
-        <p className="text-xs text-muted-foreground">
-          No steps coming through? In Samsung Health, open Settings → Health Connect and let it share steps.
-        </p>
-      )}
+      {status === 'connected' && <HealthStepsDiagnosis version={(lastImport ?? 0) + checks} />}
     </div>
   )
 }
