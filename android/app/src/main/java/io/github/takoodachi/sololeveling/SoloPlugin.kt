@@ -1,7 +1,10 @@
 package io.github.takoodachi.sololeveling
 
+import android.content.ClipData
 import android.content.Intent
+import android.util.Base64
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.content.FileProvider
 import androidx.health.connect.client.PermissionController
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -13,12 +16,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.io.File
 
 /**
  * The app's own bridge to the site (src/lib/native.ts → `soloPlugin()`):
  * - long-press app shortcuts (res/xml/shortcuts.xml) arrive as a `shortcut` event with the
  *   path to open;
- * - step sync while the app is closed is switched on and off here ([StepsSync]).
+ * - step sync while the app is closed is switched on and off here ([StepsSync]);
+ * - images go to Android's share sheet (the WebView has no Web Share API);
+ * - creatine and water reminders with a log button are handed over here ([QuickLog]).
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
@@ -73,6 +80,42 @@ class SoloPlugin : Plugin() {
             } catch (e: Exception) {
                 call.reject(e.message ?: "Couldn't switch on background sync")
             }
+        }
+    }
+
+    /** The recap share card: a PNG (base64) into the cache, out through the share sheet. */
+    @PluginMethod
+    fun shareImage(call: PluginCall) {
+        val data = call.getString("base64") ?: return call.reject("No image to share")
+        try {
+            val dir = File(context.cacheDir, "shared").apply { mkdirs() }
+            val name = (call.getString("fileName") ?: "image.png").replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val file = File(dir, name).apply { writeBytes(Base64.decode(data, Base64.DEFAULT)) }
+            // res/xml/file_paths.xml shares the cache directory
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                call.getString("text")?.let { putExtra(Intent.EXTRA_TEXT, it) }
+                clipData = ClipData.newRawUri(null, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            activity.startActivity(Intent.createChooser(send, null))
+            call.resolve()
+        } catch (e: Exception) {
+            call.reject(e.message ?: "Couldn't share the image")
+        }
+    }
+
+    /** Replaces every quick-log reminder with `items` (src/features/reminders/deliver.ts). */
+    @PluginMethod
+    fun scheduleQuickLog(call: PluginCall) {
+        try {
+            val items = call.getArray("items")?.toList<JSONObject>()?.map { QuickLog.Reminder.fromJson(it) } ?: emptyList()
+            QuickLog.schedule(context, items)
+            call.resolve()
+        } catch (e: Exception) {
+            call.reject(e.message ?: "Couldn't schedule the reminders")
         }
     }
 

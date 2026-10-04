@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom'
 import { TrendingUp } from 'lucide-react'
 import { ink } from '@/lib/colors'
 import RankBadge from '@/features/ranks/components/RankBadge'
-import type { WeekRecap } from '../recap'
+import type { Recap } from '../recap'
 
-/** The week's wins: overall rank and anything that beat every earlier session. */
-export default function RecapHighlights({ recap }: { recap: WeekRecap }) {
+/** The period's wins: overall rank and anything that beat every earlier session. */
+export default function RecapHighlights({ recap }: { recap: Recap }) {
   const { rank, bests } = recap
   const rankedUp = !!rank && (!rank.from || rank.to.step > rank.from.step)
   const gained = rank?.from ? rank.to.rating - rank.from.rating : 0
@@ -22,7 +22,7 @@ export default function RecapHighlights({ recap }: { recap: WeekRecap }) {
             <p className="text-sm text-muted-foreground">
               {rankedUp
                 ? rank.from ? `Overall rank, up from ${rank.from.label}` : 'Your first overall rank'
-                : gained > 0 ? `Overall rank · +${gained} rating this week` : 'Overall rank held'}
+                : gained > 0 ? `Overall rank · +${gained} rating this ${recap.period}` : 'Overall rank held'}
             </p>
           </div>
         </Link>

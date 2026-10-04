@@ -32,7 +32,9 @@ type Entry = Omit<SearchItem, 'group'>
 /** Screens and the sections inside them (#ids are anchors on those pages). */
 export const PAGE_ENTRIES: Entry[] = [
   { id: 'home', title: 'Home', subtitle: 'Today’s plan and weekly stats', keywords: 'dashboard today week strip', Icon: House, to: '/home' },
-  { id: 'recap', title: 'Weekly recap', subtitle: 'Last week in review', keywords: 'summary review report week wrapped', Icon: CalendarCheck, to: '/recap' },
+  { id: 'recap', title: 'Weekly recap', subtitle: 'Last week in review', keywords: 'summary review report week wrapped share image', Icon: CalendarCheck, to: '/recap' },
+  { id: 'recap-month', title: 'Monthly recap', subtitle: 'Last month in review', keywords: 'summary review report month wrapped share image', Icon: CalendarCheck, to: '/recap?period=month' },
+  { id: 'recap-year', title: 'Yearly recap', subtitle: 'Your year in review', keywords: 'summary review report year annual wrapped share image', Icon: CalendarCheck, to: '/recap?period=year' },
   { id: 'workouts', title: 'Workouts', subtitle: 'Routines, templates and history', keywords: 'training gym lift routines templates', Icon: Dumbbell, to: '/workouts' },
   { id: 'history', title: 'Workout history', subtitle: 'Workouts', keywords: 'past sessions log', Icon: History, to: '/workouts/history' },
   { id: 'plan', title: 'Weekly plan', subtitle: 'Workouts', keywords: 'schedule split days program', Icon: CalendarDays, to: '/workouts/plan#schedule' },

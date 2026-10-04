@@ -20,6 +20,15 @@ export async function toggleCheckin(key: CheckinKey, date: string): Promise<bool
   return done
 }
 
+/** Tick only, never untick: a notification button tapped twice mustn't undo itself. Returns whether it changed. */
+export async function tickCheckin(key: CheckinKey, date: string): Promise<boolean> {
+  const uuid = idFor(key, date)
+  if ((await db.checkins.get(uuid))?.done) return false
+  await db.checkins.put({ uuid, date, key, done: true, updatedAt: Date.now(), syncPending: true })
+  requestSync()
+  return true
+}
+
 /** Water drunk on a day, in ml. */
 export function useWater(date: string): number {
   return useLiveQuery(() => db.checkins.get(idFor('water', date)), [date])?.amount ?? 0

@@ -24,7 +24,8 @@ export function backgroundBridge(): BackgroundBridge | undefined {
 /** Same key as features/auth/useAuthInit (not imported: that would pull the whole app in). */
 const LOCAL_OWNER_KEY = 'solo:localOwner'
 
-async function sync(): Promise<string> {
+/** Sync from the off-screen page; the result reads on after "saved", e.g. " and synced". Also used by quick-log reminders. */
+export async function syncInBackground(): Promise<string> {
   if (!isSupabaseConfigured) return ''
   const { data } = await supabase.auth.getSession()
   const userId = data.session?.user.id
@@ -41,7 +42,7 @@ export async function runBackgroundSteps(bridge: BackgroundBridge): Promise<void
   let outcome: string
   try {
     const changed = await raiseSteps(JSON.parse(bridge.steps()) as DaySteps[])
-    outcome = changed === 0 ? 'Steps were already up to date' : `${changed} day${changed === 1 ? '' : 's'} updated${await sync()}`
+    outcome = changed === 0 ? 'Steps were already up to date' : `${changed} day${changed === 1 ? '' : 's'} updated${await syncInBackground()}`
   } catch (err) {
     outcome = `Stopped: ${err instanceof Error ? err.message : String(err)}`
   }

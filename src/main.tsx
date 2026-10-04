@@ -6,6 +6,7 @@ import App from './App'
 import './index.css'
 import { applyTheme, cachedThemeId } from '@/features/settings/themes'
 import { backgroundBridge, runBackgroundSteps } from '@/features/health/backgroundSteps'
+import { quickLogBridge, runQuickLog } from '@/features/reminders/quickLogTask'
 
 // Ask the browser not to evict our IndexedDB under storage pressure (best-effort;
 // installed home-screen apps on iOS are already exempt from Safari's 7-day cap).
@@ -88,8 +89,11 @@ function startApp(): void {
     })
 }
 
-// The Android app's background step sync loads this page off-screen with a bridge on the
-// window: do that job and draw nothing (features/health/backgroundSteps.ts).
+// The Android app loads this page off-screen with a bridge on the window for jobs done while
+// it's closed: a reminder's log button (features/reminders/quickLogTask.ts) or the background
+// step sync (features/health/backgroundSteps.ts). Do the job and draw nothing.
+const quickLog = quickLogBridge()
 const background = backgroundBridge()
-if (background) void runBackgroundSteps(background)
+if (quickLog) void runQuickLog(quickLog)
+else if (background) void runBackgroundSteps(background)
 else startApp()
