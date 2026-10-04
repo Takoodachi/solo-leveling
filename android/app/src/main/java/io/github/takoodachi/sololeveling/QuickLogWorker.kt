@@ -16,6 +16,7 @@ import androidx.work.workDataOf
 import com.getcapacitor.CapConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
@@ -52,6 +53,7 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
     @SuppressLint("SetJavaScriptEnabled")
     private suspend fun runInSite(url: String, task: String): String = withContext(Dispatchers.Main) {
         val answer = CompletableDeferred<String>()
+        val loadError = CompletableDeferred<String>()
         val page = WebView(applicationContext)
         try {
             page.settings.javaScriptEnabled = true
@@ -59,13 +61,19 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
             page.addJavascriptInterface(PageBridge(task, answer), "SoloBackground")
             page.webViewClient = object : WebViewClient() {
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                    if (request.isForMainFrame) {
-                        answer.complete(JSONObject().put("ok", false).put("title", "Couldn’t log it").put("detail", "The app didn’t load (${error.description}). Open it to log it.").toString())
-                    }
+                    if (request.isForMainFrame) loadError.complete(error.description.toString())
                 }
             }
             page.loadUrl(url)
-            answer.await()
+            select {
+                answer.onAwait { it }
+                // Not the end yet. Offline, when the site's service worker has gone to sleep, the load
+                // first fails on the network and then arrives from the worker's cache a moment later
+                loadError.onAwait { reason ->
+                    withTimeoutOrNull(LOAD_RETRY_MS) { answer.await() }
+                        ?: JSONObject().put("ok", false).put("title", "Couldn’t log it").put("detail", "The app didn’t load ($reason). Open it to log it.").toString()
+                }
+            }
         } finally {
             page.destroy()
         }
@@ -87,6 +95,8 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_KIND = "kind"
         private const val KEY_DATE = "date"
         private const val PAGE_TIMEOUT_MS = 60_000L
+        /** How long the page still has to answer after its load reported an error. */
+        private const val LOAD_RETRY_MS = 10_000L
 
         /**
          * One job per notification, so a second tap before the first is done can't add a second glass.
