@@ -24,11 +24,30 @@ export interface BackgroundStepsStatus {
   lastResult: string | null
 }
 
-/** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts and step sync while closed. */
+/** A reminder the app posts itself, with a button that logs without opening it (QuickLog.kt). */
+export interface QuickLogReminder {
+  id: number
+  kind: 'creatine' | 'water'
+  /** The day it's for (YYYY-MM-DD): the button logs to that day. */
+  date: string
+  at: number
+  title: string
+  body: string
+  /** Opened when the notification itself is tapped. */
+  url: string
+  /** The button: "Tick it off", "Add a glass". */
+  action: string
+}
+
+/** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts, step sync while closed, sharing, quick-log reminders. */
 interface SoloPlugin {
   backgroundStepsStatus(): Promise<BackgroundStepsStatus>
   enableBackgroundSteps(): Promise<BackgroundStepsStatus>
   disableBackgroundSteps(): Promise<BackgroundStepsStatus>
+  /** Android's share sheet for a PNG (the WebView has no Web Share API). Since the recap share card. */
+  shareImage(options: { base64: string; fileName: string; text?: string }): Promise<void>
+  /** Replaces every quick-log reminder with `items`. Since notification buttons. */
+  scheduleQuickLog(options: { items: QuickLogReminder[] }): Promise<void>
   addListener(event: 'shortcut', listener: (event: { path: string }) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -47,7 +66,31 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     backgroundStepsStatus: () => native.backgroundStepsStatus(),
     enableBackgroundSteps: () => native.enableBackgroundSteps(),
     disableBackgroundSteps: () => native.disableBackgroundSteps(),
+    shareImage: options => native.shareImage(options),
+    scheduleQuickLog: options => native.scheduleQuickLog(options),
     addListener: (event, listener) => native.addListener(event, listener),
+  }
+}
+
+/** An APK built before a plugin method existed answers it with UNIMPLEMENTED. */
+export function isUnimplemented(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code
+  return code === 'UNIMPLEMENTED' || /not implemented/i.test(err instanceof Error ? err.message : String(err))
+}
+
+/**
+ * Hands creatine and water reminders to the app's own notifications, which carry a log button
+ * (QuickLog.kt). False when the APK predates them: then they go out as plain notifications.
+ */
+export async function scheduleQuickLogReminders(items: QuickLogReminder[]): Promise<boolean> {
+  const plugin = await soloPlugin()
+  if (!plugin) return false
+  try {
+    await plugin.scheduleQuickLog({ items })
+    return true
+  } catch (err) {
+    if (isUnimplemented(err)) return false
+    throw err
   }
 }
 

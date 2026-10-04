@@ -49,6 +49,18 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Creatine and water reminders with a log button (QuickLog.kt): their alarms, the
+             button, and setting the alarms again after a restart or an app update -->
+        <receiver
+            android:name=".QuickLogReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -71,6 +83,8 @@
          declares POST_NOTIFICATIONS itself; exact alarms need no user prompt with this one
          (fine for a sideloaded app, Play restricts it to clocks and calendars). -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Quick-log reminders set their alarms again after a restart (the plugin asks for it too) -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Health Connect: steps only. The site's code runs with this app's permissions, so the
          capacitor-health plugin's other read permissions are stripped from the merged manifest. -->

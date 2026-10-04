@@ -1,5 +1,5 @@
 import { isSupabaseConfigured, looseSupabase } from '@/lib/supabase'
-import { isAndroidApp } from '@/lib/native'
+import { isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
 import { nativeNotifyState, replaceScheduled } from '@/lib/localNotifications'
 import type { PlannedReminder } from './reminders'
 
@@ -27,14 +27,35 @@ function idOf(key: string): number {
 
 const fingerprint = (plan: PlannedReminder[]) => plan.map(p => `${p.key}@${p.at}:${p.title}`).join('|')
 
+/** Reminders whose notification can log the thing itself (a button that works with the app closed). */
+const isQuickLog = (p: PlannedReminder): p is PlannedReminder & { kind: QuickLogReminder['kind'] } => p.kind === 'creatine' || p.kind === 'water'
+
+const quickLogItem = (p: PlannedReminder & { kind: QuickLogReminder['kind'] }): QuickLogReminder => ({
+  id: idOf(p.key),
+  kind: p.kind,
+  date: p.key.slice(-10), // keys are kind-YYYY-MM-DD
+  at: p.at,
+  title: p.title,
+  body: p.body,
+  url: p.url,
+  action: p.kind === 'creatine' ? 'Tick it off' : 'Add a glass',
+})
+
 async function toPhone(plan: PlannedReminder[]): Promise<void> {
   if (!isAndroidApp()) return
   const on = localStorage.getItem(NATIVE_ON_KEY) === '1' && (await nativeNotifyState()) === 'granted'
   const wanted = on ? plan : []
+  // Creatine and water go to the app's own notifications, with a log button, when this APK has
+  // them (cheap, and always sent so an updated APK takes them over); the rest to the plugin
+  const quick = await scheduleQuickLogReminders(wanted.filter(isQuickLog).map(quickLogItem)).catch((err: unknown) => {
+    console.warn('[reminders] quick-log scheduling failed, using plain notifications:', err)
+    return false
+  })
+  const viaPlugin = quick ? wanted.filter(p => !isQuickLog(p)) : wanted
   // A leading marker, so "on with nothing planned" still differs from "never scheduled"
-  const print = `${on ? 'on' : 'off'}|${fingerprint(wanted)}`
+  const print = `${on ? 'on' : 'off'}|${fingerprint(viaPlugin)}`
   if (localStorage.getItem(NATIVE_PLAN_KEY) === print) return
-  await replaceScheduled(ID_FROM, ID_TO, wanted.map(p => ({ id: idOf(p.key), title: p.title, body: p.body, at: p.at, url: p.url, channel: 'reminders' })))
+  await replaceScheduled(ID_FROM, ID_TO, viaPlugin.map(p => ({ id: idOf(p.key), title: p.title, body: p.body, at: p.at, url: p.url, channel: 'reminders' })))
   localStorage.setItem(NATIVE_PLAN_KEY, print)
 }
 
@@ -76,4 +97,5 @@ export function resetDelivery(): void {
 export async function clearPhoneReminders(): Promise<void> {
   resetDelivery()
   await replaceScheduled(ID_FROM, ID_TO, []).catch(() => {})
+  await scheduleQuickLogReminders([]).catch(() => false)
 }
