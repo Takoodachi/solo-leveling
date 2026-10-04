@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronRight, Repeat, CalendarDays, Pencil, Moon } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bell, ChevronRight, Repeat, CalendarDays, Pencil, Moon } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import NumberStepper from '@/components/NumberStepper'
@@ -10,7 +11,7 @@ import { useSettings, updateSettings, DEFAULT_REST_SECONDS } from '@/features/se
 import { CATEGORY_META, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import DayRoutineSheet from '@/features/workouts/components/DayRoutineSheet'
-import ReminderSettings from '@/features/workouts/components/ReminderSettings'
+import { reminderPrefs } from '@/features/reminders/reminders'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -25,6 +26,7 @@ export default function PlanPage() {
   const trainingDays = WEEK_ORDER.filter(d => byDay.get(d))
   const weeklyMinutes = trainingDays.reduce<number>((sum, d) => sum + minutesFor(byDay.get(d)!), 0)
   const goal = settings?.weeklyWorkoutGoal ?? Math.max(trainingDays.length, 3)
+  const workoutReminder = reminderPrefs(settings).workout
 
   return (
     <FullScreen className="flex flex-col gap-6">
@@ -98,7 +100,14 @@ export default function PlanPage() {
 
       <section id="reminders" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Reminders</h2>
-        <ReminderSettings settings={settings} />
+        <Link to="/settings#reminders" className="flex items-center gap-3 rounded-3xl bg-card p-4 hover:bg-accent/50">
+          <Bell size={18} className="text-primary" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Workout reminder</span>
+            <span className="block text-sm text-muted-foreground">{workoutReminder.on ? `On at ${workoutReminder.time}` : 'Off'} · set it in Settings</span>
+          </span>
+          <ChevronRight size={18} className="text-muted-foreground" />
+        </Link>
       </section>
 
       <DayRoutineSheet

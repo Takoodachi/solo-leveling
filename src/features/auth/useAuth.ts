@@ -4,6 +4,8 @@ import { wipeLocalData } from '@/db/seed'
 import { grantWeeklyStreakFreeze } from '@/lib/streak'
 import { useAuthStore } from './authStore'
 import { LOCAL_OWNER_KEY } from './useAuthInit'
+import { unsubscribePush } from '@/features/reminders/push'
+import { clearPhoneReminders } from '@/features/reminders/deliver'
 
 type Result = { error: string | null }
 
@@ -55,6 +57,9 @@ async function signOut(): Promise<void> {
   const userId = useAuthStore.getState().userId
   if (userId) await syncService.sync(userId)
   await syncService.whenIdle()
+  // This device stops getting the account's reminders (needs the session, so before signing out)
+  await unsubscribePush().catch(() => {})
+  await clearPhoneReminders()
   syncService.setUser(null)
   await supabase.auth.signOut({ scope: 'local' })
   await wipeLocalData()

@@ -49,7 +49,8 @@ export default function HealthStepsDiagnosis({ version }: { version: number }) {
       ) : (
         <ul className="flex flex-col gap-0.5 text-muted-foreground">
           {data.sources.map(s => (
-            <li key={s.app}>
+            // An app we have no name for shows its package id, which has no spaces to wrap at
+            <li key={s.app} className="[overflow-wrap:anywhere]">
               From <span className="font-medium text-foreground">{s.app}</span>: {s.steps.toLocaleString()} steps
               {s.lastAt > 0 && `, latest ${s.lastAt >= now.getTime() ? 'just now' : formatDistance(s.lastAt, now, { addSuffix: true })}`}
             </li>

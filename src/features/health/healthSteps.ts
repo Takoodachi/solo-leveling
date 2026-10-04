@@ -1,8 +1,7 @@
 import { Health, type PermissionResponse } from 'capacitor-health'
 import { addDays, startOfDay, subDays } from 'date-fns'
-import { db } from '@/db'
-import { writeSteps } from '@/features/dashboard/hooks/useDailyActivity'
 import { requestSync, syncService } from '@/lib/sync'
+import { raiseSteps } from './stepsWriter'
 
 /**
  * Samsung Health steps, read through Health Connect (Android app only). Import this module
@@ -62,21 +61,8 @@ async function runImport(): Promise<number> {
     dataType: 'steps',
     bucket: 'day',
   })
-  let updated = 0
-  for (const sample of aggregatedData) {
-    // Android gives each day's start as a local date-time, e.g. "2026-09-27T00:00"
-    const date = String(sample.startDate).slice(0, 10)
-    const steps = Math.round(Number(sample.value) || 0)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || steps <= 0) continue
-    // Read, compare and write in one transaction so a manual save can't land in between
-    const raised = await db.transaction('rw', db.dailyActivity, async () => {
-      const existing = await db.dailyActivity.where('date').equals(date).first()
-      if (existing && existing.steps >= steps) return false
-      await writeSteps(date, steps)
-      return true
-    })
-    if (raised) updated++
-  }
+  // Android gives each day's start as a local date-time, e.g. "2026-09-27T00:00"
+  const updated = await raiseSteps(aggregatedData.map(d => ({ date: String(d.startDate).slice(0, 10), steps: Number(d.value) || 0 })))
   if (updated) requestSync()
   try {
     localStorage.setItem(LAST_IMPORT_KEY, String(Date.now()))
@@ -92,6 +78,10 @@ const APP_NAMES: Record<string, string> = {
   'com.google.android.apps.fitness': 'Google Fit',
   'com.google.android.apps.healthdata': 'Health Connect',
 }
+
+// Android 16 counts steps itself and writes them as com.android.healthconnect.phone.<device id>
+const appName = (id: string) =>
+  APP_NAMES[id] ?? (id.startsWith('com.android.healthconnect.phone') ? 'This phone’s step counter' : id)
 
 export interface StepsDiagnosis {
   /** Health Connect's daily totals (every app, without double counting), newest first. */
@@ -113,17 +103,19 @@ export async function diagnose(days = 3): Promise<StepsDiagnosis> {
   ])
   const bySource = new Map<string, { steps: number; lastAt: number }>()
   for (const r of records) {
-    const s = bySource.get(r.sourceBundleId) ?? { steps: 0, lastAt: 0 }
+    // By name, so the phone's counter stays one line if its id changes
+    const app = appName(r.sourceBundleId)
+    const s = bySource.get(app) ?? { steps: 0, lastAt: 0 }
     s.steps += Number(r.value) || 0
     s.lastAt = Math.max(s.lastAt, Date.parse(r.endDate) || 0)
-    bySource.set(r.sourceBundleId, s)
+    bySource.set(app, s)
   }
   return {
     days: aggregatedData
       .map(d => ({ date: String(d.startDate).slice(0, 10), steps: Math.round(Number(d.value) || 0) }))
       .reverse(),
     sources: [...bySource]
-      .map(([id, s]) => ({ app: APP_NAMES[id] ?? id, steps: Math.round(s.steps), lastAt: s.lastAt }))
+      .map(([app, s]) => ({ app, steps: Math.round(s.steps), lastAt: s.lastAt }))
       .sort((a, b) => b.steps - a.steps),
   }
 }

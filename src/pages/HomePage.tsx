@@ -4,6 +4,8 @@ import SectionHeader from '@/components/SectionHeader'
 import { useNow } from '@/hooks/useNow'
 import { formatDisplayDate, toDateStr, weekDates } from '@/lib/date'
 import { parseISO } from 'date-fns'
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
@@ -17,6 +19,7 @@ import CustomizeHomeSheet from '@/features/dashboard/components/CustomizeHomeShe
 import WeeklyOverviewCard from '@/features/dashboard/components/WeeklyOverviewCard'
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
 import HomeSearch from '@/features/search/components/HomeSearch'
+import RecapBanner from '@/features/recap/components/RecapBanner'
 
 type Tab = 'today' | 'week'
 const TABS = [{ value: 'today', label: 'Today’s Plan' }, { value: 'week', label: 'Weekly Stats' }] as const
@@ -70,6 +73,7 @@ export default function HomePage() {
           {tab === 'today' ? (
             <>
               <ResumeBanner />
+              <RecapBanner now={now} />
               <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>{formatDisplayDate(selected)}</SectionHeader>
               <TodayWidgets
                 selected={selected}
@@ -90,6 +94,9 @@ export default function HomePage() {
                   elapsedDays={week.filter(d => d <= todayStr).length}
                   workoutGoal={settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)}
                 />
+                <Link to="/recap" className="flex items-center justify-between rounded-3xl bg-card px-5 py-4 font-medium hover:bg-accent">
+                  Last week’s recap <ChevronRight size={18} className="text-muted-foreground" />
+                </Link>
               </>
             )
           )}

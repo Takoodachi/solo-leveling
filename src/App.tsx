@@ -8,6 +8,8 @@ import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
+import { useNativeLinks } from '@/hooks/useNativeLinks'
+import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
 const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
@@ -26,6 +28,7 @@ const RanksPage = lazy(() => import('@/pages/RanksPage'))
 const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
 const FriendPage = lazy(() => import('@/pages/FriendPage'))
 const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
+const RecapPage = lazy(() => import('@/pages/RecapPage'))
 
 function Spinner() {
   return (
@@ -59,7 +62,10 @@ function AppRoutes() {
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)
   const localMode = useAuthStore(s => s.localMode)
-  useHealthStepsSync(!loading && (!!userId || localMode))
+  const ready = !loading && (!!userId || localMode)
+  useHealthStepsSync(ready)
+  useReminderScheduler(ready)
+  useNativeLinks()
 
   // Wait for the session check (and any account-switch wipe) before rendering data.
   if (loading || (session && !userId)) return <Spinner />
@@ -94,6 +100,7 @@ function AppRoutes() {
         <Route path="challenges" element={<ChallengesPage />} />
         <Route path="leaderboard/:id" element={<FriendPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
+        <Route path="recap" element={<RecapPage />} />
         <Route path="login" element={session ? <Navigate to="/settings" replace /> : <LoginPage embedded />} />
         {/* Old URLs from the previous layout */}
         <Route path="dashboard" element={<Navigate to="/home" replace />} />

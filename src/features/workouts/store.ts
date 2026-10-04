@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { db } from '@/db'
 import type { Exercise } from '@/types'
 import { intensityFromRpe } from '@/lib/cardio'
-import { type WorkoutDraft, type SetDraft, type LastSet, emptySet, setHasValue } from './types'
+import { applyFill, type HintFill } from './progression'
+import { type WorkoutDraft, type SetDraft, type LastSet, type LiftTrend, emptySet, setHasValue } from './types'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
 
@@ -16,7 +17,7 @@ interface WorkoutStore {
   rename: (name: string) => void
   setNotes: (notes: string) => void
 
-  addBlock: (exercise: Exercise, opts?: { restSec?: number; lastSets?: LastSet[] }) => void
+  addBlock: (exercise: Exercise, opts?: { restSec?: number; lastSets?: LastSet[]; trend?: LiftTrend }) => void
   removeBlock: (blockIdx: number) => void
   moveBlock: (blockIdx: number, delta: -1 | 1) => void
 
@@ -24,6 +25,8 @@ interface WorkoutStore {
   updateSet: (blockIdx: number, setIdx: number, field: SetField, value: string) => void
   toggleDone: (blockIdx: number, setIdx: number) => boolean
   removeSet: (blockIdx: number, setIdx: number) => void
+  /** Write a progression hint's numbers into the block's sets that aren't done yet. */
+  fillSets: (blockIdx: number, fill: HintFill) => void
   markAllFilledDone: () => void
 }
 
@@ -52,7 +55,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets }],
+          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend }],
         },
       }
     }),
@@ -113,6 +116,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       if (!s.draft) return s
       return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, sets: b.sets.filter((_, j) => j !== setIdx) })) }
     }),
+
+  fillSets: (blockIdx, fill) =>
+    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, sets: applyFill(b.sets, fill) })) } : s)),
 
   markAllFilledDone: () =>
     set(s => {

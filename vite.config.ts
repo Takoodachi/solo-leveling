@@ -25,6 +25,13 @@ export default defineConfig({
         scope: '/',
         start_url: '/home',
         categories: ['health', 'fitness', 'lifestyle'],
+        // Long-press the icon (installed on Android or desktop; iOS has no shortcuts for web apps).
+        // The Android app has its own copy: android/app/src/main/res/xml/shortcuts.xml
+        shortcuts: [
+          { name: 'Start workout', url: '/workouts?start=1', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Log food', url: '/nutrition?add=1', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Log weight', url: '/analytics/weight', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+        ],
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

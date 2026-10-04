@@ -105,6 +105,12 @@ const COLLECTIONS: CollectionSpec[] = [
     columns: ['uuid', 'name', 'items', 'mealType', 'updatedAt'],
     normalize: row => ({ ...row, items: row.items ?? [] }),
   },
+  {
+    remote: 'exercise_notes',
+    table: () => t(db.exerciseNotes),
+    columns: ['uuid', 'exerciseId', 'text', 'updatedAt'],
+    normalize: row => ({ text: '', ...row }),
+  },
 ]
 
 const SINGLETONS: SingletonSpec[] = [
@@ -124,7 +130,7 @@ const SINGLETONS: SingletonSpec[] = [
     table: () => s(db.settings),
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
-      'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays',
+      'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays', 'reminders',
       'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'theme', 'navTabs', 'avatar', 'showSearch', 'updatedAt',
     ],
   },

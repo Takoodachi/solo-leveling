@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type {
   Food, FoodLog,
   BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
-  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin, SavedMeal,
+  Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin, SavedMeal, ExerciseNote,
 } from '@/types'
 
 export class SoloLevelingDB extends Dexie {
@@ -23,6 +23,7 @@ export class SoloLevelingDB extends Dexie {
   pendingDeletes!: Table<PendingDelete,   string>
   checkins!:       Table<Checkin,         string>
   savedMeals!:     Table<SavedMeal,       string>
+  exerciseNotes!:  Table<ExerciseNote,    string>
 
   constructor() {
     super('SoloLevelingDB')
@@ -75,5 +76,8 @@ export class SoloLevelingDB extends Dexie {
       savedMeals: 'uuid, name',
     }) // saved meals (one-tap food logging)
     this.version(16).stores({}) // Settings gains theme, navTabs, avatar (no index changes)
+    this.version(17).stores({
+      exerciseNotes: 'uuid',
+    }) // a note per exercise (machine settings)
   }
 }

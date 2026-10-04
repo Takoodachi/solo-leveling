@@ -6,10 +6,14 @@ import type { BlockDraft } from '../types'
 import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockHeader from './BlockHeader'
+import ExerciseNote from './ExerciseNote'
+import ProgressHint from './ProgressHint'
+import { applyFill, suggestProgress } from '../progression'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
+import { tap } from '@/lib/haptics'
 
 interface Props {
   block: BlockDraft
@@ -24,14 +28,19 @@ interface Props {
 }
 
 export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, liftRank, rankContext }: Props) {
-  const { addSet, removeSet, updateSet, toggleDone } = useWorkoutStore()
+  const { addSet, removeSet, updateSet, toggleDone, fillSets, draft } = useWorkoutStore()
   // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
   const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
   const done = block.sets.filter(s => s.done).length
   const rank = rankContext ? liveRank(block.exercise.uuid, block.sets.filter(s => s.done), liftRank, rankContext) : liftRank
+  // No "what to try today" while correcting a workout that's already happened
+  const hint = draft?.editing ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg })
+  const fill = hint?.fill
+  const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
 
   function handleToggle(setIdx: number) {
     if (!toggleDone(blockIdx, setIdx)) return
+    tap()
     onSetDone(block.restSec)
     announceRankUp(setIdx)
   }
@@ -75,6 +84,9 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
           </>
         }
       />
+
+      <ExerciseNote exerciseId={block.exercise.uuid} className="mb-3" />
+      {hint && <ProgressHint hint={hint} onUse={fill && fillChanges ? () => fillSets(blockIdx, fill) : undefined} />}
 
       <div className="grid gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" style={{ gridTemplateColumns: SET_GRID[mode] }}>
         <span className="text-center">Set</span>
