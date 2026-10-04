@@ -65,13 +65,37 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
   }
 })
 
+// 5. Reminders pushed by the server (supabase/functions/send-reminders). A push must always
+//    show something: iOS drops a subscription whose pushes stay silent.
+self.addEventListener('push', (event: PushEvent) => {
+  let data: { title?: string; body?: string; url?: string; tag?: string } = {}
+  try {
+    data = (event.data?.json() ?? {}) as typeof data
+  } catch {
+    // not JSON: show the generic notification
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'Solo Leveling', {
+      body: data.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: data.tag,
+      data: { url: data.url ?? '/home' },
+    }),
+  )
+})
+
+// A tapped notification opens its screen: in the running app (the page navigates on
+// 'open-url', see useNativeLinks), else in a new window. The rest timer carries no url.
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close()
+  const url = (event.notification.data as { url?: string } | null)?.url ?? '/workouts/active'
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
       const client = clients[0]
-      if (client) return client.focus()
-      return self.clients.openWindow('/workouts/active')
+      if (!client) return void (await self.clients.openWindow(url))
+      await client.focus()
+      client.postMessage({ type: 'open-url', url })
     }),
   )
 })

@@ -26,6 +26,8 @@ const config: CapacitorConfig = {
   plugins: {
     // The site already uses viewport-fit=cover; this avoids a layout jump before it loads
     SystemBars: { initialViewportFitValueHint: 'cover', style: 'DARK' },
+    // Reminders and the rest timer: the app mark in the status bar, tinted with the accent
+    LocalNotifications: { smallIcon: 'ic_stat_ascent', iconColor: '#FF5F1A' },
   },
 }
 

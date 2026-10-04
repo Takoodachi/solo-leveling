@@ -24,7 +24,7 @@ export default function ExportButton() {
     try {
       const [
         foods, foodLog, bodyMetrics, dailyActivity, userStats, targets, achievements, settings,
-        exercises, workouts, workoutSets, routines, challenges, checkins, savedMeals,
+        exercises, workouts, workoutSets, routines, challenges, checkins, savedMeals, exerciseNotes,
       ] = await Promise.all([
         db.foods.filter(f => f.isCustom || f.isFavorite).toArray(),
         db.foodLog.toArray(),
@@ -41,6 +41,7 @@ export default function ExportButton() {
         db.challenges.toArray(),
         db.checkins.toArray(),
         db.savedMeals.toArray(),
+        db.exerciseNotes.toArray(),
       ])
 
       const data = {
@@ -48,7 +49,7 @@ export default function ExportButton() {
         exportedAt: Date.now(),
         foods, foodLog, bodyMetrics, dailyActivity,
         userStats, targets, achievements, settings,
-        exercises, workouts, workoutSets, routines, challenges, checkins, savedMeals,
+        exercises, workouts, workoutSets, routines, challenges, checkins, savedMeals, exerciseNotes,
       }
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

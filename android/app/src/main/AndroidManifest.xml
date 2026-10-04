@@ -23,6 +23,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Long-press shortcuts: start workout, log food, log weight -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
         </activity>
 
         <!-- Health Connect: explains why the app reads steps (Android 13 and older) -->
@@ -64,10 +67,16 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Reminders and the rest timer ring on time with the app closed. The notification plugin
+         declares POST_NOTIFICATIONS itself; exact alarms need no user prompt with this one
+         (fine for a sideloaded app, Play restricts it to clocks and calendars). -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- Health Connect: steps only. The site's code runs with this app's permissions, so the
          capacitor-health plugin's other read permissions are stripped from the merged manifest. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <!-- Step sync while the app is closed (StepsSyncWorker). Asked for only when it's switched on. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_DISTANCE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" tools:node="remove" />

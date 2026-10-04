@@ -22,12 +22,26 @@ export type LastSet = {
   rpe?: number
 }
 
+/** One earlier session of an exercise: when it was logged and its sets in order. */
+export type PastSession = { at: number; sets: LastSet[] }
+
+/** What the progression hint uses besides the last session's sets (see progression.ts). */
+export type LiftTrend = {
+  /** Days since the last session. */
+  gapDays: number
+  /** Smallest gap between the working weights of earlier sessions: the real jump on this equipment. */
+  step?: number
+  /** Sessions in a row, counting the last, at the same working weight without more reps. */
+  flat: number
+}
+
 export type BlockDraft = {
   exercise: Exercise
   restSec: number
   targetReps?: number
   sets: SetDraft[]
   lastSets?: LastSet[]
+  trend?: LiftTrend
 }
 
 /** A saved workout being edited in the logger (instead of a live session). */

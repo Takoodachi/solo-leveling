@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { buzz } from '@/lib/haptics'
+import { nativeNotifyState, replaceScheduled, requestNativeNotify } from '@/lib/localNotifications'
 
 const STORAGE_KEY = 'solo:restTimer'
 
@@ -32,12 +34,26 @@ function scheduleInServiceWorker(endAt: number | null): void {
   })
 }
 
+/** Below the reminders' id range (features/reminders/deliver.ts). */
+const REST_ALARM_ID = 9001
+
+/**
+ * Android app: a scheduled notification, which still rings with the phone locked or the app
+ * in the background (the WebView has no web notifications, and its timers freeze there).
+ */
+function scheduleOnPhone(endAt: number | null): void {
+  const alarm = { id: REST_ALARM_ID, title: 'Rest done', body: 'Time for your next set', at: endAt ?? 0, url: '/workouts/active', channel: 'rest-timer' as const }
+  void replaceScheduled(REST_ALARM_ID, REST_ALARM_ID + 1, endAt == null ? [] : [alarm]).catch(() => {})
+}
+
 function alertRestDone(): void {
-  navigator.vibrate?.([200, 100, 200]) // Android; iOS ignores vibration from the web
+  buzz([200, 100, 200]) // Android; iPhones can't vibrate from a timer
 }
 
 /** Must be called from a tap (iOS only shows the prompt in response to a user gesture). */
 export function requestNotificationPermission(): void {
+  // The Android app asks through the system instead (no web notifications in its WebView)
+  void nativeNotifyState().then(state => { if (state === 'prompt') void requestNativeNotify() }).catch(() => {})
   if (typeof Notification === 'undefined' || Notification.permission !== 'default') return
   void Notification.requestPermission()
 }
@@ -61,12 +77,20 @@ export function useRestTimer() {
   // Fire once at the end.
   useEffect(() => {
     if (!timer) return
+    const left = Math.max(0, timer.endAt - Date.now())
+    // With the app on screen its own buzz is enough: drop the phone's notification just before it rings
+    const quiet = setTimeout(() => {
+      if (document.visibilityState === 'visible') scheduleOnPhone(null)
+    }, Math.max(0, left - 800))
     const t = setTimeout(() => {
       alertRestDone()
       persist(null)
       setTimer(null)
-    }, Math.max(0, timer.endAt - Date.now()))
-    return () => clearTimeout(t)
+    }, left)
+    return () => {
+      clearTimeout(quiet)
+      clearTimeout(t)
+    }
   }, [timer])
 
   const start = useCallback((seconds: number) => {
@@ -74,6 +98,7 @@ export function useRestTimer() {
     const next = { endAt: Date.now() + seconds * 1000, total: seconds }
     persist(next)
     scheduleInServiceWorker(next.endAt)
+    scheduleOnPhone(next.endAt)
     setNow(Date.now())
     setTimer(next)
   }, [])
@@ -81,6 +106,7 @@ export function useRestTimer() {
   const stop = useCallback(() => {
     persist(null)
     scheduleInServiceWorker(null)
+    scheduleOnPhone(null)
     setTimer(null)
   }, [])
 
@@ -90,6 +116,7 @@ export function useRestTimer() {
       const next = { endAt: prev.endAt + delta * 1000, total: prev.total + delta }
       persist(next)
       scheduleInServiceWorker(next.endAt)
+      scheduleOnPhone(next.endAt)
       return next
     })
   }, [])

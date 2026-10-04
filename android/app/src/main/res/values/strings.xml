@@ -6,4 +6,8 @@
     <string name="custom_url_scheme">io.github.takoodachi.sololeveling</string>
     <!-- Opened by Health Connect's "privacy policy" link (capacitor-health's PermissionsRationaleActivity) -->
     <string name="privacy_policy_url">https://solo-leveling.luongdtran06.workers.dev/health-privacy.html</string>
+    <!-- Long-press app shortcuts (res/xml/shortcuts.xml) -->
+    <string name="shortcut_workout">Start workout</string>
+    <string name="shortcut_food">Log food</string>
+    <string name="shortcut_weight">Log weight</string>
 </resources>

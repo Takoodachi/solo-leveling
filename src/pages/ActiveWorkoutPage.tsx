@@ -9,7 +9,7 @@ import { useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
 import { useRestTimer, requestNotificationPermission } from '@/features/workouts/hooks/useRestTimer'
 import { useWakeLock } from '@/features/workouts/hooks/useWakeLock'
 import { useElapsed } from '@/features/workouts/hooks/useElapsed'
-import { lastSessionSets } from '@/features/workouts/hooks/useWorkoutHistory'
+import { blockHistory } from '@/features/workouts/hooks/useWorkoutHistory'
 import ExerciseLogCard from '@/features/workouts/components/ExerciseLogCard'
 import CardioLogCard from '@/features/workouts/components/CardioLogCard'
 import { parsePositive } from '@/features/workouts/types'
@@ -61,8 +61,7 @@ export default function ActiveWorkoutPage() {
   const rankContext = ranks?.sex && ranks.bodyKg ? { sex: ranks.sex, bodyKg: ranks.bodyKg } : null
 
   async function handleAddExercise(exercise: Exercise) {
-    const lastSets = await lastSessionSets(exercise.uuid)
-    addBlock(exercise, { restSec: defaultRest, lastSets })
+    addBlock(exercise, { restSec: defaultRest, ...(await blockHistory(exercise.uuid)) })
   }
 
   function handleSetDone(restSec: number) {

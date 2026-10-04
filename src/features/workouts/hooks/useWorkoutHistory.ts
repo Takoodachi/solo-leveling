@@ -4,7 +4,8 @@ import type { Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } fro
 import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { deleteSynced } from '@/lib/sync'
 import { est1RM, totalVolume } from '@/lib/workoutMath'
-import type { LastSet } from '../types'
+import { trendOf } from '../progression'
+import type { BlockDraft, LastSet, PastSession } from '../types'
 
 export interface WorkoutSummary extends Workout {
   setCount: number
@@ -65,21 +66,32 @@ export async function deleteWorkout(uuid: string): Promise<void> {
   await deleteSynced(db.workouts, 'workouts', [uuid])
 }
 
+/** Earlier workouts that included this exercise, newest first, with its sets in order. */
+export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinity, limit = 8): Promise<PastSession[]> {
+  const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
+  if (sets.length === 0) return []
+  const workouts = (await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))]))
+    .filter((w): w is Workout => !!w && w.createdAt < beforeCreatedAt)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit)
+  return workouts.map(w => ({
+    at: w.createdAt,
+    sets: sets
+      .filter(s => s.workoutId === w.uuid)
+      .sort((a, b) => a.setIndex - b.setIndex)
+      .map(s => ({ weight: s.weight, reps: s.reps, duration: s.duration, distanceKm: s.distanceKm, rpe: s.rpe })),
+  }))
+}
+
 /** Sets from the most recent earlier workout that included this exercise. */
 export async function lastSessionSets(exerciseId: string, beforeCreatedAt = Infinity): Promise<LastSet[] | undefined> {
-  const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-  if (sets.length === 0) return undefined
-  const workouts = await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))])
-  let latest: Workout | undefined
-  for (const w of workouts) {
-    if (w && w.createdAt < beforeCreatedAt && (!latest || w.createdAt > latest.createdAt)) latest = w
-  }
-  if (!latest) return undefined
-  const latestId = latest.uuid
-  return sets
-    .filter(s => s.workoutId === latestId)
-    .sort((a, b) => a.setIndex - b.setIndex)
-    .map(s => ({ weight: s.weight, reps: s.reps, duration: s.duration, distanceKm: s.distanceKm, rpe: s.rpe }))
+  return (await pastSessions(exerciseId, beforeCreatedAt, 1))[0]?.sets
+}
+
+/** What a new logger block needs from history: the "Previous" column and the progression facts. */
+export async function blockHistory(exerciseId: string): Promise<Pick<BlockDraft, 'lastSets' | 'trend'>> {
+  const past = await pastSessions(exerciseId)
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()) }
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'

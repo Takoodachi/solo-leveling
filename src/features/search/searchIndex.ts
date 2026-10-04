@@ -1,5 +1,5 @@
 import {
-  Award, Bell, BicepsFlexed, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye, Flag,
+  Award, Bell, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye, Flag,
   Footprints, GlassWater, Goal, History, House, LayoutGrid, ListPlus, Medal, PanelBottom, Palette, PersonStanding,
   Play, Radar, Ruler, Scale, Settings, Target, Timer, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
   type LucideIcon,
@@ -32,12 +32,12 @@ type Entry = Omit<SearchItem, 'group'>
 /** Screens and the sections inside them (#ids are anchors on those pages). */
 export const PAGE_ENTRIES: Entry[] = [
   { id: 'home', title: 'Home', subtitle: 'Today’s plan and weekly stats', keywords: 'dashboard today week strip', Icon: House, to: '/home' },
+  { id: 'recap', title: 'Weekly recap', subtitle: 'Last week in review', keywords: 'summary review report week wrapped', Icon: CalendarCheck, to: '/recap' },
   { id: 'workouts', title: 'Workouts', subtitle: 'Routines, templates and history', keywords: 'training gym lift routines templates', Icon: Dumbbell, to: '/workouts' },
   { id: 'history', title: 'Workout history', subtitle: 'Workouts', keywords: 'past sessions log', Icon: History, to: '/workouts/history' },
   { id: 'plan', title: 'Weekly plan', subtitle: 'Workouts', keywords: 'schedule split days program', Icon: CalendarDays, to: '/workouts/plan#schedule' },
   { id: 'frequency', title: 'Training frequency goal', subtitle: 'Workouts › Plan', keywords: 'workouts per week weekly goal', Icon: Target, to: '/workouts/plan#frequency' },
   { id: 'rest', title: 'Rest timer', subtitle: 'Workouts › Plan', keywords: 'rest seconds between sets', Icon: Timer, to: '/workouts/plan#rest-timer' },
-  { id: 'reminders', title: 'Reminders', subtitle: 'Workouts › Plan', keywords: 'notifications notify', Icon: Bell, to: '/workouts/plan#reminders' },
   { id: 'nutrition', title: 'Nutrition', subtitle: 'Food log, meals and calories', keywords: 'food eat diet meals calories kcal macros', Icon: UtensilsCrossed, to: '/nutrition' },
   { id: 'analytics', title: 'Analytics', subtitle: 'Charts and progress', keywords: 'stats graphs charts progress', Icon: ChartColumn, to: '/analytics' },
   { id: 'set-volume', title: 'Set volume radar', subtitle: 'Analytics', keywords: 'weekly analysis sets per muscle mev mav mrv volume landmarks', Icon: Radar, to: '/analytics#set-volume' },
@@ -63,6 +63,7 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'account', title: 'Account & sync', subtitle: 'Settings', keywords: 'sign in sign out log in login logout email password cloud sync', Icon: Cloud, to: '/settings#account' },
   { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings', keywords: 'privacy share visible hide', Icon: Eye, to: '/settings#sharing' },
   { id: 'theme', title: 'Theme', subtitle: 'Settings', keywords: `dark light mode colours colors palette appearance ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
+  { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert workout creatine food weigh water recap', Icon: Bell, to: '/settings#reminders' },
   { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs', Icon: PanelBottom, to: '/settings#bottom-bar' },
   { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings', keywords: 'widgets cards customize home search bar hide show', Icon: LayoutGrid, to: '/settings#home-screen' },
   { id: 'backup', title: 'Backup', subtitle: 'Settings', keywords: 'export import json data restore', Icon: DatabaseBackup, to: '/settings#backup' },

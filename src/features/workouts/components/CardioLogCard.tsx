@@ -7,11 +7,13 @@ import { resolveBodyKg } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
 import { parsePositive, sanitizeNumeric, type BlockDraft, type LastSet } from '../types'
 import BlockHeader from './BlockHeader'
+import ExerciseNote from './ExerciseNote'
 import type { RankInfo } from '@/features/ranks/tiers'
 import type { Sex } from '@/features/ranks/standards'
 import { describeRunScore, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
+import { tap } from '@/lib/haptics'
 
 interface Props {
   block: BlockDraft
@@ -61,7 +63,9 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
     : undefined
 
   function handleLog(setIdx: number) {
-    if (!toggleDone(blockIdx, setIdx) || !ranked) return
+    if (!toggleDone(blockIdx, setIdx)) return
+    tap()
+    if (!ranked) return
     const rating = rateRun(ranked, entries[setIdx].distanceKm, entries[setIdx].duration)
     const before = entries.filter((_, i) => i !== setIdx && block.sets[i].done).reduce<RankInfo | undefined>((r, e) => liveRunRank(ranked, e, r), runRank)
     const to = liveRunRank(ranked, entries[setIdx], before)
@@ -91,6 +95,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
           </>
         }
       />
+      <ExerciseNote exerciseId={id} cardio className="mb-3" />
       <div className="flex flex-col gap-3">
         {block.sets.map((set, setIdx) => {
           const entry = { ...entries[setIdx], rpe: rpeFor(set.intensity ?? 'moderate') }

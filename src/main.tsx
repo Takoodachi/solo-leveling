@@ -5,9 +5,7 @@ import { restoreDraftFromStorage } from '@/features/workouts/store'
 import App from './App'
 import './index.css'
 import { applyTheme, cachedThemeId } from '@/features/settings/themes'
-
-// Paint the last-used theme before the first render, so launches don't flash the default.
-applyTheme(cachedThemeId())
+import { backgroundBridge, runBackgroundSteps } from '@/features/health/backgroundSteps'
 
 // Ask the browser not to evict our IndexedDB under storage pressure (best-effort;
 // installed home-screen apps on iOS are already exempt from Safari's 7-day cap).
@@ -63,24 +61,35 @@ window.addEventListener('vite:preloadError', event => {
   if (!reloadOnce()) renderFatal('A new version of the app is available.', 'Reload to finish updating.')
 })
 
-Promise.all([seedDatabase(), restoreDraftFromStorage()])
-  .then(() => {
-    const root = document.getElementById('root')
-    if (!root) throw new Error('#root element not found')
-    createRoot(root, {
-      // A render error unmounts the whole tree; show what happened instead of a blank page.
-      onUncaughtError(error) {
-        console.error('Uncaught app error:', error)
-        if (isChunkLoadError(error) && reloadOnce()) return
-        renderFatal('Something went wrong.', error)
-      },
-    }).render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    )
-  })
-  .catch((err: unknown) => {
-    console.error('Failed to initialize database:', err)
-    renderFatal('The app couldn’t open its local database.', err)
-  })
+function startApp(): void {
+  // Paint the last-used theme before the first render, so launches don't flash the default.
+  applyTheme(cachedThemeId())
+
+  Promise.all([seedDatabase(), restoreDraftFromStorage()])
+    .then(() => {
+      const root = document.getElementById('root')
+      if (!root) throw new Error('#root element not found')
+      createRoot(root, {
+        // A render error unmounts the whole tree; show what happened instead of a blank page.
+        onUncaughtError(error) {
+          console.error('Uncaught app error:', error)
+          if (isChunkLoadError(error) && reloadOnce()) return
+          renderFatal('Something went wrong.', error)
+        },
+      }).render(
+        <StrictMode>
+          <App />
+        </StrictMode>,
+      )
+    })
+    .catch((err: unknown) => {
+      console.error('Failed to initialize database:', err)
+      renderFatal('The app couldn’t open its local database.', err)
+    })
+}
+
+// The Android app's background step sync loads this page off-screen with a bridge on the
+// window: do that job and draw nothing (features/health/backgroundSteps.ts).
+const background = backgroundBridge()
+if (background) void runBackgroundSteps(background)
+else startApp()

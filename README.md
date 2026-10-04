@@ -43,7 +43,7 @@ Workers & Pages → Create → *Import a repository* → this repo. Settings:
 | Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` |
 | Non-production branch deploy command | `npx wrangler versions upload` |
-| **Build** variables (Settings → Build → Variables and secrets) | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+| **Build** variables (Settings → Build → Variables and secrets) | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (optional: `VITE_VAPID_PUBLIC_KEY`, see *Reminder notifications*) |
 
 - `wrangler.jsonc` serves `dist/` as static assets, with `not_found_handling: "single-page-application"` so
   deep links like `/workouts/active` load the app. Don't add a `_redirects` file: Cloudflare rejects
@@ -86,6 +86,50 @@ Settings → Health Connect and let it share steps. Steps then import whenever t
 
 **Dev**: `CAP_SERVER_URL=http://10.0.2.2:5174 npm run android` builds an APK that loads a local
 dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulator.
+
+**What only the app has** (all need a current APK; older ones say so in Settings):
+- **Reminders** as the phone's own scheduled notifications: no server, they ring with the app closed.
+- **Step sync in the background** (Settings → Steps → *Sync in the background*): about once an hour,
+  needs Health Connect's "Access data in the background" (Android 14+).
+- **Long-press shortcuts** on the app icon: Start workout, Log food, Log weight.
+- The **rest timer** rings as a notification when the phone is locked or the app is behind another.
+
+## Reminder notifications
+
+Settings → Reminders picks what to be reminded of (workout, creatine, food, weigh-in, water, weekly
+recap) and when. Those choices sync with the account. Showing them is per device:
+
+- **Android app**: works as soon as notifications are switched on there. Nothing to set up.
+- **iPhone home-screen app, browsers**: web push, which needs the one-time setup below. Until it's
+  done, those devices just say reminders aren't available. Everything is on Supabase's free tier.
+
+One-time setup for web push:
+
+1. **Keys**: run `node scripts/generate-vapid.mjs`. It prints a public and a private key.
+2. **Database**: run `supabase/migrations/20260930000000_reminders_push.sql` in the SQL Editor
+   (do this before deploying, like every migration).
+3. **Function**: Supabase → Edge Functions → *Deploy a new function* → name it `send-reminders`
+   and paste `supabase/functions/send-reminders/index.ts` (or `supabase functions deploy send-reminders`).
+   Under the function's **Secrets**, add `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` from step 1.
+4. **Schedule**: in the SQL Editor, run this with your project URL and publishable (anon) key filled in:
+
+   ```sql
+   select cron.schedule('solo-reminders', '* * * * *',
+     $$select public.sl_send_due_pushes('https://YOUR-PROJECT.supabase.co/functions/v1/send-reminders', 'YOUR-ANON-KEY')$$);
+   select cron.schedule('solo-cron-cleanup', '17 3 * * *',
+     $$delete from cron.job_run_details where end_time < now() - interval '3 days'$$);
+   ```
+
+   It checks the queue every minute and only calls the function when a reminder is due.
+5. **Site**: add the public key as a Cloudflare **build** variable `VITE_VAPID_PUBLIC_KEY`, then redeploy.
+
+Each person then opens Settings → Reminders on their phone and switches notifications on. On an
+iPhone this only works in the installed home-screen app (iOS 16.4+), not in Safari.
+
+How it fits together: the app works out the coming reminders on the device (it knows the timezone
+and what's already logged that day) and saves them to `push_queue`; the scheduled job sends the due
+ones through the function to the account's subscribed devices (`push_subscriptions`). The function
+has no database access and uses no service key.
 
 ## How sync works (short version)
 

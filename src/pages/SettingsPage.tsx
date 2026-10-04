@@ -10,6 +10,7 @@ import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
 import ShareCard from '@/features/leaderboard/components/ShareCard'
 import HealthStepsCard from '@/features/health/components/HealthStepsCard'
+import RemindersCard from '@/features/reminders/components/RemindersCard'
 import { isAndroidApp } from '@/lib/native'
 
 const APP_VERSION = '0.3.0'
@@ -41,6 +42,9 @@ export default function SettingsPage() {
           <HealthStepsCard />
         </Section>
       )}
+      <Section id="reminders" title="Reminders">
+        <RemindersCard />
+      </Section>
       <Section id="theme" title="Theme">
         <ThemePicker />
       </Section>

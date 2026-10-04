@@ -13,7 +13,7 @@ import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { useWorkoutStore } from '../store'
 import { emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
-import { findNewBests, getWorkoutWithSets, lastSessionSets, type NewBest } from './useWorkoutHistory'
+import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
   durationMin: number
@@ -67,7 +67,7 @@ export function useActiveWorkout() {
     for (const [i, re] of routine.exercises.entries()) {
       const exercise = exercises[i]
       if (!exercise) continue
-      const lastSets = await lastSessionSets(exercise.uuid)
+      const { lastSets, trend } = await blockHistory(exercise.uuid)
       const base = { exercise, lastSets }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
@@ -75,6 +75,7 @@ export function useActiveWorkout() {
         restSec: cardio ? 0 : re.restSec,
         targetReps: re.reps,
         lastSets,
+        trend,
         sets: cardio
           ? [prefillCardio(base, Math.max(1, re.sets) * re.reps)]
           : Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),

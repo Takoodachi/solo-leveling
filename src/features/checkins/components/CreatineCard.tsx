@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Check, Pill } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { tap } from '@/lib/haptics'
 import { toggleCheckin, useCheckin, useCheckinStreak } from '../useCheckins'
 
 /** Home tile: one tap ticks off the selected day's creatine. */
@@ -16,7 +17,8 @@ export default function CreatineCard({ date, today }: { date: string; today: str
 
   async function handleTap() {
     if (future) return
-    if (await toggleCheckin('creatine', date)) navigator.vibrate?.(12)
+    if (!done) tap() // inside the tap: iPhones only tick from a touch
+    await toggleCheckin('creatine', date)
   }
 
   return (

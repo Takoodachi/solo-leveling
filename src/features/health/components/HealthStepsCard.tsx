@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useNow } from '@/hooks/useNow'
 import type { HealthStatus } from '../healthSteps'
 import HealthStepsDiagnosis from './HealthStepsDiagnosis'
+import BackgroundStepsRow from './BackgroundStepsRow'
 
 const load = () => import('../healthSteps')
 
@@ -125,6 +126,7 @@ export default function HealthStepsCard() {
           </Button>
         </div>
       )}
+      {status === 'connected' && <BackgroundStepsRow />}
       {status === 'connected' && <HealthStepsDiagnosis version={(lastImport ?? 0) + checks} />}
     </div>
   )

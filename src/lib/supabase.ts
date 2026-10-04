@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type {
   Food, FoodLog,
   BodyMetric, Targets, Achievement,
@@ -47,3 +47,6 @@ export const supabase = createClient<Database>(
   supabaseKey ?? 'placeholder-key',
   { global: { fetch: fetchWithTimeout } },
 )
+
+/** The same client, loosely typed, for tables that aren't in `Database` (push subscriptions and queue). */
+export const looseSupabase = supabase as unknown as SupabaseClient

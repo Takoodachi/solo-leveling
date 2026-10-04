@@ -85,6 +85,16 @@ export interface Achievement {
 
 export type ReminderDays = 'daily' | 'workout-days'
 
+/** What the app can remind you about (Settings → Reminders). */
+export type ReminderKind = 'workout' | 'creatine' | 'food' | 'weight' | 'water' | 'recap'
+
+export interface ReminderPref {
+  on: boolean
+  time: string // HH:mm, local
+  /** Workout only: every day, or only the days with a scheduled routine. */
+  days?: ReminderDays
+}
+
 export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
 
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
@@ -107,9 +117,10 @@ export interface Settings {
   dailyStepGoal?: number
   weeklyWorkoutGoal?: number
   defaultRestSeconds?: number
-  reminderEnabled?: boolean
+  reminderEnabled?: boolean // legacy workout reminder (before `reminders`); read through `reminderPrefs`
   reminderTime?: string // HH:mm
   reminderDays?: ReminderDays
+  reminders?: Partial<Record<ReminderKind, ReminderPref>> // what to be reminded of, and when
   creatineEnabled?: boolean // legacy (before homeWidgets): false hid the creatine card
   homeWidgets?: HomeWidgetId[] // Home cards in display order (unset = all, default order)
   waterGoalMl?: number
@@ -147,6 +158,19 @@ export interface Exercise {
   muscles?: string[]
   musclesSecondary?: string[]
   instructions?: string
+  updatedAt: number
+  syncPending?: boolean
+}
+
+/**
+ * The user's own note on an exercise (machine settings, grip, cues). One row per
+ * exercise (id `note-<exerciseId>`), kept apart from `exercises` because built-ins
+ * are re-seeded on every start and never synced. Clearing a note saves text = ''.
+ */
+export interface ExerciseNote {
+  uuid: string
+  exerciseId: string
+  text: string
   updatedAt: number
   syncPending?: boolean
 }
