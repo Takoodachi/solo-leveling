@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon. Each opens the app at a screen: SoloPlugin reads the
+     solo://open/<path> data and the site navigates there (src/hooks/useNativeLinks.ts). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start_workout"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_workout"
+        android:shortcutShortLabel="@string/shortcut_workout"
+        android:shortcutLongLabel="@string/shortcut_workout">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.takoodachi.sololeveling"
+            android:targetClass="io.github.takoodachi.sololeveling.MainActivity"
+            android:data="solo://open/workouts?start=1" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="log_food"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_food"
+        android:shortcutShortLabel="@string/shortcut_food"
+        android:shortcutLongLabel="@string/shortcut_food">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.takoodachi.sololeveling"
+            android:targetClass="io.github.takoodachi.sololeveling.MainActivity"
+            android:data="solo://open/nutrition?add=1" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="log_weight"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_weight"
+        android:shortcutShortLabel="@string/shortcut_weight"
+        android:shortcutLongLabel="@string/shortcut_weight">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.takoodachi.sololeveling"
+            android:targetClass="io.github.takoodachi.sololeveling.MainActivity"
+            android:data="solo://open/analytics/weight" />
+    </shortcut>
+</shortcuts>

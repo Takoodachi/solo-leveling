@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "io.github.takoodachi.sololeveling"
@@ -40,9 +41,19 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    // Step sync while the app is closed: a periodic job that reads Health Connect itself
+    implementation 'androidx.health.connect:connect-client:1.2.0-alpha01'
+    implementation 'androidx.work:work-runtime-ktx:2.10.5'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
 }
 
 apply from: 'capacitor.build.gradle'
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')
