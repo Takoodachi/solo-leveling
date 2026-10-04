@@ -48,12 +48,14 @@ function useCard(recap: Recap, current: boolean): Card {
 function ShareDialog({ recap, current, onClose }: Props & { onClose: () => void }) {
   const card = useCard(recap, current)
   const [sharing, setSharing] = useState(false)
+  // The line on the card, which is also the text sent with it: no food
+  const line = headline(recap, { shared: true })
 
   async function share() {
     if (!card || !('blob' in card)) return
     setSharing(true)
     try {
-      const outcome = await shareImage(card.blob, `solo-leveling-${recap.period}-${recap.dates[0]}.png`, `My ${recap.period}: ${headline(recap)}`)
+      const outcome = await shareImage(card.blob, `solo-leveling-${recap.period}-${recap.dates[0]}.png`, `My ${recap.period}: ${line}`)
       if (outcome === 'saved') toast.success('Image saved', { description: 'It’s in your downloads, ready to send.' })
       if (outcome === 'needs-update') toast('Update the app to share images', { description: 'Install the latest Android build, or share from the site in Chrome.' })
       if (outcome === 'shared' || outcome === 'saved') onClose()
@@ -71,7 +73,7 @@ function ShareDialog({ recap, current, onClose }: Props & { onClose: () => void 
         <DialogDescription>Training, steps, rank and new bests. Food and body weight stay private.</DialogDescription>
       </DialogHeader>
       <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-secondary">
-        {card && 'url' in card && <img src={card.url} alt={`Recap card: ${headline(recap)}`} className="h-full w-full object-cover" />}
+        {card && 'url' in card && <img src={card.url} alt={`Recap card: ${line}`} className="h-full w-full object-cover" />}
         {card && 'error' in card && <p className="p-6 text-sm text-muted-foreground">{card.error}</p>}
       </div>
       <Button size="lg" className="gap-2" onClick={() => void share()} disabled={!card || !('blob' in card) || sharing}>

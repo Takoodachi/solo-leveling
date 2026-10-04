@@ -163,7 +163,7 @@ export async function renderRecapCard(recap: Recap, owner: CardOwner, current: b
   ctx.fillText(`${periodLabel(recap.period, recap.dates[0])}${current ? ' · so far' : ''}`, PAD, 276)
   ctx.globalAlpha = 1
   font(ctx, 600, 38)
-  wrap(ctx, headline(recap), W - PAD * 2, 2).forEach((line, i) => ctx.fillText(line, PAD, 344 + i * 50))
+  wrap(ctx, headline(recap, { shared: true }), W - PAD * 2, 2).forEach((line, i) => ctx.fillText(line, PAD, 344 + i * 50))
 
   // Stat tiles, two a row
   let y = 24 + bandH + 36

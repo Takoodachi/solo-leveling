@@ -31,13 +31,14 @@ interface Props {
   recap: Recap
   /** Days of the period so far, counted from the first one with anything logged. */
   elapsedDays: number
-  /** The period is over (comparisons with the one before are fair). */
+  /** The period is over. One still going isn't set against the whole one before it. */
   finished: boolean
 }
 
 export default function RecapStats({ recap, elapsedDays, finished }: Props) {
   const { training, previous, steps, food, weight, period } = recap
   const more = training.workouts - previous.workouts
+  const than = (now: number, before: number) => (finished ? versus(now, before, period) : null)
   // A month or year only partly logged (or still going) gets its share of the goal
   const goal = period === 'week' ? recap.workoutGoal : Math.max(1, Math.round((recap.workoutGoal * elapsedDays) / recap.dates.length))
   return (
@@ -46,18 +47,18 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
         Icon={Dumbbell}
         label="Workouts"
         value={`${training.workouts} / ${goal}`}
-        note={previous.workouts > 0 ? (more === 0 ? `Same as the ${period} before` : `${Math.abs(more)} ${more > 0 ? 'more' : 'fewer'} than the ${period} before`) : null}
+        note={finished && previous.workouts > 0 ? (more === 0 ? `Same as the ${period} before` : `${Math.abs(more)} ${more > 0 ? 'more' : 'fewer'} than the ${period} before`) : null}
       />
-      <Tile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={versus(training.activeMin, previous.activeMin, period)} />
+      <Tile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={than(training.activeMin, previous.activeMin)} />
       {training.sets > 0 && (
-        <Tile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume)} note={versus(training.volume, previous.volume, period)} />
+        <Tile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume)} note={than(training.volume, previous.volume)} />
       )}
       {training.cardioKm > 0 && (
-        <Tile Icon={Route} label="Cardio distance" value={`${training.cardioKm.toFixed(1)} km`} note={versus(training.cardioKm, previous.cardioKm, period)} />
+        <Tile Icon={Route} label="Cardio distance" value={`${training.cardioKm.toFixed(1)} km`} note={than(training.cardioKm, previous.cardioKm)} />
       )}
       {steps.total > 0 && (
         <>
-          <Tile Icon={Footprints} label="Steps a day" value={Math.round(steps.total / Math.max(1, elapsedDays)).toLocaleString()} note={finished ? versus(steps.total, previous.steps, period) : null} />
+          <Tile Icon={Footprints} label="Steps a day" value={Math.round(steps.total / Math.max(1, elapsedDays)).toLocaleString()} note={than(steps.total, previous.steps)} />
           <Tile
             Icon={Footprints}
             label={`Days at ${steps.goal.toLocaleString()} steps`}

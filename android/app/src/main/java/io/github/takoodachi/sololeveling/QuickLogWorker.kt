@@ -7,10 +7,8 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -62,7 +60,7 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
             page.webViewClient = object : WebViewClient() {
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                     if (request.isForMainFrame) {
-                        answer.complete(JSONObject().put("ok", false).put("title", "Couldn’t log it").put("detail", "No connection to the app (${error.description}). Open it to log it.").toString())
+                        answer.complete(JSONObject().put("ok", false).put("title", "Couldn’t log it").put("detail", "The app didn’t load (${error.description}). Open it to log it.").toString())
                     }
                 }
             }
@@ -90,12 +88,15 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_DATE = "date"
         private const val PAGE_TIMEOUT_MS = 60_000L
 
-        /** One job per notification, so a second tap before the first is done can't add a second glass. */
+        /**
+         * One job per notification, so a second tap before the first is done can't add a second glass.
+         * It runs straight away, connection or not: offline the site comes from its service worker's
+         * cache and the log is saved on the phone, to sync when the app is next opened. Waiting for
+         * a connection instead would leave the "working" notification spinning until there is one.
+         */
         fun enqueue(context: Context, id: Int, kind: String, date: String) {
             val request = OneTimeWorkRequestBuilder<QuickLogWorker>()
                 .setInputData(workDataOf(KEY_ID to id, KEY_KIND to kind, KEY_DATE to date))
-                // The site loads from the network: offline, it waits and logs to the same day later
-                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork("quick-log-$id", ExistingWorkPolicy.KEEP, request)
         }

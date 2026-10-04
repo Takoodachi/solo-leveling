@@ -27,6 +27,9 @@ const LOCAL_OWNER_KEY = 'solo:localOwner'
 /** Sync from the off-screen page; the result reads on after "saved", e.g. " and synced". Also used by quick-log reminders. */
 export async function syncInBackground(): Promise<string> {
   if (!isSupabaseConfigured) return ''
+  // No connection (a reminder's button pressed offline). Answer now: asking for the session
+  // would retry refreshing it for half a minute first
+  if (!navigator.onLine) return localStorage.getItem(LOCAL_OWNER_KEY) ? ' on this phone (offline: syncs when the app is next opened)' : ' on this phone (not signed in)'
   const { data } = await supabase.auth.getSession()
   const userId = data.session?.user.id
   if (!userId) return ' on this phone (not signed in)'
