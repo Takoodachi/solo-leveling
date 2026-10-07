@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, subDays } from 'date-fns'
-import { Search, ScanLine, Sparkles, Loader2, Check } from 'lucide-react'
+import { Search, ScanLine, Sparkles, Loader2, Check, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/db'
 import {
@@ -19,6 +19,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useFoods, saveScannedFood } from '../hooks/useFoods'
 import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
+import { useOnline } from '@/hooks/useOnline'
 import ScannedFoodReview, { type ReviewedFood } from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
@@ -80,6 +81,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const savedMeals = useSavedMeals()
   const { searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
   const barcode = useBarcodeLookup()
+  const online = useOnline()
   const userId = useAuthStore(s => s.userId)
   // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
   const aiAvailable = AI_FOOD_ENABLED && isSupabaseConfigured && !!userId
@@ -451,9 +453,15 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                 variant="outline"
                 size="icon"
                 onClick={() => setShowScanner(true)}
-                aria-label="Scan barcode"
+                aria-label={online ? 'Scan barcode' : 'Scan barcode (offline: saved products only)'}
+                className="relative"
               >
                 <ScanLine size={18} />
+                {!online && (
+                  <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-amber-500 text-amber-950">
+                    <WifiOff className="!size-2.5" strokeWidth={3} />
+                  </span>
+                )}
               </Button>
             </div>
             <ScrollArea className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', '[&_[data-radix-scroll-area-viewport]>div]:!block')}>

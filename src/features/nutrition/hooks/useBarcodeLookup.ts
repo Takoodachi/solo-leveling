@@ -19,6 +19,7 @@ function fromSaved(barcode: string, food: Food): ScannedFood {
 /**
  * Barcode → reviewable result. A product scanned before opens with your saved
  * values (so a wrong entry can be corrected); otherwise it's fetched from Open Food Facts.
+ * Offline, that means saved products work and new ones can't be found (BarcodeScanner says so).
  */
 export function useBarcodeLookup() {
   const [scan, setScan] = useState<ScannedFood | null>(null)
@@ -30,7 +31,9 @@ export function useBarcodeLookup() {
       if (!found) toast.error('Not in Open Food Facts yet', { description: 'Create it as a custom food from the label.' })
       return found
     } catch {
-      toast.error('Couldn’t look up the barcode — check your connection')
+      // Offline, only a product looked up in the last day is still in the service worker's cache
+      if (navigator.onLine) toast.error('Couldn’t look up the barcode — check your connection')
+      else toast.error('You’re offline', { description: 'This product isn’t saved on this device yet. Scan it again when you’re back online, or create it as a custom food.' })
       return null
     }
   }

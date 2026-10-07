@@ -8,6 +8,7 @@ import { today } from '@/lib/date'
 import { updateStreak } from '@/lib/streak'
 import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
+import { announceAchievements } from '@/features/gamification/announce'
 import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
 import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
@@ -164,7 +165,7 @@ export function useActiveWorkout() {
     requestSync()
 
     if (xpResult?.leveledUp) toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' })
-    for (const a of achievements) toast.success(`Achievement unlocked: ${a.title}`, { icon: a.icon })
+    await announceAchievements(achievements)
 
     const result: FinishResult = { celebrate: true, xp, newBests, rankUps }
     navigate(`/workouts/summary/${workoutUuid}`, { replace: true, state: result })

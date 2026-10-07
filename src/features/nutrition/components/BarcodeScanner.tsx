@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType, NotFoundException } from '@zxing/library'
-import { Loader2 } from 'lucide-react'
+import { Loader2, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useOnline } from '@/hooks/useOnline'
 import { normalizeBarcode } from '../openFoodFacts'
 
 interface Props {
@@ -29,6 +30,7 @@ export default function BarcodeScanner({ onResult, onCancel }: Props) {
   const [ready, setReady] = useState(false)
   const [manual, setManual] = useState('')
   const [manualError, setManualError] = useState<string | null>(null)
+  const online = useOnline()
 
   useEffect(() => {
     onResultRef.current = onResult
@@ -90,6 +92,14 @@ export default function BarcodeScanner({ onResult, onCancel }: Props) {
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      {!online && (
+        <p role="status" className="flex items-start gap-2 rounded-2xl bg-amber-500/15 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+          <WifiOff size={16} className="mt-px shrink-0" />
+          <span>
+            <span className="font-semibold">You’re offline.</span> Products you’ve scanned and saved before still work. A new one can’t be looked up until you’re back online.
+          </span>
+        </p>
+      )}
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-black">
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
         {!ready && !error && (

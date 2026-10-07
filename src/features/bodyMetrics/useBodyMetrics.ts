@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { toast } from 'sonner'
 import { db } from '@/db'
 import type { BodyMetric } from '@/types'
 import { requestSync, deleteSynced } from '@/lib/sync'
 import { evaluateAchievements } from '@/lib/achievementEval'
+import { announceAchievements } from '@/features/gamification/announce'
 
 export function useBodyMetrics(limit = 90) {
   const metrics = useLiveQuery(
@@ -31,10 +31,7 @@ export function useBodyMetrics(limit = 90) {
       await db.bodyMetrics.put(entry)
     }
 
-    const newAchievements = await evaluateAchievements()
-    for (const ach of newAchievements) {
-      toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
-    }
+    await announceAchievements(await evaluateAchievements())
 
     requestSync()
   }
