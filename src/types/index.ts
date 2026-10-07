@@ -147,6 +147,7 @@ export interface Settings {
   workoutTips?: boolean // "what to try today" on each lift in the logger (unset = shown)
   appShortcuts?: AppShortcutId[] // long-press actions on the Android app's icon, in order (unset = workout, food, weight)
   customTheme?: CustomTheme // the user's own palette, on screen when theme = 'custom'
+  achievementGoals?: string[] // achievement keys picked as goals (features/gamification/goals.ts)
   updatedAt?: number
   syncPending?: boolean
 }

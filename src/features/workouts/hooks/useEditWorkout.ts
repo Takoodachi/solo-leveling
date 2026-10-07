@@ -6,6 +6,7 @@ import type { WorkoutSet } from '@/types'
 import { deleteSynced, requestSync } from '@/lib/sync'
 import { parseDate } from '@/lib/date'
 import { evaluateAchievements } from '@/lib/achievementEval'
+import { announceAchievements } from '@/features/gamification/announce'
 import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
 import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
@@ -152,7 +153,7 @@ export function useEditWorkout() {
     navigate(`/workouts/summary/${workoutId}`, { replace: true })
     useWorkoutStore.getState().discard()
     toast.success('Workout updated')
-    for (const a of await evaluateAchievements()) toast.success(`Achievement unlocked: ${a.title}`, { icon: a.icon })
+    await announceAchievements(await evaluateAchievements())
     requestSync()
   }
 

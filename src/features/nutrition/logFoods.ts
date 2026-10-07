@@ -4,6 +4,7 @@ import { today } from '@/lib/date'
 import { requestSync, deleteSynced } from '@/lib/sync'
 import { updateStreak } from '@/lib/streak'
 import { evaluateAchievements } from '@/lib/achievementEval'
+import { announceAchievements } from '@/features/gamification/announce'
 import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 import type { Food, FoodLog, MealType } from '@/types'
 
@@ -28,9 +29,7 @@ export async function logFoods(entries: NewFoodLog[]): Promise<string[]> {
       toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
     }
   }
-  for (const ach of await evaluateAchievements()) {
-    toast.success(`Achievement unlocked: ${ach.title}`, { icon: ach.icon })
-  }
+  await announceAchievements(await evaluateAchievements())
   requestSync()
   return rows.map(r => r.uuid)
 }

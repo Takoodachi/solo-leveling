@@ -1,94 +1,21 @@
 import { db } from '@/db'
 import { ACHIEVEMENT_DEFS, type AchievementDef } from '@/features/gamification/achievements'
-import { today } from '@/lib/date'
-import { subDays, format, parseISO } from 'date-fns'
-import { computeRanks, type RanksSnapshot } from '@/features/ranks/computeRanks'
-import { TIERS } from '@/features/ranks/tiers'
-
-async function alreadyUnlocked(): Promise<Set<string>> {
-  const rows = await db.achievements.toArray()
-  return new Set(rows.map(r => r.key))
-}
-
-async function checkProteinGoal7Days(): Promise<boolean> {
-  const targets = await db.targets.get(1)
-  if (!targets) return false
-  const proteinTarget = targets.dailyProtein
-  if (proteinTarget <= 0) return false
-
-  const todayDate = parseISO(today())
-  const dates: string[] = []
-  for (let i = 0; i < 7; i++) {
-    dates.push(format(subDays(todayDate, i), 'yyyy-MM-dd'))
-  }
-
-  for (const d of dates) {
-    const logs = await db.foodLog.where('date').equals(d).toArray()
-    if (logs.length === 0) return false
-
-    const foodIds = [...new Set(logs.map(l => l.foodId))]
-    const foods = await db.foods.bulkGet(foodIds)
-    const foodMap = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
-
-    let proteinTotal = 0
-    for (const log of logs) {
-      const food = foodMap.get(log.foodId)
-      if (food) proteinTotal += food.protein * log.servings
-    }
-    if (proteinTotal < proteinTarget) return false
-  }
-  return true
-}
-
-const tierMin = (key: string) => TIERS.find(t => t.key === key)?.min ?? Infinity
-
-async function isUnlocked(key: string, ranks: () => Promise<RanksSnapshot>): Promise<boolean> {
-  switch (key) {
-    case 'week_streak': {
-      const s = await db.userStats.get(1)
-      return (s?.longestStreak ?? 0) >= 7
-    }
-    case 'month_streak': {
-      const s = await db.userStats.get(1)
-      return (s?.longestStreak ?? 0) >= 30
-    }
-    case 'level_5': {
-      const s = await db.userStats.get(1)
-      return (s?.level ?? 1) >= 5
-    }
-    case 'level_10': {
-      const s = await db.userStats.get(1)
-      return (s?.level ?? 1) >= 10
-    }
-    case 'first_workout':     return (await db.workouts.count()) >= 1
-    case 'ten_workouts':      return (await db.workouts.count()) >= 10
-    case 'fifty_workouts':    return (await db.workouts.count()) >= 50
-    case 'hundred_sets':      return (await db.workoutSets.count()) >= 100
-    case 'first_calorie_log': return (await db.foodLog.count()) >= 1
-    case 'protein_goal':      return await checkProteinGoal7Days()
-    case 'weight_logged':     return (await db.bodyMetrics.count()) >= 1
-    case 'lift_gold':         return ((await ranks()).lifts[0]?.rank.rating ?? 0) >= tierMin('gold')
-    case 'lift_diamond':      return ((await ranks()).lifts[0]?.rank.rating ?? 0) >= tierMin('diamond')
-    case 'overall_gold':      return ((await ranks()).overall?.rating ?? 0) >= tierMin('gold')
-    default:                  return false
-  }
-}
+import { achievementStats } from '@/features/gamification/achievementStats'
 
 /**
  * Scan all achievement definitions, unlock any newly-passing ones, and return
- * the newly-unlocked definitions so the caller can toast them.
+ * the newly-unlocked definitions so the caller can announce them.
  */
 export async function evaluateAchievements(): Promise<AchievementDef[]> {
-  const unlocked = await alreadyUnlocked()
+  const unlocked = new Set((await db.achievements.toArray()).map(r => r.key))
   const newlyUnlocked: AchievementDef[] = []
   const now = Date.now()
-  // Computed at most once per run, and only if a rank achievement is still locked.
-  let ranksOnce: Promise<RanksSnapshot> | null = null
-  const ranks = () => (ranksOnce ??= computeRanks())
+  // Only reads what the still-locked ones count
+  const stat = achievementStats()
 
   for (const def of ACHIEVEMENT_DEFS) {
     if (unlocked.has(def.key)) continue
-    if (await isUnlocked(def.key, ranks)) {
+    if ((await stat(def.metric)) >= def.target) {
       await db.achievements.put({
         // Stable id: two devices unlocking the same achievement update one row.
         uuid: `ach-${def.key}`,

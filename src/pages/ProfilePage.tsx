@@ -2,7 +2,7 @@ import PageHeader from '@/components/PageHeader'
 import { useIsNavTab } from '@/hooks/useNavTabs'
 import ProfileCard from '@/features/settings/components/ProfileCard'
 import ShortcutsCard from '@/features/settings/components/ShortcutsCard'
-import AchievementsGrid from '@/features/settings/components/AchievementsGrid'
+import AchievementsSection from '@/features/gamification/components/AchievementsSection'
 import BodyGoalsCard from '@/features/settings/components/BodyGoalsCard'
 import TargetsCard from '@/features/settings/components/TargetsCard'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
@@ -19,7 +19,7 @@ export default function ProfilePage() {
       <ShortcutsCard />
       <RankSummaryCard />
       <LeaderboardCard />
-      <AchievementsGrid />
+      <AchievementsSection />
 
       <section id="body-goals" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Body & goals</h2>
