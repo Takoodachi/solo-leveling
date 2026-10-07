@@ -9,6 +9,7 @@ import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import { useNativeLinks } from '@/hooks/useNativeLinks'
+import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import LoginPage from '@/features/auth/LoginPage'
@@ -59,6 +60,7 @@ function AppRoutes() {
   useLeaderboardPublisher()
   useThemeSync()
   useHashScroll()
+  useVisibleViewport()
   const session = useAuthStore(s => s.session)
   const userId = useAuthStore(s => s.userId)
   const loading = useAuthStore(s => s.loading)

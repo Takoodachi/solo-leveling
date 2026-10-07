@@ -13,7 +13,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -317,9 +316,10 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
 
   return (
     <Dialog open={open} onOpenChange={open => !open && handleClose()}>
-      {/* minmax(0,1fr): long names truncate instead of widening the dialog past the screen */}
-      <DialogContent className="max-w-sm grid-cols-[minmax(0,1fr)] p-0 gap-0">
-        <DialogHeader className="p-4 pb-2">
+      {/* A column where only the list gives way: with the keyboard up there's less room, and the
+          search field and the buttons under the list have to stay on screen */}
+      <DialogContent className="flex max-w-sm flex-col gap-0 p-0">
+        <DialogHeader className="shrink-0 p-4 pb-2">
           <DialogTitle>Add Food — {mealType}</DialogTitle>
         </DialogHeader>
 
@@ -394,7 +394,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
         ) : (
           <>
             {aiAvailable && (
-              <div className="px-4 pb-3 flex flex-col gap-2">
+              <div className="flex shrink-0 flex-col gap-2 px-4 pb-3">
                 <Label className="flex items-center gap-1.5 text-sm">
                   <Sparkles size={14} className="text-primary" />
                   Describe what you ate
@@ -430,14 +430,14 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
             )}
 
             {aiAvailable && (
-              <div className="px-4 pb-2 flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground">or search the catalog</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
 
-            <div className="px-4 pb-2 flex gap-2">
+            <div className="flex shrink-0 gap-2 px-4 pb-2">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -464,7 +464,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                 )}
               </Button>
             </div>
-            <ScrollArea className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', '[&_[data-radix-scroll-area-viewport]>div]:!block')}>
+            <div className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', 'min-h-[7.5rem] overflow-y-auto overscroll-contain')}>
               <div className="px-2 pb-2">
                 <FoodResults
                   foods={results}
@@ -476,9 +476,9 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   onToggleFavorite={food => void toggleFavorite(food.uuid)}
                 />
               </div>
-            </ScrollArea>
+            </div>
             {added.length > 0 && (
-              <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl bg-primary/10 py-1.5 pl-3 pr-1.5">
+              <div className="mx-4 mb-2 flex shrink-0 items-center gap-2 rounded-2xl bg-primary/10 py-1.5 pl-3 pr-1.5">
                 <Check size={16} className="shrink-0 text-primary" />
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="block truncate">{added[added.length - 1].label}</span>
@@ -490,7 +490,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                 <Button size="sm" className="shrink-0" onClick={handleClose}>Done</Button>
               </div>
             )}
-            <div className="px-4 pb-4">
+            <div className="shrink-0 px-4 pb-4">
               <Button
                 variant="ghost"
                 size="sm"

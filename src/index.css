@@ -11,6 +11,10 @@
    * here are fallbacks. Dark is the default (index.html sets class="dark").
    */
   :root {
+    /* The part of the page the keyboard leaves in view (hooks/useVisibleViewport.ts narrows it) */
+    --visible-top: 0px;
+    --visible-height: 100dvh;
+
     --background: 0 0% 98%;
     --foreground: 240 6% 8%;
     --card: 0 0% 100%;
