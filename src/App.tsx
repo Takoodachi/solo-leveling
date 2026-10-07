@@ -9,6 +9,7 @@ import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import { useNativeLinks } from '@/hooks/useNativeLinks'
+import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
@@ -66,6 +67,7 @@ function AppRoutes() {
   useHealthStepsSync(ready)
   useReminderScheduler(ready)
   useNativeLinks()
+  useAppShortcuts(ready)
 
   // Wait for the session check (and any account-switch wipe) before rendering data.
   if (loading || (session && !userId)) return <Spinner />

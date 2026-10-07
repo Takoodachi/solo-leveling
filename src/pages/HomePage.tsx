@@ -4,7 +4,7 @@ import SectionHeader from '@/components/SectionHeader'
 import { useNow } from '@/hooks/useNow'
 import { formatDisplayDate, toDateStr, weekDates } from '@/lib/date'
 import { parseISO } from 'date-fns'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
@@ -20,6 +20,8 @@ import WeeklyOverviewCard from '@/features/dashboard/components/WeeklyOverviewCa
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
 import HomeSearch from '@/features/search/components/HomeSearch'
 import RecapBanner from '@/features/recap/components/RecapBanner'
+import LogStepsSheet from '@/features/dashboard/components/LogStepsSheet'
+import WaterSheet from '@/features/checkins/components/WaterSheet'
 
 type Tab = 'today' | 'week'
 const TABS = [{ value: 'today', label: 'Today’s Plan' }, { value: 'week', label: 'Weekly Stats' }] as const
@@ -31,6 +33,10 @@ export default function HomePage() {
   const [picked, setPicked] = useState<string | null>(null)
   const [customizing, setCustomizing] = useState(false)
   const [searching, setSearching] = useState(false)
+  // /home?log=steps or ?log=water (a long-press shortcut on the app icon) opens that sheet
+  const [params, setParams] = useSearchParams()
+  const logging = params.get('log')
+  const doneLogging = (open: boolean) => { if (!open) setParams({}, { replace: true }) }
   const week = weekDates(now)
   const selected = picked && week.includes(picked) ? picked : todayStr
 
@@ -55,6 +61,8 @@ export default function HomePage() {
         <HomeSearch open={searching} onOpenChange={setSearching} onCustomize={() => setCustomizing(true)} />
       )}
       <CustomizeHomeSheet open={customizing} onOpenChange={setCustomizing} />
+      <LogStepsSheet open={logging === 'steps'} onOpenChange={doneLogging} />
+      <WaterSheet open={logging === 'water'} onOpenChange={doneLogging} date={todayStr} today={todayStr} />
       {!searching && (
         <>
           <Segmented value={tab} options={TABS} onChange={setTab} className={showSearch ? undefined : 'mt-2'} />

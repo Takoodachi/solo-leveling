@@ -6,10 +6,19 @@
  */
 interface CapacitorBridge {
   getPlatform?: () => string
+  /** Every native plugin in this APK with the methods it answers. */
+  PluginHeaders?: { name: string; methods: { name: string }[] }[]
 }
 
+const bridge = () => (globalThis as { Capacitor?: CapacitorBridge }).Capacitor
+
 export function isAndroidApp(): boolean {
-  return (globalThis as { Capacitor?: CapacitorBridge }).Capacitor?.getPlatform?.() === 'android'
+  return bridge()?.getPlatform?.() === 'android'
+}
+
+/** Whether this APK's own plugin has a method: ones added since it was built are missing. */
+export function soloHas(method: string): boolean {
+  return bridge()?.PluginHeaders?.find(p => p.name === 'Solo')?.methods.some(m => m.name === method) ?? false
 }
 
 export interface BackgroundStepsStatus {
@@ -39,6 +48,16 @@ export interface QuickLogReminder {
   action: string
 }
 
+/** A long-press action on the app's icon (Shortcuts.kt). */
+export interface IconShortcut {
+  id: string
+  label: string
+  /** Opened in the app when it's picked. */
+  path: string
+  /** Names its drawable: ic_shortcut_<icon>. */
+  icon: string
+}
+
 /** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts, step sync while closed, sharing, quick-log reminders. */
 interface SoloPlugin {
   backgroundStepsStatus(): Promise<BackgroundStepsStatus>
@@ -48,6 +67,8 @@ interface SoloPlugin {
   shareImage(options: { base64: string; fileName: string; text?: string }): Promise<void>
   /** Replaces every quick-log reminder with `items`. Since notification buttons. */
   scheduleQuickLog(options: { items: QuickLogReminder[] }): Promise<void>
+  /** Replaces the long-press shortcuts on the app's icon. Since they became a setting. */
+  setShortcuts(options: { items: IconShortcut[] }): Promise<void>
   addListener(event: 'shortcut', listener: (event: { path: string }) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -68,6 +89,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     disableBackgroundSteps: () => native.disableBackgroundSteps(),
     shareImage: options => native.shareImage(options),
     scheduleQuickLog: options => native.scheduleQuickLog(options),
+    setShortcuts: options => native.setShortcuts(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -87,6 +109,22 @@ export async function scheduleQuickLogReminders(items: QuickLogReminder[]): Prom
   if (!plugin) return false
   try {
     await plugin.scheduleQuickLog({ items })
+    return true
+  } catch (err) {
+    if (isUnimplemented(err)) return false
+    throw err
+  }
+}
+
+/**
+ * Puts these long-press shortcuts on the app's icon, in this order. False when the APK predates
+ * the setting: it keeps the three it was built with.
+ */
+export async function setIconShortcuts(items: IconShortcut[]): Promise<boolean> {
+  const plugin = await soloPlugin()
+  if (!plugin) return false
+  try {
+    await plugin.setShortcuts({ items })
     return true
   } catch (err) {
     if (isUnimplemented(err)) return false

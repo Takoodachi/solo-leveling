@@ -26,7 +26,8 @@ export default defineConfig({
         start_url: '/home',
         categories: ['health', 'fitness', 'lifestyle'],
         // Long-press the icon (installed on Android or desktop; iOS has no shortcuts for web apps).
-        // The Android app has its own copy: android/app/src/main/res/xml/shortcuts.xml
+        // Fixed here: a web manifest can't differ per user. The Android app's are chosen in
+        // Settings → App icon (src/features/settings/appShortcuts.ts).
         shortcuts: [
           { name: 'Start workout', url: '/workouts?start=1', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
           { name: 'Log food', url: '/nutrition?add=1', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },

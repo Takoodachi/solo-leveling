@@ -91,7 +91,7 @@ dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulat
 - **Reminders** as the phone's own scheduled notifications: no server, they ring with the app closed.
 - **Step sync in the background** (Settings → Steps → *Sync in the background*): about once an hour,
   needs Health Connect's "Access data in the background" (Android 14+).
-- **Long-press shortcuts** on the app icon: Start workout, Log food, Log weight.
+- **Long-press shortcuts** on the app icon: Start workout, Log food and Log weight to begin with; Settings → App icon swaps them (up to four).
 - The **rest timer** rings as a notification when the phone is locked or the app is behind another.
 
 ## Reminder notifications

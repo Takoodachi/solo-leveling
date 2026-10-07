@@ -1,15 +1,23 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
-import { applyTheme, themeById, type Theme } from '../themes'
+import { activeTheme, applyTheme, type Theme } from '../themes'
 
 const listeners = new Set<() => void>()
-const current = () => document.documentElement.dataset.theme ?? ''
 
-/** Apply a theme now and tell subscribers (useActiveTheme). */
-export function paintTheme(id: string | null | undefined): void {
-  applyTheme(id)
+/**
+ * Apply a theme now and tell subscribers (useActiveTheme). `custom` is the user's own palette,
+ * used when the id is the custom theme's; `remember: false` paints a preview.
+ */
+export function paintTheme(id: string | null | undefined, custom?: unknown, remember = true): void {
+  applyTheme(id, custom, remember)
   for (const l of listeners) l()
+}
+
+/** Back to the saved theme once a preview is over (`when` is asked again after the read, in case one restarted). */
+export async function repaintSavedTheme(when: () => boolean = () => true): Promise<void> {
+  const settings = await db.settings.get(1)
+  if (when()) paintTheme(settings?.theme, settings?.customTheme)
 }
 
 /**
@@ -17,21 +25,22 @@ export function paintTheme(id: string | null | undefined): void {
  * on this device or pulled from another one.
  */
 export function useThemeSync(): void {
-  const theme = useLiveQuery(async () => (await db.settings.get(1))?.theme ?? null, [])
+  // As text, so an unrelated settings change doesn't repaint
+  const saved = useLiveQuery(async () => {
+    const settings = await db.settings.get(1)
+    return JSON.stringify([settings?.theme ?? null, settings?.customTheme ?? null])
+  }, [])
   useEffect(() => {
-    if (theme === undefined) return // still loading: keep the cached theme
-    paintTheme(theme)
-  }, [theme])
+    if (saved === undefined) return // still loading: keep the cached theme
+    const [id, custom] = JSON.parse(saved) as [string | null, unknown]
+    paintTheme(id, custom)
+  }, [saved])
 }
 
 /** The theme on screen right now (updates when it changes). */
 export function useActiveTheme(): Theme {
-  const id = useSyncExternalStore(
-    cb => {
-      listeners.add(cb)
-      return () => listeners.delete(cb)
-    },
-    current,
-  )
-  return themeById(id)
+  return useSyncExternalStore(cb => {
+    listeners.add(cb)
+    return () => listeners.delete(cb)
+  }, activeTheme)
 }

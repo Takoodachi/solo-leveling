@@ -4,7 +4,7 @@ import { seedDatabase } from '@/db/seed'
 import { restoreDraftFromStorage } from '@/features/workouts/store'
 import App from './App'
 import './index.css'
-import { applyTheme, cachedThemeId } from '@/features/settings/themes'
+import { applyCachedTheme } from '@/features/settings/themes'
 import { backgroundBridge, runBackgroundSteps } from '@/features/health/backgroundSteps'
 import { quickLogBridge, runQuickLog } from '@/features/reminders/quickLogTask'
 
@@ -64,7 +64,7 @@ window.addEventListener('vite:preloadError', event => {
 
 function startApp(): void {
   // Paint the last-used theme before the first render, so launches don't flash the default.
-  applyTheme(cachedThemeId())
+  applyCachedTheme()
 
   Promise.all([seedDatabase(), restoreDraftFromStorage()])
     .then(() => {

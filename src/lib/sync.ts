@@ -131,7 +131,8 @@ const SINGLETONS: SingletonSpec[] = [
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays', 'reminders',
-      'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'theme', 'navTabs', 'avatar', 'showSearch', 'updatedAt',
+      'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'theme', 'navTabs', 'avatar', 'showSearch',
+      'workoutTips', 'appShortcuts', 'customTheme', 'updatedAt',
     ],
   },
 ]
