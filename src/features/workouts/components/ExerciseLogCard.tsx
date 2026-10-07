@@ -14,6 +14,7 @@ import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/live
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
 import { tap } from '@/lib/haptics'
+import { useSettings } from '@/features/settings/hooks/useSettings'
 
 interface Props {
   block: BlockDraft
@@ -29,12 +30,13 @@ interface Props {
 
 export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, liftRank, rankContext }: Props) {
   const { addSet, removeSet, updateSet, toggleDone, fillSets, draft } = useWorkoutStore()
+  const { settings } = useSettings()
   // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
   const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
   const done = block.sets.filter(s => s.done).length
   const rank = rankContext ? liveRank(block.exercise.uuid, block.sets.filter(s => s.done), liftRank, rankContext) : liftRank
-  // No "what to try today" while correcting a workout that's already happened
-  const hint = draft?.editing ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg })
+  // No "what to try today" while correcting a workout that's already happened, or with tips switched off
+  const hint = draft?.editing || settings?.workoutTips === false ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg })
   const fill = hint?.fill
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
 

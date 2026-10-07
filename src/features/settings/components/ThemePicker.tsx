@@ -1,8 +1,12 @@
-import { Check } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Pencil, Plus } from 'lucide-react'
+import type { CustomTheme } from '@/types'
 import { cn } from '@/lib/utils'
-import { THEMES, themeById, type Theme } from '../themes'
+import { CUSTOM_THEME, THEMES, customTheme, resolveTheme, type Theme } from '../themes'
+import { DEFAULT_CUSTOM, cleanCustomTheme } from '../themeBuilder'
 import { paintTheme } from '../hooks/useTheme'
 import { useSettings } from '../hooks/useSettings'
+import CustomThemeEditor from './CustomThemeEditor'
 
 const hsl = (v: string) => `hsl(${v})`
 
@@ -37,14 +41,30 @@ function Swatch({ theme, active, onPick }: { theme: Theme; active: boolean; onPi
   )
 }
 
-/** Settings → Theme: preset palettes, dark and light. The choice syncs with the account. */
+/** Settings → Theme: preset palettes, dark and light, and one of your own. The choice syncs with the account. */
 export default function ThemePicker() {
   const { settings, updateSettings } = useSettings()
-  const active = themeById(settings?.theme).id
+  const [editing, setEditing] = useState(false)
+  const own = customTheme(settings?.customTheme)
+  const active = resolveTheme(settings?.theme, settings?.customTheme).id
 
   function pick(id: string) {
-    paintTheme(id) // right away, before the setting round-trips through Dexie
+    paintTheme(id, settings?.customTheme) // right away, before the setting round-trips through Dexie
     void updateSettings({ theme: id })
+  }
+
+  async function save(custom: CustomTheme) {
+    await updateSettings({ customTheme: custom, theme: CUSTOM_THEME })
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-3xl bg-card p-4">
+        <p className="eyebrow px-1 text-muted-foreground">Your own theme</p>
+        <CustomThemeEditor initial={cleanCustomTheme(settings?.customTheme) ?? DEFAULT_CUSTOM} onSave={c => void save(c)} onCancel={() => setEditing(false)} />
+      </div>
+    )
   }
 
   return (
@@ -59,6 +79,18 @@ export default function ThemePicker() {
           </div>
         </div>
       ))}
+      <div className="flex flex-col gap-2">
+        <p className="eyebrow px-1 text-muted-foreground">Your own</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {own && <Swatch theme={own} active={active === CUSTOM_THEME} onPick={() => pick(CUSTOM_THEME)} />}
+          <button type="button" onClick={() => setEditing(true)} className="flex min-w-0 flex-col gap-1.5 rounded-2xl p-1.5 text-left">
+            <span className="flex h-16 items-center justify-center rounded-xl border border-dashed border-foreground/25 text-muted-foreground">
+              {own ? <Pencil size={18} /> : <Plus size={20} />}
+            </span>
+            <span className="truncate px-0.5 text-xs font-medium">{own ? 'Edit colours' : 'Make your own'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

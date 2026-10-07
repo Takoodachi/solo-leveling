@@ -100,6 +100,18 @@ export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatin
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
 export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'
 
+/** What a long-press on the Android app's icon can offer (features/settings/appShortcuts.ts). */
+export type AppShortcutId = 'workout' | 'food' | 'weight' | 'water' | 'steps' | 'recap' | 'ranks' | 'leaderboard' | 'analytics'
+
+/** A palette the user mixed themselves: three "H S% L%" colours, the rest is derived (features/settings/themeBuilder.ts). */
+export interface CustomTheme {
+  mode: 'dark' | 'light'
+  accent: string
+  background: string
+  /** The far end of the accent gradient (unset = follows the accent). */
+  gradient?: string
+}
+
 export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
 export type VolumeMuscle =
   | 'chest' | 'shoulders' | 'triceps' | 'biceps' | 'forearms' | 'abs'
@@ -132,6 +144,9 @@ export interface Settings {
   navTabs?: NavTabId[] // the two bottom-bar slots beside + (unset = workouts, analytics)
   avatar?: string // profile photo: a small JPEG data URL (≈10 KB), shared on the leaderboard
   showSearch?: boolean // search bar on Home (unset = shown)
+  workoutTips?: boolean // "what to try today" on each lift in the logger (unset = shown)
+  appShortcuts?: AppShortcutId[] // long-press actions on the Android app's icon, in order (unset = workout, food, weight)
+  customTheme?: CustomTheme // the user's own palette, on screen when theme = 'custom'
   updatedAt?: number
   syncPending?: boolean
 }

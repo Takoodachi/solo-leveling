@@ -10,6 +10,7 @@
  */
 
 import { setSystemBarStyle } from '@/lib/native'
+import { cleanCustomTheme, customTokens, deriveTokens, parseHsl, type Hsl } from './themeBuilder'
 
 export type ThemeMode = 'dark' | 'light'
 
@@ -17,6 +18,8 @@ type Token =
   | 'background' | 'foreground' | 'card' | 'popover' | 'primary' | 'primary-foreground'
   | 'secondary' | 'muted' | 'muted-foreground' | 'accent' | 'destructive' | 'border' | 'input'
   | 'carbs' | 'fat' | 'brand-from' | 'brand-to'
+
+export type ThemeTokens = Record<Token, string>
 
 export interface Theme {
   id: string
@@ -28,7 +31,7 @@ export interface Theme {
 const DARK_MACROS = { carbs: '199 89% 60%', fat: '45 96% 64%' }
 const LIGHT_MACROS = { carbs: '200 98% 39%', fat: '32 95% 44%' }
 
-function theme(id: string, name: string, mode: ThemeMode, t: Record<Token, string>): Theme {
+function theme(id: string, name: string, mode: ThemeMode, t: ThemeTokens): Theme {
   const onSurface = t.foreground
   return {
     id,
@@ -45,6 +48,11 @@ function theme(id: string, name: string, mode: ThemeMode, t: Record<Token, strin
       ink: mode === 'dark' ? '100%' : '55%',
     },
   }
+}
+
+/** A preset made by the builder from its accent, background and gradient end ("H S% L%"). */
+function mixed(id: string, name: string, mode: ThemeMode, accent: string, background: string, gradient: string): Theme {
+  return theme(id, name, mode, deriveTokens(mode, parseHsl(accent) as Hsl, parseHsl(background) as Hsl, parseHsl(gradient)))
 }
 
 export const THEMES: Theme[] = [
@@ -84,6 +92,10 @@ export const THEMES: Theme[] = [
     destructive: '14 90% 55%', border: '350 12% 15%', input: '350 12% 18%',
     ...DARK_MACROS, 'brand-from': '0 90% 60%', 'brand-to': '338 85% 45%',
   }),
+  mixed('gold', 'Midnight Gold', 'dark', '45 95% 54%', '40 30% 4%', '28 95% 52%'),
+  mixed('neon', 'Neon', 'dark', '322 92% 62%', '285 40% 5%', '268 90% 62%'),
+  mixed('graphite', 'Graphite', 'dark', '217 92% 63%', '220 8% 6%', '240 80% 66%'),
+  mixed('volt', 'Volt', 'dark', '82 85% 52%', '90 25% 4%', '150 75% 42%'),
   // ── Light ────────────────────────────────────────────────────────────
   theme('daylight', 'Daylight', 'light', {
     background: '30 25% 96%', foreground: '240 10% 8%', card: '0 0% 100%', popover: '0 0% 100%',
@@ -120,13 +132,31 @@ export const THEMES: Theme[] = [
     destructive: '0 72% 48%', border: '250 30% 88%', input: '250 30% 85%',
     ...LIGHT_MACROS, 'brand-from': '270 80% 62%', 'brand-to': '240 75% 56%',
   }),
+  mixed('lagoon', 'Lagoon', 'light', '186 90% 30%', '185 35% 95%', '205 90% 42%'),
+  mixed('honey', 'Honey', 'light', '36 95% 40%', '45 55% 95%', '22 90% 48%'),
+  mixed('cherry', 'Cherry', 'light', '354 76% 48%', '10 40% 96%', '14 88% 52%'),
+  mixed('paper', 'Paper', 'light', '240 6% 20%', '40 12% 95%', '240 5% 38%'),
 ]
 
 export const DEFAULT_THEME = 'ember'
+/** `settings.theme` when the user's own palette (`settings.customTheme`) is the one on screen. */
+export const CUSTOM_THEME = 'custom'
 const THEME_KEY = 'solo:theme'
+const CUSTOM_KEY = 'solo:customTheme'
 
 export function themeById(id: string | undefined | null): Theme {
   return THEMES.find(t => t.id === id) ?? THEMES[0]
+}
+
+/** The user's own palette as a theme; null when there isn't a usable one saved. */
+export function customTheme(custom: unknown): Theme | null {
+  const clean = cleanCustomTheme(custom)
+  return clean && theme(CUSTOM_THEME, 'Custom', clean.mode, customTokens(clean))
+}
+
+/** The theme a setting means: a preset, or the custom one when that's chosen and saved. */
+export function resolveTheme(id: string | undefined | null, custom?: unknown): Theme {
+  return (id === CUSTOM_THEME ? customTheme(custom) : null) ?? themeById(id)
 }
 
 /** "H S% L%" → "#rrggbb" (for the browser's theme-color, which wants a plain colour). */
@@ -141,9 +171,18 @@ export function hslToHex(hsl: string): string {
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
-/** Paint the app in a theme and remember it on this device, so the next launch starts in it. */
-export function applyTheme(id: string | undefined | null): void {
-  const t = themeById(id)
+let active: Theme = THEMES[0]
+
+/** The theme on screen right now. */
+export const activeTheme = () => active
+
+/**
+ * Paint the app in a theme. `remember` keeps it for this device's next launch; a preview (the
+ * custom theme while it's being edited) leaves that alone.
+ */
+export function applyTheme(id: string | undefined | null, custom?: unknown, remember = true): void {
+  const t = resolveTheme(id, custom)
+  active = t
   const root = document.documentElement
   for (const [k, v] of Object.entries(t.vars)) root.style.setProperty(`--${k}`, v)
   root.classList.toggle('dark', t.mode === 'dark')
@@ -152,18 +191,24 @@ export function applyTheme(id: string | undefined | null): void {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hslToHex(t.vars.background))
   document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', t.mode)
   setSystemBarStyle(t.mode)
+  if (!remember) return
   try {
     localStorage.setItem(THEME_KEY, t.id)
+    if (t.id === CUSTOM_THEME) localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom))
   } catch {
     // storage unavailable: the synced setting still applies after load
   }
 }
 
-/** The theme this device last used (applied before React renders, so there's no flash). */
-export function cachedThemeId(): string | null {
+/** Paint the theme this device last used (before React renders, so there's no flash). */
+export function applyCachedTheme(): void {
+  let id: string | null = null
+  let custom: unknown = null
   try {
-    return localStorage.getItem(THEME_KEY)
+    id = localStorage.getItem(THEME_KEY)
+    if (id === CUSTOM_THEME) custom = JSON.parse(localStorage.getItem(CUSTOM_KEY) ?? 'null')
   } catch {
-    return null
+    // storage unavailable or a broken copy: the default theme, until the setting loads
   }
+  applyTheme(id, custom, false)
 }
