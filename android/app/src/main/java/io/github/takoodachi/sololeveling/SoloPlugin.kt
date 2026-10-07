@@ -21,8 +21,8 @@ import java.io.File
 
 /**
  * The app's own bridge to the site (src/lib/native.ts → `soloPlugin()`):
- * - long-press app shortcuts (res/xml/shortcuts.xml) arrive as a `shortcut` event with the
- *   path to open;
+ * - long-press app shortcuts arrive as a `shortcut` event with the path to open, and the site
+ *   chooses which ones the icon offers ([Shortcuts]);
  * - step sync while the app is closed is switched on and off here ([StepsSync]);
  * - images go to Android's share sheet (the WebView has no Web Share API);
  * - creatine and water reminders with a log button are handed over here ([QuickLog]).
@@ -40,6 +40,8 @@ class SoloPlugin : Plugin() {
             if (StepsSync.BACKGROUND_PERMISSION in granted) StepsSync.schedule(context)
             resolveStatus(call)
         }
+        // Some launchers have no shortcuts to set: nothing to do about that
+        runCatching { Shortcuts.ensureDefaults(context) }
         announceShortcut(activity.intent)
     }
 
@@ -116,6 +118,20 @@ class SoloPlugin : Plugin() {
             call.resolve()
         } catch (e: Exception) {
             call.reject(e.message ?: "Couldn't schedule the reminders")
+        }
+    }
+
+    /** Replaces the long-press shortcuts on the app's icon (src/features/settings/hooks/useAppShortcuts.ts). */
+    @PluginMethod
+    fun setShortcuts(call: PluginCall) {
+        try {
+            val items = call.getArray("items")?.toList<JSONObject>()?.map {
+                Shortcuts.Item(it.getString("id"), it.getString("label"), it.getString("path"), it.optString("icon"))
+            } ?: emptyList()
+            Shortcuts.publish(context, items)
+            call.resolve()
+        } catch (e: Exception) {
+            call.reject(e.message ?: "Couldn't set the shortcuts")
         }
     }
 

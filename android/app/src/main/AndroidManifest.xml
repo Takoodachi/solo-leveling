@@ -23,9 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Long-press shortcuts: start workout, log food, log weight -->
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
-
         </activity>
 
         <!-- Health Connect: explains why the app reads steps (Android 13 and older) -->
