@@ -1,11 +1,18 @@
 import { motion } from 'framer-motion'
-import { TrendingUp } from 'lucide-react'
+import { Play, TrendingUp } from 'lucide-react'
 import type { RankUp } from '../computeRanks'
 import RankBadge from './RankBadge'
 import { ink } from '@/lib/colors'
 
+interface Props {
+  ups: RankUp[]
+  animate?: boolean
+  /** Tapping a row plays its rank-up scene again. */
+  onReplay?: (up: RankUp) => void
+}
+
 /** "Rank ups" block on the workout summary; badges pop in when celebrating. */
-export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]; animate?: boolean }) {
+export default function RankUpsSection({ ups, animate = false, onReplay }: Props) {
   if (ups.length === 0) return null
 
   return (
@@ -21,7 +28,7 @@ export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]
               initial={animate ? { opacity: 0, y: 8 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay }}
-              className="flex items-center gap-3"
+              className="relative flex items-center gap-3"
             >
               <motion.div
                 initial={animate ? { scale: 0.3, rotate: -15 } : false}
@@ -34,7 +41,7 @@ export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]
                 <p className="flex items-center gap-2">
                   <span className="truncate font-semibold">{u.id === 'overall' ? 'Overall rank' : u.name}</span>
                   {newTier && u.from && (
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style={{ backgroundColor: `${u.to.tier.color}26`, color: u.to.tier.color }}>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style={{ backgroundColor: `${u.to.tier.color}26`, color: ink(u.to.tier.color) }}>
                       New tier
                     </span>
                   )}
@@ -44,6 +51,17 @@ export default function RankUpsSection({ ups, animate = false }: { ups: RankUp[]
                   <span className="font-semibold" style={{ color: ink(u.to.tier.color) }}>{u.to.label}</span>
                 </p>
               </div>
+              {onReplay && (
+                // Covers the row, so the whole of it is the tap target
+                <button
+                  type="button"
+                  onClick={() => onReplay(u)}
+                  aria-label={`Replay the rank-up for ${u.id === 'overall' ? 'your overall rank' : u.name}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground after:absolute after:inset-0 hover:bg-accent"
+                >
+                  <Play size={14} />
+                </button>
+              )}
             </motion.li>
           )
         })}
