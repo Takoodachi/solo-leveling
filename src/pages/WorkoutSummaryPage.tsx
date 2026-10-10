@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useReducedMotion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
 import { Trophy, Trash2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
@@ -15,6 +16,8 @@ import { formatKm, formatPace, INTENSITIES, intensityFromRpe } from '@/lib/cardi
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
 import { findRankUps, type RankUp } from '@/features/ranks/computeRanks'
 import RankUpsSection from '@/features/ranks/components/RankUpsSection'
+import RankUpCeremony from '@/features/ranks/components/RankUpCeremony'
+import { useRankUpIntro } from '@/features/ranks/useRankUpIntro'
 import type { WorkoutSetWithExercise } from '@/types'
 
 function describeSet(s: WorkoutSetWithExercise): string {
@@ -39,7 +42,21 @@ function groupByExercise(sets: WorkoutSetWithExercise[]) {
   return groups
 }
 
+/** A workout just finished opens with its rank-ups, full screen; the summary comes in once they've played. */
 export default function WorkoutSummaryPage() {
+  const { id } = useParams()
+  const state = useLocation().state as FinishResult | null
+  const { intro, endIntro } = useRankUpIntro(id, state?.celebrate ? state.rankUps : undefined)
+
+  return (
+    <>
+      <RankUpCeremony ups={intro} onDone={endIntro} />
+      {!intro && <WorkoutSummary />}
+    </>
+  )
+}
+
+function WorkoutSummary() {
   const { id } = useParams()
   const navigate = useNavigate()
   const state = useLocation().state as FinishResult | null
@@ -47,6 +64,8 @@ export default function WorkoutSummaryPage() {
   const { startEditing } = useEditWorkout()
   const now = useNow()
   const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
+  const [replay, setReplay] = useState<RankUp | null>(null)
+  const stillness = useReducedMotion()
   const celebrate = state?.celebrate === true
 
   // History view: work out new bests and rank-ups on the fly (the finish flow passes them in).
@@ -93,11 +112,12 @@ export default function WorkoutSummaryPage() {
         />
       )}
 
-      {celebrate && <RankUpsSection ups={rankUps} animate />}
+      {celebrate && <RankUpsSection ups={rankUps} animate onReplay={stillness ? undefined : setReplay} />}
 
       <WorkoutSummaryCard workout={workout} />
 
-      {!celebrate && <RankUpsSection ups={rankUps} />}
+      {!celebrate && <RankUpsSection ups={rankUps} onReplay={stillness ? undefined : setReplay} />}
+      <RankUpCeremony ups={replay && [replay]} onDone={() => setReplay(null)} />
 
       {bests.length > 0 && (
         <section className="rounded-3xl bg-card p-5">
