@@ -14,12 +14,16 @@ interface Props {
   onOpenChange: (open: boolean) => void
   onSelect: (exercise: Exercise) => void
   title?: string
+  /** The category it opens on (replacing an exercise starts among its own kind). */
+  initialCategory?: string
 }
 
-export default function ExercisePickerSheet({ open, onOpenChange, onSelect, title = 'Add exercise' }: Props) {
+export default function ExercisePickerSheet({ open, onOpenChange, onSelect, title = 'Add exercise', initialCategory }: Props) {
   const { searchExercises } = useExercises()
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState<string | null>(null)
+  // undefined = not picked yet this time: the one it was opened on
+  const [picked, setCategory] = useState<string | null | undefined>(undefined)
+  const category = picked === undefined ? (initialCategory ?? null) : picked
   const [creating, setCreating] = useState(false)
 
   const results = searchExercises(query)
@@ -30,7 +34,7 @@ export default function ExercisePickerSheet({ open, onOpenChange, onSelect, titl
 
   function close() {
     setQuery('')
-    setCategory(null)
+    setCategory(undefined)
     setCreating(false)
     onOpenChange(false)
   }

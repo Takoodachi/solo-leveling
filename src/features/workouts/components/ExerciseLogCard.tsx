@@ -1,13 +1,13 @@
-import { Plus, Minus } from 'lucide-react'
+import { Check, Plus, Minus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { WeightUnit } from '@/types'
 import { setModeFor } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
-import type { BlockDraft } from '../types'
+import { setHasValue, type BlockDraft } from '../types'
 import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockHeader from './BlockHeader'
-import ExerciseNote from './ExerciseNote'
+import BlockTools from './BlockTools'
 import ProgressHint from './ProgressHint'
 import UnitToggle from './UnitToggle'
 import { applyFill, suggestProgress } from '../progression'
@@ -27,13 +27,18 @@ interface Props {
   isLast: boolean
   onSetDone: (restSec: number) => void
   onShowInfo: () => void
+  /** Swap this exercise for another one, in its place. */
+  onReplace?: () => void
   /** Best rank so far on this lift (from history), if it's a ranked lift. */
   liftRank?: RankInfo
   rankContext: RankContext | null
 }
 
-export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, liftRank, rankContext }: Props) {
-  const { addSet, removeSet, updateSet, toggleDone, fillSets, setUnit, draft } = useWorkoutStore()
+/** After the last set is ticked, the tick shows for a moment before the card folds away. */
+const FOLD_DELAY_MS = 600
+
+export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSetDone, onShowInfo, onReplace, liftRank, rankContext }: Props) {
+  const { addSet, removeSet, restoreSet, updateSet, toggleDone, foldIfDone, fillSets, setUnit, draft } = useWorkoutStore()
   const { settings } = useSettings()
   // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
   const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
@@ -52,6 +57,23 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
     tap()
     onSetDone(block.restSec)
     announceRankUp(setIdx)
+    // That was the last one: the card gets out of the way of the next exercise. Not while
+    // correcting a past workout, where ticks are only being fixed.
+    if (!draft?.editing && block.sets.every((s, i) => i === setIdx || s.done)) {
+      window.setTimeout(() => foldIfDone(blockIdx, block.exercise.uuid), FOLD_DELAY_MS)
+    }
+  }
+
+  // A set with something in it can be put back, like a removed exercise
+  function handleRemoveSet(setIdx: number) {
+    const removed = block.sets[setIdx]
+    const startedAt = draft?.startedAt
+    removeSet(blockIdx, setIdx)
+    if (startedAt == null || !(removed.done || setHasValue(removed))) return
+    toast(`Removed set ${setIdx + 1} of ${block.exercise.name}`, {
+      duration: 7000,
+      action: { label: 'Undo', onClick: () => restoreSet(blockIdx, setIdx, removed, block.exercise.uuid, startedAt) },
+    })
   }
 
   function announceRankUp(setIdx: number) {
@@ -91,6 +113,7 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
         onShowInfo={onShowInfo}
         subtitle={
           <>
+            {done === block.sets.length && <Check size={12} strokeWidth={3.5} className="text-primary" aria-label="All sets done" />}
             {done}/{block.sets.length} sets · rest {block.restSec}s
             {rank && (
               <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
@@ -103,7 +126,7 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
 
       {!block.collapsed && (
         <>
-          <ExerciseNote exerciseId={block.exercise.uuid} className="mb-3" />
+          <BlockTools exerciseId={block.exercise.uuid} onReplace={onReplace} />
           {hint && <ProgressHint hint={hint} onUse={fill && fillChanges ? () => fillSets(blockIdx, fill) : undefined} />}
 
           <div className="grid items-center gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" style={{ gridTemplateColumns: SET_GRID[mode] }}>
@@ -129,6 +152,7 @@ export default function ExerciseLogCard({ block, blockIdx, isFirst, isLast, onSe
                 onChange={(field, value) => updateSet(blockIdx, setIdx, field, value)}
                 onToggleDone={() => handleToggle(setIdx)}
                 onUseLast={() => copyLast(setIdx)}
+                onRemove={block.sets.length > 1 ? () => handleRemoveSet(setIdx) : undefined}
               />
             ))}
           </div>

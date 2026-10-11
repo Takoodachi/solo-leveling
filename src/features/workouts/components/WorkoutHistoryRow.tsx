@@ -4,7 +4,8 @@ import { ChevronRight } from 'lucide-react'
 import { formatKm } from '@/lib/cardio'
 import type { WorkoutSummary } from '../hooks/useWorkoutHistory'
 
-export default function WorkoutHistoryRow({ workout }: { workout: WorkoutSummary }) {
+/** `showYear`: the date tile says "Oct '25" (lists that reach past this year). */
+export default function WorkoutHistoryRow({ workout, showYear = false }: { workout: WorkoutSummary; showYear?: boolean }) {
   const date = parseISO(workout.date)
   return (
     <Link
@@ -13,7 +14,7 @@ export default function WorkoutHistoryRow({ workout }: { workout: WorkoutSummary
     >
       <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary">
         <span className="text-lg font-bold leading-none">{format(date, 'd')}</span>
-        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{format(date, 'MMM')}</span>
+        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{format(date, showYear ? "MMM ''yy" : 'MMM')}</span>
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{workout.name ?? 'Workout'}</p>

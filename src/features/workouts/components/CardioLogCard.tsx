@@ -7,7 +7,7 @@ import { resolveBodyKg } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
 import { parsePositive, sanitizeNumeric, type BlockDraft, type LastSet } from '../types'
 import BlockHeader from './BlockHeader'
-import ExerciseNote from './ExerciseNote'
+import BlockTools from './BlockTools'
 import type { RankInfo } from '@/features/ranks/tiers'
 import type { Sex } from '@/features/ranks/standards'
 import { describeRunScore, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
@@ -21,6 +21,8 @@ interface Props {
   isFirst: boolean
   isLast: boolean
   onShowInfo: () => void
+  /** Swap this exercise for another one, in its place. */
+  onReplace?: () => void
   bodyKg?: number
   /** Running only: the best running rank so far, and the runner's sex for rating. */
   runRank?: RankInfo
@@ -50,8 +52,8 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 /** Cardio is one entry: time, optional distance, effort. Pace and calories update as you type. */
-export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShowInfo, bodyKg, runRank, sex }: Props) {
-  const { updateSet, toggleDone } = useWorkoutStore()
+export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, bodyKg, runRank, sex }: Props) {
+  const { updateSet, toggleDone, foldIfDone, draft } = useWorkoutStore()
   const id = block.exercise.uuid
   const distance = showsDistance(id)
   const last = block.lastSets?.[0]
@@ -65,6 +67,10 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
   function handleLog(setIdx: number) {
     if (!toggleDone(blockIdx, setIdx)) return
     tap()
+    // Logged: the card folds away, like a lift's after its last set (not while correcting a past workout)
+    if (!draft?.editing && block.sets.every((s, i) => i === setIdx || s.done)) {
+      window.setTimeout(() => foldIfDone(blockIdx, id), 600)
+    }
     if (!ranked) return
     const rating = rateRun(ranked, entries[setIdx].distanceKm, entries[setIdx].duration)
     const before = entries.filter((_, i) => i !== setIdx && block.sets[i].done).reduce<RankInfo | undefined>((r, e) => liveRunRank(ranked, e, r), runRank)
@@ -96,7 +102,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
           </>
         }
       />
-      {!block.collapsed && <ExerciseNote exerciseId={id} cardio className="mb-3" />}
+      {!block.collapsed && <BlockTools exerciseId={id} cardio onReplace={onReplace} />}
       <div className={cn('flex flex-col gap-3', block.collapsed && 'hidden')}>
         {block.sets.map((set, setIdx) => {
           const entry = { ...entries[setIdx], rpe: rpeFor(set.intensity ?? 'moderate') }

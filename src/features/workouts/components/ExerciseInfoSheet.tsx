@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Badge } from '@/components/ui/badge'
 import type { Exercise } from '@/types'
 import ExerciseNote from './ExerciseNote'
+import ExerciseHistory from './ExerciseHistory'
 
 interface Props {
   exercise: Exercise | null
@@ -29,6 +30,7 @@ export default function ExerciseInfoSheet({ exercise, onClose }: Props) {
             </p>
             <h4 className="mb-1.5 mt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your note</h4>
             <ExerciseNote key={exercise.uuid} exerciseId={exercise.uuid} cardio={exercise.type === 'cardio'} />
+            <ExerciseHistory exercise={exercise} />
           </>
         )}
       </SheetContent>
