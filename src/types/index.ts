@@ -178,15 +178,21 @@ export interface Exercise {
   syncPending?: boolean
 }
 
+/** The unit an exercise is logged in. Stored weights are always kg. */
+export type WeightUnit = 'kg' | 'lb'
+
 /**
- * The user's own note on an exercise (machine settings, grip, cues). One row per
- * exercise (id `note-<exerciseId>`), kept apart from `exercises` because built-ins
- * are re-seeded on every start and never synced. Clearing a note saves text = ''.
+ * What the user has set up for an exercise: their note (machine settings, grip, cues)
+ * and the unit they log it in. One row per exercise (id `note-<exerciseId>`), kept apart
+ * from `exercises` because built-ins are re-seeded on every start and never synced.
+ * Clearing a note saves text = ''.
  */
 export interface ExerciseNote {
   uuid: string
   exerciseId: string
   text: string
+  /** Unset = kg. The logger shows and takes this unit; see features/workouts/units.ts. */
+  unit?: WeightUnit | null
   updatedAt: number
   syncPending?: boolean
 }

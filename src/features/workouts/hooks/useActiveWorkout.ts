@@ -14,6 +14,7 @@ import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { useWorkoutStore } from '../store'
 import { emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
+import { weightKg, weightText } from '../units'
 import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
@@ -36,11 +37,11 @@ const str = (n: number | undefined) => (n != null ? String(n) : '')
 /** XP for cardio: 1 per minute, capped per entry (sets earn XP.PER_SET). */
 const CARDIO_XP_CAP = 120
 
-function prefillSet(block: Pick<BlockDraft, 'exercise' | 'lastSets'>, index: number, targetReps: number): SetDraft {
+function prefillSet(block: Pick<BlockDraft, 'exercise' | 'lastSets' | 'unit'>, index: number, targetReps: number): SetDraft {
   const last = block.lastSets?.[index] ?? block.lastSets?.at(-1)
   return setModeFor(block.exercise) === 'time'
     ? emptySet({ duration: String(targetReps) })
-    : emptySet({ weight: str(last?.weight), reps: String(targetReps) })
+    : emptySet({ weight: weightText(last?.weight, block.unit), reps: String(targetReps) })
 }
 
 /** Cardio from a routine: one entry with the target minutes (sets × minutes for older routines). */
@@ -68,8 +69,8 @@ export function useActiveWorkout() {
     for (const [i, re] of routine.exercises.entries()) {
       const exercise = exercises[i]
       if (!exercise) continue
-      const { lastSets, trend } = await blockHistory(exercise.uuid)
-      const base = { exercise, lastSets }
+      const { lastSets, trend, unit } = await blockHistory(exercise.uuid)
+      const base = { exercise, lastSets, unit }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
         exercise,
@@ -77,6 +78,7 @@ export function useActiveWorkout() {
         targetReps: re.reps,
         lastSets,
         trend,
+        unit,
         sets: cardio
           ? [prefillCardio(base, Math.max(1, re.sets) * re.reps)]
           : Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),
@@ -116,7 +118,7 @@ export function useActiveWorkout() {
           exerciseId: block.exercise.uuid,
           setIndex: bi * 100 + si,
           reps: num(s.reps),
-          weight: num(s.weight),
+          weight: weightKg(s.weight, block.unit),
           duration: num(s.duration),
           distanceKm: num(s.distanceKm),
           rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : undefined,

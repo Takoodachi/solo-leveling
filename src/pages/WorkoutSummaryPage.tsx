@@ -11,6 +11,8 @@ import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
 import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
 import { canEditWorkout, EDIT_WINDOW_DAYS, useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
+import { useLbExercises } from '@/features/workouts/hooks/useExerciseNote'
+import { fromKg } from '@/features/workouts/units'
 import { useNow } from '@/hooks/useNow'
 import { formatKm, formatPace, INTENSITIES, intensityFromRpe } from '@/lib/cardio'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
@@ -20,13 +22,14 @@ import RankUpCeremony from '@/features/ranks/components/RankUpCeremony'
 import { useRankUpIntro } from '@/features/ranks/useRankUpIntro'
 import type { WorkoutSetWithExercise } from '@/types'
 
-function describeSet(s: WorkoutSetWithExercise): string {
+/** A set as it was logged: exercises logged in pounds read in pounds. */
+function describeSet(s: WorkoutSetWithExercise, lb: boolean): string {
   if (s.exercise.type === 'cardio') {
     const effort = INTENSITIES.find(i => i.value === intensityFromRpe(s.rpe))?.label
     return [s.duration ? `${s.duration} min` : '', s.distanceKm ? formatKm(s.distanceKm) : '', formatPace(s.exerciseId, s) ?? '', s.rpe ? effort : '']
       .filter(Boolean).join(' · ') || '—'
   }
-  if (s.weight && s.reps) return `${s.weight}×${s.reps}`
+  if (s.weight && s.reps) return lb ? `${fromKg(s.weight, 'lb')} lb×${s.reps}` : `${s.weight}×${s.reps}`
   if (s.reps) return `${s.reps} reps`
   const parts = [s.duration ? `${s.duration} min` : '', s.distanceKm ? `${s.distanceKm} km` : ''].filter(Boolean)
   return parts.join(' · ') || '—'
@@ -65,6 +68,7 @@ function WorkoutSummary() {
   const now = useNow()
   const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
   const [replay, setReplay] = useState<RankUp | null>(null)
+  const lbExercises = useLbExercises()
   const stillness = useReducedMotion()
   const celebrate = state?.celebrate === true
 
@@ -142,7 +146,7 @@ function WorkoutSummary() {
           {groupByExercise(workout.sets).map(g => (
             <li key={g.name} className="py-3 first:pt-0 last:pb-0">
               <p className="font-medium">{g.name}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(describeSet).join('  ·  ')}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(s => describeSet(s, lbExercises.has(s.exerciseId))).join('  ·  ')}</p>
             </li>
           ))}
         </ul>

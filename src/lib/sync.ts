@@ -108,7 +108,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'exercise_notes',
     table: () => t(db.exerciseNotes),
-    columns: ['uuid', 'exerciseId', 'text', 'updatedAt'],
+    columns: ['uuid', 'exerciseId', 'text', 'unit', 'updatedAt'],
     normalize: row => ({ text: '', ...row }),
   },
 ]

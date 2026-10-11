@@ -33,7 +33,7 @@ export default function FriendPage() {
       <FullScreen className="flex flex-col gap-6">
         <PageHeader back="/leaderboard" title="Leaderboard" />
         <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">
-          {lb.ready ? 'This person isn’t sharing on the leaderboard.' : 'Loading…'}
+          {!lb.signedIn ? 'The leaderboard needs an account.' : lb.ready ? 'This person isn’t sharing on the leaderboard.' : 'Loading…'}
         </p>
       </FullScreen>
     )

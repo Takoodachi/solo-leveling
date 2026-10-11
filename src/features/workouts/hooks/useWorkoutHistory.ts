@@ -6,6 +6,7 @@ import { deleteSynced } from '@/lib/sync'
 import { est1RM, totalVolume } from '@/lib/workoutMath'
 import { trendOf } from '../progression'
 import type { BlockDraft, LastSet, PastSession } from '../types'
+import { exerciseUnit } from './useExerciseNote'
 
 export interface WorkoutSummary extends Workout {
   setCount: number
@@ -88,10 +89,10 @@ export async function lastSessionSets(exerciseId: string, beforeCreatedAt = Infi
   return (await pastSessions(exerciseId, beforeCreatedAt, 1))[0]?.sets
 }
 
-/** What a new logger block needs from history: the "Previous" column and the progression facts. */
-export async function blockHistory(exerciseId: string): Promise<Pick<BlockDraft, 'lastSets' | 'trend'>> {
+/** What a new logger block needs from history: the "Previous" column, the progression facts and the unit it's logged in. */
+export async function blockHistory(exerciseId: string): Promise<Pick<BlockDraft, 'lastSets' | 'trend' | 'unit'>> {
   const past = await pastSessions(exerciseId)
-  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()) }
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId) }
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'

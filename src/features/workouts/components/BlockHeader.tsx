@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
-import { ArrowUp, ArrowDown, X, Info } from 'lucide-react'
+import { ArrowUp, ArrowDown, ChevronDown, X, Info } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { useWorkoutStore } from '../store'
 
 interface Props {
@@ -8,22 +10,45 @@ interface Props {
   blockIdx: number
   isFirst: boolean
   isLast: boolean
+  /** Folded away: the card shows this header only. */
+  collapsed?: boolean
   onShowInfo: () => void
 }
 
-const iconBtn = 'flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent disabled:opacity-30'
+const iconBtn = 'flex h-9 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent disabled:opacity-30'
 
-/** Exercise name (tap for info) + reorder / remove controls, shared by set and cardio cards. */
-export default function BlockHeader({ name, subtitle, blockIdx, isFirst, isLast, onShowInfo }: Props) {
-  const { removeBlock, moveBlock } = useWorkoutStore()
+/** Exercise name (tap for info) + fold / reorder / remove controls, shared by set and cardio cards. */
+export default function BlockHeader({ name, subtitle, blockIdx, isFirst, isLast, collapsed = false, onShowInfo }: Props) {
+  const { removeBlock, restoreBlock, moveBlock, toggleCollapsed } = useWorkoutStore()
+
+  // Removing takes the logged sets with it and is one stray tap away, so it can be taken back
+  function handleRemove() {
+    const startedAt = useWorkoutStore.getState().draft?.startedAt
+    const removed = removeBlock(blockIdx)
+    if (!removed || startedAt == null) return
+    toast(`Removed ${name}`, {
+      duration: 7000,
+      action: { label: 'Undo', onClick: () => restoreBlock(removed, blockIdx, startedAt) },
+    })
+  }
+
   return (
-    <header className="mb-3 flex items-start gap-2">
+    <header className={cn('flex items-start gap-1', !collapsed && 'mb-3')}>
+      <button
+        type="button"
+        className={cn(iconBtn, '-ml-1.5 w-7')}
+        onClick={() => toggleCollapsed(blockIdx)}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? `Show ${name}` : `Hide ${name}`}
+      >
+        <ChevronDown size={18} className={cn('transition-transform', collapsed && '-rotate-90')} />
+      </button>
       <button type="button" onClick={onShowInfo} className="min-w-0 flex-1 text-left">
         <h3 className="flex items-center gap-1.5 text-base font-semibold leading-tight">
-          <span className="truncate">{name}</span>
+          <span className="line-clamp-2">{name}</span>
           <Info size={14} className="shrink-0 text-muted-foreground" />
         </h3>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">{subtitle}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">{subtitle}</p>
       </button>
       <button type="button" className={iconBtn} disabled={isFirst} onClick={() => moveBlock(blockIdx, -1)} aria-label="Move up">
         <ArrowUp size={16} />
@@ -31,7 +56,7 @@ export default function BlockHeader({ name, subtitle, blockIdx, isFirst, isLast,
       <button type="button" className={iconBtn} disabled={isLast} onClick={() => moveBlock(blockIdx, 1)} aria-label="Move down">
         <ArrowDown size={16} />
       </button>
-      <button type="button" className={iconBtn} onClick={() => removeBlock(blockIdx)} aria-label="Remove exercise">
+      <button type="button" className={iconBtn} onClick={handleRemove} aria-label="Remove exercise">
         <X size={16} />
       </button>
     </header>
