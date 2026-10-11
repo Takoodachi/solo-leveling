@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { format, subDays } from 'date-fns'
+import { subDays } from 'date-fns'
 import { Search, ScanLine, Sparkles, Loader2, Check, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/db'
@@ -14,16 +14,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { toDateStr } from '@/lib/date'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useFoods, saveScannedFood, barcodeFoodId } from '../hooks/useFoods'
 import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
 import { useOnlineFoodSearch, onlineKey, MIN_ONLINE_QUERY } from '../hooks/useOnlineFoodSearch'
-import type { ScannedFood } from '../openFoodFacts'
+import type { ReviewedFood, ScannedFood } from '../openFoodFacts'
 import { useOnline } from '@/hooks/useOnline'
-import ScannedFoodReview, { type ReviewedFood } from './ScannedFoodReview'
+import ScannedFoodReview from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
-import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
+import AiFoodConfirm, { type AiParsedFood, type ConfirmedFood } from './AiFoodConfirm'
 import FoodResults, { type RecentUse } from './FoodResults'
 import OnlineFoodResults from './OnlineFoodResults'
 import FoodAmountFields from './FoodAmountFields'
@@ -48,7 +49,7 @@ const RECENT_WINDOW_DAYS = 14
 const AI_FOOD_ENABLED = import.meta.env.VITE_ENABLE_AI_FOOD === 'true'
 
 function daysAgoIso(days: number): string {
-  return format(subDays(new Date(), days), 'yyyy-MM-dd')
+  return toDateStr(subDays(new Date(), days))
 }
 
 /** What's been added since the dialog opened (it stays open to add several things). */
@@ -190,14 +191,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     }
   }
 
-  async function handleAiConfirm(food: {
-    name: string
-    kcal: number
-    protein: number
-    carbs: number
-    fat: number
-    notes: string
-  }) {
+  async function handleAiConfirm(food: ConfirmedFood) {
     // Persist as a reusable Food (one serving = the whole portion the user described).
     const saved = await addCustomFood({
       name: food.name,

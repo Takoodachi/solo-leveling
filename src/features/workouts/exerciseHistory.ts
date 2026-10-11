@@ -1,8 +1,9 @@
 import { format, parseISO } from 'date-fns'
 import { db } from '@/db'
 import type { Exercise, WeightUnit, Workout, WorkoutSet } from '@/types'
-import { formatKm, formatPace, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
+import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { est1RM } from '@/lib/workoutMath'
+import { describeSet } from './describeSet'
 import { exerciseUnit } from './hooks/useExerciseNote'
 import { fromKg } from './units'
 
@@ -34,15 +35,6 @@ export interface ExerciseHistory {
 }
 
 type DatedSet = WorkoutSet & { date: string }
-
-function describeSet(s: WorkoutSet, exercise: Exercise, unit: WeightUnit): string {
-  if (exercise.type === 'cardio') {
-    return [s.duration ? `${s.duration} min` : '', s.distanceKm ? formatKm(s.distanceKm) : '', formatPace(exercise.uuid, s) ?? ''].filter(Boolean).join(' · ') || '—'
-  }
-  if (s.weight && s.reps) return `${fromKg(s.weight, unit)}×${s.reps}`
-  if (s.reps) return `${s.reps} reps`
-  return s.duration ? `${s.duration} min` : '—'
-}
 
 /** The set with the highest `score`, if any scores above zero. */
 function top(sets: DatedSet[], score: (s: DatedSet) => number): DatedSet | undefined {

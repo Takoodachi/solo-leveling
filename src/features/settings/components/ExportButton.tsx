@@ -3,7 +3,7 @@ import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { db } from '@/db'
-import { format } from 'date-fns'
+import { today } from '@/lib/date'
 import { isAndroidApp } from '@/lib/native'
 
 const BACKUP_VERSION = 2
@@ -56,7 +56,7 @@ export default function ExportButton() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `solo-leveling-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
+      a.download = `solo-leveling-backup-${today()}.json`
       a.click()
       URL.revokeObjectURL(url)
       toast.success('Data exported')

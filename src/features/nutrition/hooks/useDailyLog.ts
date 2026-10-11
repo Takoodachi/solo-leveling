@@ -50,12 +50,3 @@ function emptyByMeal(): Record<MealType, FoodLogWithFood[]> {
 function zeroDailyNutrition(): DailyNutrition {
   return { kcal: 0, protein: 0, carbs: 0, fat: 0 }
 }
-
-export function calcMealNutrition(entries: FoodLogWithFood[]): DailyNutrition {
-  return entries.reduce<DailyNutrition>((acc, entry) => ({
-    kcal:    acc.kcal    + entry.food.kcalPerServing * entry.servings,
-    protein: acc.protein + entry.food.protein       * entry.servings,
-    carbs:   acc.carbs   + entry.food.carbs         * entry.servings,
-    fat:     acc.fat     + entry.food.fat           * entry.servings,
-  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 })
-}

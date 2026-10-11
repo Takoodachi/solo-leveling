@@ -138,7 +138,6 @@ export const THEMES: Theme[] = [
   mixed('paper', 'Paper', 'light', '240 6% 20%', '40 12% 95%', '240 5% 38%'),
 ]
 
-export const DEFAULT_THEME = 'ember'
 /** `settings.theme` when the user's own palette (`settings.customTheme`) is the one on screen. */
 export const CUSTOM_THEME = 'custom'
 const THEME_KEY = 'solo:theme'

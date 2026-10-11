@@ -1,9 +1,9 @@
 import { formatShortDate } from '@/lib/date'
-import { formatKm } from '@/lib/cardio'
+import { formatClock, formatKm } from '@/lib/cardio'
 import type { Sex } from '../standards'
 import { RUNNING_SOURCE, type RegionRank } from '../computeRanks'
 import { TIERS } from '../tiers'
-import { MIN_RUN_KM, describeRunScore, fiveKTimeFor, formatRunTime, timeFor, type RunRank } from '../running'
+import { MIN_RUN_KM, describeRunScore, fiveKTimeFor, timeFor, type RunRank } from '../running'
 import RankBadge from './RankBadge'
 import RankProgress from './RankProgress'
 import { ink } from '@/lib/colors'
@@ -32,7 +32,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
           {running && rank ? (
             <>
               <p className="text-xs text-muted-foreground">
-                Best {formatKm(running.best.distanceKm)} in {formatRunTime(running.best.duration)} · {formatShortDate(running.best.date)}
+                Best {formatKm(running.best.distanceKm)} in {formatClock(running.best.duration)} · {formatShortDate(running.best.date)}
               </p>
               <p className="text-xs text-muted-foreground tabular-nums">
                 {describeRunScore(running.best.distanceKm, running.best.duration)} · {rank.rating} pts
@@ -59,8 +59,8 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
 
       {rank && next != null && (
         <p className="text-xs text-muted-foreground">
-          Next: <span className="text-foreground">{rank.nextLabel}</span> at a {formatRunTime(timeFor(sex, next, 5))} 5K, {formatRunTime(timeFor(sex, next, 10))} 10K
-          or {formatRunTime(timeFor(sex, next, 21.1))} half marathon
+          Next: <span className="text-foreground">{rank.nextLabel}</span> at a {formatClock(timeFor(sex, next, 5))} 5K, {formatClock(timeFor(sex, next, 10))} 10K
+          or {formatClock(timeFor(sex, next, 21.1))} half marathon
         </p>
       )}
 
@@ -72,7 +72,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
             <div key={t.key} className="flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-2xl bg-secondary/60 py-2">
               <RankBadge tier={t.key} size={30} locked={!reached} />
               <span className="text-[10px] font-bold uppercase" style={{ color: ink(t.color) }}>{t.name}</span>
-              <span className="text-xs tabular-nums">{formatRunTime(fiveKTimeFor(sex, t.min))}</span>
+              <span className="text-xs tabular-nums">{formatClock(fiveKTimeFor(sex, t.min))}</span>
             </div>
           )
         })}

@@ -3,6 +3,7 @@ import { ArrowLeft, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { round1 } from '@/lib/format'
 
 export interface AiParsedFood {
   name: string
@@ -14,17 +15,13 @@ export interface AiParsedFood {
   notes?: string
 }
 
+/** What the confirm step hands back: the estimate after the user's corrections. */
+export type ConfirmedFood = Required<Omit<AiParsedFood, 'ingredients'>>
+
 interface Props {
   parsed: AiParsedFood
   onBack: () => void
-  onConfirm: (food: {
-    name: string
-    kcal: number
-    protein: number
-    carbs: number
-    fat: number
-    notes: string
-  }) => Promise<void> | void
+  onConfirm: (food: ConfirmedFood) => Promise<void> | void
 }
 
 function joinIngredientsAndNotes(parsed: AiParsedFood): string {
@@ -125,8 +122,4 @@ export default function AiFoodConfirm({ parsed, onBack, onConfirm }: Props) {
       </div>
     </div>
   )
-}
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10
 }

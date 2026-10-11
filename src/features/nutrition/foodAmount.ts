@@ -1,4 +1,5 @@
 import type { Food } from '@/types'
+import { round1 } from '@/lib/format'
 
 /** Foods measured by weight or volume can be entered in grams / ml as well as in servings. */
 export const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml'
@@ -35,8 +36,8 @@ export function servingsOf(food: Food, draft: AmountDraft): number {
 export function computeMacros(food: Food, servings: number) {
   return {
     kcal: Math.round(food.kcalPerServing * servings),
-    protein: Math.round(food.protein * servings * 10) / 10,
-    carbs: Math.round(food.carbs * servings * 10) / 10,
-    fat: Math.round(food.fat * servings * 10) / 10,
+    protein: round1(food.protein * servings),
+    carbs: round1(food.carbs * servings),
+    fat: round1(food.fat * servings),
   }
 }

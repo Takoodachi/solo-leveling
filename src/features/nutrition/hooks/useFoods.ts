@@ -2,24 +2,17 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import type { Food } from '@/types'
 import { requestSync } from '@/lib/sync'
+import { normalize } from '@/lib/search'
 import { logFoods, unlogFoods, type NewFoodLog } from '../logFoods'
+import type { ReviewedFood } from '../openFoodFacts'
 
 /** Barcode foods use a stable id, so re-scanning a product finds (and can correct) the saved entry. */
 export function barcodeFoodId(barcode: string): string {
   return `barcode-${barcode}`
 }
 
-/** Save a reviewed barcode scan. Values are per `amount` `unit` (one package serving, or 100 g/ml). */
-export async function saveScannedFood(scan: {
-  barcode: string
-  name: string
-  amount: number
-  unit: 'g' | 'ml'
-  kcal: number
-  protein: number
-  carbs: number
-  fat: number
-}): Promise<Food> {
+/** Save a reviewed product (scanned, or found by name). */
+export async function saveScannedFood(scan: ReviewedFood): Promise<Food> {
   const uuid = barcodeFoodId(scan.barcode)
   const existing = await db.foods.get(uuid)
   const now = Date.now()
@@ -53,11 +46,6 @@ export async function saveScannedFood(scan: {
   return food
 }
 
-/** Lowercase without diacritics (Vietnamese đ → d) for forgiving search. */
-function foldAccents(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim()
-}
-
 export function useFoods() {
   const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
   // Booleans aren't indexable in IndexedDB, so filter instead of where().
@@ -66,10 +54,10 @@ export function useFoods() {
   /** Every word must match; accents don't matter, so "pho bo" finds "Phở bò". */
   function searchFoods(query: string): Food[] {
     if (!foods) return []
-    const words = foldAccents(query).split(/\s+/).filter(Boolean)
+    const words = normalize(query).split(/\s+/).filter(Boolean)
     if (words.length === 0) return foods
     return foods.filter(f => {
-      const name = foldAccents(f.name)
+      const name = normalize(f.name)
       return words.every(w => name.includes(w))
     })
   }

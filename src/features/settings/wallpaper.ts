@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { withImage } from '@/lib/image'
+import { clamp } from '@/lib/utils'
 
 /**
  * A photo of the user's own behind the app (Settings → Theme). It stays on this device: a few
@@ -28,7 +29,6 @@ export const DEFAULT_LOOK: WallpaperLook = { dim: 0.7, blur: 0 }
 /** Below the low end of `dim`, text straight on the page stops being readable over a bright photo. */
 export const LOOK_RANGE = { dim: [0.4, 0.92], blur: [0, 24] } as const
 
-const clamp = (n: number, [low, high]: readonly [number, number]) => Math.min(high, Math.max(low, n))
 
 export function cleanLook(look: Partial<WallpaperLook> | undefined): WallpaperLook {
   return {

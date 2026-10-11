@@ -7,6 +7,7 @@ import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
 import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 import type { Food, FoodLog, MealType } from '@/types'
+import { usesGrams } from './foodAmount'
 
 export type NewFoodLog = Pick<FoodLog, 'date' | 'foodId' | 'servings' | 'mealType'>
 export interface MealItem { foodId: string; servings: number }
@@ -87,7 +88,7 @@ export function itemCount(n: number): string {
 
 /** "150 g" or "2 × 1 slice". */
 export function amountLabel(food: Food, servings: number): string {
-  return food.servingUnit === 'g' || food.servingUnit === 'ml'
+  return usesGrams(food)
     ? `${Math.round(servings * food.servingSize)} ${food.servingUnit}`
     : `${Math.round(servings * 100) / 100} × ${food.servingSize} ${food.servingUnit}`
 }

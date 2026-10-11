@@ -50,10 +50,6 @@ const MET: Record<RoutineCategory, number> = {
 
 const LIGHT_MET = 3
 
-export function metFor(category: RoutineCategory): number {
-  return MET[category]
-}
-
 /** Estimated active kcal: MET × body weight (kg) × hours. */
 export function estimateKcal(met: number, bodyKg: number | undefined, minutes: number): number {
   return Math.round(met * resolveBodyKg(bodyKg) * (minutes / 60))

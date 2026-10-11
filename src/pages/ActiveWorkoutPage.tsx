@@ -151,33 +151,28 @@ export default function ActiveWorkoutPage() {
           </div>
         )}
 
-        {draft.blocks.map((block, idx) => setModeFor(block.exercise) === 'cardio' ? (
-          <CardioLogCard
-            key={`${block.exercise.uuid}-${idx}`}
-            block={block}
-            blockIdx={idx}
-            isFirst={idx === 0}
-            isLast={idx === draft.blocks.length - 1}
-            onShowInfo={() => setInfo(block.exercise)}
-            onReplace={editing ? undefined : () => setReplacing({ idx, exercise: block.exercise })}
-            bodyKg={ranks?.bodyKg ?? undefined}
-            runRank={ranks?.running?.rank}
-            sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
-          />
-        ) : (
-          <ExerciseLogCard
-            key={`${block.exercise.uuid}-${idx}`}
-            block={block}
-            blockIdx={idx}
-            isFirst={idx === 0}
-            isLast={idx === draft.blocks.length - 1}
-            onSetDone={handleSetDone}
-            onShowInfo={() => setInfo(block.exercise)}
-            onReplace={editing ? undefined : () => setReplacing({ idx, exercise: block.exercise })}
-            liftRank={rankOf.get(block.exercise.uuid)}
-            rankContext={rankContext}
-          />
-        ))}
+        {draft.blocks.map((block, idx) => {
+          const key = `${block.exercise.uuid}-${idx}`
+          const card = {
+            block,
+            blockIdx: idx,
+            isFirst: idx === 0,
+            isLast: idx === draft.blocks.length - 1,
+            onShowInfo: () => setInfo(block.exercise),
+            onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
+          }
+          return setModeFor(block.exercise) === 'cardio' ? (
+            <CardioLogCard
+              key={key}
+              {...card}
+              bodyKg={ranks?.bodyKg ?? undefined}
+              runRank={ranks?.running?.rank}
+              sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
+            />
+          ) : (
+            <ExerciseLogCard key={key} {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
+          )
+        })}
 
         <Button variant="secondary" size="lg" className="gap-2" onClick={() => setPickerOpen(true)}>
           <Plus size={18} />

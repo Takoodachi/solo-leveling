@@ -1,29 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type {
-  Food, FoodLog,
-  BodyMetric, Targets, Achievement,
-} from '@/types'
-
-// Supabase row types mirror Dexie types but include user_id
-type WithUserId<T> = T & { user_id: string }
-
-export type SupabaseFood       = WithUserId<Food>
-export type SupabaseFoodLog    = WithUserId<FoodLog>
-export type SupabaseBodyMetric = WithUserId<BodyMetric>
-export type SupabaseTargets    = WithUserId<Targets> & { user_id: string }
-export type SupabaseAchievement = WithUserId<Achievement>
-
-export interface Database {
-  public: {
-    Tables: {
-      foods:        { Row: SupabaseFood;        Insert: SupabaseFood;        Update: Partial<SupabaseFood> }
-      food_log:     { Row: SupabaseFoodLog;     Insert: SupabaseFoodLog;     Update: Partial<SupabaseFoodLog> }
-      body_metrics: { Row: SupabaseBodyMetric;  Insert: SupabaseBodyMetric;  Update: Partial<SupabaseBodyMetric> }
-      targets:      { Row: SupabaseTargets;     Insert: SupabaseTargets;     Update: Partial<SupabaseTargets> }
-      achievements: { Row: SupabaseAchievement; Insert: SupabaseAchievement; Update: Partial<SupabaseAchievement> }
-    }
-  }
-}
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -41,12 +16,10 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
   return fetch(input, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
 }
 
-// Fallback placeholder values prevent createClient from throwing at module load time
-export const supabase = createClient<Database>(
+// Fallback placeholder values prevent createClient from throwing at module load time.
+// The client carries no table types: rows are typed where they're read (lib/sync.ts and the features).
+export const supabase = createClient(
   supabaseUrl ?? 'https://placeholder.supabase.co',
   supabaseKey ?? 'placeholder-key',
   { global: { fetch: fetchWithTimeout } },
 )
-
-/** The same client, loosely typed, for tables that aren't in `Database` (push subscriptions and queue). */
-export const looseSupabase = supabase as unknown as SupabaseClient

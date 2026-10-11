@@ -276,6 +276,9 @@ export interface BadgeArt {
   layers: Layer[]
 }
 
+/** The colour a layer's tone stands for in a tier's palette. */
+export const toneColor = (pal: Palette, tone: Layer['fill']) => (!tone || tone === 'none' ? 'none' : pal[tone])
+
 export const BADGES: Record<TierKey, BadgeArt> = {
   wood: {
     pal: { hi: '#f2c592', lt: '#c98a4e', dk: '#8a5226', rim: '#3d2210', core: '#f0c08a', eye: '#2a160a', a0: '#f2c592', a1: '#c98a4e', a2: '#8a5226' },

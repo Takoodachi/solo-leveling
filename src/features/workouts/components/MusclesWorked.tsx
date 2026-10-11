@@ -1,15 +1,10 @@
 import type { ReactNode } from 'react'
 import type { WorkoutSetWithExercise } from '@/types'
 import { REGION_LABEL, type MuscleRegion } from '@/features/ranks/standards'
-import { BACK, CENTER_BACK, CENTER_FRONT, FRONT, MIRROR, VIEWBOX, type Shape } from '@/features/ranks/components/bodygraphShapes'
+import { BACK, BODY_FILL, BODY_LINE, CENTER_BACK, CENTER_FRONT, FRONT, HALVES, MUSCLE_FILL, MUSCLE_LINE, VIEWBOX, bodyInk, type Shape } from '@/features/ranks/components/bodygraphShapes'
 import { musclesWorked } from '../musclesWorked'
 
-// The same wireframe as the ranked bodygraph (line strengths per theme in index.css)
-const line = (alpha: number | string) => `hsl(var(--foreground) / ${alpha})`
-const BODY_LINE = line('var(--body-line)')
-const MUSCLE_LINE = line('var(--muscle-line)')
 const accent = (alpha: number) => `hsl(var(--primary) / ${alpha})`
-const HALVES = [undefined, MIRROR] as const
 /** How many muscles the list beside the figures names. */
 const LISTED = 5
 /** The faintest a worked muscle gets, so a helper muscle still shows. */
@@ -29,14 +24,14 @@ function Figure({ label, shapes, center, level }: FigureProps) {
 
   return (
     <svg viewBox={VIEWBOX} className="h-auto w-full" role="img" aria-label={`${label} view`}>
-      {center.map((s, i) => <path key={i} d={s.d} fill={line(0.02)} stroke={BODY_LINE} strokeWidth={0.55} />)}
+      {center.map((s, i) => <path key={i} d={s.d} fill={BODY_FILL} stroke={BODY_LINE} strokeWidth={0.55} />)}
       {both(() => shapes.map((s, i) => {
         const worked = s.region ? level.get(s.region) : undefined
         return worked
           ? <path key={i} d={s.d} fill={accent(MIN_ALPHA + (1 - MIN_ALPHA) * worked)} stroke={accent(0.9)} strokeWidth={0.7} strokeLinejoin="round" />
-          : <path key={i} d={s.d} fill={line(s.region ? 0.05 : 0.02)} stroke={s.region ? MUSCLE_LINE : BODY_LINE} strokeWidth={0.55} strokeLinejoin="round" />
+          : <path key={i} d={s.d} fill={s.region ? MUSCLE_FILL : BODY_FILL} stroke={s.region ? MUSCLE_LINE : BODY_LINE} strokeWidth={0.55} strokeLinejoin="round" />
       }))}
-      <g fill="none" strokeWidth={0.45} strokeLinecap="round" stroke={line('var(--detail-line)')}>
+      <g fill="none" strokeWidth={0.45} strokeLinecap="round" stroke={bodyInk('var(--detail-line)')}>
         {center.filter(s => s.detail).map((s, i) => <path key={i} d={s.detail} />)}
         {both(() => shapes.filter(s => s.detail).map((s, i) => <path key={i} d={s.detail} />))}
       </g>

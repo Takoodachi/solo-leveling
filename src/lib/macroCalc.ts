@@ -1,4 +1,5 @@
 import type { Food, FoodIngredient } from '@/types'
+import { round1 } from './format'
 
 export interface MacroTotals {
   kcal: number
@@ -9,18 +10,13 @@ export interface MacroTotals {
 
 const ZERO: MacroTotals = { kcal: 0, protein: 0, carbs: 0, fat: 0 }
 
-function isGramBased(food: Food): boolean {
-  return food.servingUnit === 'g' || food.servingUnit === 'ml'
-}
-
 export function macrosForIngredient(
   ingredient: FoodIngredient,
   source: Food | undefined,
 ): MacroTotals {
   if (!source || source.servingSize <= 0) return ZERO
-  const factor = isGramBased(source)
-    ? ingredient.grams / source.servingSize
-    : ingredient.grams / source.servingSize
+  // For a food measured in servings the amount counts as servings (the picker says so)
+  const factor = ingredient.grams / source.servingSize
   return {
     kcal: source.kcalPerServing * factor,
     protein: source.protein * factor,
@@ -45,9 +41,9 @@ export function macrosFromIngredients(
 
   return {
     kcal: Math.round(totals.kcal),
-    protein: Math.round(totals.protein * 10) / 10,
-    carbs: Math.round(totals.carbs * 10) / 10,
-    fat: Math.round(totals.fat * 10) / 10,
+    protein: round1(totals.protein),
+    carbs: round1(totals.carbs),
+    fat: round1(totals.fat),
   }
 }
 

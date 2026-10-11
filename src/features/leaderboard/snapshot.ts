@@ -2,9 +2,9 @@ import { differenceInCalendarDays, parseISO, startOfWeek, subDays } from 'date-f
 import { db } from '@/db'
 import type { UserStats } from '@/types'
 import { toDateStr } from '@/lib/date'
-import { formatKm } from '@/lib/cardio'
+import { formatClock, formatKm } from '@/lib/cardio'
 import { computeRanks, describeBest, rankHistory } from '@/features/ranks/computeRanks'
-import { formatRunTime, isRunExercise } from '@/features/ranks/running'
+import { isRunExercise } from '@/features/ranks/running'
 import type { Highlight, LeaderboardSnapshot } from './types'
 
 const HISTORY_WEEKS = 12
@@ -48,7 +48,7 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
   if (run && run.best.date >= since) {
     highlights.push({
       kind: 'run', name: 'Running', rating: run.rank.rating,
-      detail: `${formatKm(run.best.distanceKm)} in ${formatRunTime(run.best.duration)}`, date: run.best.date,
+      detail: `${formatKm(run.best.distanceKm)} in ${formatClock(run.best.duration)}`, date: run.best.date,
     })
   }
 

@@ -6,6 +6,8 @@
  * always shown for review before they're saved (see ScannedFoodReview).
  */
 
+import { round1 } from '@/lib/format'
+
 const KJ_PER_KCAL = 4.184
 const FIELDS = [
   'product_name', 'product_name_en', 'generic_name', 'generic_name_en', 'brands', 'quantity',
@@ -27,6 +29,18 @@ export interface ScannedFood {
   source: 'database' | 'saved'
 }
 
+/** A product after the review step: checked values per `amount` `unit` (one package serving, or 100 g/ml). */
+export interface ReviewedFood {
+  barcode: string
+  name: string
+  amount: number
+  unit: 'g' | 'ml'
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
 type Nutriments = Record<string, unknown>
 type Product = Record<string, unknown>
 
@@ -37,10 +51,6 @@ function num(v: unknown): number | null {
 
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined
-}
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10
 }
 
 /** kcal for a basis ("100g" or "serving"), converting from kJ when only that is recorded. */
@@ -119,12 +129,13 @@ const SEARCH_RESULTS = 24
 /**
  * Open Food Facts lets one address search about ten times a minute, and answers anything sooner
  * with its "busy" page (measured Oct 2026: requests 7 s apart nearly all get through, 2.5 s
- * apart two in three are turned away). So searches from this device keep this far apart, and one
- * that's turned away anyway is asked once more after the same wait, never straight away.
+ * apart two in three are turned away; at busy hours about half are turned away whatever the gap).
+ * So searches from this device keep this far apart, and one that's turned away anyway is asked
+ * again after the same wait, never straight away: three tries in all, about 20 s at worst.
  */
 const SEARCH_GAP_MS = 6500
-const SEARCH_ATTEMPTS = 2
-const SEARCH_TIMEOUT_MS = 25_000
+const SEARCH_ATTEMPTS = 3
+const SEARCH_TIMEOUT_MS = 30_000
 let lastSearchAt = 0
 
 /** The search response. `onBusy` is called when it has to wait before asking (again). */

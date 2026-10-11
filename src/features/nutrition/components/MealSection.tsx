@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Plus, ChevronDown, ChevronUp, History, Bookmark } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import FoodLogRow from './FoodLogRow'
 import AddFoodDialog from './AddFoodDialog'
 import EditFoodLogDialog from './EditFoodLogDialog'
@@ -54,7 +53,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
 
       {open && (
         <div className="px-5 pb-4">
-          {entries.length > 0 && <Separator className="mb-2" />}
+          {entries.length > 0 && <div className="mb-2 h-px bg-border" />}
 
           {entries.map(entry => (
             <FoodLogRow

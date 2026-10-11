@@ -1,6 +1,5 @@
 import { Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useFoods } from '../hooks/useFoods'
 import { lastServings, logFoods, toastLogged, MEAL_LABELS } from '../logFoods'
 import type { Food, MealType } from '@/types'
@@ -29,7 +28,7 @@ export default function FavoriteFoods({ date, mealType }: Props) {
           Favorites · add to {MEAL_LABELS[mealType].toLowerCase()}
         </span>
       </div>
-      <ScrollArea className="w-full">
+      <div className="no-scrollbar w-full overflow-x-auto">
         <div className="flex gap-2 pb-1">
           {favorites.map(food => (
             <Button
@@ -43,7 +42,7 @@ export default function FavoriteFoods({ date, mealType }: Props) {
             </Button>
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }

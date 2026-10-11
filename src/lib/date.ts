@@ -1,4 +1,4 @@
-import { format, parseISO, isToday, isYesterday, startOfWeek, getISOWeek, addDays, subDays } from 'date-fns'
+import { format, parseISO, isToday, isYesterday, startOfWeek, addDays, subDays } from 'date-fns'
 
 export function toDateStr(date: Date): string {
   return format(date, 'yyyy-MM-dd')
@@ -21,14 +21,6 @@ export function formatDisplayDate(dateStr: string): string {
 
 export function formatShortDate(dateStr: string): string {
   return format(parseISO(dateStr), 'MMM d')
-}
-
-export function getWeekStart(date: Date): string {
-  return toDateStr(startOfWeek(date, { weekStartsOn: 1 }))
-}
-
-export function getISOWeekNumber(date: Date): number {
-  return getISOWeek(date)
 }
 
 /** The 7 dates (Mon → Sun) of the week containing `date`. */

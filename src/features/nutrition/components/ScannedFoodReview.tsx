@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Segmented from '@/components/Segmented'
 import { cn } from '@/lib/utils'
-import { nutritionWarnings, type NutrientKey, type ScannedFood } from '../openFoodFacts'
+import { nutritionWarnings, type NutrientKey, type ReviewedFood, type ScannedFood } from '../openFoodFacts'
 
 const FIELDS: { key: NutrientKey; label: string }[] = [
   { key: 'kcal', label: 'Calories' },
@@ -13,17 +13,6 @@ const FIELDS: { key: NutrientKey; label: string }[] = [
   { key: 'carbs', label: 'Carbs (g)' },
   { key: 'fat', label: 'Fat (g)' },
 ]
-
-export interface ReviewedFood {
-  barcode: string
-  name: string
-  amount: number
-  unit: 'g' | 'ml'
-  kcal: number
-  protein: number
-  carbs: number
-  fat: number
-}
 
 interface Props {
   scan: ScannedFood

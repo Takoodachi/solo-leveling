@@ -1,21 +1,9 @@
 import { format, parseISO } from 'date-fns'
-import { Beef, Dumbbell, Flame, Footprints, GlassWater, Pill, Route, Scale, Timer, Weight, type LucideIcon } from 'lucide-react'
+import { Beef, Dumbbell, Flame, Footprints, GlassWater, Pill, Route, Scale, Timer, Weight } from 'lucide-react'
+import IconTile from '@/components/IconTile'
 import { formatDurationMin } from '@/lib/format'
 import { formatVolume } from '@/lib/workoutMath'
 import type { Recap } from '../recap'
-
-function Tile({ Icon, label, value, note }: { Icon: LucideIcon; label: string; value: string; note?: string | null }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-3xl bg-card p-4">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary"><Icon size={18} /></span>
-      <div>
-        <p className="text-lg font-semibold tabular-nums leading-tight">{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        {note && <p className="mt-1 text-xs text-muted-foreground">{note}</p>}
-      </div>
-    </div>
-  )
-}
 
 /** "12% more than the week before", stated the same way up or down (no red for a quieter week). */
 function versus(now: number, before: number, period: string): string | null {
@@ -43,23 +31,23 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
   const goal = period === 'week' ? recap.workoutGoal : Math.max(1, Math.round((recap.workoutGoal * elapsedDays) / recap.dates.length))
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Tile
+      <IconTile
         Icon={Dumbbell}
         label="Workouts"
         value={`${training.workouts} / ${goal}`}
         note={finished && previous.workouts > 0 ? (more === 0 ? `Same as the ${period} before` : `${Math.abs(more)} ${more > 0 ? 'more' : 'fewer'} than the ${period} before`) : null}
       />
-      <Tile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={than(training.activeMin, previous.activeMin)} />
+      <IconTile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={than(training.activeMin, previous.activeMin)} />
       {training.sets > 0 && (
-        <Tile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume)} note={than(training.volume, previous.volume)} />
+        <IconTile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume)} note={than(training.volume, previous.volume)} />
       )}
       {training.cardioKm > 0 && (
-        <Tile Icon={Route} label="Cardio distance" value={`${training.cardioKm.toFixed(1)} km`} note={than(training.cardioKm, previous.cardioKm)} />
+        <IconTile Icon={Route} label="Cardio distance" value={`${training.cardioKm.toFixed(1)} km`} note={than(training.cardioKm, previous.cardioKm)} />
       )}
       {steps.total > 0 && (
         <>
-          <Tile Icon={Footprints} label="Steps a day" value={Math.round(steps.total / Math.max(1, elapsedDays)).toLocaleString()} note={than(steps.total, previous.steps)} />
-          <Tile
+          <IconTile Icon={Footprints} label="Steps a day" value={Math.round(steps.total / Math.max(1, elapsedDays)).toLocaleString()} note={than(steps.total, previous.steps)} />
+          <IconTile
             Icon={Footprints}
             label={`Days at ${steps.goal.toLocaleString()} steps`}
             value={`${steps.goalDays} / ${elapsedDays}`}
@@ -69,18 +57,18 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
       )}
       {food && (
         <>
-          <Tile
+          <IconTile
             Icon={Flame}
             label={`Calories a day, ${food.days} day${food.days === 1 ? '' : 's'} logged`}
             value={food.avgNetKcal.toLocaleString()}
             note={food.targetKcal > 0 ? `Target ${food.targetKcal.toLocaleString()}` : null}
           />
-          <Tile Icon={Beef} label="Protein a day" value={`${food.avgProtein} g`} note={`Target reached on ${food.proteinDays} of ${food.days}`} />
+          <IconTile Icon={Beef} label="Protein a day" value={`${food.avgProtein} g`} note={`Target reached on ${food.proteinDays} of ${food.days}`} />
         </>
       )}
-      {weight && <Tile Icon={Scale} label="Body weight" value={`${weight.to.toFixed(1)} kg`} note={weight.to === weight.from ? null : `${signed(weight.to - weight.from, 'kg')} over the ${period}`} />}
-      {recap.creatineDays > 0 && <Tile Icon={Pill} label="Creatine" value={`${recap.creatineDays} / ${elapsedDays} days`} />}
-      {recap.waterGoalDays > 0 && <Tile Icon={GlassWater} label="Water goal" value={`${recap.waterGoalDays} / ${elapsedDays} days`} />}
+      {weight && <IconTile Icon={Scale} label="Body weight" value={`${weight.to.toFixed(1)} kg`} note={weight.to === weight.from ? null : `${signed(weight.to - weight.from, 'kg')} over the ${period}`} />}
+      {recap.creatineDays > 0 && <IconTile Icon={Pill} label="Creatine" value={`${recap.creatineDays} / ${elapsedDays} days`} />}
+      {recap.waterGoalDays > 0 && <IconTile Icon={GlassWater} label="Water goal" value={`${recap.waterGoalDays} / ${elapsedDays} days`} />}
     </div>
   )
 }

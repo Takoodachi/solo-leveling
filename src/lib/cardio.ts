@@ -124,9 +124,13 @@ export function cardioKcal(exerciseId: string, e: CardioEntry, bodyKg: number): 
   return e.duration ? cardioMet(exerciseId, e) * bodyKg * (e.duration / 60) : 0
 }
 
-function clock(minutes: number): string {
+/** A time as a clock reads it: "5:30", "24:05", and "1:02:10" from an hour up. */
+export function formatClock(minutes: number): string {
   const total = Math.round(minutes * 60)
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = String(total % 60).padStart(2, '0')
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }
 
 /** "5:30 /km", "22.4 km/h", "2:05 /500m" — null without both time and distance. */
@@ -138,9 +142,9 @@ export function formatPace(exerciseId: string, e: CardioEntry): string | null {
 export function formatSpeed(exerciseId: string, speed: number): string {
   switch (paceStyle(exerciseId) ?? 'per-km') {
     case 'kmh': return `${speed.toFixed(1)} km/h`
-    case 'per-500m': return `${clock(30 / speed)} /500m`
-    case 'per-100m': return `${clock(6 / speed)} /100m`
-    case 'per-km': return `${clock(60 / speed)} /km`
+    case 'per-500m': return `${formatClock(30 / speed)} /500m`
+    case 'per-100m': return `${formatClock(6 / speed)} /100m`
+    case 'per-km': return `${formatClock(60 / speed)} /km`
   }
 }
 

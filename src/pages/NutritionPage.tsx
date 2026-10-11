@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { addDays, subDays, parseISO, format } from 'date-fns'
+import { addDays, subDays, parseISO } from 'date-fns'
 import PageHeader from '@/components/PageHeader'
 import { useIsNavTab } from '@/hooks/useNavTabs'
 import { useNutritionStore } from '@/features/nutrition/store'
@@ -11,7 +11,7 @@ import FavoriteFoods from '@/features/nutrition/components/FavoriteFoods'
 import CopyDayCard from '@/features/nutrition/components/CopyDayCard'
 import MealSection from '@/features/nutrition/components/MealSection'
 import AddFoodDialog from '@/features/nutrition/components/AddFoodDialog'
-import { formatDisplayDate } from '@/lib/date'
+import { formatDisplayDate, toDateStr } from '@/lib/date'
 import { useNow } from '@/hooks/useNow'
 import type { MealType } from '@/types'
 
@@ -36,7 +36,7 @@ export default function NutritionPage() {
 
   function shift(direction: 1 | -1) {
     const current = parseISO(selectedDate)
-    setDate(format(direction === 1 ? addDays(current, 1) : subDays(current, 1), 'yyyy-MM-dd'))
+    setDate(toDateStr(direction === 1 ? addDays(current, 1) : subDays(current, 1)))
   }
 
   return (

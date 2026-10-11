@@ -1,7 +1,7 @@
 import { db } from '@/db'
-import { today } from './date'
+import { toDateStr, today } from './date'
 import { requestSync } from './sync'
-import { subDays, format, parseISO, getISOWeek, getISOWeekYear } from 'date-fns'
+import { subDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns'
 
 /** A day counts as "logged" when food or a workout is logged that day. */
 export async function updateStreak(): Promise<void> {
@@ -11,7 +11,7 @@ export async function updateStreak(): Promise<void> {
   const todayStr = today()
   if (stats.lastLogDate === todayStr) return // already logged today
 
-  const yesterdayStr = format(subDays(parseISO(todayStr), 1), 'yyyy-MM-dd')
+  const yesterdayStr = toDateStr(subDays(parseISO(todayStr), 1))
   const wasYesterday = stats.lastLogDate === yesterdayStr
 
   let { currentStreak, longestStreak, streakFreezes } = stats

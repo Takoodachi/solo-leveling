@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { differenceInCalendarDays, format, parseISO, subDays } from 'date-fns'
+import { toDateStr } from '@/lib/date'
 import { db } from '@/db'
 import { requestSync, deleteSynced } from '@/lib/sync'
 import type { Food, FoodLogWithFood, MealType, SavedMeal } from '@/types'
@@ -38,7 +39,7 @@ async function foodMap(ids: string[]): Promise<Map<string, Food>> {
  */
 export function useRecentMeals(mealType: MealType, date: string): PastMeal[] | undefined {
   return useLiveQuery(async () => {
-    const since = format(subDays(parseISO(date), RECENT_DAYS), 'yyyy-MM-dd')
+    const since = toDateStr(subDays(parseISO(date), RECENT_DAYS))
     const logs = await db.foodLog.where('date').between(since, date, true, false).filter(l => l.mealType === mealType).toArray()
     const foods = await foodMap(logs.map(l => l.foodId))
 

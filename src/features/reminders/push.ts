@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, looseSupabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 /**
  * Web push for browsers and the iOS home-screen app (the Android app schedules its own
@@ -37,7 +37,7 @@ export async function pushSubscription(): Promise<PushSubscription | null> {
 
 async function save(subscription: PushSubscription): Promise<void> {
   const { endpoint, keys } = subscription.toJSON()
-  const { error } = await looseSupabase
+  const { error } = await supabase
     .from('push_subscriptions')
     .upsert({ endpoint, p256dh: keys?.p256dh, auth: keys?.auth, updatedAt: Date.now() }, { onConflict: 'endpoint' })
   if (error) throw error
@@ -65,7 +65,7 @@ export async function unsubscribePush(): Promise<void> {
   const subscription = await pushSubscription().catch(() => null)
   if (!subscription) return
   await subscription.unsubscribe().catch(() => false)
-  await looseSupabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint).then(() => {}, () => {})
+  await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint).then(() => {}, () => {})
 }
 
 /** Once a day, re-save the subscription: the server drops ones it hasn't heard from in two months. */

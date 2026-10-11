@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { formatDistance } from 'date-fns'
 import { toast } from 'sonner'
 import { Switch } from '@/components/ui/switch'
 import { useNow } from '@/hooks/useNow'
 import { soloPlugin, type BackgroundStepsStatus } from '@/lib/native'
+import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
 
 /** `old-app`: an Android app built before background sync existed. */
 type State = BackgroundStepsStatus | 'old-app' | null
@@ -22,13 +23,8 @@ export default function BackgroundStepsRow() {
     [],
   )
 
-  useEffect(() => {
-    void refresh()
-    // Access can be changed in Health Connect, and a run may have finished, while we were away
-    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [refresh])
+  // Access can be changed in Health Connect, and a run may have finished, while we were away
+  useRefreshOnReturn(refresh)
 
   async function toggle(on: boolean) {
     setBusy(true)
