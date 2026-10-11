@@ -116,7 +116,8 @@ export function describeBest(b: NewBest & { est1RM?: number }): { label: string;
   }
 }
 
-const round = (n: number, step: number) => Math.round(n / step) * step
+// Divided by the steps in a whole, not multiplied by the step: 773 × 0.1 is 77.30000000000001
+const round = (n: number, step: number) => Math.round(n / step) / Math.round(1 / step)
 const maxOf = (xs: number[]) => Math.max(0, ...xs)
 
 /**
