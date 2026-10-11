@@ -3,6 +3,7 @@ package io.github.takoodachi.sololeveling
 import android.content.ClipData
 import android.content.Intent
 import android.util.Base64
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
 import androidx.health.connect.client.PermissionController
@@ -25,13 +26,26 @@ import java.io.File
  *   chooses which ones the icon offers ([Shortcuts]);
  * - step sync while the app is closed is switched on and off here ([StepsSync]);
  * - images go to Android's share sheet (the WebView has no Web Share API);
- * - creatine and water reminders with a log button are handed over here ([QuickLog]).
+ * - creatine and water reminders with a log button are handed over here ([QuickLog]);
+ * - Android's Back (the edge swipe or the button) goes to the site as a `back` event.
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var backgroundAccess: ActivityResultLauncher<Set<String>>
     private var waitingForAccess: PluginCall? = null
+
+    /**
+     * Android's Back. Off until the site says it's listening ([handleBack]); from then on each
+     * Back is the site's to act on, since it knows what's open and where back leads. With no
+     * listener (the page is loading, or reloaded) Back steps out of the app, so it can never
+     * be a dead key.
+     */
+    private val back = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            if (hasListeners("back")) notifyListeners("back", JSObject()) else activity.moveTaskToBack(true)
+        }
+    }
 
     override fun load() {
         backgroundAccess = activity.registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
@@ -40,6 +54,7 @@ class SoloPlugin : Plugin() {
             if (StepsSync.BACKGROUND_PERMISSION in granted) StepsSync.schedule(context)
             resolveStatus(call)
         }
+        activity.onBackPressedDispatcher.addCallback(activity, back)
         // Some launchers have no shortcuts to set: nothing to do about that
         runCatching { Shortcuts.ensureDefaults(context) }
         announceShortcut(activity.intent)
@@ -133,6 +148,23 @@ class SoloPlugin : Plugin() {
         } catch (e: Exception) {
             call.reject(e.message ?: "Couldn't set the shortcuts")
         }
+    }
+
+    /** The site takes Android's Back (src/hooks/useAndroidBack.ts), or hands it back to the system. */
+    @PluginMethod
+    fun handleBack(call: PluginCall) {
+        val enabled = call.getBoolean("enabled", true) ?: true
+        activity.runOnUiThread {
+            back.isEnabled = enabled
+            call.resolve()
+        }
+    }
+
+    /** Back with nowhere left to go back to: out to the launcher, the app kept as it is. */
+    @PluginMethod
+    fun leaveApp(call: PluginCall) {
+        activity.moveTaskToBack(true)
+        call.resolve()
     }
 
     @PluginMethod

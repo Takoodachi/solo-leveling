@@ -158,6 +158,13 @@
   :root[data-wallpaper].dark { --wallpaper-card: 0.8; }
   :root[data-wallpaper] .bg-card:not([role='dialog']) { background-color: hsl(var(--card) / var(--wallpaper-card)); }
   :root[data-wallpaper] .bg-background\/90 { background-color: hsl(var(--background) / 0.55); }
+  /* A strip that only holds a field (Home's search), while it isn't stuck to the top yet: no fill
+     of its own over the photo, or it reads as a box around the field. The field itself is solid. */
+  :root[data-wallpaper] .wallpaper-clear { background-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  :root[data-wallpaper] .bg-card.wallpaper-solid { background-color: hsl(var(--card)); }
+  /* The status bar's scrim is there for content scrolling under the clock: at the top of a page
+     there is none, and it would be a band across the photo (Wallpaper sets data-scrolled). */
+  :root[data-wallpaper]:not([data-scrolled]) .status-scrim { opacity: 0; }
   /* Small uppercase label used for dates and section links ("VIEW ALL"). */
   .eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-[0.14em];

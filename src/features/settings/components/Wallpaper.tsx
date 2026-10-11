@@ -4,7 +4,8 @@ import { useWallpaper } from '../hooks/useWallpaper'
 /**
  * The user's photo behind the whole app (mounted once, in App). It sits under everything on a
  * layer of its own, so scrolling never repaints it. While it's up, <html> carries
- * `data-wallpaper`: index.css then lets page fills through and makes cards slightly see-through.
+ * `data-wallpaper` (and `data-scrolled` once the page has moved): index.css then lets page fills
+ * through, makes cards slightly see-through and keeps bars off the photo where nothing needs them.
  */
 export default function Wallpaper() {
   const wallpaper = useWallpaper()
@@ -14,8 +15,14 @@ export default function Wallpaper() {
     if (!image) return
     const root = document.documentElement
     root.dataset.wallpaper = ''
+    // Whether anything has scrolled up under the status bar (its scrim only shows then)
+    const onScroll = () => root.toggleAttribute('data-scrolled', window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
+      window.removeEventListener('scroll', onScroll)
       delete root.dataset.wallpaper
+      delete root.dataset.scrolled
     }
   }, [image])
 

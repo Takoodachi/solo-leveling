@@ -9,6 +9,7 @@ import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import { useNativeLinks } from '@/hooks/useNativeLinks'
+import { useAndroidBack } from '@/hooks/useAndroidBack'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
@@ -53,7 +54,7 @@ function ScrollToTop() {
 
 /** Opaque band behind the status bar / Dynamic Island so scrolled content never runs under the clock. */
 function StatusBarScrim() {
-  return <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[45] h-[env(safe-area-inset-top)] bg-background/90 backdrop-blur-xl" />
+  return <div aria-hidden="true" className="status-scrim pointer-events-none fixed inset-x-0 top-0 z-[45] h-[env(safe-area-inset-top)] bg-background/90 backdrop-blur-xl transition-opacity duration-200" />
 }
 
 function AppRoutes() {
@@ -70,6 +71,7 @@ function AppRoutes() {
   useHealthStepsSync(ready)
   useReminderScheduler(ready)
   useNativeLinks()
+  useAndroidBack()
   useAppShortcuts(ready)
 
   // Wait for the session check (and any account-switch wipe) before rendering data.

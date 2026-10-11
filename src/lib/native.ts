@@ -58,7 +58,15 @@ export interface IconShortcut {
   icon: string
 }
 
-/** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts, step sync while closed, sharing, quick-log reminders. */
+/** What the plugin tells the site, by event name. */
+interface SoloEvents {
+  /** A long-press app shortcut was picked. */
+  shortcut: { path: string }
+  /** Android's Back, once `handleBack` has claimed it. */
+  back: Record<string, never>
+}
+
+/** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts, step sync while closed, sharing, quick-log reminders, Back. */
 interface SoloPlugin {
   backgroundStepsStatus(): Promise<BackgroundStepsStatus>
   enableBackgroundSteps(): Promise<BackgroundStepsStatus>
@@ -69,7 +77,11 @@ interface SoloPlugin {
   scheduleQuickLog(options: { items: QuickLogReminder[] }): Promise<void>
   /** Replaces the long-press shortcuts on the app's icon. Since they became a setting. */
   setShortcuts(options: { items: IconShortcut[] }): Promise<void>
-  addListener(event: 'shortcut', listener: (event: { path: string }) => void): Promise<{ remove: () => Promise<void> }>
+  /** Send Android's Back to the site as `back` events (or give it back to the system). Since in-app Back. */
+  handleBack(options: { enabled: boolean }): Promise<void>
+  /** Out to the launcher, the app kept alive: Back with nowhere left to go. Since in-app Back. */
+  leaveApp(): Promise<void>
+  addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
 let solo: SoloPlugin | undefined
@@ -90,6 +102,8 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     shareImage: options => native.shareImage(options),
     scheduleQuickLog: options => native.scheduleQuickLog(options),
     setShortcuts: options => native.setShortcuts(options),
+    handleBack: options => native.handleBack(options),
+    leaveApp: () => native.leaveApp(),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -148,6 +162,38 @@ export function onAppShortcut(open: (path: string) => void): () => void {
     stopped = true
     stop()
   }
+}
+
+/**
+ * Android's Back (the edge swipe or the button) goes to `onBack` instead of closing the app.
+ * Returns a function that gives Back to the system again. Does nothing in a browser, on iOS, or
+ * in an APK built before this: there Back keeps doing what the system does.
+ */
+export function onAndroidBack(onBack: () => void): () => void {
+  if (!soloHas('handleBack')) return () => {}
+  let stop = () => {}
+  let stopped = false
+  void soloPlugin()
+    .then(async plugin => {
+      if (!plugin) return
+      const handle = await plugin.addListener('back', onBack)
+      await plugin.handleBack({ enabled: true })
+      stop = () => {
+        void plugin.handleBack({ enabled: false }).catch(() => {})
+        void handle.remove()
+      }
+      if (stopped) stop()
+    })
+    .catch(() => {})
+  return () => {
+    stopped = true
+    stop()
+  }
+}
+
+/** Step out of the Android app to the launcher (Back on the first screen). */
+export function leaveApp(): void {
+  void soloPlugin().then(plugin => plugin?.leaveApp()).catch(() => {})
 }
 
 /** The Android status and navigation bars are see-through: light icons on dark themes, dark on light ones. */
