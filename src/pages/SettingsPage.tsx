@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/authStore'
 import SettingsSection from '@/features/settings/components/SettingsSection'
 import AccountCard from '@/features/settings/components/AccountCard'
 import ThemePicker from '@/features/settings/components/ThemePicker'
+import WallpaperCard from '@/features/settings/components/WallpaperCard'
 import NavBarCard from '@/features/settings/components/NavBarCard'
 import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import WorkoutPrefsCard from '@/features/settings/components/WorkoutPrefsCard'
@@ -65,6 +66,7 @@ export default function SettingsPage() {
       </SettingsSection>
       <SettingsSection id="theme" title="Theme" summary={resolveTheme(settings?.theme, settings?.customTheme).name} Icon={Palette}>
         <ThemePicker />
+        <WallpaperCard />
       </SettingsSection>
       <SettingsSection id="bottom-bar" title="Bottom bar" summary={`${NAV_CHOICES[left].label} · ${NAV_CHOICES[right].label}`} Icon={PanelBottom}>
         <NavBarCard />

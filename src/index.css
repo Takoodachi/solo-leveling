@@ -146,6 +146,18 @@
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .text-balance { text-wrap: balance; }
+  /* The fill of a whole screen. With a photo behind the app (features/settings/wallpaper.ts,
+     <html data-wallpaper>) these let it through and cards go slightly see-through; dialogs and
+     sheets stay solid. Lighter themes keep more of the card, since dark text needs it. The bars
+     that stick while the page scrolls under them are already blurred glass: they get thinner,
+     or they read as dark bands across the photo. */
+  .bg-page { background-color: hsl(var(--background)); }
+  :root[data-wallpaper] body,
+  :root[data-wallpaper] .bg-page { background-color: transparent; }
+  :root[data-wallpaper] { --wallpaper-card: 0.88; }
+  :root[data-wallpaper].dark { --wallpaper-card: 0.8; }
+  :root[data-wallpaper] .bg-card:not([role='dialog']) { background-color: hsl(var(--card) / var(--wallpaper-card)); }
+  :root[data-wallpaper] .bg-background\/90 { background-color: hsl(var(--background) / 0.55); }
   /* Small uppercase label used for dates and section links ("VIEW ALL"). */
   .eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-[0.14em];

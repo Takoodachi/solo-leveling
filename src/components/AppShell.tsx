@@ -26,7 +26,7 @@ export default function AppShell() {
   const dir = nav.idx !== currentIdx ? (currentIdx >= nav.idx ? 1 : -1) : nav.dir
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
+    <div className="min-h-dvh overflow-x-clip bg-page text-foreground">
       <motion.main
         key={location.pathname}
         initial={{ x: `${dir * 24}%`, opacity: 0 }}

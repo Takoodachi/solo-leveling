@@ -4,6 +4,8 @@
  * storage bucket needed, so it stays on the free tier and works offline.
  */
 
+import { withImage } from '@/lib/image'
+
 const SIZE = 160 // px: sharp at the largest avatar (72 px) on 2× screens
 const QUALITY = 0.82
 const MAX_INPUT_BYTES = 25 * 1024 * 1024
@@ -15,30 +17,11 @@ export function safeAvatar(src: string | undefined | null): string | undefined {
   return src && src.length <= MAX_URL_LENGTH && AVATAR_URL.test(src) ? src : undefined
 }
 
-async function draw(file: File, ctx: CanvasRenderingContext2D): Promise<void> {
-  const crop = (w: number, h: number) => {
+function draw(file: File, ctx: CanvasRenderingContext2D): Promise<void> {
+  return withImage(file, (image, w, h) => {
     const side = Math.min(w, h)
-    return [(w - side) / 2, (h - side) / 2, side, side, 0, 0, SIZE, SIZE] as const
-  }
-  if ('createImageBitmap' in window) {
-    try {
-      const bitmap = await createImageBitmap(file) // applies the photo's EXIF rotation
-      ctx.drawImage(bitmap, ...crop(bitmap.width, bitmap.height))
-      bitmap.close()
-      return
-    } catch {
-      // older Safari can't decode some files this way: fall back to an <img>
-    }
-  }
-  const url = URL.createObjectURL(file)
-  try {
-    const img = new Image()
-    img.src = url
-    await img.decode()
-    ctx.drawImage(img, ...crop(img.naturalWidth, img.naturalHeight))
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+    ctx.drawImage(image, (w - side) / 2, (h - side) / 2, side, side, 0, 0, SIZE, SIZE)
+  })
 }
 
 /** Turn a picked image into the avatar data URL. Throws a readable message on bad input. */
