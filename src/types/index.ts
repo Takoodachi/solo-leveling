@@ -249,6 +249,14 @@ export interface WorkoutSet {
   syncPending?: boolean
 }
 
+/**
+ * Local-only: the photo behind the app on this device (`image`) and how it's shown (`look`).
+ * Two rows, so changing the look doesn't rewrite the picture. See features/settings/wallpaper.ts.
+ */
+export type WallpaperRow =
+  | { key: 'image'; dataUrl: string; updatedAt: number }
+  | { key: 'look'; dim: number; blur: number; updatedAt: number }
+
 /** Local-only: the in-progress workout, persisted so a reload doesn't lose it. */
 export interface WorkoutDraftRow {
   id: 1

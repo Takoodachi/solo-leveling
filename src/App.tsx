@@ -12,6 +12,7 @@ import { useNativeLinks } from '@/hooks/useNativeLinks'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
+import Wallpaper from '@/features/settings/components/Wallpaper'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
 const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
@@ -34,7 +35,7 @@ const RecapPage = lazy(() => import('@/pages/RecapPage'))
 
 function Spinner() {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background">
+    <div className="flex min-h-dvh items-center justify-center bg-page">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
   )
@@ -119,6 +120,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <Wallpaper />
       <StatusBarScrim />
       <AppRoutes />
       <Toaster
