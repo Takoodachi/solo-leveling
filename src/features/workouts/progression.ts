@@ -1,7 +1,8 @@
-import type { Exercise } from '@/types'
+import type { Exercise, WeightUnit } from '@/types'
 import { standardFor } from '@/features/ranks/standards'
 import { resolveBodyKg, setModeFor } from '@/lib/workoutMath'
 import type { LastSet, LiftTrend, PastSession, SetDraft } from './types'
+import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
 
 /**
  * "What to try today" for a lift, from the last session (double progression): add reps at the
@@ -17,6 +18,9 @@ import type { LastSet, LiftTrend, PastSession, SetDraft } from './types'
  *   jump are however many Epley says keep the heavier weight inside the range, at most five
  *   past the target.
  * - Bodyweight moves count bodyweight in the load; assisted ones progress by taking help off.
+ * - An exercise logged in pounds is worked out in pounds, with the jumps a pound gym has (5 lb on
+ *   a bar, 10 on a stack) and targets on the 2.5 lb grid. The hint's text and its fill are then in
+ *   pounds too, like the fields they fill.
  *
  * Sources: ACSM's progression models (2–10% more load once the target reps are exceeded,
  * smaller jumps for small-muscle and single-joint lifts); Plotkin et al. 2022 (adding reps and
@@ -25,6 +29,7 @@ import type { LastSet, LiftTrend, PastSession, SetDraft } from './types'
  * after three flat sessions) is coaching practice, not a trial result.
  */
 
+/** In the block's unit, like the weight fields it's written into. */
 export interface HintFill {
   /** Weight for the sets that are empty or still at `from`. */
   weight?: number
@@ -48,6 +53,8 @@ export interface ProgressInput {
   /** The routine's rep target, when the block came from a routine. */
   targetReps?: number
   bodyKg?: number
+  /** The unit the exercise is logged in; history (`lastSets`, `trend`) is kg either way. */
+  unit?: WeightUnit
 }
 
 /** Same cap as the rank scoring: past this, Epley measures endurance. */
@@ -75,13 +82,14 @@ function gearOf(name: string): Gear {
 }
 
 /** The usual smallest jump on this equipment, until the lifter's own history shows the real one. */
-function defaultStep(gear: Gear, name: string, kg: number): number {
+function defaultStep(gear: Gear, name: string, weight: number, lb: boolean): number {
+  const heavy = weight >= (lb ? 225 : 100) && /deadlift|squat|hip thrust|rack pull/.test(name)
   switch (gear) {
-    case 'dumbbell': return kg < 10 ? 1 : 2.5
-    case 'kettlebell': return 4
-    case 'machine': return 5
-    case 'barbell': return kg >= 100 && /deadlift|squat|hip thrust|rack pull/.test(name) ? 5 : 2.5
-    default: return 2.5
+    case 'dumbbell': return lb ? (weight < 25 ? 2.5 : 5) : weight < 10 ? 1 : 2.5
+    case 'kettlebell': return lb ? 9 : 4
+    case 'machine': return lb ? 10 : 5
+    case 'barbell': return heavy ? (lb ? 10 : 5) : lb ? 5 : 2.5
+    default: return lb ? 5 : 2.5
   }
 }
 
@@ -93,6 +101,11 @@ function defaultTarget(name: string, gear: Gear): number {
 
 const round = (n: number) => Math.round(n * 100) / 100
 const kg = (n: number) => String(round(n))
+/** Pound targets land on what can be loaded: the 2.5 lb grid, unless that would lose the jump. */
+const loadable = (n: number, from: number, lb: boolean) => {
+  const snapped = lb ? Math.round(n / 2.5) * 2.5 : round(n)
+  return snapped === from ? round(n) : snapped
+}
 const list = (reps: number[]) => reps.join(' · ')
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
 const weeksSince = (days: number) => `${Math.round(days / 7)} weeks`
@@ -130,9 +143,12 @@ export function trendOf(sessions: PastSession[], now: number): LiftTrend | undef
   }
 }
 
-export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg }: ProgressInput): ProgressHint | null {
+export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit }: ProgressInput): ProgressHint | null {
   if (setModeFor(exercise) !== 'load') return null
-  const sets = (lastSets ?? []).filter(s => (s.reps ?? 0) > 0)
+  // From here on every weight is in the unit the exercise is logged in
+  const lb = isLb(unit)
+  const u = lb ? 'lb' : 'kg'
+  const sets = (lastSetsIn(lastSets, unit) ?? []).filter(s => (s.reps ?? 0) > 0)
   if (sets.length === 0) return null
 
   const name = exercise.name.toLowerCase()
@@ -152,13 +168,15 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg 
   const every = work.length > 1 ? ' on every set' : ''
 
   // Bodyweight moves lift part of the body too, so a small plate is a small jump
-  const body = std?.kind === 'reps' ? resolveBodyKg(bodyKg) * std.bodyShare : exercise.type === 'bodyweight' ? resolveBodyKg(bodyKg) : 0
+  const bodyWeight = fromKg(resolveBodyKg(bodyKg), unit)
+  const body = std?.kind === 'reps' ? bodyWeight * std.bodyShare : exercise.type === 'bodyweight' ? bodyWeight : 0
   const moved = (w: number) => (assisted ? Math.max(1, body - w) : body + w)
   const gear = gearOf(name)
-  const usual = assisted ? 5 : body > 0 ? 2.5 : defaultStep(gear, name, top)
-  const step = trend?.step && trend.step <= usual * 2 ? trend.step : usual
+  const usual = assisted ? (lb ? 10 : 5) : body > 0 ? (lb ? 5 : 2.5) : defaultStep(gear, name, top, lb)
+  const own = trend?.step ? stepFromKg(trend.step, unit) : 0
+  const step = own > 0 && own <= usual * 2 ? own : usual
   const stepsFor = (share: number) => Math.max(1, Math.round((moved(top) * share) / step)) * step
-  const next = assisted ? Math.max(0, round(top - step)) : round(top + step)
+  const next = assisted ? Math.max(0, loadable(top - step, top, lb)) : loadable(top + step, top, lb)
 
   const target = Math.max(1, Math.round(targetReps ?? defaultTarget(name, gear)))
   const low = Math.max(1, target - (target >= 15 ? 4 : target >= 11 ? 3 : 2))
@@ -169,10 +187,10 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg 
 
   if (gapDays >= EASE_AFTER_DAYS) {
     const percent = gapDays >= LONG_BREAK_DAYS ? 15 : 10
-    const eased = assisted ? round(top + stepsFor(percent / 100)) : Math.max(0, round(top - stepsFor(percent / 100)))
+    const eased = assisted ? loadable(top + stepsFor(percent / 100), top, lb) : Math.max(0, loadable(top - stepsFor(percent / 100), top, lb))
     return {
       kind: 'ease',
-      title: eased > 0 ? `Ease back in at ${kg(eased)} kg` : 'Ease back in at bodyweight',
+      title: eased > 0 ? `Ease back in at ${kg(eased)} ${u}` : 'Ease back in at bodyweight',
       why: `${weeksSince(gapDays)} since you last did this. Start about ${percent}% ${assisted ? 'easier' : 'lighter'}, match last time’s reps (${list(work)}), then build back up.`,
       fill: eased > 0 ? { weight: eased, from: top } : undefined,
     }
@@ -182,36 +200,36 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg 
     const big = after(least) < low
     return {
       kind: 'weight',
-      title: !assisted ? `Go up to ${kg(next)} kg` : next > 0 ? `Take some help off: ${kg(next)} kg` : 'Try it without assistance',
-      why: `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${kg(top)} kg${assisted ? ' of assistance' : ''}. ${
+      title: !assisted ? `Go up to ${kg(next)} ${u}` : next > 0 ? `Take some help off: ${kg(next)} ${u}` : 'Try it without assistance',
+      why: `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${kg(top)} ${u}${assisted ? ' of assistance' : ''}. ${
         big ? 'It’s a big jump, so fewer reps at first is fine.' : `Aim for ${low}–${target} reps.`
       }`,
       fill: next > 0 ? { weight: next, from: top } : undefined,
     }
   }
 
-  const reset = round(top - stepsFor(0.1))
+  const reset = loadable(top - stepsFor(0.1), top, lb)
   if (!assisted && (trend?.flat ?? 0) >= FLAT_SESSIONS && reset > 0) {
     return {
       kind: 'reset',
-      title: `Try a reset at ${kg(reset)} kg`,
-      why: `${trend?.flat} sessions at ${kg(top)} kg without more reps. Taking about 10% off and building back up usually gets past a plateau.`,
+      title: `Try a reset at ${kg(reset)} ${u}`,
+      why: `${trend?.flat} sessions at ${kg(top)} ${u} without more reps. Taking about 10% off and building back up usually gets past a plateau.`,
       fill: { weight: reset, from: top },
     }
   }
 
   const goals = work.map(r => (r >= need ? r : r + 1))
-  const then = !assisted ? `go up to ${kg(next)} kg` : next > 0 ? `drop to ${kg(next)} kg of assistance` : 'try it without assistance'
+  const then = !assisted ? `go up to ${kg(next)} ${u}` : next > 0 ? `drop to ${kg(next)} ${u} of assistance` : 'try it without assistance'
   // Past the usual target: say why, or the number reads like a mistake
   const heavier = Math.round((moved(next) / moved(top) - 1) * 100)
   const when = need <= target
     ? `At ${need}${every}, ${then}.`
     : assisted
       ? `Less help is a big step, so build to ${need}${every}, then ${then}.`
-      : `${kg(next)} kg is ${heavier}% heavier, so build to ${need}${every} first.`
+      : `${kg(next)} ${u} is ${heavier}% heavier, so build to ${need}${every} first.`
   return {
     kind: 'reps',
-    title: assisted ? 'Same assistance, add reps' : `Stay at ${kg(top)} kg, add reps`,
+    title: assisted ? 'Same assistance, add reps' : `Stay at ${kg(top)} ${u}, add reps`,
     why: `Aim for ${list(goals)} (last time ${list(work)}). ${when}`,
     fill: straight ? { weight: top, from: top, reps: goals } : undefined,
   }

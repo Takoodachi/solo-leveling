@@ -83,20 +83,21 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
         blockIdx={blockIdx}
         isFirst={isFirst}
         isLast={isLast}
+        collapsed={block.collapsed}
         onShowInfo={onShowInfo}
         subtitle={
           <>
             Cardio{lastText && <> · last time {lastText}</>}
             {rank && (
-              <span className="ml-1 inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
+              <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
                 <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
               </span>
             )}
           </>
         }
       />
-      <ExerciseNote exerciseId={id} cardio className="mb-3" />
-      <div className="flex flex-col gap-3">
+      {!block.collapsed && <ExerciseNote exerciseId={id} cardio className="mb-3" />}
+      <div className={cn('flex flex-col gap-3', block.collapsed && 'hidden')}>
         {block.sets.map((set, setIdx) => {
           const entry = { ...entries[setIdx], rpe: rpeFor(set.intensity ?? 'moderate') }
           const pace = formatPace(id, entry)

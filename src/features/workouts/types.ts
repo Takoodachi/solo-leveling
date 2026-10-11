@@ -1,4 +1,4 @@
-import type { Exercise, RoutineCategory } from '@/types'
+import type { Exercise, RoutineCategory, WeightUnit } from '@/types'
 import type { Intensity } from '@/lib/cardio'
 
 /** One set row in the live logger. Inputs are strings while editing. */
@@ -39,9 +39,14 @@ export type BlockDraft = {
   exercise: Exercise
   restSec: number
   targetReps?: number
+  /** Weight fields are text in the block's `unit`; everything else here is kg. */
   sets: SetDraft[]
   lastSets?: LastSet[]
   trend?: LiftTrend
+  /** The unit this exercise is logged in (unset = kg), from its saved choice. See units.ts. */
+  unit?: WeightUnit
+  /** Folded away in the logger: only its header shows. */
+  collapsed?: boolean
 }
 
 /** A saved workout being edited in the logger (instead of a live session). */

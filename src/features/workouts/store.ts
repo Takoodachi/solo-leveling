@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { db } from '@/db'
-import type { Exercise } from '@/types'
+import type { Exercise, WeightUnit } from '@/types'
 import { intensityFromRpe } from '@/lib/cardio'
 import { applyFill, type HintFill } from './progression'
-import { type WorkoutDraft, type SetDraft, type LastSet, type LiftTrend, emptySet, setHasValue } from './types'
+import { type WorkoutDraft, type BlockDraft, type SetDraft, type LastSet, type LiftTrend, emptySet, setHasValue } from './types'
+import { convertWeightText, weightText } from './units'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
 
@@ -17,9 +18,15 @@ interface WorkoutStore {
   rename: (name: string) => void
   setNotes: (notes: string) => void
 
-  addBlock: (exercise: Exercise, opts?: { restSec?: number; lastSets?: LastSet[]; trend?: LiftTrend }) => void
-  removeBlock: (blockIdx: number) => void
+  addBlock: (exercise: Exercise, opts?: { restSec?: number; lastSets?: LastSet[]; trend?: LiftTrend; unit?: WeightUnit }) => void
+  /** Takes the block out and hands it back, so the removal can be undone. */
+  removeBlock: (blockIdx: number) => BlockDraft | undefined
+  /** Puts a removed block back where it was, if the workout it came from is still the one open. */
+  restoreBlock: (block: BlockDraft, blockIdx: number, startedAt: number) => void
   moveBlock: (blockIdx: number, delta: -1 | 1) => void
+  /** Log this exercise in another unit: its weight fields keep their weight, not their number. */
+  setUnit: (blockIdx: number, unit: WeightUnit) => void
+  toggleCollapsed: (blockIdx: number) => void
 
   addSet: (blockIdx: number) => void
   updateSet: (blockIdx: number, setIdx: number, field: SetField, value: string) => void
@@ -51,17 +58,30 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       // Cardio is one entry (time + distance + effort); everything else starts from last session's first set.
       const first = exercise.type === 'cardio'
         ? emptySet({ duration: str(last?.duration), distanceKm: str(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
-        : emptySet({ weight: str(last?.weight), reps: str(last?.reps) })
+        : emptySet({ weight: weightText(last?.weight, opts?.unit), reps: str(last?.reps) })
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend }],
+          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit }],
         },
       }
     }),
 
-  removeBlock: blockIdx =>
-    set(s => (s.draft ? { draft: { ...s.draft, blocks: s.draft.blocks.filter((_, i) => i !== blockIdx) } } : s)),
+  removeBlock: blockIdx => {
+    const draft = get().draft
+    const removed = draft?.blocks[blockIdx]
+    if (!draft || !removed) return undefined
+    set({ draft: { ...draft, blocks: draft.blocks.filter((_, i) => i !== blockIdx) } })
+    return removed
+  },
+
+  restoreBlock: (block, blockIdx, startedAt) =>
+    set(s => {
+      if (!s.draft || s.draft.startedAt !== startedAt) return s
+      const blocks = [...s.draft.blocks]
+      blocks.splice(Math.min(blockIdx, blocks.length), 0, block)
+      return { draft: { ...s.draft, blocks } }
+    }),
 
   moveBlock: (blockIdx, delta) =>
     set(s => {
@@ -72,6 +92,21 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       ;[blocks[blockIdx], blocks[to]] = [blocks[to], blocks[blockIdx]]
       return { draft: { ...s.draft, blocks } }
     }),
+
+  setUnit: (blockIdx, unit) =>
+    set(s => {
+      if (!s.draft) return s
+      return {
+        draft: mapBlock(s.draft, blockIdx, b => ({
+          ...b,
+          unit,
+          sets: b.sets.map(st => ({ ...st, weight: convertWeightText(st.weight, b.unit, unit) })),
+        })),
+      }
+    }),
+
+  toggleCollapsed: blockIdx =>
+    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, collapsed: !b.collapsed })) } : s)),
 
   addSet: blockIdx =>
     set(s => {

@@ -1,14 +1,15 @@
 import { Check } from 'lucide-react'
+import type { WeightUnit } from '@/types'
 import { cn } from '@/lib/utils'
 import { sanitizeNumeric as sanitize, type SetDraft, type LastSet } from '../types'
 import { SET_COLUMNS, SET_GRID, type SetField, type SetRowMode } from '../setColumns'
 
-function describeLast(s: LastSet | undefined, mode: SetRowMode): string {
+function describeLast(s: LastSet | undefined, mode: SetRowMode, unit: WeightUnit): string {
   if (!s) return '—'
   if (mode === 'load') {
     if (s.weight != null && s.reps != null) return `${s.weight}×${s.reps}`
     if (s.reps != null) return `${s.reps} reps`
-    return s.weight != null ? `${s.weight} kg` : '—'
+    return s.weight != null ? `${s.weight} ${unit}` : '—'
   }
   const parts: string[] = []
   if (s.duration != null) parts.push(`${s.duration}m`)
@@ -20,13 +21,15 @@ interface Props {
   index: number
   set: SetDraft
   mode: SetRowMode
+  /** The unit the weight field and `last` are in. */
+  unit?: WeightUnit
   last?: LastSet
   onChange: (field: SetField, value: string) => void
   onToggleDone: () => void
   onUseLast: () => void
 }
 
-export default function SetRow({ index, set, mode, last, onChange, onToggleDone, onUseLast }: Props) {
+export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, onToggleDone, onUseLast }: Props) {
   return (
     <div
       className={cn(
@@ -45,7 +48,7 @@ export default function SetRow({ index, set, mode, last, onChange, onToggleDone,
         className="truncate text-left text-sm text-muted-foreground disabled:opacity-60"
         aria-label="Copy previous set"
       >
-        {describeLast(last, mode)}
+        {describeLast(last, mode, unit)}
       </button>
       {SET_COLUMNS[mode].map(([field, label, keyboard]) => (
         <input
@@ -53,7 +56,7 @@ export default function SetRow({ index, set, mode, last, onChange, onToggleDone,
           type="text"
           inputMode={keyboard}
           enterKeyHint="next"
-          aria-label={label}
+          aria-label={field === 'weight' ? unit : label}
           placeholder={label === 'reps' ? '0' : '–'}
           value={set[field]}
           onChange={e => onChange(field, sanitize(e.target.value))}
