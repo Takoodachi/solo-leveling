@@ -16,16 +16,20 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
-import { useFoods, saveScannedFood } from '../hooks/useFoods'
+import { useFoods, saveScannedFood, barcodeFoodId } from '../hooks/useFoods'
 import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
+import { useOnlineFoodSearch, onlineKey, MIN_ONLINE_QUERY } from '../hooks/useOnlineFoodSearch'
+import type { ScannedFood } from '../openFoodFacts'
 import { useOnline } from '@/hooks/useOnline'
 import ScannedFoodReview, { type ReviewedFood } from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood } from './AiFoodConfirm'
 import FoodResults, { type RecentUse } from './FoodResults'
+import OnlineFoodResults from './OnlineFoodResults'
+import FoodAmountFields from './FoodAmountFields'
+import { amountDraft, servingsOf, EMPTY_AMOUNT, type AmountDraft } from '../foodAmount'
 import { useSavedMeals, type SavedMealWithSummary } from '../hooks/useMeals'
 import { logMealItems, unlogFoods, amountLabel } from '../logFoods'
-import NumberStepper from '@/components/NumberStepper'
 import type { Food, MealType } from '@/types'
 
 interface Props {
@@ -36,17 +40,6 @@ interface Props {
   /** Pre-filled search (from search on Home). */
   initialQuery?: string
 }
-
-function computeMacros(food: Food, servings: number) {
-  return {
-    kcal: Math.round(food.kcalPerServing * servings),
-    protein: Math.round(food.protein * servings * 10) / 10,
-    carbs: Math.round(food.carbs * servings * 10) / 10,
-    fat: Math.round(food.fat * servings * 10) / 10,
-  }
-}
-
-const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml'
 
 // The barcode library is large; load it only when the scanner opens.
 const BarcodeScanner = lazy(() => import('./BarcodeScanner'))
@@ -68,9 +61,7 @@ interface Added {
 export default function AddFoodDialog({ open, onClose, date, mealType, initialQuery = '' }: Props) {
   const [query, setQuery] = useState(initialQuery)
   const [selected, setSelected] = useState<Food | null>(null)
-  const [servings, setServings] = useState('1')
-  const [grams, setGrams] = useState('')
-  const [inputMode, setInputMode] = useState<'servings' | 'grams'>('servings')
+  const [amount, setAmount] = useState<AmountDraft>(EMPTY_AMOUNT)
   const [showCustom, setShowCustom] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [aiText, setAiText] = useState('')
@@ -78,8 +69,9 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
   const [added, setAdded] = useState<Added[]>([])
   const savedMeals = useSavedMeals()
-  const { searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
+  const { foods, searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
   const barcode = useBarcodeLookup()
+  const onlineSearch = useOnlineFoodSearch()
   const online = useOnline()
   const userId = useAuthStore(s => s.userId)
   // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
@@ -113,15 +105,13 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     })
   }, [baseResults, recentMap])
 
-  function getEffectiveServings(): number {
-    if (inputMode === 'grams' && selected && usesGrams(selected)) {
-      const g = parseFloat(grams)
-      if (g > 0 && selected.servingSize > 0) return g / selected.servingSize
-    }
-    return Math.max(0.1, parseFloat(servings) || 1)
-  }
-
-  const macros = selected ? computeMacros(selected, getEffectiveServings()) : null
+  // An online search belongs to the words it was made with: other words, and it's out of sight
+  const typed = query.trim()
+  const searchedOnline = onlineSearch.state?.key === onlineKey(query) ? onlineSearch.state : null
+  const savedBarcodes = useMemo(
+    () => new Set(foods.flatMap(f => (f.uuid.startsWith('barcode-') ? [f.uuid.slice('barcode-'.length)] : []))),
+    [foods],
+  )
 
   async function logFood(food: Food, n: number) {
     const uuid = await addFoodLog({ date, foodId: food.uuid, servings: n, mealType })
@@ -131,7 +121,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   // Stay open after adding, back on the list, so a whole meal can go in one visit.
   async function handleAdd() {
     if (!selected) return
-    await logFood(selected, getEffectiveServings())
+    await logFood(selected, servingsOf(selected, amount))
     setSelected(null)
     setQuery('')
   }
@@ -153,17 +143,20 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   function handleFoodSelect(food: Food) {
     const n = recentMap.get(food.uuid)?.servings ?? 1
     setSelected(food)
-    setServings(String(n))
-    setGrams(String(Math.round(n * food.servingSize)))
-    setInputMode(usesGrams(food) ? 'grams' : 'servings')
+    setAmount(amountDraft(food, n))
+  }
+
+  // A product found online: one saved before goes straight to its amount, a new one is checked first
+  function handlePickOnline(found: ScannedFood) {
+    const saved = foods.find(f => f.uuid === barcodeFoodId(found.barcode))
+    if (saved) handleFoodSelect(saved)
+    else void barcode.review(found)
   }
 
   function handleClose() {
     setQuery('')
     setSelected(null)
-    setServings('1')
-    setGrams('')
-    setInputMode('servings')
+    setAmount(EMPTY_AMOUNT)
     setShowCustom(false)
     setShowScanner(false)
     setAiText('')
@@ -171,6 +164,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     setAiResult(null)
     setAdded([])
     barcode.clear()
+    onlineSearch.clear()
     onClose()
   }
 
@@ -333,58 +327,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
               </p>
             </div>
 
-            {/* Amount input */}
-            <div className="flex flex-col gap-2">
-              {usesGrams(selected) && (
-                <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
-                  {(['grams', 'servings'] as const).map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setInputMode(m)}
-                      className={cn(
-                        'px-3 py-1 rounded text-xs font-medium transition-colors',
-                        inputMode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-                      )}
-                    >
-                      {m === 'grams' ? `${selected.servingUnit}` : 'Servings'}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <Label>{inputMode === 'grams' ? `Amount (${selected.servingUnit})` : 'Servings'}</Label>
-
-              {inputMode === 'grams' ? (
-                <NumberStepper
-                  value={grams}
-                  onChange={setGrams}
-                  step={10}
-                  min={0}
-                  inputMode="decimal"
-                  placeholder={String(selected.servingSize)}
-                />
-              ) : (
-                <NumberStepper
-                  value={servings}
-                  onChange={setServings}
-                  step={0.5}
-                  min={0.1}
-                  inputMode="decimal"
-                  placeholder="1"
-                />
-              )}
-            </div>
-
-            {/* Live macro preview */}
-            {macros && (
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2 flex justify-between">
-                <span><span className="text-foreground font-medium">{macros.kcal}</span> cal</span>
-                <span>P <span className="text-foreground font-medium">{macros.protein}</span>g</span>
-                <span>C <span className="text-foreground font-medium">{macros.carbs}</span>g</span>
-                <span>F <span className="text-foreground font-medium">{macros.fat}</span>g</span>
-              </div>
-            )}
+            <FoodAmountFields food={selected} draft={amount} onChange={setAmount} />
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setSelected(null)}>Back</Button>
@@ -475,6 +418,16 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   onAddMeal={meal => void handleAddMeal(meal)}
                   onToggleFavorite={food => void toggleFavorite(food.uuid)}
                 />
+                {typed.length >= MIN_ONLINE_QUERY && (
+                  <OnlineFoodResults
+                    query={typed}
+                    search={searchedOnline}
+                    online={online}
+                    saved={savedBarcodes}
+                    onSearch={() => void onlineSearch.search(query)}
+                    onPick={handlePickOnline}
+                  />
+                )}
               </div>
             </div>
             {added.length > 0 && (

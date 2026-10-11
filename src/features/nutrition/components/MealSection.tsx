@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import FoodLogRow from './FoodLogRow'
 import AddFoodDialog from './AddFoodDialog'
+import EditFoodLogDialog from './EditFoodLogDialog'
 import MealOptionRow from './MealOptionRow'
 import MealsSheet from './MealsSheet'
 import { useFoods } from '../hooks/useFoods'
@@ -22,6 +23,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
   const [open, setOpen] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [showMeals, setShowMeals] = useState(false)
+  const [editing, setEditing] = useState<FoodLogWithFood | null>(null)
   const { removeFoodLog } = useFoods()
   const recent = useRecentMeals(mealType, date) ?? []
   const last = recent[0]
@@ -58,6 +60,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
             <FoodLogRow
               key={entry.uuid}
               entry={entry}
+              onEdit={() => setEditing(entry)}
               onDelete={() => void removeFoodLog(entry.uuid)}
             />
           ))}
@@ -91,6 +94,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
         date={date}
         mealType={mealType}
       />
+      <EditFoodLogDialog entry={editing} onClose={() => setEditing(null)} />
       <MealsSheet open={showMeals} onOpenChange={setShowMeals} mealType={mealType} date={date} entries={entries} recent={recent} />
     </div>
   )

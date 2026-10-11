@@ -50,6 +50,19 @@ export async function lastServings(foodId: string): Promise<number> {
   return last?.servings ?? 1
 }
 
+/** Correct how much of a logged food was eaten. Today's targets are checked again: the change may have met one. */
+export async function updateFoodLogServings(uuid: string, servings: number): Promise<void> {
+  const log = await db.foodLog.get(uuid)
+  if (!log || !(servings > 0) || log.servings === servings) return
+  await db.foodLog.update(uuid, { servings, updatedAt: Date.now(), syncPending: true })
+  if (log.date === today()) {
+    for (const label of await checkDailyTargetsAndGrant(log.date)) {
+      toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
+    }
+  }
+  requestSync()
+}
+
 export async function unlogFoods(uuids: string[]): Promise<void> {
   await deleteSynced(db.foodLog, 'food_log', uuids)
 }
