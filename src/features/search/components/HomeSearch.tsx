@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import type { Exercise } from '@/types'
 import { useNow } from '@/hooks/useNow'
+import { cn } from '@/lib/utils'
 import { toDateStr } from '@/lib/date'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardStore } from '@/features/leaderboard/store'
@@ -12,6 +13,8 @@ import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
 import { useSearch } from '../useSearch'
 import type { SearchItem } from '../searchIndex'
 import SearchResults from './SearchResults'
+import { useStuck } from '../useStuck'
+import { useCloseOnBack } from '@/hooks/useAndroidBack'
 
 interface Props {
   /** While open, Home shows results in place of its cards. */
@@ -24,6 +27,9 @@ interface Props {
 export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
+  // Only a bar once the page is scrolling under it; before that it's a field on the page
+  const stuck = useStuck(stripRef)
   const [query, setQuery] = useState('')
   const [sheet, setSheet] = useState<'steps' | 'water' | null>(null)
   const [info, setInfo] = useState<Exercise | null>(null)
@@ -45,6 +51,9 @@ export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
     onOpenChange(false)
   }
 
+  // Android's Back leaves the search before it leaves Home
+  useCloseOnBack(open, close)
+
   function pick(item: SearchItem) {
     if (item.to) {
       navigate(item.to)
@@ -59,9 +68,9 @@ export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
 
   return (
     <>
-      <div className="sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-2 bg-background/90 px-4 py-2 backdrop-blur-xl">
+      <div ref={stripRef} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-2 bg-background/90 px-4 py-2 backdrop-blur-xl', !stuck && 'wallpaper-clear')}>
         <div className="flex items-center gap-2">
-          <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-card px-4 focus-within:ring-2 focus-within:ring-primary">
+          <label className="wallpaper-solid flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-card px-4 focus-within:ring-2 focus-within:ring-primary">
             <Search size={18} className="shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
