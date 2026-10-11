@@ -9,7 +9,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import NumberStepper from '@/components/NumberStepper'
 import { useFoods } from '../hooks/useFoods'
 import type { Food, FoodIngredient } from '@/types'
@@ -94,7 +93,7 @@ export default function IngredientPicker({ open, onClose, onSelect, excludeUuid 
                 />
               </div>
             </div>
-            <ScrollArea className="h-[300px]">
+            <div className="h-[300px] overflow-y-auto overscroll-contain">
               <div className="px-2 pb-2">
                 {results.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">No foods found</p>
@@ -115,7 +114,7 @@ export default function IngredientPicker({ open, onClose, onSelect, excludeUuid 
                   </button>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </>
         )}
       </DialogContent>

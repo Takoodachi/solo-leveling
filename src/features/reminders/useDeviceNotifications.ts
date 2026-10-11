@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { isAndroidApp } from '@/lib/native'
 import { nativeNotifyState, requestNativeNotify } from '@/lib/localNotifications'
 import { useAuthStore } from '@/features/auth/authStore'
 import { NATIVE_ON_KEY, resetDelivery } from './deliver'
 import { isPushConfigured, pushSubscription, pushSupport, subscribePush, unsubscribePush } from './push'
+import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
 
 /** Whether this device shows reminders, and what's in the way when it can't. */
 export type DeviceNotify =
@@ -40,13 +41,8 @@ export function useDeviceNotifications() {
 
   const refresh = useCallback(() => read(userId).then(setState, () => setState('unsupported')), [userId])
 
-  useEffect(() => {
-    void refresh()
-    // Permission can be changed in the system settings while the app is in the background
-    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [refresh])
+  // Permission can be changed in the system settings while the app is in the background
+  useRefreshOnReturn(refresh)
 
   /** Must be called from the tap: browsers only show the permission prompt in response to one. */
   const set = useCallback(async (on: boolean): Promise<DeviceNotify> => {

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { TierKey } from '../tiers'
-import { BADGES, type Layer, type Palette } from './badgeArt'
+import { BADGES, toneColor, type Layer, type Palette } from './badgeArt'
 
 interface Props {
   tier: TierKey
@@ -21,9 +21,8 @@ const glowFilter = (color: string, size: number) =>
   `drop-shadow(0 0 ${size / 4.5}px color-mix(in srgb, ${color} var(--badge-glow-outer, 0%), transparent))`
 
 function Piece({ layer: l, pal }: { layer: Layer; pal: Palette }) {
-  const paint = (tone: Layer['fill']) => (!tone || tone === 'none' ? 'none' : pal[tone])
   const common = {
-    stroke: l.stroke === undefined ? pal.rim : paint(l.stroke),
+    stroke: l.stroke === undefined ? pal.rim : toneColor(pal, l.stroke),
     strokeWidth: l.w ?? 1.2,
     strokeLinejoin: 'round' as const,
     strokeLinecap: 'round' as const,
@@ -31,8 +30,8 @@ function Piece({ layer: l, pal }: { layer: Layer; pal: Palette }) {
   }
   return (
     <>
-      <path d={l.d} fill={paint(l.fill)} {...common} />
-      {l.mirror && <path d={l.d} fill={paint(l.fillR ?? l.fill)} transform={MIRROR} {...common} />}
+      <path d={l.d} fill={toneColor(pal, l.fill)} {...common} />
+      {l.mirror && <path d={l.d} fill={toneColor(pal, l.fillR ?? l.fill)} transform={MIRROR} {...common} />}
     </>
   )
 }

@@ -1,4 +1,3 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import type { DailyActivity } from '@/types'
 import { requestSync } from '@/lib/sync'
@@ -24,13 +23,4 @@ export async function writeSteps(date: string, steps: number): Promise<void> {
 export async function logSteps(date: string, steps: number): Promise<void> {
   await writeSteps(date, steps)
   requestSync()
-}
-
-export function useDailyActivity(limit = 90) {
-  const entries = useLiveQuery(
-    () => db.dailyActivity.orderBy('date').reverse().limit(limit).toArray(),
-    [limit],
-  )
-
-  return { entries: entries ?? [], logSteps }
 }

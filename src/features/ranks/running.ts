@@ -1,3 +1,4 @@
+import { formatClock } from '@/lib/cardio'
 import { MAX_RATING, rankFor, type RankInfo } from './tiers'
 import type { MuscleRegion, Sex } from './standards'
 import { curvePerformance, curveRating, type Five } from './scoring'
@@ -84,21 +85,12 @@ export function timeFor(sex: Sex, rating: number, distanceKm: number): number {
   return Math.min(t, (distanceKm / MIN_RUN_KMH) * 60)
 }
 
-/** "24:05" or "1:02:10". */
-export function formatRunTime(minutes: number): string {
-  const total = Math.round(minutes * 60)
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = String(total % 60).padStart(2, '0')
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
-}
-
 /** "A 23:01 5K", or for longer runs "Pace like a 27:31 5K, +187 for 21.1 km". */
 export function describeRunScore(distanceKm: number, minutes: number): string | null {
   const t = equivalent5k(distanceKm, minutes)
   if (t == null) return null
   const bonus = Math.round(distanceBonus(distanceKm))
-  return bonus > 0 ? `Pace like a ${formatRunTime(t)} 5K, +${bonus} for ${Math.round(distanceKm * 10) / 10} km` : `A ${formatRunTime(t)} 5K`
+  return bonus > 0 ? `Pace like a ${formatClock(t)} 5K, +${bonus} for ${Math.round(distanceKm * 10) / 10} km` : `A ${formatClock(t)} 5K`
 }
 
 export interface RunRank {

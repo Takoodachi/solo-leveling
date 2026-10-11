@@ -1,9 +1,8 @@
+/** To one decimal place (grams of a macro). */
+export const round1 = (n: number) => Math.round(n * 10) / 10
+
 export function formatKcal(kcal: number): string {
   return Math.round(kcal).toLocaleString()
-}
-
-export function formatWeight(kg: number): string {
-  return `${kg % 1 === 0 ? kg : kg.toFixed(1)} kg`
 }
 
 export function formatDuration(seconds: number): string {
@@ -19,14 +18,6 @@ export function formatDurationMin(minutes: number): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return m > 0 ? `${h}h ${m}m` : `${h}h`
-}
-
-export function formatMacro(grams: number): string {
-  return `${Math.round(grams)}g`
-}
-
-export function formatDistance(km: number): string {
-  return `${km.toFixed(2)} km`
 }
 
 export function clampPercent(value: number, max: number): number {

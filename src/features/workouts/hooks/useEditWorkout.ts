@@ -11,7 +11,7 @@ import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
 import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
-import { emptySet, parsePositive, type BlockDraft } from '../types'
+import { emptySet, parsePositive, type BlockDraft, numText } from '../types'
 import { weightKg, weightText } from '../units'
 import { exerciseUnit } from './useExerciseNote'
 import { getWorkoutWithSets, lastSessionSets } from './useWorkoutHistory'
@@ -24,7 +24,6 @@ export function canEditWorkout(date: string, now: Date): boolean {
   return differenceInCalendarDays(now, parseDate(date)) <= EDIT_WINDOW_DAYS
 }
 
-const str = (n: number | undefined) => (n != null ? String(n) : '')
 
 /**
  * Edit a saved workout in the logger: its sets load as checked, and saving
@@ -66,9 +65,9 @@ export function useEditWorkout() {
         sets: sets.map(s => emptySet({
           uuid: s.uuid,
           weight: weightText(s.weight, unit),
-          reps: str(s.reps),
-          duration: str(s.duration),
-          distanceKm: str(s.distanceKm),
+          reps: numText(s.reps),
+          duration: numText(s.duration),
+          distanceKm: numText(s.distanceKm),
           intensity: cardio ? intensityFromRpe(s.rpe) : undefined,
           done: true,
         })),

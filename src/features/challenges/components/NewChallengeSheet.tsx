@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addDays, format } from 'date-fns'
+import { addDays } from 'date-fns'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { ChallengeMetric } from '@/types'
 import { cn } from '@/lib/utils'
-import { today } from '@/lib/date'
+import { toDateStr, today } from '@/lib/date'
 import { CHALLENGE_METRICS, METRIC_KEYS } from '../metrics'
 import { saveChallenge } from '../hooks/useChallenges'
 
@@ -42,7 +42,7 @@ export default function NewChallengeSheet({ open, onOpenChange }: Props) {
       metric,
       target: targetNum,
       startDate: start,
-      endDate: format(addDays(new Date(`${start}T12:00:00`), days - 1), 'yyyy-MM-dd'),
+      endDate: toDateStr(addDays(new Date(`${start}T12:00:00`), days - 1)),
       createdAt: Date.now(),
     })
     toast.success('Challenge started — good luck!')

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { formatDistance } from 'date-fns'
 import { Footprints, RefreshCw, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -7,6 +7,7 @@ import { useNow } from '@/hooks/useNow'
 import type { HealthStatus } from '../healthSteps'
 import HealthStepsDiagnosis from './HealthStepsDiagnosis'
 import BackgroundStepsRow from './BackgroundStepsRow'
+import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
 
 const load = () => import('../healthSteps')
 
@@ -41,13 +42,8 @@ export default function HealthStepsCard() {
     [],
   )
 
-  useEffect(() => {
-    void refresh()
-    // Permissions can change in Health Connect while we're in the background
-    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [refresh])
+  // Permissions can change in Health Connect while we're in the background
+  useRefreshOnReturn(refresh)
 
   const importNow = async () => {
     setBusy(true)

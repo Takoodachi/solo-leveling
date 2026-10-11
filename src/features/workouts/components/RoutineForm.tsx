@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Exercise, Routine, RoutineExercise } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, swapped } from '@/lib/utils'
 import { CATEGORIES, CATEGORY_META, LEVELS, LEVEL_META, WEEKDAY_SHORT, WEEK_ORDER } from '../categories'
 import { useExerciseMap } from '../hooks/useExercises'
 import ExercisePickerSheet from './ExercisePickerSheet'
@@ -35,11 +35,7 @@ export default function RoutineForm({ initial, onSave, onDelete }: Props) {
 
   const patch = (p: Partial<RoutineDraft>) => setR(prev => ({ ...prev, ...p }))
   const setItem = (i: number, next: RoutineExercise) => patch({ exercises: r.exercises.map((x, j) => (j === i ? next : x)) })
-  const move = (i: number, d: -1 | 1) => {
-    const list = [...r.exercises]
-    ;[list[i], list[i + d]] = [list[i + d], list[i]]
-    patch({ exercises: list })
-  }
+  const move = (i: number, d: -1 | 1) => patch({ exercises: swapped(r.exercises, i, i + d) })
   const toggleDay = (d: number) =>
     patch({ scheduleDays: r.scheduleDays.includes(d) ? r.scheduleDays.filter(x => x !== d) : [...r.scheduleDays, d].sort((a, b) => a - b) })
 

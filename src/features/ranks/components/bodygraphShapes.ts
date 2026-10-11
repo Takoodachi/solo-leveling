@@ -15,6 +15,16 @@ export interface Shape {
 }
 
 export const MIRROR = 'translate(200 0) scale(-1 1)'
+/** The drawn half, then its mirror image. */
+export const HALVES = [undefined, MIRROR] as const
+
+// Wireframe look, for everything drawn from these shapes: outlines in the text colour, faint on
+// dark themes and solid on light ones (the strengths are per theme, in index.css)
+export const bodyInk = (alpha: number | string) => `hsl(var(--foreground) / ${alpha})`
+export const BODY_LINE = bodyInk('var(--body-line)')
+export const BODY_FILL = bodyInk(0.02)
+export const MUSCLE_LINE = bodyInk('var(--muscle-line)')
+export const MUSCLE_FILL = bodyInk(0.05)
 /** Tight box around a figure (arms included). */
 export const VIEWBOX = '18 4 164 412'
 

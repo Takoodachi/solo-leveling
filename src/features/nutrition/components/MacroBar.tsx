@@ -1,4 +1,3 @@
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { clampPercent } from '@/lib/format'
 
@@ -22,10 +21,16 @@ export default function MacroBar({ label, value, target, unit = 'g', colorClass 
           {Math.round(value)}{unit} / {target}{unit}
         </span>
       </div>
-      <Progress
-        value={percent}
-        className={cn('h-2', over && '[&>div]:bg-destructive')}
-      />
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        className="h-2 w-full overflow-hidden rounded-full bg-secondary"
+      >
+        <div className={cn('h-full transition-all', over ? 'bg-destructive' : 'bg-primary')} style={{ width: `${percent}%` }} />
+      </div>
     </div>
   )
 }

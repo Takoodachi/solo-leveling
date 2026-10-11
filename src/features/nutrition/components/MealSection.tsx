@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Plus, ChevronDown, ChevronUp, History, Bookmark } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import FoodLogRow from './FoodLogRow'
 import AddFoodDialog from './AddFoodDialog'
+import EditFoodLogDialog from './EditFoodLogDialog'
 import MealOptionRow from './MealOptionRow'
 import MealsSheet from './MealsSheet'
 import { useFoods } from '../hooks/useFoods'
@@ -22,6 +22,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
   const [open, setOpen] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [showMeals, setShowMeals] = useState(false)
+  const [editing, setEditing] = useState<FoodLogWithFood | null>(null)
   const { removeFoodLog } = useFoods()
   const recent = useRecentMeals(mealType, date) ?? []
   const last = recent[0]
@@ -52,12 +53,13 @@ export default function MealSection({ mealType, entries, date }: Props) {
 
       {open && (
         <div className="px-5 pb-4">
-          {entries.length > 0 && <Separator className="mb-2" />}
+          {entries.length > 0 && <div className="mb-2 h-px bg-border" />}
 
           {entries.map(entry => (
             <FoodLogRow
               key={entry.uuid}
               entry={entry}
+              onEdit={() => setEditing(entry)}
               onDelete={() => void removeFoodLog(entry.uuid)}
             />
           ))}
@@ -91,6 +93,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
         date={date}
         mealType={mealType}
       />
+      <EditFoodLogDialog entry={editing} onClose={() => setEditing(null)} />
       <MealsSheet open={showMeals} onOpenChange={setShowMeals} mealType={mealType} date={date} entries={entries} recent={recent} />
     </div>
   )

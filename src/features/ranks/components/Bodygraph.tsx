@@ -2,18 +2,10 @@ import { useId, type ReactNode } from 'react'
 import type { RegionRank } from '../computeRanks'
 import type { MuscleRegion } from '../standards'
 import { TIERS, type Tier } from '../tiers'
-import { BACK, CENTER_BACK, CENTER_FRONT, FRONT, MIRROR, VIEWBOX, type Shape } from './bodygraphShapes'
+import { BACK, BODY_FILL, BODY_LINE, CENTER_BACK, CENTER_FRONT, FRONT, HALVES, MUSCLE_FILL, MUSCLE_LINE, VIEWBOX, bodyInk, type Shape } from './bodygraphShapes'
 
-// Wireframe look: outlines in the text colour, faint on dark themes and dark and
-// solid on light ones (strengths in index.css); ranked muscles fill with their tier.
-const line = (alpha: number | string) => `hsl(var(--foreground) / ${alpha})`
-const BODY_LINE = line('var(--body-line)')
-const BODY_FILL = line(0.02)
-const MUSCLE_LINE = line('var(--muscle-line)')
-const MUSCLE_FILL = line(0.05)
 /** A ranked muscle's border: its tier colour on dark themes, the text colour on light ones. */
 const tierLine = (color: string) => `color-mix(in oklab, ${color} var(--tier-line, 100%), hsl(var(--foreground)))`
-const HALVES = [undefined, MIRROR] as const
 
 interface Props {
   regions: RegionRank[]
@@ -56,14 +48,14 @@ function Figure({ label, shapes, center, tierOf, gradient, selected, onSelect }:
         ))}
         <g fill="none" strokeWidth={0.45} strokeLinecap="round" pointerEvents="none">
           {[...center, ...shapes].filter(s => s.detail).map((s, i) => {
-            const stroke = tier(s) ? line('var(--detail-line-ranked)') : line('var(--detail-line)')
+            const stroke = tier(s) ? bodyInk('var(--detail-line-ranked)') : bodyInk('var(--detail-line)')
             return center.includes(s)
               ? <path key={i} d={s.detail} stroke={stroke} />
               : <g key={i}>{both(() => <path d={s.detail} stroke={stroke} />)}</g>
           })}
         </g>
         {selected && both(() => shapes.filter(s => s.region === selected).map((s, i) => (
-          <path key={i} d={s.d} fill={line(0.14)} stroke="hsl(var(--foreground))" strokeWidth={1.2} strokeLinejoin="round" pointerEvents="none" />
+          <path key={i} d={s.d} fill={bodyInk(0.14)} stroke="hsl(var(--foreground))" strokeWidth={1.2} strokeLinejoin="round" pointerEvents="none" />
         )))}
         {/* Tap targets, a little larger than the muscles */}
         {both(() => shapes.filter(s => s.region).map((s, i) => (

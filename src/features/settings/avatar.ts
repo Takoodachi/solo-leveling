@@ -17,6 +17,14 @@ export function safeAvatar(src: string | undefined | null): string | undefined {
   return src && src.length <= MAX_URL_LENGTH && AVATAR_URL.test(src) ? src : undefined
 }
 
+/** The letters for an avatar without a photo: "Tako" is TA, "Luong Tran" and "luong.tran" are LT. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/[\s._-]+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
 function draw(file: File, ctx: CanvasRenderingContext2D): Promise<void> {
   return withImage(file, (image, w, h) => {
     const side = Math.min(w, h)

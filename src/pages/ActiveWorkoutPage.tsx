@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Plus, X, Timer, Pencil } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
@@ -13,6 +14,7 @@ import { blockHistory } from '@/features/workouts/hooks/useWorkoutHistory'
 import ExerciseLogCard from '@/features/workouts/components/ExerciseLogCard'
 import CardioLogCard from '@/features/workouts/components/CardioLogCard'
 import { parsePositive } from '@/features/workouts/types'
+import { replacementBlock } from '@/features/workouts/replaceExercise'
 import { setModeFor } from '@/lib/workoutMath'
 import ExercisePickerSheet from '@/features/workouts/components/ExercisePickerSheet'
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
@@ -25,7 +27,7 @@ import type { Exercise } from '@/types'
 
 export default function ActiveWorkoutPage() {
   const navigate = useNavigate()
-  const { draft, restored, addBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
+  const { draft, restored, addBlock, replaceBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
   const { finish } = useActiveWorkout()
   const { saveEdits, cancelEditing } = useEditWorkout()
   const { settings } = useSettings()
@@ -34,6 +36,8 @@ export default function ActiveWorkoutPage() {
   const elapsed = useElapsed(draft && !editing ? draft.startedAt : null)
   const rest = useRestTimer()
   const [pickerOpen, setPickerOpen] = useState(false)
+  // The card whose exercise is being swapped for another (the picker is open for it)
+  const [replacing, setReplacing] = useState<{ idx: number; exercise: Exercise } | null>(null)
   const [finishOpen, setFinishOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [info, setInfo] = useState<Exercise | null>(null)
@@ -62,6 +66,23 @@ export default function ActiveWorkoutPage() {
 
   async function handleAddExercise(exercise: Exercise) {
     addBlock(exercise, { restSec: defaultRest, ...(await blockHistory(exercise.uuid)) })
+  }
+
+  // The new exercise takes the old one's place; sets already ticked stay logged under the old one
+  async function handleReplace(exercise: Exercise) {
+    if (!replacing || replacing.exercise.uuid === exercise.uuid) return
+    const { idx } = replacing
+    const history = await blockHistory(exercise.uuid)
+    const old = useWorkoutStore.getState().draft?.blocks[idx]
+    if (!old || old.exercise.uuid !== replacing.exercise.uuid) return
+    const undo = replaceBlock(idx, replacementBlock(old, exercise, history))
+    if (!undo) return
+    const kept = old.sets.filter(s => s.done).length
+    toast(`${exercise.name} instead of ${old.exercise.name}`, {
+      description: kept > 0 ? `Your ${kept} logged ${kept === 1 ? 'set' : 'sets'} of ${old.exercise.name} ${kept === 1 ? 'stays' : 'stay'}.` : undefined,
+      duration: 7000,
+      action: { label: 'Undo', onClick: undo },
+    })
   }
 
   function handleSetDone(restSec: number) {
@@ -130,31 +151,28 @@ export default function ActiveWorkoutPage() {
           </div>
         )}
 
-        {draft.blocks.map((block, idx) => setModeFor(block.exercise) === 'cardio' ? (
-          <CardioLogCard
-            key={`${block.exercise.uuid}-${idx}`}
-            block={block}
-            blockIdx={idx}
-            isFirst={idx === 0}
-            isLast={idx === draft.blocks.length - 1}
-            onShowInfo={() => setInfo(block.exercise)}
-            bodyKg={ranks?.bodyKg ?? undefined}
-            runRank={ranks?.running?.rank}
-            sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
-          />
-        ) : (
-          <ExerciseLogCard
-            key={`${block.exercise.uuid}-${idx}`}
-            block={block}
-            blockIdx={idx}
-            isFirst={idx === 0}
-            isLast={idx === draft.blocks.length - 1}
-            onSetDone={handleSetDone}
-            onShowInfo={() => setInfo(block.exercise)}
-            liftRank={rankOf.get(block.exercise.uuid)}
-            rankContext={rankContext}
-          />
-        ))}
+        {draft.blocks.map((block, idx) => {
+          const key = `${block.exercise.uuid}-${idx}`
+          const card = {
+            block,
+            blockIdx: idx,
+            isFirst: idx === 0,
+            isLast: idx === draft.blocks.length - 1,
+            onShowInfo: () => setInfo(block.exercise),
+            onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
+          }
+          return setModeFor(block.exercise) === 'cardio' ? (
+            <CardioLogCard
+              key={key}
+              {...card}
+              bodyKg={ranks?.bodyKg ?? undefined}
+              runRank={ranks?.running?.rank}
+              sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
+            />
+          ) : (
+            <ExerciseLogCard key={key} {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
+          )
+        })}
 
         <Button variant="secondary" size="lg" className="gap-2" onClick={() => setPickerOpen(true)}>
           <Plus size={18} />
@@ -170,6 +188,13 @@ export default function ActiveWorkoutPage() {
       />
 
       <ExercisePickerSheet open={pickerOpen} onOpenChange={setPickerOpen} onSelect={e => void handleAddExercise(e)} />
+      <ExercisePickerSheet
+        open={!!replacing}
+        onOpenChange={open => !open && setReplacing(null)}
+        onSelect={e => void handleReplace(e)}
+        title={replacing ? `Replace ${replacing.exercise.name}` : 'Replace exercise'}
+        initialCategory={replacing?.exercise.category}
+      />
       <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
 
       <FinishWorkoutDialog

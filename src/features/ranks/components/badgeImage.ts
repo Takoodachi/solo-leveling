@@ -1,14 +1,13 @@
 import type { TierKey } from '../tiers'
-import { BADGES, type Layer, type Palette } from './badgeArt'
+import { BADGES, toneColor, type Layer, type Palette } from './badgeArt'
 
 const MIRROR = 'translate(100 0) scale(-1 1)'
 
 function paths(l: Layer, pal: Palette): string {
-  const paint = (tone: Layer['fill']) => (!tone || tone === 'none' ? 'none' : pal[tone])
-  const stroke = l.stroke === undefined ? pal.rim : paint(l.stroke)
+  const stroke = l.stroke === undefined ? pal.rim : toneColor(pal, l.stroke)
   const attrs = `stroke="${stroke}" stroke-width="${l.w ?? 1.2}" stroke-linejoin="round" stroke-linecap="round"${l.o != null ? ` opacity="${l.o}"` : ''}`
-  const left = `<path d="${l.d}" fill="${paint(l.fill)}" ${attrs}/>`
-  return l.mirror ? `${left}<path d="${l.d}" fill="${paint(l.fillR ?? l.fill)}" transform="${MIRROR}" ${attrs}/>` : left
+  const left = `<path d="${l.d}" fill="${toneColor(pal, l.fill)}" ${attrs}/>`
+  return l.mirror ? `${left}<path d="${l.d}" fill="${toneColor(pal, l.fillR ?? l.fill)}" transform="${MIRROR}" ${attrs}/>` : left
 }
 
 /**

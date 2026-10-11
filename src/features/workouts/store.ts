@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 import { db } from '@/db'
+import { swapped } from '@/lib/utils'
 import type { Exercise, WeightUnit } from '@/types'
-import { intensityFromRpe } from '@/lib/cardio'
 import { applyFill, type HintFill } from './progression'
-import { type WorkoutDraft, type BlockDraft, type SetDraft, type LastSet, type LiftTrend, emptySet, setHasValue } from './types'
+import { type WorkoutDraft, type BlockDraft, type SetDraft, type LastSet, type LiftTrend, cardioSet, emptySet, numText, setHasValue } from './types'
 import { convertWeightText, weightText } from './units'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
+
+/** How long the last tick shows before its card folds away. */
+const FOLD_DELAY_MS = 600
 
 interface WorkoutStore {
   draft: WorkoutDraft | null
@@ -27,11 +30,20 @@ interface WorkoutStore {
   /** Log this exercise in another unit: its weight fields keep their weight, not their number. */
   setUnit: (blockIdx: number, unit: WeightUnit) => void
   toggleCollapsed: (blockIdx: number) => void
+  /** Call after a tick: if that was the card's last set, it folds away a moment later. */
+  foldWhenDone: (blockIdx: number) => void
+  /**
+   * Another exercise in this one's place (the machine is taken). Sets already ticked stay logged
+   * under the old exercise and the new one takes the rest; returns how to take it back.
+   */
+  replaceBlock: (blockIdx: number, block: BlockDraft) => (() => void) | undefined
 
   addSet: (blockIdx: number) => void
   updateSet: (blockIdx: number, setIdx: number, field: SetField, value: string) => void
   toggleDone: (blockIdx: number, setIdx: number) => boolean
   removeSet: (blockIdx: number, setIdx: number) => void
+  /** Puts a removed set back where it was, if that exercise is still there in the same workout. */
+  restoreSet: (blockIdx: number, setIdx: number, set: SetDraft, exerciseId: string, startedAt: number) => void
   /** Write a progression hint's numbers into the block's sets that aren't done yet. */
   fillSets: (blockIdx: number, fill: HintFill) => void
   markAllFilledDone: () => void
@@ -54,11 +66,10 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     set(s => {
       if (!s.draft) return s
       const last = opts?.lastSets?.[0]
-      const str = (n: number | undefined) => (n != null ? String(n) : '')
       // Cardio is one entry (time + distance + effort); everything else starts from last session's first set.
       const first = exercise.type === 'cardio'
-        ? emptySet({ duration: str(last?.duration), distanceKm: str(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
-        : emptySet({ weight: weightText(last?.weight, opts?.unit), reps: str(last?.reps) })
+        ? cardioSet(last)
+        : emptySet({ weight: weightText(last?.weight, opts?.unit), reps: numText(last?.reps) })
       return {
         draft: {
           ...s.draft,
@@ -88,9 +99,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       if (!s.draft) return s
       const to = blockIdx + delta
       if (to < 0 || to >= s.draft.blocks.length) return s
-      const blocks = [...s.draft.blocks]
-      ;[blocks[blockIdx], blocks[to]] = [blocks[to], blocks[blockIdx]]
-      return { draft: { ...s.draft, blocks } }
+      return { draft: { ...s.draft, blocks: swapped(s.draft.blocks, blockIdx, to) } }
     }),
 
   setUnit: (blockIdx, unit) =>
@@ -107,6 +116,42 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   toggleCollapsed: blockIdx =>
     set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, collapsed: !b.collapsed })) } : s)),
+
+  foldWhenDone: blockIdx => {
+    const draft = get().draft
+    const block = draft?.blocks[blockIdx]
+    // Not while correcting a past workout, where ticks are only being fixed
+    if (!draft || draft.editing || !block?.sets.every(st => st.done)) return
+    const id = block.exercise.uuid
+    setTimeout(() => set(s => {
+      // Still the same card, and still done: nothing was unticked or moved meanwhile
+      const now = s.draft?.blocks[blockIdx]
+      if (!s.draft || !now || now.exercise.uuid !== id || now.collapsed || !now.sets.every(st => st.done)) return s
+      return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, collapsed: true })) }
+    }), FOLD_DELAY_MS)
+  },
+
+  replaceBlock: (blockIdx, block) => {
+    const draft = get().draft
+    const old = draft?.blocks[blockIdx]
+    if (!draft || !old) return undefined
+    const done = old.sets.filter(st => st.done)
+    const blocks = [...draft.blocks]
+    // Work already done isn't thrown away: it stays as its own (folded) card, above the new one
+    if (done.length > 0) blocks.splice(blockIdx, 1, { ...old, sets: done, collapsed: true }, block)
+    else blocks[blockIdx] = block
+    set({ draft: { ...draft, blocks } })
+
+    const at = done.length > 0 ? blockIdx + 1 : blockIdx
+    return () =>
+      set(s => {
+        // Only while the replacement is still where it was put, in the same workout
+        if (!s.draft || s.draft.startedAt !== draft.startedAt || s.draft.blocks[at]?.exercise.uuid !== block.exercise.uuid) return s
+        const next = [...s.draft.blocks]
+        next.splice(blockIdx, at - blockIdx + 1, old)
+        return { draft: { ...s.draft, blocks: next } }
+      })
+  },
 
   addSet: blockIdx =>
     set(s => {
@@ -150,6 +195,18 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     set(s => {
       if (!s.draft) return s
       return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, sets: b.sets.filter((_, j) => j !== setIdx) })) }
+    }),
+
+  restoreSet: (blockIdx, setIdx, removed, exerciseId, startedAt) =>
+    set(s => {
+      if (!s.draft || s.draft.startedAt !== startedAt || s.draft.blocks[blockIdx]?.exercise.uuid !== exerciseId) return s
+      return {
+        draft: mapBlock(s.draft, blockIdx, b => {
+          const sets = [...b.sets]
+          sets.splice(Math.min(setIdx, sets.length), 0, removed)
+          return { ...b, sets }
+        }),
+      }
     }),
 
   fillSets: (blockIdx, fill) =>

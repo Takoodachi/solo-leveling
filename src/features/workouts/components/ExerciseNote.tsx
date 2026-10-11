@@ -9,7 +9,15 @@ const MAX_LENGTH = 300
  * Your own note on an exercise (seat height, pin, grip), the same wherever the exercise shows.
  * Tap to write or change it; it saves when you leave the field.
  */
-export default function ExerciseNote({ exerciseId, cardio, className }: { exerciseId: string; cardio?: boolean; className?: string }) {
+interface Props {
+  exerciseId: string
+  cardio?: boolean
+  /** Sharing its row with something else: the empty state is just "Add a note". */
+  brief?: boolean
+  className?: string
+}
+
+export default function ExerciseNote({ exerciseId, cardio, brief, className }: Props) {
   const note = useExerciseNote(exerciseId)
   const [draft, setDraft] = useState<string | null>(null) // null = not editing
   const examples = cardio ? 'route, incline, level' : 'seat, pin, grip'
@@ -28,7 +36,7 @@ export default function ExerciseNote({ exerciseId, cardio, className }: { exerci
         )}
       >
         <StickyNote size={14} className={cn('shrink-0 text-primary', note && 'mt-0.5')} />
-        <span className="min-w-0 flex-1 whitespace-pre-line [overflow-wrap:anywhere]">{note || `Add a note (${examples}…)`}</span>
+        <span className="min-w-0 flex-1 whitespace-pre-line [overflow-wrap:anywhere]">{note || (brief ? 'Add a note' : `Add a note (${examples}…)`)}</span>
       </button>
     )
   }

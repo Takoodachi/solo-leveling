@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, parseISO, subDays } from 'date-fns'
+import { toDateStr } from '@/lib/date'
 import { Copy } from 'lucide-react'
 import { db } from '@/db'
 import { formatKcal } from '@/lib/format'
@@ -8,7 +9,7 @@ import MealOptionRow from './MealOptionRow'
 
 /** On an empty day: copy everything logged the day before, meal by meal, in one tap. */
 export default function CopyDayCard({ date }: { date: string }) {
-  const prev = format(subDays(parseISO(date), 1), 'yyyy-MM-dd')
+  const prev = toDateStr(subDays(parseISO(date), 1))
   const yesterday = useLiveQuery(async () => {
     const logs = await db.foodLog.where('date').equals(prev).toArray()
     const foods = await db.foods.bulkGet(logs.map(l => l.foodId))

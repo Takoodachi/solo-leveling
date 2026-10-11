@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import type { HomeWidgetId } from '@/types'
+import { swapped } from '@/lib/utils'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { DEFAULT_HOME_WIDGETS, homeWidgetDef, homeWidgetsFrom } from '../homeWidgets'
 
@@ -55,11 +56,7 @@ export default function CustomizeHomeSheet({ open, onOpenChange }: Props) {
   const hidden = DEFAULT_HOME_WIDGETS.filter(id => !shown.includes(id))
   const save = (ids: HomeWidgetId[]) => void updateSettings({ homeWidgets: ids })
 
-  function move(i: number, delta: -1 | 1) {
-    const next = [...shown]
-    ;[next[i], next[i + delta]] = [next[i + delta], next[i]]
-    save(next)
-  }
+  const move = (i: number, delta: -1 | 1) => save(swapped(shown, i, i + delta))
 
   const toggle = (id: HomeWidgetId, on: boolean) => save(on ? [...shown, id] : shown.filter(x => x !== id))
   const rowProps = { count: shown.length, onMove: move, onToggle: toggle }

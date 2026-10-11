@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import Segmented from '@/components/Segmented'
 import { useFoods } from '../hooks/useFoods'
 import { macrosFromIngredients, totalGrams } from '@/lib/macroCalc'
 import IngredientRow from './IngredientRow'
@@ -35,20 +35,19 @@ export default function CustomFoodForm({ onSuccess, onCancel }: Props) {
   const [mode, setMode] = useState<'direct' | 'recipe'>('direct')
 
   return (
-    <Tabs value={mode} onValueChange={v => setMode(v as 'direct' | 'recipe')} className="w-full">
-      <TabsList className="grid grid-cols-2 w-full">
-        <TabsTrigger value="direct">Direct</TabsTrigger>
-        <TabsTrigger value="recipe">Recipe</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="direct">
-        <DirectForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} />
-      </TabsContent>
-
-      <TabsContent value="recipe">
-        <RecipeForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} foods={foods} />
-      </TabsContent>
-    </Tabs>
+    // min-w-0: the dialog is a grid, and a grid item is otherwise as wide as its widest field wants
+    <div className="flex min-w-0 flex-col gap-2">
+      <Segmented
+        size="sm"
+        value={mode}
+        onChange={setMode}
+        options={[{ value: 'direct', label: 'Direct' }, { value: 'recipe', label: 'Recipe' }]}
+        className="bg-secondary"
+      />
+      {mode === 'direct'
+        ? <DirectForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} />
+        : <RecipeForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} foods={foods} />}
+    </div>
   )
 }
 

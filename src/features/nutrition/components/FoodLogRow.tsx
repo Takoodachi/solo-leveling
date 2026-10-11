@@ -2,25 +2,34 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatKcal } from '@/lib/format'
 import type { FoodLogWithFood } from '@/types'
+import { amountLabel } from '../logFoods'
 
 interface Props {
   entry: FoodLogWithFood
+  /** Tapping the food opens its amount to correct it. */
+  onEdit: () => void
   onDelete: () => void
 }
 
-export default function FoodLogRow({ entry, onDelete }: Props) {
+export default function FoodLogRow({ entry, onEdit, onDelete }: Props) {
   const kcal = Math.round(entry.food.kcalPerServing * entry.servings)
-  const servingLabel = entry.servings === 1
-    ? `1 × ${entry.food.servingSize}${entry.food.servingUnit}`
-    : `${entry.servings} × ${entry.food.servingSize}${entry.food.servingUnit}`
+  const servingLabel = amountLabel(entry.food, entry.servings)
 
   return (
-    <div className="flex items-center justify-between py-2 gap-2">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{entry.food.name}</p>
-        <p className="text-xs text-muted-foreground">{servingLabel}</p>
-      </div>
-      <span className="text-sm font-medium shrink-0">{formatKcal(kcal)} cal</span>
+    <div className="flex items-center gap-2">
+      {/* The row and the bin are sibling buttons (a button can't contain a button) */}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="-mx-2 flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl px-2 py-2 text-left transition-colors active:bg-accent/60"
+        aria-label={`${entry.food.name}, ${servingLabel}: change amount`}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{entry.food.name}</span>
+          <span className="block text-xs text-muted-foreground">{servingLabel}</span>
+        </span>
+        <span className="shrink-0 text-sm font-medium">{formatKcal(kcal)} cal</span>
+      </button>
       <Button
         variant="ghost"
         size="icon"

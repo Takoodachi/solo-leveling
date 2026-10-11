@@ -60,5 +60,11 @@ export function useBarcodeLookup() {
     }
   }
 
-  return { scan, lookingUp, lookup, recheck, clear: () => setScan(null) }
+  /** Open a product found by name for the same review: your saved entry if it was saved before. */
+  async function review(found: ScannedFood): Promise<void> {
+    const saved = await db.foods.get(barcodeFoodId(found.barcode))
+    setScan(saved ? fromSaved(found.barcode, saved) : found)
+  }
+
+  return { scan, lookingUp, lookup, recheck, review, clear: () => setScan(null) }
 }

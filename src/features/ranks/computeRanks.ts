@@ -3,6 +3,7 @@ import { db } from '@/db'
 import type { BodyMetric, Workout } from '@/types'
 import { XP } from '@/lib/xp'
 import { toDateStr } from '@/lib/date'
+import { formatClock } from '@/lib/cardio'
 import { rankFor, type RankInfo } from './tiers'
 import {
   MUSCLE_GROUPS, RANKED_EXERCISE_IDS, REGION_LABEL, groupOfRegion, groupOfStandard, standardFor,
@@ -269,7 +270,7 @@ export function describeBest(b: { weight?: number; reps?: number; duration?: num
 
 function clock(seconds: number): string {
   const s = Math.ceil(seconds)
-  return s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  return s < 60 ? `${s} s` : formatClock(s / 60)
 }
 
 /** What it takes to reach the next division, e.g. "62.5 kg × 5", "9 reps" or "1:30 hold". */

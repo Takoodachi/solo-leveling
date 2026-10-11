@@ -1,7 +1,7 @@
 import type { WorkoutWithSets } from '@/types'
 import { formatVolume, totalReps, totalVolume } from '@/lib/workoutMath'
 import { formatKm } from '@/lib/cardio'
-import VolumeBySetChart from './VolumeBySetChart'
+import MusclesWorked from './MusclesWorked'
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -42,12 +42,9 @@ export default function WorkoutSummaryCard({ workout }: { workout: WorkoutWithSe
       <div className="grid grid-cols-2 gap-x-6 gap-y-5">
         {stats.map(([label, value]) => <Stat key={label} label={label} value={value} />)}
       </div>
-      {lifts.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-2 text-xs text-muted-foreground">{volume > 0 ? 'Volume per set (kg)' : 'Minutes per set'}</p>
-          <VolumeBySetChart sets={lifts} />
-        </div>
-      )}
+      <div className="mt-6 empty:hidden">
+        <MusclesWorked sets={workout.sets} />
+      </div>
     </section>
   )
 }

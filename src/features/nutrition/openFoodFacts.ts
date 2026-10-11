@@ -1,9 +1,12 @@
 /**
- * Barcode → nutrition lookup via Open Food Facts (free, no API key).
+ * Nutrition lookup via Open Food Facts (free, no API key): a product by its barcode, or
+ * products by name.
  *
  * OFF is crowd-sourced: values can be missing or mistyped, so results are
  * always shown for review before they're saved (see ScannedFoodReview).
  */
+
+import { round1 } from '@/lib/format'
 
 const KJ_PER_KCAL = 4.184
 const FIELDS = [
@@ -26,6 +29,18 @@ export interface ScannedFood {
   source: 'database' | 'saved'
 }
 
+/** A product after the review step: checked values per `amount` `unit` (one package serving, or 100 g/ml). */
+export interface ReviewedFood {
+  barcode: string
+  name: string
+  amount: number
+  unit: 'g' | 'ml'
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
 type Nutriments = Record<string, unknown>
 type Product = Record<string, unknown>
 
@@ -36,10 +51,6 @@ function num(v: unknown): number | null {
 
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined
-}
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10
 }
 
 /** kcal for a basis ("100g" or "serving"), converting from kJ when only that is recorded. */
@@ -111,6 +122,74 @@ export async function lookupBarcode(barcode: string): Promise<ScannedFood | null
   const json = (await res.json()) as { status?: number; product?: Product }
   if (json.status !== 1 || !json.product) return null
   return parseProduct(barcode, json.product)
+}
+
+const SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl'
+const SEARCH_RESULTS = 24
+/**
+ * Open Food Facts lets one address search about ten times a minute, and answers anything sooner
+ * with its "busy" page (measured Oct 2026: requests 7 s apart nearly all get through, 2.5 s
+ * apart two in three are turned away; at busy hours about half are turned away whatever the gap).
+ * So searches from this device keep this far apart, and one that's turned away anyway is asked
+ * again after the same wait, never straight away: three tries in all, about 20 s at worst.
+ */
+const SEARCH_GAP_MS = 6500
+const SEARCH_ATTEMPTS = 3
+const SEARCH_TIMEOUT_MS = 30_000
+let lastSearchAt = 0
+
+/** The search response. `onBusy` is called when it has to wait before asking (again). */
+async function fetchSearch(url: string, onBusy?: () => void): Promise<Response> {
+  // Older browsers have no AbortSignal.timeout: there the request simply runs as long as it takes
+  const signal = 'timeout' in AbortSignal ? AbortSignal.timeout(SEARCH_TIMEOUT_MS) : undefined
+  for (let attempt = 1; ; attempt++) {
+    const wait = lastSearchAt + SEARCH_GAP_MS - Date.now()
+    if (wait > 0) {
+      if (wait > 1000) onBusy?.()
+      await new Promise(resolve => setTimeout(resolve, wait))
+    }
+    lastSearchAt = Date.now()
+    try {
+      const res = await fetch(url, { signal })
+      if (res.ok) return res
+      if (attempt === SEARCH_ATTEMPTS) throw new Error(`Open Food Facts responded ${res.status}`)
+    } catch (err) {
+      // Its "busy" page carries no CORS headers, so a browser reports it as a failed request
+      if (attempt === SEARCH_ATTEMPTS || signal?.aborted || !navigator.onLine) throw err
+    }
+  }
+}
+
+/**
+ * Products whose name or brand matches `query`, the most scanned first, then the ones with all
+ * four values before the incomplete ones. Throws when the service doesn't answer. It's shared
+ * and rate-limited, so only search when asked to, never while typing.
+ */
+export async function searchProducts(query: string, onBusy?: () => void): Promise<ScannedFood[]> {
+  const params = new URLSearchParams({
+    search_terms: query,
+    search_simple: '1',
+    action: 'process',
+    json: '1',
+    sort_by: 'unique_scans_n',
+    page_size: String(SEARCH_RESULTS),
+    fields: `code,${FIELDS}`,
+  })
+  const res = await fetchSearch(`${SEARCH_URL}?${params}`, onBusy)
+  const json = (await res.json()) as { products?: Product[] }
+
+  const seen = new Set<string>()
+  const found = (json.products ?? []).flatMap(p => {
+    const code = str(p.code)
+    const named = str(p.product_name_en) ?? str(p.product_name) ?? str(p.generic_name_en) ?? str(p.generic_name)
+    if (!code || !named || seen.has(code)) return []
+    seen.add(code)
+    const food = parseProduct(code, p)
+    // An entry with no numbers at all is a name and nothing to log
+    return Object.values(food.values).every(v => v == null) ? [] : [food]
+  })
+  const complete = (f: ScannedFood) => Object.values(f.values).every(v => v != null)
+  return [...found.filter(complete), ...found.filter(f => !complete(f))]
 }
 
 /** GS1 check digit test (EAN-13, EAN-8, UPC-A). */

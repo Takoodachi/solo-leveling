@@ -1,8 +1,7 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { REGION_LABEL, groupOfRegion, type MuscleRegion } from '@/features/ranks/standards'
 import type { RegionRank } from '@/features/ranks/computeRanks'
-import { formatRunTime } from '@/features/ranks/running'
-import { formatKm } from '@/lib/cardio'
+import { formatClock, formatKm } from '@/lib/cardio'
 import { rankFor, type TierKey } from '@/features/ranks/tiers'
 import type { LeaderboardEntry, LeaderboardSnapshot } from './types'
 
@@ -36,7 +35,7 @@ export const BOARDS: Board[] = [
     key: 'running', label: 'Running',
     score: s => s.running?.rating ?? null,
     value: s => (s.running ? rankFor(s.running.rating).label : 'No run yet'),
-    detail: s => (s.running ? `Best ${formatKm(s.running.distanceKm)} in ${formatRunTime(s.running.duration)}` : 'Run 5 km+ to rank'),
+    detail: s => (s.running ? `Best ${formatKm(s.running.distanceKm)} in ${formatClock(s.running.duration)}` : 'Run 5 km+ to rank'),
     tier: s => (s.running ? rankFor(s.running.rating).tier.key : null),
     empty: 'Log a run of 5 km or more to join this board.',
   },
@@ -88,11 +87,6 @@ export function regionsOf(s: LeaderboardSnapshot): RegionRank[] {
 }
 
 export const profileLink = (e: Pick<LeaderboardEntry, 'me' | 'userId'>) => `/leaderboard/${e.me ? 'me' : e.userId}`
-
-export function initials(name: string): string {
-  const parts = name.trim().split(/[\s._-]+/).filter(Boolean)
-  return ((parts[0]?.[0] ?? '?') + (parts[1]?.[0] ?? '')).toUpperCase()
-}
 
 /** "today", "yesterday", "3d ago", "2w ago". */
 export function ago(date: string, now: Date): string {

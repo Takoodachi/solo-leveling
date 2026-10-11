@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, looseSupabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
 import { nativeNotifyState, replaceScheduled } from '@/lib/localNotifications'
 import type { PlannedReminder } from './reminders'
@@ -67,7 +67,7 @@ async function toQueue(plan: PlannedReminder[], userId: string | null): Promise<
   const print = `${userId}|${fingerprint(plan)}`
   if (localStorage.getItem(QUEUE_PLAN_KEY) === print) return
 
-  const queue = looseSupabase.from('push_queue')
+  const queue = supabase.from('push_queue')
   const rows = plan.map(p => ({ key: p.key, fireAt: p.at, title: p.title, body: p.body, url: p.url }))
   const { error } = rows.length ? await queue.upsert(rows, { onConflict: 'user_id,key' }) : { error: null }
   if (error) {

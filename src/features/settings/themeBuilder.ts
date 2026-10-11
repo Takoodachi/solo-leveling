@@ -1,4 +1,5 @@
 import type { CustomTheme } from '@/types'
+import { clamp } from '@/lib/utils'
 import type { ThemeMode, ThemeTokens } from './themes'
 
 /**
@@ -19,7 +20,6 @@ export const CUSTOM_RANGES: Record<ThemeMode, Record<'accent' | 'background', { 
 
 export const DEFAULT_CUSTOM: CustomTheme = { mode: 'dark', accent: '18 100% 55%', background: '240 5% 4%' }
 
-const clamp = (n: number, [min, max]: Span) => Math.min(max, Math.max(min, n))
 const wrap = (h: number) => ((h % 360) + 360) % 360
 const hueGap = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180)
 export const hsl = ([h, s, l]: Hsl) => `${Math.round(wrap(h))} ${Math.round(clamp(s, [0, 100]))}% ${Math.round(clamp(l, [0, 100]))}%`

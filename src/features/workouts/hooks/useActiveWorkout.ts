@@ -10,10 +10,10 @@ import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
 import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
-import { intensityFromRpe, rpeFor } from '@/lib/cardio'
+import { rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { useWorkoutStore } from '../store'
-import { emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
+import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { weightKg, weightText } from '../units'
 import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
 
@@ -32,7 +32,6 @@ export interface FinishResult {
 }
 
 const num = parsePositive
-const str = (n: number | undefined) => (n != null ? String(n) : '')
 
 /** XP for cardio: 1 per minute, capped per entry (sets earn XP.PER_SET). */
 const CARDIO_XP_CAP = 120
@@ -46,8 +45,7 @@ function prefillSet(block: Pick<BlockDraft, 'exercise' | 'lastSets' | 'unit'>, i
 
 /** Cardio from a routine: one entry with the target minutes (sets × minutes for older routines). */
 function prefillCardio(block: Pick<BlockDraft, 'lastSets'>, minutes: number): SetDraft {
-  const last = block.lastSets?.[0]
-  return emptySet({ duration: String(minutes), distanceKm: str(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
+  return { ...cardioSet(block.lastSets?.[0]), duration: String(minutes) }
 }
 
 export function useActiveWorkout() {

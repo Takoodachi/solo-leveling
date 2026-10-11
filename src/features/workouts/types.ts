@@ -1,5 +1,5 @@
 import type { Exercise, RoutineCategory, WeightUnit } from '@/types'
-import type { Intensity } from '@/lib/cardio'
+import { intensityFromRpe, type Intensity } from '@/lib/cardio'
 
 /** One set row in the live logger. Inputs are strings while editing. */
 export type SetDraft = {
@@ -71,6 +71,14 @@ export type WorkoutDraft = {
 
 export function emptySet(prefill?: Partial<SetDraft>): SetDraft {
   return { uuid: crypto.randomUUID(), weight: '', reps: '', duration: '', distanceKm: '', done: false, ...prefill }
+}
+
+/** A stored number as a field's text (nothing stored = an empty field). */
+export const numText = (n: number | undefined) => (n != null ? String(n) : '')
+
+/** Cardio's one entry (time, distance, effort), starting from last time's. */
+export function cardioSet(last: LastSet | undefined): SetDraft {
+  return emptySet({ duration: numText(last?.duration), distanceKm: numText(last?.distanceKm), intensity: intensityFromRpe(last?.rpe) })
 }
 
 /** Accept "12", "12.5" and "12,5" while typing. */

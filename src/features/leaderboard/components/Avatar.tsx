@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
-import { safeAvatar } from '@/features/settings/avatar'
-import { initials } from '../boards'
+import { initials, safeAvatar } from '@/features/settings/avatar'
 
 interface Props {
   name: string

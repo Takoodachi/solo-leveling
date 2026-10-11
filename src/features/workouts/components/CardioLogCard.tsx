@@ -5,9 +5,8 @@ import { cn } from '@/lib/utils'
 import { INTENSITIES, cardioKcal, formatKm, formatPace, rpeFor, showsDistance } from '@/lib/cardio'
 import { resolveBodyKg } from '@/lib/workoutMath'
 import { useWorkoutStore } from '../store'
-import { parsePositive, sanitizeNumeric, type BlockDraft, type LastSet } from '../types'
-import BlockHeader from './BlockHeader'
-import ExerciseNote from './ExerciseNote'
+import { parsePositive, sanitizeNumeric, type LastSet } from '../types'
+import BlockCard, { type BlockCardProps } from './BlockCard'
 import type { RankInfo } from '@/features/ranks/tiers'
 import type { Sex } from '@/features/ranks/standards'
 import { describeRunScore, isRunExercise, liveRunRank, rateRun } from '@/features/ranks/running'
@@ -15,12 +14,7 @@ import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
 import { tap } from '@/lib/haptics'
 
-interface Props {
-  block: BlockDraft
-  blockIdx: number
-  isFirst: boolean
-  isLast: boolean
-  onShowInfo: () => void
+interface Props extends BlockCardProps {
   bodyKg?: number
   /** Running only: the best running rank so far, and the runner's sex for rating. */
   runRank?: RankInfo
@@ -50,8 +44,9 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 /** Cardio is one entry: time, optional distance, effort. Pace and calories update as you type. */
-export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShowInfo, bodyKg, runRank, sex }: Props) {
-  const { updateSet, toggleDone } = useWorkoutStore()
+export default function CardioLogCard({ bodyKg, runRank, sex, ...card }: Props) {
+  const { block, blockIdx } = card
+  const { updateSet, toggleDone, foldWhenDone } = useWorkoutStore()
   const id = block.exercise.uuid
   const distance = showsDistance(id)
   const last = block.lastSets?.[0]
@@ -65,6 +60,7 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
   function handleLog(setIdx: number) {
     if (!toggleDone(blockIdx, setIdx)) return
     tap()
+    foldWhenDone(blockIdx) // logged: the card folds away, like a lift's after its last set
     if (!ranked) return
     const rating = rateRun(ranked, entries[setIdx].distanceKm, entries[setIdx].duration)
     const before = entries.filter((_, i) => i !== setIdx && block.sets[i].done).reduce<RankInfo | undefined>((r, e) => liveRunRank(ranked, e, r), runRank)
@@ -77,27 +73,20 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
   }
 
   return (
-    <section className="rounded-3xl bg-card p-4">
-      <BlockHeader
-        name={block.exercise.name}
-        blockIdx={blockIdx}
-        isFirst={isFirst}
-        isLast={isLast}
-        collapsed={block.collapsed}
-        onShowInfo={onShowInfo}
-        subtitle={
-          <>
-            Cardio{lastText && <> · last time {lastText}</>}
-            {rank && (
-              <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
-                <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
-              </span>
-            )}
-          </>
-        }
-      />
-      {!block.collapsed && <ExerciseNote exerciseId={id} cardio className="mb-3" />}
-      <div className={cn('flex flex-col gap-3', block.collapsed && 'hidden')}>
+    <BlockCard
+      {...card}
+      subtitle={
+        <>
+          Cardio{lastText && <> · last time {lastText}</>}
+          {rank && (
+            <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
+              <RankBadge tier={rank.tier.key} size={18} /> {rank.label}
+            </span>
+          )}
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
         {block.sets.map((set, setIdx) => {
           const entry = { ...entries[setIdx], rpe: rpeFor(set.intensity ?? 'moderate') }
           const pace = formatPace(id, entry)
@@ -138,6 +127,6 @@ export default function CardioLogCard({ block, blockIdx, isFirst, isLast, onShow
           )
         })}
       </div>
-    </section>
+    </BlockCard>
   )
 }
