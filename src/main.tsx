@@ -5,6 +5,8 @@ import { restoreDraftFromStorage } from '@/features/workouts/store'
 import App from './App'
 import './index.css'
 import { applyCachedTheme } from '@/features/settings/themes'
+import { applyCachedCardStyle } from '@/features/settings/cardStyle'
+import { isLoadingAhead } from '@/lib/lazyAhead'
 import { backgroundBridge, runBackgroundSteps } from '@/features/health/backgroundSteps'
 import { quickLogBridge, runQuickLog } from '@/features/reminders/quickLogTask'
 
@@ -59,12 +61,15 @@ function reloadOnce(): boolean {
 
 window.addEventListener('vite:preloadError', event => {
   event.preventDefault()
+  // A screen being fetched ahead of time (lib/lazyAhead.ts): nobody asked for it yet, so nothing to do
+  if (isLoadingAhead()) return
   if (!reloadOnce()) renderFatal('A new version of the app is available.', 'Reload to finish updating.')
 })
 
 function startApp(): void {
-  // Paint the last-used theme before the first render, so launches don't flash the default.
+  // Paint the last-used theme and card style before the first render, so launches don't flash the defaults.
   applyCachedTheme()
+  applyCachedCardStyle()
 
   Promise.all([seedDatabase(), restoreDraftFromStorage()])
     .then(() => {

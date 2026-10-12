@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
+import Collapse from '@/components/Collapse'
 import type { BlockDraft } from '../types'
 import type { HoldHandle } from '../hooks/useHoldToMove'
 import BlockHeader from './BlockHeader'
@@ -16,6 +17,8 @@ export interface BlockCardProps {
   onReplace?: () => void
   /** Goes on the header: hold it to carry the card to another place. */
   hold?: HoldHandle
+  /** A card is being carried: every card is down to its header, at once (nothing may still be moving under the finger). */
+  folded?: boolean
 }
 
 interface Props extends BlockCardProps {
@@ -25,7 +28,7 @@ interface Props extends BlockCardProps {
 }
 
 /** A logger card: the header (fold, move, remove), your note with the way to swap the exercise out, then its fields. */
-export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, hold, subtitle, children }: Props) {
+export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, hold, folded, subtitle, children }: Props) {
   return (
     <section className="rounded-3xl bg-card p-4">
       <BlockHeader
@@ -34,13 +37,14 @@ export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo
         blockIdx={blockIdx}
         isFirst={isFirst}
         isLast={isLast}
-        collapsed={block.collapsed}
+        collapsed={folded || block.collapsed}
         onShowInfo={onShowInfo}
         hold={hold}
       />
-      {!block.collapsed && (
-        <>
-          <div className="mb-3 flex items-start gap-2">
+      {!folded && (
+        <Collapse open={!block.collapsed}>
+          {/* The space under the header is in here, not on the row that closes: padding can't shrink to nothing */}
+          <div className="mb-3 flex items-start gap-2 pt-3">
             <ExerciseNote exerciseId={block.exercise.uuid} cardio={block.exercise.type === 'cardio'} brief={!!onReplace} className="min-w-0 flex-1" />
             {onReplace && (
               <button
@@ -53,7 +57,7 @@ export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo
             )}
           </div>
           {children}
-        </>
+        </Collapse>
       )}
     </section>
   )

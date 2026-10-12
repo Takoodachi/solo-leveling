@@ -54,6 +54,16 @@ export default {
         md: 'calc(var(--radius) - 6px)',
         sm: 'calc(var(--radius) - 10px)',
       },
+      keyframes: {
+        // Something just ticked off: it lands a touch too big, then settles
+        pop: { '0%': { transform: 'scale(0.6)' }, '60%': { transform: 'scale(1.12)' }, '100%': { transform: 'scale(1)' } },
+        // Opacity only: unlike tailwindcss-animate's `animate-in`, no transform, so fixed bars inside stay pinned
+        'fade-in': { from: { opacity: '0' } },
+      },
+      animation: {
+        pop: 'pop 0.35s ease-out',
+        'fade-in': 'fade-in 0.22s ease-out',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

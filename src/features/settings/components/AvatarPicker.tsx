@@ -9,10 +9,12 @@ interface Props {
   name: string
   src?: string
   size?: number
+  /** Given the photo instead of it being saved to the profile (the first-run setup saves everything at the end). */
+  onPick?: (avatar: string) => void
 }
 
 /** Tap the avatar to pick a photo; it's cropped square and shrunk before saving. */
-export default function AvatarPicker({ name, src, size = 72 }: Props) {
+export default function AvatarPicker({ name, src, size = 72, onPick }: Props) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
 
@@ -22,7 +24,9 @@ export default function AvatarPicker({ name, src, size = 72 }: Props) {
     if (!file) return
     setBusy(true)
     try {
-      await updateSettings({ avatar: await avatarFromFile(file) })
+      const avatar = await avatarFromFile(file)
+      if (onPick) return onPick(avatar)
+      await updateSettings({ avatar })
       toast.success('Photo updated')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Couldn’t use that image')

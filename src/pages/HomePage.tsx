@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Segmented from '@/components/Segmented'
 import SectionHeader from '@/components/SectionHeader'
 import { useNow } from '@/hooks/useNow'
@@ -16,12 +16,15 @@ import HomeHeader from '@/features/dashboard/components/HomeHeader'
 import WeekStrip from '@/features/dashboard/components/WeekStrip'
 import TodayWidgets from '@/features/dashboard/components/TodayWidgets'
 import CustomizeHomeSheet from '@/features/dashboard/components/CustomizeHomeSheet'
-import WeeklyOverviewCard from '@/features/dashboard/components/WeeklyOverviewCard'
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
 import HomeSearch from '@/features/search/components/HomeSearch'
 import RecapBanner from '@/features/recap/components/RecapBanner'
 import LogStepsSheet from '@/features/dashboard/components/LogStepsSheet'
 import WaterSheet from '@/features/checkins/components/WaterSheet'
+import { lazyAhead } from '@/lib/lazyAhead'
+
+// It draws a chart, and the chart library is a fifth of the app: not part of what Home needs to open
+const WeeklyOverviewCard = lazyAhead(() => import('@/features/dashboard/components/WeeklyOverviewCard'))
 
 type Tab = 'today' | 'week'
 const TABS = [{ value: 'today', label: 'Today’s Plan' }, { value: 'week', label: 'Weekly Stats' }] as const
@@ -79,7 +82,7 @@ export default function HomePage() {
           )}
 
           {tab === 'today' ? (
-            <>
+            <div key="today" className="flex animate-fade-in flex-col gap-5">
               <ResumeBanner />
               <RecapBanner now={now} />
               <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>{formatDisplayDate(selected)}</SectionHeader>
@@ -92,11 +95,13 @@ export default function HomePage() {
                 completed={completed}
                 onCustomize={() => setCustomizing(true)}
               />
-            </>
+            </div>
           ) : (
             days && (
-              <>
-                <WeeklyOverviewCard days={days} today={todayStr} />
+              <div key="week" className="flex animate-fade-in flex-col gap-5">
+                <Suspense fallback={<div className="h-72 rounded-3xl bg-card" />}>
+                  <WeeklyOverviewCard days={days} today={todayStr} />
+                </Suspense>
                 <WeeklyStatsGrid
                   days={days}
                   elapsedDays={week.filter(d => d <= todayStr).length}
@@ -105,7 +110,7 @@ export default function HomePage() {
                 <Link to="/recap" className="flex items-center justify-between rounded-3xl bg-card px-5 py-4 font-medium hover:bg-accent">
                   Last week’s recap <ChevronRight size={18} className="text-muted-foreground" />
                 </Link>
-              </>
+              </div>
             )
           )}
         </>

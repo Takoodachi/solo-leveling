@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useNavTabs } from '@/hooks/useNavTabs'
@@ -13,14 +13,13 @@ function Tab({ to, label, Icon }: NavTab) {
       aria-label={label}
       className={({ isActive }) =>
         cn(
-          'relative flex h-full flex-col items-center justify-center gap-1 transition-colors',
+          'relative flex h-full flex-col items-center justify-center gap-1 transition-[color,transform] active:scale-90',
           isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/80',
         )
       }
     >
       {({ isActive }) => (
         <>
-          {isActive && <span className="absolute top-0 h-[3px] w-8 rounded-b-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]" />}
           <Icon size={24} strokeWidth={isActive ? 2.4 : 1.8} className={cn(isActive && 'drop-shadow-[0_0_10px_hsl(var(--primary)/0.55)]')} />
           <span className={cn('text-[11px] font-medium leading-none', !isActive && 'sr-only')}>{label}</span>
         </>
@@ -33,11 +32,23 @@ export default function BottomNav() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   // Home · chosen · (+) · chosen · Settings (the middle two are picked in Settings)
   const tabs = useNavTabs()
+  const { pathname } = useLocation()
+  const open = tabs.findIndex(t => pathname.startsWith(t.to))
+  // The + takes the middle of the five columns
+  const column = open < 2 ? open : open + 1
 
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/5 bg-background/85 pb-safe backdrop-blur-xl">
-        <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-2">
+        <div className="relative mx-auto grid h-16 max-w-md grid-cols-5 items-center px-2">
+          {/* One marker for the whole bar, so it slides from tab to tab (hidden on a screen that isn't one of them) */}
+          <span
+            aria-hidden="true"
+            className={cn('pointer-events-none absolute left-2 top-0 flex w-[calc((100%-1rem)/5)] justify-center transition-[transform,opacity] duration-300 ease-out', open < 0 && 'opacity-0')}
+            style={{ transform: `translateX(${Math.max(column, 0) * 100}%)` }}
+          >
+            <span className="h-[3px] w-8 rounded-b-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]" />
+          </span>
           <Tab {...tabs[0]} />
           <Tab {...tabs[1]} />
           <div className="flex justify-center">

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
-import { axisTick, tooltipStyle } from '@/features/analytics/chartStyles'
+import { axisTick, tooltipStyle, dayLabel } from '@/features/analytics/chartStyles'
 import { useBodyMetrics } from './useBodyMetrics'
 import { today, formatShortDate, toDateStr } from '@/lib/date'
 import { weightSlope, withTrend } from '@/lib/weightTrend'
@@ -38,7 +38,7 @@ export default function WeightLogPage() {
 
   // Oldest first, each weigh-in with the trend at that point
   const points = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date)))
-  const chartData = points.map(m => ({ date: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
+  const chartData = points.map(m => ({ date: m.date, label: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
   const latest = metrics[0]
   const trendNow = points.at(-1)?.trend
   const since = latest ? toDateStr(subDays(parseISO(latest.date), PACE_DAYS)) : ''
@@ -106,9 +106,9 @@ export default function WeightLogPage() {
           </div>
           <ResponsiveContainer width="100%" height={170}>
             <LineChart data={chartData} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
-              <XAxis dataKey="date" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+              <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} domain={['auto', 'auto']} width={36} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+              <Tooltip contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
               <Line type="monotone" dataKey="weight" stroke="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
               <Line type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
             </LineChart>

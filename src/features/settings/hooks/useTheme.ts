@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import { activeTheme, applyTheme, type Theme } from '../themes'
+import { applyCardStyle } from '../cardStyle'
 
 const listeners = new Set<() => void>()
 
@@ -21,19 +22,20 @@ export async function repaintSavedTheme(when: () => boolean = () => true): Promi
 }
 
 /**
- * Mount once (in App): apply the synced theme whenever it changes, whether set
- * on this device or pulled from another one.
+ * Mount once (in App): apply the synced theme and card style whenever they change, whether
+ * set on this device or pulled from another one.
  */
 export function useThemeSync(): void {
   // As text, so an unrelated settings change doesn't repaint
   const saved = useLiveQuery(async () => {
     const settings = await db.settings.get(1)
-    return JSON.stringify([settings?.theme ?? null, settings?.customTheme ?? null])
+    return JSON.stringify([settings?.theme ?? null, settings?.customTheme ?? null, settings?.cardStyle ?? null])
   }, [])
   useEffect(() => {
     if (saved === undefined) return // still loading: keep the cached theme
-    const [id, custom] = JSON.parse(saved) as [string | null, unknown]
+    const [id, custom, card] = JSON.parse(saved) as [string | null, unknown, unknown]
     paintTheme(id, custom)
+    applyCardStyle(card)
   }, [saved])
 }
 

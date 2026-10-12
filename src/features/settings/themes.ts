@@ -142,6 +142,8 @@ export const THEMES: Theme[] = [
 export const CUSTOM_THEME = 'custom'
 const THEME_KEY = 'solo:theme'
 const CUSTOM_KEY = 'solo:customTheme'
+/** The three colours the launch screen is drawn in (index.html reads them before any of the app's code is here). */
+const LAUNCH_KEY = 'solo:launch'
 
 export function themeById(id: string | undefined | null): Theme {
   return THEMES.find(t => t.id === id) ?? THEMES[0]
@@ -193,6 +195,7 @@ export function applyTheme(id: string | undefined | null, custom?: unknown, reme
   if (!remember) return
   try {
     localStorage.setItem(THEME_KEY, t.id)
+    localStorage.setItem(LAUNCH_KEY, JSON.stringify({ background: t.vars.background, foreground: t.vars.foreground, primary: t.vars.primary }))
     if (t.id === CUSTOM_THEME) localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom))
   } catch {
     // storage unavailable: the synced setting still applies after load

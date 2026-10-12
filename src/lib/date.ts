@@ -23,6 +23,11 @@ export function formatShortDate(dateStr: string): string {
   return format(parseISO(dateStr), 'MMM d')
 }
 
+/** "Monday, Oct 12": the date with its day of the week (a chart's tooltip, where there's room for it). */
+export function formatDayDate(dateStr: string): string {
+  return format(parseISO(dateStr), 'EEEE, MMM d')
+}
+
 /** The 7 dates (Mon → Sun) of the week containing `date`. */
 export function weekDates(date: Date): string[] {
   const start = startOfWeek(date, { weekStartsOn: 1 })

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Check, Pill } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { tap } from '@/lib/haptics'
@@ -31,18 +30,15 @@ export default function CreatineCard({ date, today }: { date: string; today: str
     >
       <span className="flex w-full items-start justify-between">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Pill size={20} /></span>
-        <motion.span
+        <span
           key={String(done)}
-          initial={done ? { scale: 0.6 } : false}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 11, stiffness: 300 }}
           className={cn(
             'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-colors',
-            done ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/20 text-transparent',
+            done ? 'animate-pop border-primary bg-primary text-primary-foreground' : 'border-foreground/20 text-transparent',
           )}
         >
           <Check size={22} strokeWidth={3} />
-        </motion.span>
+        </span>
       </span>
       <span className="block">
         <span className="block font-semibold">Creatine</span>

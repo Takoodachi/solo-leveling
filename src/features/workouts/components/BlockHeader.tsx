@@ -36,7 +36,7 @@ export default function BlockHeader({ name, subtitle, blockIdx, isFirst, isLast,
   }
 
   return (
-    <header className={cn('flex items-start gap-1', !collapsed && 'mb-3')}>
+    <header className="flex items-start gap-1">
       <button
         type="button"
         className={cn(iconBtn, '-ml-1.5 w-7')}

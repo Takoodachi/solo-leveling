@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ChevronDown, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Collapse from '@/components/Collapse'
 
 interface Props {
   /** The anchor search results link to (`/settings#theme`); arriving on it opens the section. */
@@ -38,7 +39,7 @@ export default function SettingsSection({ id, title, summary, Icon, children }: 
         <ChevronDown size={20} className={cn('shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
       {/* The cards inside keep their own padding; on this card's surface they read as one */}
-      {open && <div id={`${id}-panel`} className="-mt-2 flex flex-col">{children}</div>}
+      <Collapse open={open} id={`${id}-panel`} className="-mt-2 flex flex-col">{children}</Collapse>
     </section>
   )
 }

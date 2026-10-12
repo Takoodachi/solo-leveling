@@ -5,6 +5,7 @@ import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { useAuthStore } from '@/features/auth/authStore'
 import { clampPercent } from '@/lib/format'
 import { useSettings } from '../hooks/useSettings'
+import { xpFill } from '@/features/gamification/xpFill'
 import AvatarPicker from './AvatarPicker'
 
 export default function ProfileCard() {
@@ -55,7 +56,7 @@ export default function ProfileCard() {
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${clampPercent(xp, needed)}%` }} />
+          <div className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(clampPercent(xp, needed))} />
         </div>
       </div>
 

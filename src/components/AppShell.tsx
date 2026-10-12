@@ -1,7 +1,7 @@
 import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useNavTabs } from '@/hooks/useNavTabs'
+import { cn } from '@/lib/utils'
 import BottomNav from './BottomNav'
 
 /** Position for the slide direction: bar tabs in bar order, other pages just past them. */
@@ -27,20 +27,21 @@ export default function AppShell() {
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-page text-foreground">
-      <motion.main
-        key={location.pathname}
-        initial={{ x: `${dir * 24}%`, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: 'tween', duration: 0.18, ease: 'easeOut' }}
-        className="pt-safe pl-safe pr-safe"
-      >
-        {/* Bottom padding clears the nav bar (4rem) + home indicator. */}
-        <div className="mx-auto w-full max-w-md px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
-          <Suspense fallback={null}>
+      {/* A new screen slides in from the side its tab is on (the key restarts the animation).
+          The boundary is outside it on purpose: a screen whose code isn't here yet then keeps
+          the one on show where it is (a navigation is a transition) and arrives with its
+          animation. Inside, the slide played on an empty screen and the content turned up after it. */}
+      <Suspense fallback={null}>
+        <main
+          key={location.pathname}
+          className={cn('pt-safe pl-safe pr-safe duration-200 ease-out animate-in fade-in-0', dir > 0 ? 'slide-in-from-right-[24%]' : 'slide-in-from-left-[24%]')}
+        >
+          {/* Bottom padding clears the nav bar (4rem) + home indicator. */}
+          <div className="mx-auto w-full max-w-md px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
             <Outlet />
-          </Suspense>
-        </div>
-      </motion.main>
+          </div>
+        </main>
+      </Suspense>
       <BottomNav />
     </div>
   )

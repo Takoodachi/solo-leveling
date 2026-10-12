@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import type { RanksSnapshot } from '../computeRanks'
 import { MIN_GROUPS_FOR_OVERALL } from '../computeRanks'
 import RankBadge from './RankBadge'
-import RankProgress from './RankProgress'
+import { TierProgress } from './RankProgress'
 import { ink } from '@/lib/colors'
 
 /** Big overall emblem at the top of the ranks screen. */
@@ -24,7 +24,7 @@ export default function RankHero({ ranks }: { ranks: RanksSnapshot }) {
         <>
           <h2 className="relative font-heading text-3xl font-bold uppercase tracking-wide" style={{ color }}>{overall.label}</h2>
           <p className="relative text-sm text-muted-foreground tabular-nums">Strength rating {overall.rating} / 1000</p>
-          <RankProgress rank={overall} className="relative mt-4 w-full max-w-xs" />
+          <TierProgress rank={overall} className="relative mt-4 w-full max-w-xs" />
         </>
       ) : (
         <>

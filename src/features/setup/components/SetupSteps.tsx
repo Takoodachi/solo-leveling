@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Logo from '@/components/Logo'
@@ -5,7 +6,12 @@ import NumberStepper from '@/components/NumberStepper'
 import Segmented from '@/components/Segmented'
 import { cn } from '@/lib/utils'
 import type { GoalType } from '@/features/settings/targetSuggestion'
-import { setupTargets, type SetupForm } from '../setup'
+import AvatarPicker from '@/features/settings/components/AvatarPicker'
+import { Swatch } from '@/features/settings/components/ThemePicker'
+import { THEMES } from '@/features/settings/themes'
+import { paintTheme, useActiveTheme } from '@/features/settings/hooks/useTheme'
+import { homeWidgetDef } from '@/features/dashboard/homeWidgets'
+import { TRACKABLE, setupTargets, type SetupForm } from '../setup'
 
 interface StepProps {
   form: SetupForm
@@ -21,12 +27,16 @@ export function NameStep({ form, onChange }: StepProps) {
       <Logo size={56} className="mb-6" />
       <h1 className={title}>Welcome to Solo Leveling</h1>
       <p className={lead}>
-        Three short questions, so your targets and strength ranks fit you. Skip any of them: everything can be changed later in Profile.
+        A few short questions, so the app fits you from the start. Skip any of them: everything can be changed later in Profile and Settings.
       </p>
-      <div className="mt-8 flex flex-col gap-2">
-        <Label htmlFor="setup-name">What should we call you?</Label>
-        <Input id="setup-name" value={form.name} onChange={e => onChange({ name: e.target.value })} placeholder="Your name" autoComplete="given-name" maxLength={40} enterKeyHint="next" />
+      <div className="mt-8 flex items-center gap-4">
+        <AvatarPicker name={form.name} src={form.avatar} size={72} onPick={avatar => onChange({ avatar })} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <Label htmlFor="setup-name">What should we call you?</Label>
+          <Input id="setup-name" value={form.name} onChange={e => onChange({ name: e.target.value })} placeholder="Your name" autoComplete="given-name" maxLength={40} enterKeyHint="next" />
+        </div>
       </div>
+      <p className="mt-3 text-xs text-muted-foreground">Tap the circle to add a photo. Friends on the leaderboard see your name and photo.</p>
     </>
   )
 }
@@ -107,6 +117,71 @@ export function GoalStep({ form, onChange }: StepProps) {
           'Targets start at 2,000 kcal and 150 g of protein. With your sex, height and weight they can be fitted to you (Profile → Body & goals).'
         )}
       </p>
+    </>
+  )
+}
+
+/** What to keep track of: each choice is a card on Home. Steps, calories and water start chosen. */
+export function TrackStep({ form, onChange }: StepProps) {
+  const toggle = (id: (typeof TRACKABLE)[number]) =>
+    onChange({ track: form.track.includes(id) ? form.track.filter(t => t !== id) : [...form.track, id] })
+  return (
+    <>
+      <h1 className={title}>What do you want to track?</h1>
+      <p className={lead}>Each one gets a card on your Home screen. The usual three are already picked: add or drop any, now or later (Home → Customize).</p>
+      <div className="mt-6 flex flex-col gap-2">
+        {TRACKABLE.map(id => {
+          const def = homeWidgetDef(id)
+          if (!def) return null
+          const on = form.track.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              role="checkbox"
+              aria-checked={on}
+              onClick={() => toggle(id)}
+              className={cn('flex min-h-16 items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors', on ? 'bg-card ring-2 ring-primary' : 'bg-card/50')}
+            >
+              <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', on ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
+                <def.icon size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{def.label}</span>
+                <span className="block truncate text-sm text-muted-foreground">{def.description}</span>
+              </span>
+              <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full border-2', on ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/25 text-transparent')}>
+                <Check size={14} strokeWidth={3} />
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+/** The look: picking a theme paints it at once, as a preview; it's saved with the rest at the end. */
+export function ThemeStep({ form, onChange }: StepProps) {
+  const active = useActiveTheme().id
+  function pick(id: string) {
+    paintTheme(id, undefined, false)
+    onChange({ theme: id })
+  }
+  return (
+    <>
+      <h1 className={title}>Pick a look</h1>
+      <p className={lead}>The whole app changes as you tap. There are more ways to make it yours in Settings → Theme.</p>
+      {(['dark', 'light'] as const).map(mode => (
+        <div key={mode} className="mt-5 flex flex-col gap-2">
+          <p className="eyebrow px-1 text-muted-foreground">{mode === 'dark' ? 'Dark' : 'Light'}</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {THEMES.filter(t => t.mode === mode).map(t => (
+              <Swatch key={t.id} theme={t} active={t.id === (form.theme ?? active)} onPick={() => pick(t.id)} />
+            ))}
+          </div>
+        </div>
+      ))}
     </>
   )
 }

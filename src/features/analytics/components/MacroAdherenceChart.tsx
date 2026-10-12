@@ -1,7 +1,7 @@
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid,
 } from 'recharts'
-import { formatShortDate } from '@/lib/date'
+import { formatDayDate, formatShortDate } from '@/lib/date'
 import type { MacroDay } from '../hooks/useAnalyticsData'
 
 interface Props {
@@ -23,7 +23,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const p = payload[0].payload
   return (
     <div className="rounded-xl border border-border bg-popover px-2.5 py-1.5 text-xs shadow-md">
-      <p className="font-medium">{formatShortDate(p.date)}</p>
+      <p className="font-medium">{formatDayDate(p.date)}</p>
       <p className="text-foreground">{p.totalKcal.toLocaleString()} kcal{p.netKcal != null && ' eaten'}</p>
       {p.netKcal != null && (
         <p className="text-foreground">−{p.stepKcal.toLocaleString()} steps = {p.netKcal.toLocaleString()} net</p>

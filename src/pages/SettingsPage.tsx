@@ -7,6 +7,8 @@ import SettingsSection from '@/features/settings/components/SettingsSection'
 import AccountCard from '@/features/settings/components/AccountCard'
 import ThemePicker from '@/features/settings/components/ThemePicker'
 import WallpaperCard from '@/features/settings/components/WallpaperCard'
+import CardStylePicker from '@/features/settings/components/CardStylePicker'
+import { CARD_STYLES, cardStyleOf } from '@/features/settings/cardStyle'
 import NavBarCard from '@/features/settings/components/NavBarCard'
 import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import WorkoutPrefsCard from '@/features/settings/components/WorkoutPrefsCard'
@@ -44,7 +46,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-3">
       <PageHeader title="Settings" />
       {isSupabaseConfigured && (
-        <SettingsSection id="account" title="Account & sync" summary={email ?? 'Not signed in'} Icon={Cloud}>
+        <SettingsSection id="account" title="Account & sync" summary={email ?? (signedIn ? 'Waiting for a connection' : 'Not signed in')} Icon={Cloud}>
           <AccountCard />
         </SettingsSection>
       )}
@@ -64,8 +66,9 @@ export default function SettingsPage() {
       <SettingsSection id="workouts" title="Workouts" summary={settings?.workoutTips === false ? 'Tips off' : 'Tips on'} Icon={Dumbbell}>
         <WorkoutPrefsCard />
       </SettingsSection>
-      <SettingsSection id="theme" title="Theme" summary={resolveTheme(settings?.theme, settings?.customTheme).name} Icon={Palette}>
+      <SettingsSection id="theme" title="Theme" summary={`${resolveTheme(settings?.theme, settings?.customTheme).name} · ${CARD_STYLES.find(s => s.id === cardStyleOf(settings?.cardStyle))?.name} cards`} Icon={Palette}>
         <ThemePicker />
+        <CardStylePicker />
         <WallpaperCard />
       </SettingsSection>
       <SettingsSection id="bottom-bar" title="Bottom bar" summary={`${NAV_CHOICES[left].label} · ${NAV_CHOICES[right].label}`} Icon={PanelBottom}>

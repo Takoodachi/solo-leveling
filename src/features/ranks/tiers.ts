@@ -54,6 +54,13 @@ function stepLabel(step: number): string {
   return `${TIERS[Math.floor(step / 3)].name} ${DIVISIONS[step % 3]}`
 }
 
+/** The tier a rank is in, end to end: where it starts and ends, the tier after it, and its divisions in order. */
+export function tierSpan(rank: RankInfo): { lo: number; hi: number; next: Tier | null; divisions: readonly string[] } {
+  const i = TIERS.indexOf(rank.tier)
+  const next = TIERS[i + 1] ?? null
+  return { lo: i === 0 ? 0 : rank.tier.min, hi: next?.min ?? MAX_RATING, next, divisions: next ? DIVISIONS : [] }
+}
+
 export function rankFor(rawRating: number): RankInfo {
   const rating = Math.min(MAX_RATING, Math.max(1, Math.round(rawRating)))
   let step = 0

@@ -11,7 +11,7 @@ import CustomThemeEditor from './CustomThemeEditor'
 const hsl = (v: string) => `hsl(${v})`
 
 /** A tiny mock of the app drawn in the theme's own colours. */
-function Swatch({ theme, active, onPick }: { theme: Theme; active: boolean; onPick: () => void }) {
+export function Swatch({ theme, active, onPick }: { theme: Theme; active: boolean; onPick: () => void }) {
   const v = theme.vars
   return (
     <button

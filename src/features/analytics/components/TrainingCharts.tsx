@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tool
 import { formatShortDate } from '@/lib/date'
 import { formatVolume } from '@/lib/workoutMath'
 import { useWeeklyVolume, useLiftedExercises, useOneRmHistory } from '../hooks/useTrainingAnalytics'
-import { tooltipStyle, axisTick, compactNumber } from '../chartStyles'
+import { tooltipStyle, axisTick, compactNumber, dayLabel } from '../chartStyles'
 import ChartCard from './ChartCard'
 import LiftPicker from './LiftPicker'
 
@@ -32,7 +32,11 @@ export function WeeklyVolumeCard() {
               <Tooltip
                 cursor={{ fill: 'hsl(var(--accent))' }}
                 contentStyle={tooltipStyle}
-                formatter={(v, _k, item) => [`${formatVolume(Number(v))} · ${(item.payload as { workouts: number }).workouts} workouts`, 'Week']}
+                labelFormatter={dayLabel}
+                formatter={(v, _k, item) => {
+                  const { workouts } = item.payload as { workouts: number }
+                  return [`${formatVolume(Number(v))} · ${workouts} ${workouts === 1 ? 'workout' : 'workouts'}`, 'Week']
+                }}
               />
               <Bar dataKey="volume" fill="url(#volBar)" radius={[8, 8, 8, 8]} maxBarSize={28} />
             </BarChart>
@@ -66,6 +70,7 @@ export function OneRmCard() {
                 <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  labelFormatter={dayLabel}
                   formatter={(v, _k, item) => {
                     const p = item.payload as { topWeight: number; topReps: number }
                     return [`${v} kg (from ${p.topWeight}×${p.topReps})`, 'Est. 1RM']

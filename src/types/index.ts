@@ -113,6 +113,8 @@ export interface CustomTheme {
 }
 
 export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
+/** How cards are drawn (features/settings/cardStyle.ts). */
+export type CardStyle = 'solid' | 'glass' | 'outline' | 'glow' | 'bold'
 export type VolumeMuscle =
   | 'chest' | 'shoulders' | 'triceps' | 'biceps' | 'forearms' | 'abs'
   | 'quads' | 'adductors' | 'abductors' | 'glutes' | 'hamstrings' | 'calves'
@@ -148,6 +150,7 @@ export interface Settings {
   workoutTips?: boolean // "what to try today" on each lift in the logger (unset = shown)
   appShortcuts?: AppShortcutId[] // long-press actions on the Android app's icon, in order (unset = workout, food, weight)
   customTheme?: CustomTheme // the user's own palette, on screen when theme = 'custom'
+  cardStyle?: CardStyle // how cards are drawn (unset = solid; read it through `cardStyleOf`)
   achievementGoals?: string[] // achievement keys picked as goals (features/gamification/goals.ts)
   updatedAt?: number
   syncPending?: boolean

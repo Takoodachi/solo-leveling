@@ -1,5 +1,6 @@
 import { format, parseISO } from 'date-fns'
 import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip } from 'recharts'
+import { dayLabel, tooltipStyle } from '@/features/analytics/chartStyles'
 import type { DaySummary } from '../hooks/useWeekSummary'
 
 interface Props {
@@ -16,6 +17,7 @@ export default function WeeklyOverviewCard({ days, today }: Props) {
   const maxVol = Math.max(1, ...days.map(d => d.volume))
   const maxKcal = Math.max(1, ...days.map(d => d.kcal))
   const data = days.map(d => ({
+    date: d.date,
     day: format(parseISO(d.date), 'EEE'),
     volume: d.volume / maxVol,
     kcal: d.kcal / maxKcal,
@@ -52,7 +54,8 @@ export default function WeeklyOverviewCard({ days, today }: Props) {
             <XAxis dataKey="day" interval={0} padding={{ left: 12, right: 12 }} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={6} />
             <Tooltip
               cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '3 3' }}
-              contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
+              contentStyle={tooltipStyle}
+              labelFormatter={dayLabel}
               formatter={(_, key, item) => {
                 const raw = (item.payload as { raw: DaySummary }).raw
                 return key === 'volume'
