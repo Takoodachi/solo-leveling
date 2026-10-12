@@ -65,7 +65,7 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'settings', title: 'Settings', subtitle: 'Account, theme and backup', keywords: 'preferences options', Icon: Settings, to: '/settings' },
   { id: 'account', title: 'Account & sync', subtitle: 'Settings', keywords: 'sign in sign out log in login logout email password cloud sync', Icon: Cloud, to: '/settings#account' },
   { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings', keywords: 'privacy share visible hide', Icon: Eye, to: '/settings#sharing' },
-  { id: 'theme', title: 'Theme', subtitle: 'Settings', keywords: `dark light mode colours colors palette appearance custom own ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
+  { id: 'theme', title: 'Theme', subtitle: 'Settings', keywords: `dark light mode colours colors palette appearance custom own card style glass outline glow bold ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
   { id: 'workout-tips', title: 'Tips during workouts', subtitle: 'Settings', keywords: 'suggestions hints progression weight reps increase recommend off hide', Icon: Lightbulb, to: '/settings#workouts' },
   ...(isAndroidApp() ? [{ id: 'app-icon', title: 'App icon shortcuts', subtitle: 'Settings', keywords: 'long press hold home screen launcher quick actions', Icon: Smartphone, to: '/settings#app-icon' }] : []),
   { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert workout creatine food weigh water recap', Icon: Bell, to: '/settings#reminders' },
