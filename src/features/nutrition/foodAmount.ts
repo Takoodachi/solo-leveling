@@ -1,8 +1,15 @@
 import type { Food } from '@/types'
+import { QUICK_ADD_FOOD } from '@/data/foods'
 import { round1 } from '@/lib/format'
 
-/** Foods measured by weight or volume can be entered in grams / ml as well as in servings. */
-export const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml'
+/** Calories logged on their own (see `QUICK_ADD_FOOD`). */
+export const isQuickAdd = (food: Pick<Food, 'uuid'>) => food.uuid === QUICK_ADD_FOOD.uuid
+
+/**
+ * Foods entered as an amount: those measured by weight or volume (grams / ml, or servings if
+ * preferred), and a quick add, whose amount is its calories.
+ */
+export const usesGrams = (food: Food) => food.servingUnit === 'g' || food.servingUnit === 'ml' || isQuickAdd(food)
 
 export type AmountMode = 'servings' | 'grams'
 

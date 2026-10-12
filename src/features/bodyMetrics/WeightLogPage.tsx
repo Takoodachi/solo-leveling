@@ -1,20 +1,25 @@
 import { useState } from 'react'
+import { parseISO, subDays } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
+import { axisTick, tooltipStyle } from '@/features/analytics/chartStyles'
 import { useBodyMetrics } from './useBodyMetrics'
-import { today, formatShortDate } from '@/lib/date'
+import { today, formatShortDate, toDateStr } from '@/lib/date'
+import { weightSlope, withTrend } from '@/lib/weightTrend'
+
+/** The pace is read over this many days up to the latest weigh-in. */
+const PACE_DAYS = 28
+
+/** "+0.4 kg a week", or that it's steady: stated the same way up or down. */
+function pace(kgPerWeek: number): string {
+  if (Math.abs(kgPerWeek) < 0.05) return 'Steady'
+  return `${kgPerWeek > 0 ? '+' : '−'}${Math.abs(kgPerWeek).toFixed(1)} kg a week`
+}
 
 export default function WeightLogPage() {
   const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
@@ -31,22 +36,32 @@ export default function WeightLogPage() {
     setWeight('')
   }
 
-  // Chart data sorted ascending for the line
-  const chartData = [...metrics]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map(m => ({ date: formatShortDate(m.date), weight: m.weightKg }))
-
+  // Oldest first, each weigh-in with the trend at that point
+  const points = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date)))
+  const chartData = points.map(m => ({ date: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
   const latest = metrics[0]
+  const trendNow = points.at(-1)?.trend
+  const since = latest ? toDateStr(subDays(parseISO(latest.date), PACE_DAYS)) : ''
+  const slope = weightSlope(points.filter(p => p.date >= since))
 
   return (
     <FullScreen className="flex flex-col gap-4">
       <PageHeader back="/analytics" title="Body weight" />
 
       {latest && (
-        <div className="rounded-3xl bg-card p-4">
-          <p className="text-xs text-muted-foreground">Latest</p>
-          <p className="text-3xl font-bold">{latest.weightKg} <span className="text-lg font-normal text-muted-foreground">kg</span></p>
-          <p className="text-xs text-muted-foreground mt-0.5">{formatShortDate(latest.date)}</p>
+        <div className="grid grid-cols-2 gap-3 rounded-3xl bg-card p-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Latest</p>
+            <p className="text-3xl font-bold">{latest.weightKg} <span className="text-lg font-normal text-muted-foreground">kg</span></p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatShortDate(latest.date)}</p>
+          </div>
+          {trendNow != null && points.length > 1 && (
+            <div>
+              <p className="text-xs text-muted-foreground">Trend</p>
+              <p className="text-3xl font-bold">{trendNow.toFixed(1)} <span className="text-lg font-normal text-muted-foreground">kg</span></p>
+              <p className="text-xs text-muted-foreground mt-0.5">{slope != null ? pace(slope * 7) : 'Pace after a week of weigh-ins'}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -79,38 +94,28 @@ export default function WeightLogPage() {
         </Button>
       </div>
 
-      {/* Chart */}
+      {/* Chart: the weigh-ins as dots, the trend as the line */}
       {chartData.length > 1 && (
         <div className="rounded-3xl bg-card p-4">
-          <h2 className="font-medium text-sm mb-3">90-day trend</h2>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={chartData}>
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                domain={['auto', 'auto']}
-                width={36}
-              />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="weight"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={false}
-              />
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-medium text-sm">Weigh-ins and trend</h2>
+            <p className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Weigh-in</span>
+              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded-full bg-primary" /> Trend</span>
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={170}>
+            <LineChart data={chartData} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+              <XAxis dataKey="date" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+              <YAxis tick={axisTick} tickLine={false} axisLine={false} domain={['auto', 'auto']} width={36} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+              <Line type="monotone" dataKey="weight" stroke="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
+              <Line type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
+          <p className="mt-2 text-xs text-muted-foreground">
+            The scale swings from day to day with water and food. The trend is the same weigh-ins with those swings smoothed out.
+          </p>
         </div>
       )}
 

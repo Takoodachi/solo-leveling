@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 import { formatShortDate } from '@/lib/date'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
+import { withTrend } from '@/lib/weightTrend'
 import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSettings'
 import { useStepsHistory } from '../hooks/useTrainingAnalytics'
 import { tooltipStyle, axisTick, compactNumber } from '../chartStyles'
@@ -10,14 +11,16 @@ import ChartCard from './ChartCard'
 
 export function WeightTrendCard() {
   const { metrics } = useBodyMetrics(30)
-  const data = [...metrics].sort((a, b) => a.date.localeCompare(b.date)).map(m => ({ label: formatShortDate(m.date), weight: m.weightKg }))
+  // The weigh-ins as dots; the line is the trend, with the day-to-day swings smoothed out
+  const data = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date))).map(m => ({ label: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
   const latest = metrics[0]
+  const trend = data.at(-1)?.trend
 
   return (
     <ChartCard
       id="body-weight"
       title="Body weight"
-      subtitle={latest ? `${latest.weightKg} kg · ${formatShortDate(latest.date)}` : 'Not logged yet'}
+      subtitle={latest ? `${latest.weightKg} kg · ${formatShortDate(latest.date)}${trend != null && data.length > 1 ? ` · trend ${trend.toFixed(1)} kg` : ''}` : 'Not logged yet'}
       action={
         <Link to="/analytics/weight" className="-mr-2 flex items-center gap-0.5 rounded-full px-2 py-1 text-sm font-semibold text-primary">
           Log <ChevronRight size={16} />
@@ -36,8 +39,9 @@ export function WeightTrendCard() {
               </defs>
               <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
               <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
-              <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kg`, 'Weight']} />
-              <Area type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+              <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
+              <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

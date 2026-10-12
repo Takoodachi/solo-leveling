@@ -27,11 +27,13 @@ import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood, type ConfirmedFood } from './AiFoodConfirm'
 import FoodResults, { type RecentUse } from './FoodResults'
 import OnlineFoodResults from './OnlineFoodResults'
+import QuickAddCalories from './QuickAddCalories'
 import FoodAmountFields from './FoodAmountFields'
 import { amountDraft, servingsOf, EMPTY_AMOUNT, type AmountDraft } from '../foodAmount'
 import { useSavedMeals, type SavedMealWithSummary } from '../hooks/useMeals'
 import { logMealItems, unlogFoods, amountLabel } from '../logFoods'
 import type { Food, MealType } from '@/types'
+import { QUICK_ADD_FOOD } from '@/data/foods'
 
 interface Props {
   open: boolean
@@ -64,6 +66,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const [selected, setSelected] = useState<Food | null>(null)
   const [amount, setAmount] = useState<AmountDraft>(EMPTY_AMOUNT)
   const [showCustom, setShowCustom] = useState(false)
+  const [showQuick, setShowQuick] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [aiText, setAiText] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
@@ -159,6 +162,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     setSelected(null)
     setAmount(EMPTY_AMOUNT)
     setShowCustom(false)
+    setShowQuick(false)
     setShowScanner(false)
     setAiText('')
     setAiLoading(false)
@@ -264,6 +268,25 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
               onCancel={() => setShowScanner(false)}
             />
           </Suspense>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  if (showQuick) {
+    return (
+      <Dialog open={open} onOpenChange={open => !open && handleClose()}>
+        <DialogContent className="max-w-sm gap-0 p-0">
+          <DialogHeader className="p-4 pb-3">
+            <DialogTitle>Quick add — {mealType}</DialogTitle>
+          </DialogHeader>
+          <QuickAddCalories
+            onBack={() => setShowQuick(false)}
+            onAdd={async kcal => {
+              await logFood(QUICK_ADD_FOOD, kcal)
+              setShowQuick(false)
+            }}
+          />
         </DialogContent>
       </Dialog>
     )
@@ -437,13 +460,11 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                 <Button size="sm" className="shrink-0" onClick={handleClose}>Done</Button>
               </div>
             )}
-            <div className="shrink-0 px-4 pb-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={() => setShowCustom(true)}
-              >
+            <div className="flex shrink-0 gap-1 px-4 pb-4">
+              <Button variant="ghost" size="sm" className="flex-1 px-2 text-muted-foreground" onClick={() => setShowQuick(true)}>
+                + Just calories
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-1 px-2 text-muted-foreground" onClick={() => setShowCustom(true)}>
                 + Create custom food
               </Button>
             </div>

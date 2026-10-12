@@ -2,7 +2,7 @@ import { Label } from '@/components/ui/label'
 import NumberStepper from '@/components/NumberStepper'
 import { cn } from '@/lib/utils'
 import type { Food } from '@/types'
-import { computeMacros, servingsOf, usesGrams, type AmountDraft } from '../foodAmount'
+import { computeMacros, isQuickAdd, servingsOf, usesGrams, type AmountDraft } from '../foodAmount'
 
 interface Props {
   food: Food
@@ -17,7 +17,7 @@ export default function FoodAmountFields({ food, draft, onChange }: Props) {
   return (
     <>
       <div className="flex flex-col gap-2">
-        {usesGrams(food) && (
+        {usesGrams(food) && !isQuickAdd(food) && (
           <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
             {(['grams', 'servings'] as const).map(m => (
               <button
@@ -35,7 +35,7 @@ export default function FoodAmountFields({ food, draft, onChange }: Props) {
           </div>
         )}
 
-        <Label>{draft.mode === 'grams' ? `Amount (${food.servingUnit})` : 'Servings'}</Label>
+        <Label>{isQuickAdd(food) ? 'Calories' : draft.mode === 'grams' ? `Amount (${food.servingUnit})` : 'Servings'}</Label>
 
         {draft.mode === 'grams' ? (
           <NumberStepper

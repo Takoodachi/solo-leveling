@@ -5,6 +5,7 @@ import { requestSync } from '@/lib/sync'
 import { normalize } from '@/lib/search'
 import { logFoods, unlogFoods, type NewFoodLog } from '../logFoods'
 import type { ReviewedFood } from '../openFoodFacts'
+import { isQuickAdd } from '../foodAmount'
 
 /** Barcode foods use a stable id, so re-scanning a product finds (and can correct) the saved entry. */
 export function barcodeFoodId(barcode: string): string {
@@ -54,9 +55,11 @@ export function useFoods() {
   /** Every word must match; accents don't matter, so "pho bo" finds "Phở bò". */
   function searchFoods(query: string): Food[] {
     if (!foods) return []
+    // Quick add isn't a food to pick: it has its own button
+    const listed = foods.filter(f => !isQuickAdd(f))
     const words = normalize(query).split(/\s+/).filter(Boolean)
-    if (words.length === 0) return foods
-    return foods.filter(f => {
+    if (words.length === 0) return listed
+    return listed.filter(f => {
       const name = normalize(f.name)
       return words.every(w => name.includes(w))
     })
