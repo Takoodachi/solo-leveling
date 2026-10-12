@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -24,7 +23,6 @@ export default function ProgressRing({
   children,
 }: Props) {
   const r = (size - stroke) / 2
-  const circumference = 2 * Math.PI * r
   const pct = Math.max(0, Math.min(1, value))
 
   return (
@@ -32,7 +30,8 @@ export default function ProgressRing({
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
         {pct > 0 && (
-          <motion.circle
+          // The arc is measured as 1 (pathLength), so drawing it in and moving it are plain CSS (.ring-arc)
+          <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
@@ -40,9 +39,9 @@ export default function ProgressRing({
             stroke={color}
             strokeWidth={stroke}
             strokeLinecap="round"
-            initial={{ strokeDasharray: `0 ${circumference}` }}
-            animate={{ strokeDasharray: `${pct * circumference} ${circumference}` }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
+            pathLength={1}
+            strokeDasharray={`${pct} 1`}
+            className="ring-arc"
           />
         )}
       </svg>

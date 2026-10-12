@@ -1,5 +1,5 @@
 import type { Food } from '@/types'
-import { QUICK_ADD_FOOD } from '@/data/foods'
+import { QUICK_ADD_FOOD } from '@/data/basics'
 import { round1 } from '@/lib/format'
 
 /** Calories logged on their own (see `QUICK_ADD_FOOD`). */

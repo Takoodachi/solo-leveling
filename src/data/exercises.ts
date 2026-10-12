@@ -177,7 +177,3 @@ export const BUILT_IN_EXERCISES: Exercise[] = [
   { uuid: 'ex-hiking',                   name: 'Hiking',                   category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Quadriceps', 'Glutes', 'Calves'], musclesSecondary: ['Hamstrings', 'Core'], instructions: "Walk on uneven, outdoor terrain (trails, hills). Carry a small pack for added load. Low-impact endurance + glute work from the inclines." },
   ...MORE_EXERCISES,
 ]
-
-export const EXERCISE_CATEGORIES = [
-  'Back', 'Chest', 'Shoulders', 'Arms', 'Lower Body', 'Core', 'Full Body', 'Cardio', 'Mobility',
-] as const

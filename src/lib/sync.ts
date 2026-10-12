@@ -1,5 +1,6 @@
 import type { Table } from 'dexie'
 import { db } from '@/db'
+import { forgetCatalog } from '@/db/seed'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { useSyncStatus } from './syncStatus'
 
@@ -132,7 +133,7 @@ const SINGLETONS: SingletonSpec[] = [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays', 'reminders',
       'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'theme', 'navTabs', 'avatar', 'showSearch',
-      'workoutTips', 'appShortcuts', 'customTheme', 'achievementGoals', 'trainingSince', 'updatedAt',
+      'workoutTips', 'appShortcuts', 'customTheme', 'achievementGoals', 'trainingSince', 'cardStyle', 'updatedAt',
     ],
   },
 ]
@@ -390,6 +391,7 @@ class SyncService {
 
       if (puts.length > 0) await table.bulkPut(puts)
       if (dels.length > 0) await table.bulkDelete(dels)
+      if (puts.length > 0 && spec.remote === 'foods') forgetCatalog() // a favorite built-in comes back as it was saved
     })
   }
 

@@ -40,12 +40,30 @@ export function useAuthInit(): void {
     }
 
     let currentUserId: string | null = null
+    const finishLoading = () => useAuthStore.getState().setLoading(false)
+
+    // This device already holds an account's data: show it now, and settle the session behind
+    // it. Checking a session can mean renewing it over the network (it lasts an hour), which
+    // held every such launch on a spinner; offline it never answers, and the app ended up on
+    // the sign-in screen with the data right there. Nothing syncs until the session is real.
+    let owner: string | null = null
+    try {
+      owner = store.localMode ? null : localStorage.getItem(LOCAL_OWNER_KEY)
+    } catch {
+      // storage unavailable: wait for the session, as a new device does
+    }
+    if (owner) {
+      store.setUserId(owner)
+      finishLoading()
+    }
 
     async function applySession(session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) {
       const s = useAuthStore.getState()
       s.setSession(session)
       const nextId = session?.user.id ?? null
-      if (nextId === currentUserId) return
+      // Shown from the device's data alone, and the session turns out to be gone: that's a sign-out too
+      const shownWithoutSession = !nextId && !!s.userId
+      if (nextId === currentUserId && !shownWithoutSession) return
       currentUserId = nextId
 
       if (!nextId) {
@@ -69,12 +87,14 @@ export function useAuthInit(): void {
         .catch(err => console.error('[auth] initial sync failed:', err))
     }
 
-    const finishLoading = () => useAuthStore.getState().setLoading(false)
     // Checking an email-link sign-in needs one network request; don't wait on it forever.
     const failsafe = setTimeout(finishLoading, 10_000)
 
     supabase.auth.getSession()
-      .then(async ({ data }) => {
+      .then(async ({ data, error }) => {
+        // It couldn't be checked (no connection, and the session needs renewing): the account's
+        // data stays on screen. The library keeps trying, and tells us below how it ends.
+        if (!data.session && error && useAuthStore.getState().userId) return
         await applySession(data.session)
         const s = useAuthStore.getState()
         if (!data.session && s.localMode) void grantWeeklyStreakFreeze()
@@ -90,7 +110,9 @@ export function useAuthInit(): void {
         finishLoading()
       })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // "No session" only counts when it's a sign-out: at startup it can also mean "couldn't check"
+      if (!session && event !== 'SIGNED_OUT') return
       // Defer: Supabase recommends not awaiting other auth calls inside this callback.
       setTimeout(() => void applySession(session), 0)
     })

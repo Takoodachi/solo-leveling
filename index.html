@@ -17,9 +17,26 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Solo Leveling</title>
+    <script>
+      // The launch screen below shows before the app's code has loaded, so the theme can't paint it:
+      // these are the colours of the theme this device last used (themes.ts keeps them).
+      try {
+        var launch = JSON.parse(localStorage.getItem('solo:launch'))
+        for (var token in launch) document.documentElement.style.setProperty('--' + token, launch[token])
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- The launch screen: what's here until the app's code has loaded and React takes over.
+           App.tsx's LaunchScreen draws the same mark in the same place; keep them alike. -->
+      <div class="flex min-h-dvh items-center justify-center bg-page text-foreground">
+        <svg viewBox="14 12 72 72" width="72" height="72" class="shrink-0 animate-pulse" aria-hidden="true">
+          <path d="M50,12 L80,42 L67,42 L50,25 L33,42 L20,42 Z" fill="hsl(var(--primary))" />
+          <path d="M50,33 L80,63 L67,63 L50,46 L33,63 L20,63 Z M50,54 L80,84 L67,84 L50,67 L33,84 L20,84 Z" fill="currentColor" />
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

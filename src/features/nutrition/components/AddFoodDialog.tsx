@@ -33,7 +33,7 @@ import { amountDraft, servingsOf, EMPTY_AMOUNT, type AmountDraft } from '../food
 import { useSavedMeals, type SavedMealWithSummary } from '../hooks/useMeals'
 import { logMealItems, unlogFoods, amountLabel } from '../logFoods'
 import type { Food, MealType } from '@/types'
-import { QUICK_ADD_FOOD } from '@/data/foods'
+import { QUICK_ADD_FOOD } from '@/data/basics'
 
 interface Props {
   open: boolean

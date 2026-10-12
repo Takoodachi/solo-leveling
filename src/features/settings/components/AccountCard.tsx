@@ -23,6 +23,17 @@ export default function AccountCard() {
 
   if (!isConfigured) return null
 
+  // This device holds an account's data, and its session hasn't been confirmed yet: that takes a
+  // connection once the hour a session lasts is up. The app works meanwhile; nothing syncs.
+  if (!session && userId) {
+    return (
+      <div className="flex flex-col gap-2 rounded-3xl bg-card p-5">
+        <p className="flex items-center gap-2 font-semibold"><CloudOff size={18} className="text-muted-foreground" /> Waiting for a connection</p>
+        <p className="text-sm text-muted-foreground">Your sign-in is checked again as soon as you’re online. What you log meanwhile is kept on this device and syncs then.</p>
+      </div>
+    )
+  }
+
   if (!session) {
     return (
       <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">

@@ -1,7 +1,9 @@
-import { lazy, Suspense, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
+import Logo from '@/components/Logo'
+import { lazyAhead, loadAhead } from '@/lib/lazyAhead'
 import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
@@ -18,29 +20,36 @@ import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
-const WorkoutsPage = lazy(() => import('@/pages/WorkoutsPage'))
-const WorkoutHistoryPage = lazy(() => import('@/pages/WorkoutHistoryPage'))
-const RoutineDetailPage = lazy(() => import('@/pages/RoutineDetailPage'))
-const RoutineEditPage = lazy(() => import('@/pages/RoutineEditPage'))
-const ActiveWorkoutPage = lazy(() => import('@/pages/ActiveWorkoutPage'))
-const WorkoutSummaryPage = lazy(() => import('@/pages/WorkoutSummaryPage'))
-const PlanPage = lazy(() => import('@/pages/PlanPage'))
-const NutritionPage = lazy(() => import('@/pages/NutritionPage'))
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
-const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
-const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
-const ChallengesPage = lazy(() => import('@/pages/ChallengesPage'))
-const RanksPage = lazy(() => import('@/pages/RanksPage'))
-const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
-const FriendPage = lazy(() => import('@/pages/FriendPage'))
-const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
-const RecapPage = lazy(() => import('@/pages/RecapPage'))
+
+// Every screen but the first is its own file, fetched ahead in this order once the first is up
+// (lib/lazyAhead.ts): the ones that can be in the bottom bar, then the rest.
+const WorkoutsPage = lazyAhead(() => import('@/pages/WorkoutsPage'))
+const AnalyticsPage = lazyAhead(() => import('@/pages/AnalyticsPage'))
+const SettingsPage = lazyAhead(() => import('@/pages/SettingsPage'))
+const NutritionPage = lazyAhead(() => import('@/pages/NutritionPage'))
+const ProfilePage = lazyAhead(() => import('@/pages/ProfilePage'))
+const RanksPage = lazyAhead(() => import('@/pages/RanksPage'))
+const LeaderboardPage = lazyAhead(() => import('@/pages/LeaderboardPage'))
+const WorkoutHistoryPage = lazyAhead(() => import('@/pages/WorkoutHistoryPage'))
+const RoutineDetailPage = lazyAhead(() => import('@/pages/RoutineDetailPage'))
+const RoutineEditPage = lazyAhead(() => import('@/pages/RoutineEditPage'))
+const ActiveWorkoutPage = lazyAhead(() => import('@/pages/ActiveWorkoutPage'))
+const WorkoutSummaryPage = lazyAhead(() => import('@/pages/WorkoutSummaryPage'))
+const PlanPage = lazyAhead(() => import('@/pages/PlanPage'))
+const ChallengesPage = lazyAhead(() => import('@/pages/ChallengesPage'))
+const FriendPage = lazyAhead(() => import('@/pages/FriendPage'))
+const WeightLogPage = lazyAhead(() => import('@/features/bodyMetrics/WeightLogPage'))
+const RecapPage = lazyAhead(() => import('@/pages/RecapPage'))
 const WelcomePage = lazy(() => import('@/pages/WelcomePage'))
 
-function Spinner() {
+/**
+ * The launch screen. index.html draws the same mark in the same place while the app's code
+ * loads, so the two read as one screen that the app then opens out of. Keep them alike.
+ */
+function LaunchScreen() {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-page">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    <div className="flex min-h-dvh items-center justify-center bg-page text-foreground">
+      <Logo size={72} className="animate-pulse" />
     </div>
   )
 }
@@ -75,22 +84,26 @@ function AppRoutes() {
   useReminderScheduler(ready)
   useDailyQuestReward(ready)
   const needsSetup = useNeedsSetup(ready)
+  useEffect(() => {
+    if (ready && !needsSetup) loadAhead()
+  }, [ready, needsSetup])
   useNativeLinks()
   useAndroidBack()
   useAppShortcuts(ready)
 
   // Wait for the session check (and any account-switch wipe) before rendering data.
-  if (loading || (session && !userId)) return <Spinner />
+  if (loading || (session && !userId)) return <LaunchScreen />
 
-  // Signed out and hasn't chosen local-only mode: offer sign-in (never a dead end).
-  if (!session && !localMode) return <LoginPage />
+  // Signed out and hasn't chosen local-only mode: offer sign-in (never a dead end). `userId`
+  // and not `session`: an account's data on this device shows before its session is checked.
+  if (!userId && !localMode) return <LoginPage />
 
   // An account that has never saved a setting gets three short questions first (skippable, shown once).
-  if (needsSetup) return <Suspense fallback={<Spinner />}><WelcomePage /></Suspense>
+  if (needsSetup) return <Suspense fallback={<LaunchScreen />}><WelcomePage /></Suspense>
 
   // Screens are code-split; the service worker precaches every chunk, so this still works offline.
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<LaunchScreen />}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/home" replace />} />
