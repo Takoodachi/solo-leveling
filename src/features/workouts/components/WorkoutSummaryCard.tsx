@@ -1,6 +1,5 @@
 import type { WorkoutWithSets } from '@/types'
-import { formatVolume, totalReps, totalVolume } from '@/lib/workoutMath'
-import { formatKm } from '@/lib/cardio'
+import { summaryStats } from '../summaryStats'
 import MusclesWorked from './MusclesWorked'
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -12,29 +11,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Strength is measured in sets and volume; cardio in time and distance. */
+/** The summary's figures (summaryStats.ts) and the muscles the workout worked. */
 export default function WorkoutSummaryCard({ workout }: { workout: WorkoutWithSets }) {
-  const exerciseCount = new Set(workout.sets.map(s => s.exerciseId)).size
-  const cardio = workout.sets.filter(s => s.exercise.type === 'cardio')
-  const lifts = workout.sets.filter(s => s.exercise.type !== 'cardio')
-  const volume = totalVolume(lifts)
-  const cardioMin = Math.round(cardio.reduce((sum, s) => sum + (s.duration ?? 0), 0))
-  const km = cardio.reduce((sum, s) => sum + (s.distanceKm ?? 0), 0)
-
-  const stats: [string, string][] = [
-    ['Duration:', `${workout.durationMin} min`],
-    ['Calories burned (est.):', workout.kcalEst ? `${workout.kcalEst} kcal` : '—'],
-    ['Avg. heart rate:', workout.avgHeartRate ? `${workout.avgHeartRate} BPM` : 'Not recorded'],
-    ['Exercises:', String(exerciseCount)],
-  ]
-  if (lifts.length > 0) {
-    stats.push(['Sets finished:', `${lifts.length} sets`])
-    stats.push(volume > 0 ? ['Volume:', formatVolume(volume)] : ['Total reps:', String(totalReps(lifts))])
-  }
-  if (cardio.length > 0) {
-    stats.push(['Cardio time:', `${cardioMin} min`])
-    if (km > 0) stats.push(['Distance:', formatKm(km)])
-  }
+  const stats = summaryStats(workout)
 
   return (
     <section className="rounded-3xl bg-card p-5 ring-1 ring-foreground/5 dark:bg-black/60">

@@ -26,6 +26,11 @@ const CATEGORY_TO_REGIONS: Record<string, readonly MuscleRegion[]> = {
   Arms: ['biceps', 'triceps'], 'Lower Body': ['quads', 'hamstrings', 'glutes'], Core: ['abs', 'obliques'],
 }
 
+/** How many muscles the list beside the figures names (the summary, the share image). */
+export const LISTED = 5
+/** The faintest a worked muscle is filled in, so a helper muscle still shows. */
+export const MIN_ALPHA = 0.28
+
 const SECONDARY_SHARE = 0.5
 /** Cardio is one entry however long it was: every ten minutes weighs like a set, within reason. */
 const CARDIO_MINUTES_PER_SET = 10
