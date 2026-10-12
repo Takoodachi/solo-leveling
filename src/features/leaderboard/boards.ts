@@ -3,6 +3,7 @@ import { REGION_LABEL, groupOfRegion, type MuscleRegion } from '@/features/ranks
 import type { RegionRank } from '@/features/ranks/computeRanks'
 import { formatClock, formatKm } from '@/lib/cardio'
 import { rankFor, type TierKey } from '@/features/ranks/tiers'
+import { totalXp } from '@/lib/xp'
 import type { LeaderboardEntry, LeaderboardSnapshot } from './types'
 
 export type BoardKey = 'strength' | 'running' | 'week' | 'level'
@@ -58,9 +59,10 @@ export const BOARDS: Board[] = [
   },
   {
     key: 'level', label: 'Level',
-    score: s => s.xp ?? 0,
+    // The shared `xp` is only what's been earned inside the current level
+    score: s => totalXp(s.level ?? 1, s.xp ?? 0),
     value: s => `Level ${s.level ?? 1}`,
-    detail: s => `${(s.xp ?? 0).toLocaleString()} XP · ${s.streak ?? 0}-day streak`,
+    detail: s => `${totalXp(s.level ?? 1, s.xp ?? 0).toLocaleString()} XP · ${s.streak ?? 0}-day streak`,
     empty: '',
   },
 ]
