@@ -13,6 +13,8 @@ import { useAndroidBack } from '@/hooks/useAndroidBack'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
+import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
+import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
 import LoginPage from '@/features/auth/LoginPage'
 import HomePage from '@/pages/HomePage'
@@ -33,6 +35,7 @@ const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'))
 const FriendPage = lazy(() => import('@/pages/FriendPage'))
 const WeightLogPage = lazy(() => import('@/features/bodyMetrics/WeightLogPage'))
 const RecapPage = lazy(() => import('@/pages/RecapPage'))
+const WelcomePage = lazy(() => import('@/pages/WelcomePage'))
 
 function Spinner() {
   return (
@@ -70,6 +73,8 @@ function AppRoutes() {
   const ready = !loading && (!!userId || localMode)
   useHealthStepsSync(ready)
   useReminderScheduler(ready)
+  useDailyQuestReward(ready)
+  const needsSetup = useNeedsSetup(ready)
   useNativeLinks()
   useAndroidBack()
   useAppShortcuts(ready)
@@ -79,6 +84,9 @@ function AppRoutes() {
 
   // Signed out and hasn't chosen local-only mode: offer sign-in (never a dead end).
   if (!session && !localMode) return <LoginPage />
+
+  // An account that has never saved a setting gets three short questions first (skippable, shown once).
+  if (needsSetup) return <Suspense fallback={<Spinner />}><WelcomePage /></Suspense>
 
   // Screens are code-split; the service worker precaches every chunk, so this still works offline.
   return (

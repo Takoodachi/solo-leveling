@@ -160,12 +160,29 @@ async function fetchSearch(url: string, onBusy?: () => void): Promise<Response> 
   }
 }
 
+const FAST_SEARCH_URL = '/api/food-search'
+const FAST_SEARCH_TIMEOUT_MS = 9000
+
 /**
- * Products whose name or brand matches `query`, the most scanned first, then the ones with all
- * four values before the incomplete ones. Throws when the service doesn't answer. It's shared
- * and rate-limited, so only search when asked to, never while typing.
+ * The site's own Worker (worker/index.js), which asks Open Food Facts' fast search for us: it
+ * answers in well under a second, with the visitor's own country first, but can't be called
+ * from a browser directly. Null when it isn't there (the dev server and an old deploy answer
+ * with the app's HTML) or didn't get an answer.
  */
-export async function searchProducts(query: string, onBusy?: () => void): Promise<ScannedFood[]> {
+async function searchFast(query: string): Promise<Product[] | null> {
+  try {
+    const signal = 'timeout' in AbortSignal ? AbortSignal.timeout(FAST_SEARCH_TIMEOUT_MS) : undefined
+    const res = await fetch(`${FAST_SEARCH_URL}?q=${encodeURIComponent(query)}`, { signal })
+    if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) return null
+    const { products } = (await res.json()) as { products?: Product[] }
+    return Array.isArray(products) ? products : null
+  } catch {
+    return null
+  }
+}
+
+/** Open Food Facts' own search, straight from the browser: the fallback, slow and often busy. */
+async function searchSlow(query: string, onBusy?: () => void): Promise<Product[]> {
   const params = new URLSearchParams({
     search_terms: query,
     search_simple: '1',
@@ -176,10 +193,20 @@ export async function searchProducts(query: string, onBusy?: () => void): Promis
     fields: `code,${FIELDS}`,
   })
   const res = await fetchSearch(`${SEARCH_URL}?${params}`, onBusy)
-  const json = (await res.json()) as { products?: Product[] }
+  return ((await res.json()) as { products?: Product[] }).products ?? []
+}
+
+/**
+ * Products whose name or brand matches `query`, best match first, the ones with all four values
+ * before the incomplete ones. Results from the fast search carry values per 100 g only; the
+ * package serving comes with the product itself (`lookupBarcode`) once one is picked. Throws
+ * when nothing answers. Only search when asked to, never while typing.
+ */
+export async function searchProducts(query: string, onBusy?: () => void): Promise<ScannedFood[]> {
+  const products = (await searchFast(query)) ?? (await searchSlow(query, onBusy))
 
   const seen = new Set<string>()
-  const found = (json.products ?? []).flatMap(p => {
+  const found = products.flatMap(p => {
     const code = str(p.code)
     const named = str(p.product_name_en) ?? str(p.product_name) ?? str(p.generic_name_en) ?? str(p.generic_name)
     if (!code || !named || seen.has(code)) return []
@@ -189,7 +216,7 @@ export async function searchProducts(query: string, onBusy?: () => void): Promis
     return Object.values(food.values).every(v => v == null) ? [] : [food]
   })
   const complete = (f: ScannedFood) => Object.values(f.values).every(v => v != null)
-  return [...found.filter(complete), ...found.filter(f => !complete(f))]
+  return [...found.filter(complete), ...found.filter(f => !complete(f))].slice(0, SEARCH_RESULTS)
 }
 
 /** GS1 check digit test (EAN-13, EAN-8, UPC-A). */

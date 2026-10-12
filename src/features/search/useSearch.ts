@@ -8,6 +8,7 @@ import { useWorkoutStore } from '@/features/workouts/store'
 import { CATEGORY_META } from '@/features/workouts/categories'
 import { useLeaderboardStore } from '@/features/leaderboard/store'
 import { useAuthStore } from '@/features/auth/authStore'
+import { isQuickAdd } from '@/features/nutrition/foodAmount'
 import { actionEntries, JUMP_TO, PAGE_ENTRIES, type SearchGroup, type SearchItem } from './searchIndex'
 
 export interface ResultGroup {
@@ -37,7 +38,7 @@ function useSearchData(enabled: boolean) {
     const [routines, exercises, foods, workouts, challenges, liftedSets] = await Promise.all([
       db.routines.toArray(),
       db.exercises.toArray(),
-      db.foods.toArray(),
+      db.foods.filter(f => !isQuickAdd(f)).toArray(),
       db.workouts.orderBy('createdAt').reverse().limit(300).toArray(),
       db.challenges.toArray(),
       db.workoutSets.filter(s => !!s.weight && !!s.reps).toArray(),

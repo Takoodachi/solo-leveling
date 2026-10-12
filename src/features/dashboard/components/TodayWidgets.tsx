@@ -11,6 +11,7 @@ import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
 import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
 import CreatineCard from '@/features/checkins/components/CreatineCard'
 import WaterCard from '@/features/checkins/components/WaterCard'
+import QuestCard from '@/features/gamification/components/QuestCard'
 import type { CalorieBudget } from '../hooks/useCalorieBudget'
 import { homeRows, homeWidgetsFrom } from '../homeWidgets'
 import TodayWorkoutCard from './TodayWorkoutCard'
@@ -42,6 +43,8 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
     switch (id) {
       case 'workout':
         return <TodayWorkoutCard isToday={selected === today} isFuture={selected > today} routine={routine} completed={completed} />
+      case 'quest':
+        return <QuestCard date={selected} today={today} />
       case 'steps':
         return <StepsCard date={selected} steps={steps} goal={settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL} />
       case 'calories':

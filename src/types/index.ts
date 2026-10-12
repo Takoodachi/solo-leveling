@@ -95,7 +95,7 @@ export interface ReminderPref {
   days?: ReminderDays
 }
 
-export type HomeWidgetId = 'workout' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
+export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
 
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
 export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'
@@ -283,11 +283,12 @@ export interface Challenge {
 
 // ── Daily check-ins ───────────────────────────────────────────────────────────
 
-export type CheckinKey = 'creatine' | 'water'
+export type CheckinKey = 'creatine' | 'water' | 'quest'
 
 /**
  * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).
  * Unticking sets done = false; water keeps a running `amount` in ml.
+ * `quest-YYYY-MM-DD` (done) records that the day's quest XP was given, so it's given once.
  */
 export interface Checkin {
   uuid: string

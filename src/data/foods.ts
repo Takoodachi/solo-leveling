@@ -3,7 +3,18 @@ import { MORE_FOODS } from './foodsMore'
 
 const NOW = 0
 
+/**
+ * "Quick add": calories logged on their own, with no food behind them. It's a food of 1 kcal
+ * per serving, so a log of 350 servings is 350 kcal and nothing else changes: totals, sync,
+ * saved meals and copy-a-day all see an ordinary food log. It's kept out of every food list.
+ */
+export const QUICK_ADD_FOOD: Food = {
+  uuid: 'food-quick-add', name: 'Quick add', kcalPerServing: 1, protein: 0, carbs: 0, fat: 0,
+  servingSize: 1, servingUnit: 'kcal', isCustom: false, isFavorite: false, updatedAt: NOW,
+}
+
 export const BUILT_IN_FOODS: Food[] = [
+  QUICK_ADD_FOOD,
   // ── Protein sources ──────────────────────────────────────────────
   { uuid: 'food-chicken-breast',    name: 'Chicken Breast (cooked)',     kcalPerServing: 165, protein: 31,   carbs: 0,    fat: 3.6,  servingSize: 100, servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },
   { uuid: 'food-chicken-thigh',     name: 'Chicken Thigh (cooked)',      kcalPerServing: 209, protein: 26,   carbs: 0,    fat: 11,   servingSize: 100, servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },

@@ -48,6 +48,12 @@ Workers & Pages → Create → *Import a repository* → this repo. Settings:
 - `wrangler.jsonc` serves `dist/` as static assets, with `not_found_handling: "single-page-application"` so
   deep links like `/workouts/active` load the app. Don't add a `_redirects` file: Cloudflare rejects
   `/* /index.html 200` as an infinite loop.
+- One small Worker script, `worker/index.js`, runs for `/api/*` only (`run_worker_first`): `/api/food-search`
+  asks Open Food Facts' fast search for the add-food dialog, which a browser can't call itself. Static
+  requests run no code. It needs no variables or secrets and fits the free plan (100,000 requests a day).
+  After a deploy, `https://<your-site>/api/food-search?q=oat` should answer with JSON; if it answers with
+  the app's HTML instead, the Worker isn't deployed and the app quietly uses the slower search.
+  Locally: `npm run build`, then `npx wrangler dev`.
 - The Supabase values must be **build** variables, not runtime ones: Vite bakes them into the bundle at build time.
 - `.nvmrc` pins Node 22 for the build.
 - Every push to `main` redeploys; other branches get preview versions.

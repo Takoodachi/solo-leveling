@@ -10,10 +10,22 @@ export const XP = {
   KCAL_TARGET_HIT: 30,
   PROTEIN_TARGET_HIT: 20,
   WEEKLY_RECAP: 25,
+  DAILY_QUEST: 40, // every objective of the day's quest done
 } as const
 
 export function xpForLevel(level: number): number {
   return Math.round(100 * Math.pow(level, 1.5))
+}
+
+/**
+ * All the XP an account has earned. `userStats.xp` only counts into the current level (it
+ * starts again at every level-up), so comparing accounts needs the levels behind it added back.
+ */
+export function totalXp(level: number, xp: number): number {
+  let total = Math.max(0, xp)
+  // Capped: a friend's shared level is data we didn't make
+  for (let l = 1; l < Math.min(level, 500); l++) total += xpForLevel(l)
+  return total
 }
 
 export interface GrantXpResult {

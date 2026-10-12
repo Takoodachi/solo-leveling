@@ -5,14 +5,13 @@ import { Badge } from '@/components/ui/badge'
 import NumberStepper from '@/components/NumberStepper'
 import Segmented from '@/components/Segmented'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
+import { useExpenditure } from '@/features/nutrition/expenditure'
 import { useTargets } from '@/features/nutrition/hooks/useTargets'
 import { cn } from '@/lib/utils'
 import { countsSteps } from '@/lib/stepCalories'
-import type { Settings } from '@/types'
 import { useSettings } from '../hooks/useSettings'
-
-type GoalType = NonNullable<Settings['goalType']>
-type Sex = NonNullable<Settings['sex']>
+import { LOWEST_BELIEVABLE, formulaMaintenance, restingKcal, suggestedTargets, type GoalType, type Sex } from '../targetSuggestion'
+import ExpenditureNote from './ExpenditureNote'
 
 const GOALS: { value: GoalType; label: string }[] = [
   { value: 'cut', label: 'Cut' },
@@ -27,36 +26,27 @@ function bmiCategory(bmi: number) {
   return { label: 'Obese', color: 'text-red-600 dark:text-red-400' }
 }
 
-// Mifflin-St Jeor × an activity factor. When step calories are subtracted, walking is
-// counted day by day, so the target only covers resting, training and daily life:
-// "lightly active" (×1.375) instead of "moderately active" (×1.55), or walking counts twice.
-function suggestedTargets(weightKg: number, heightCm: number, sex: Sex, goal: GoalType, stepsCounted: boolean) {
-  const bmr = 10 * weightKg + 6.25 * heightCm - 5 * 30 + (sex === 'male' ? 5 : -161)
-  const tdee = Math.round(bmr * (stepsCounted ? 1.375 : 1.55))
-  const offsets: Record<GoalType, number> = { cut: -500, maintain: 0, bulk: 300 }
-  const proteinPer: Record<GoalType, number> = { cut: 2.2, maintain: 1.8, bulk: 1.6 }
-  const fatPer: Record<GoalType, number> = { cut: 0.8, maintain: 1.0, bulk: 1.0 }
-  const dailyKcal = Math.round(tdee + offsets[goal])
-  const dailyProtein = Math.round(proteinPer[goal] * weightKg)
-  const dailyFat = Math.round(fatPer[goal] * weightKg)
-  const dailyCarbs = Math.round(Math.max(0, dailyKcal - dailyProtein * 4 - dailyFat * 9) / 4)
-  return { dailyKcal, dailyProtein, dailyCarbs, dailyFat }
-}
-
 export default function BodyGoalsCard() {
   const { settings, updateSettings } = useSettings()
   const { metrics } = useBodyMetrics(1)
   const { updateTargets } = useTargets()
+  const measured = useExpenditure()
 
   const weight = metrics[0]?.weightKg
   const { heightCm, sex, goalType } = settings ?? {}
   const bmi = weight && heightCm ? Math.round((weight / (heightCm / 100) ** 2) * 10) / 10 : null
   const cat = bmi ? bmiCategory(bmi) : null
+  const known = weight && heightCm && sex ? { weight, heightCm, sex } : null
+  // What the logs say is burned is used once there's enough of them, unless it comes to less
+  // than a resting body burns (then food went unlogged, and the formula is the safer guess)
+  const believable = !!measured?.ready && !!known && measured.kcal >= restingKcal(known.weight, known.heightCm, known.sex) * LOWEST_BELIEVABLE
+  const fromLogs = measured?.ready && believable ? measured.maintenance : null
 
   async function apply() {
-    if (!weight || !heightCm || !sex || !goalType) return
-    await updateTargets(suggestedTargets(weight, heightCm, sex, goalType, countsSteps(settings)))
-    toast.success('Targets updated from your profile')
+    if (!known || !goalType) return
+    const maintenance = fromLogs ?? formulaMaintenance(known.weight, known.heightCm, known.sex, countsSteps(settings))
+    await updateTargets(suggestedTargets(known.weight, goalType, maintenance))
+    toast.success(fromLogs ? 'Targets updated from your logs' : 'Targets updated from your profile')
   }
 
   return (
@@ -79,8 +69,9 @@ export default function BodyGoalsCard() {
         <Label>Goal</Label>
         <Segmented size="sm" value={goalType ?? ('' as GoalType)} options={GOALS} onChange={v => void updateSettings({ goalType: v })} className="bg-secondary" />
       </div>
-      {weight && heightCm && sex && goalType ? (
+      {known && goalType ? (
         <div className="flex flex-col gap-2">
+          <ExpenditureNote measured={measured} believable={believable} />
           <Button variant="secondary" onClick={() => void apply()}>Apply suggested targets for {goalType}</Button>
           {countsSteps(settings) && <p className="text-xs text-muted-foreground">Leaves walking out, since your steps are subtracted day by day.</p>}
         </div>

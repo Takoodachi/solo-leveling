@@ -13,8 +13,9 @@ precacheAndRoute(self.__WB_MANIFEST ?? [])
 cleanupOutdatedCaches()
 
 // 2. SPA routing offline: any in-app navigation (e.g. reopening /workouts/active
-//    with no signal at the gym) is answered with the cached index.html.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')))
+//    with no signal at the gym) is answered with the cached index.html. Not /api/*:
+//    that's the site's Worker, and opening one of its URLs should show its answer.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { denylist: [/^\/api\//] }))
 
 // 3. Runtime cache for Open Food Facts barcode lookups.
 registerRoute(
