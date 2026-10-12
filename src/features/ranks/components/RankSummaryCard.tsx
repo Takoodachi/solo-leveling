@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { useRanks } from '../useRanks'
 import { MIN_GROUPS_FOR_OVERALL } from '../computeRanks'
 import RankBadge from './RankBadge'
-import RankProgress from './RankProgress'
+import { TierProgress } from './RankProgress'
 import { ink } from '@/lib/colors'
 
 /** Home / Profile entry point to the ranks screen. */
@@ -30,7 +30,7 @@ export default function RankSummaryCard() {
           <span className="font-heading text-xl font-bold" style={{ color: ink(shown.tier.color) }}>{shown.label}</span>
           <span className="text-xs text-muted-foreground tabular-nums">{shown.rating} / 1000</span>
         </p>
-        <RankProgress rank={shown} className="mt-2" />
+        <TierProgress rank={shown} className="mt-2" />
         {!ranks.overall && (
           <p className="mt-1 text-xs text-muted-foreground">
             Overall rank unlocks at {MIN_GROUPS_FOR_OVERALL} ranked muscle groups ({rankedGroups}/{MIN_GROUPS_FOR_OVERALL})

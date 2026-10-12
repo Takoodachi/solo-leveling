@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Flame, Star } from 'lucide-react'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { clampPercent } from '@/lib/format'
+import { xpFill } from '@/features/gamification/xpFill'
 
 export default function StreakLevelCard() {
   const { xp, level, currentStreak } = useGamification()
@@ -23,7 +24,7 @@ export default function StreakLevelCard() {
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct}%` }} />
+          <div className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(pct)} />
         </div>
       </div>
     </Link>

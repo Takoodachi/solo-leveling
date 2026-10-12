@@ -309,6 +309,12 @@
   .color-slider:focus-visible {
     box-shadow: 0 0 0 2px hsl(var(--ring));
   }
+  /* A progress bar's fill as a gradient: faint where it starts (--from), full colour at its
+     tip (--to), so the tip is what the eye lands on. The rank bars and the XP bar also move the
+     tip's colour on with the progress itself (ranks/…/RankProgress, gamification/xpFill). */
+  .bar-fill {
+    background-image: linear-gradient(90deg, var(--from), var(--to));
+  }
   /* A progress ring's arc (ProgressRing; its length is measured as 1): drawn in when it first
      shows, and moved, not redrawn, when the number changes. */
   .ring-arc {
