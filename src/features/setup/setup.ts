@@ -1,16 +1,19 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
-import type { Settings } from '@/types'
+import type { HomeWidgetId, Settings } from '@/types'
 import { today } from '@/lib/date'
 import { useSyncStatus } from '@/lib/syncStatus'
 import { useAuthStore } from '@/features/auth/authStore'
 import { logWeight } from '@/features/bodyMetrics/useBodyMetrics'
+import { DEFAULT_HOME_WIDGETS } from '@/features/dashboard/homeWidgets'
 import { updateSettings } from '@/features/settings/hooks/useSettings'
 import { formulaMaintenance, suggestedTargets, type GoalType, type Sex } from '@/features/settings/targetSuggestion'
 
 /** What the first-run screens collect. Everything is optional; fields stay text while typed. */
 export interface SetupForm {
   name: string
+  /** Profile photo, as the small data URL the profile keeps. */
+  avatar?: string
   sex?: Sex
   heightCm: string
   weightKg: string
@@ -18,9 +21,17 @@ export interface SetupForm {
   trainingSince: string
   goal: GoalType
   workoutsPerWeek: number
+  /** Which of `TRACKABLE` get a card on Home. */
+  track: HomeWidgetId[]
+  /** A theme picked on the way (it's on screen already, as a preview); unset = the default one. */
+  theme?: string
 }
 
-export const EMPTY_SETUP: SetupForm = { name: '', heightCm: '', weightKg: '', trainingSince: '', goal: 'maintain', workoutsPerWeek: 3 }
+/** The Home cards that are something to keep track of: the ones the setup asks about. The rest of Home is always there. */
+export const TRACKABLE: HomeWidgetId[] = ['steps', 'calories', 'water', 'creatine', 'macros']
+
+// Steps, calories and water start chosen: a new user has a working Home without deciding anything
+export const EMPTY_SETUP: SetupForm = { name: '', heightCm: '', weightKg: '', trainingSince: '', goal: 'maintain', workoutsPerWeek: 3, track: ['steps', 'calories', 'water'] }
 
 /** A number typed into the form, if it's one a person could be. */
 const within = (text: string, low: number, high: number): number | undefined => {
@@ -53,7 +64,7 @@ export function useNeedsSetup(ready: boolean): boolean {
 }
 
 /**
- * Save what was filled in (null = skipped): name, body, training start and goal to settings, the weight as
+ * Save what was filled in (null = skipped): name, photo, body, training start, goal, theme and the Home cards chosen to settings, the weight as
  * today's weigh-in, and suggested targets when there's enough to work them out. Writing the
  * settings, even with nothing in them, is what marks the account as set up.
  */
@@ -63,6 +74,10 @@ export async function finishSetup(form: SetupForm | null): Promise<void> {
     const height = heightOf(form)
     const weight = weightOf(form)
     if (form.name.trim()) settings.displayName = form.name.trim().slice(0, 40)
+    if (form.avatar) settings.avatar = form.avatar
+    if (form.theme) settings.theme = form.theme
+    // Home in its usual order, without the trackers that weren't chosen
+    settings.homeWidgets = DEFAULT_HOME_WIDGETS.filter(id => !TRACKABLE.includes(id) || form.track.includes(id))
     if (form.sex) settings.sex = form.sex
     if (height) settings.heightCm = Math.round(height)
     if (form.trainingSince) settings.trainingSince = form.trainingSince

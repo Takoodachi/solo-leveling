@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { BodyStep, GoalStep, NameStep } from '@/features/setup/components/SetupSteps'
+import { BodyStep, GoalStep, NameStep, ThemeStep, TrackStep } from '@/features/setup/components/SetupSteps'
+import { repaintSavedTheme } from '@/features/settings/hooks/useTheme'
 import { EMPTY_SETUP, finishSetup, type SetupForm } from '@/features/setup/setup'
 
-const STEPS = [NameStep, BodyStep, GoalStep]
+const STEPS = [NameStep, BodyStep, GoalStep, TrackStep, ThemeStep]
 
 /**
- * First run: three short screens (name, body, goal) shown once to an account that has never
- * saved a setting. Every question can be left empty and the whole thing skipped; either way it
+ * First run: five short screens (you, your body, your goal, what to track, the look) shown once
+ * to an account that has never saved a setting, right after its first sign-in. Every question can be left empty and the whole thing skipped; either way it
  * doesn't come back. The app shows instead of the routes while `useNeedsSetup` says so.
  */
 export default function WelcomePage() {
@@ -22,6 +23,8 @@ export default function WelcomePage() {
     setSaving(true)
     // The screen goes away by itself once the settings are saved
     await finishSetup(filled ? form : null).catch(() => setSaving(false))
+    // Skipped with a theme being tried on: back to the one that's saved
+    if (!filled) void repaintSavedTheme()
   }
 
   return (
