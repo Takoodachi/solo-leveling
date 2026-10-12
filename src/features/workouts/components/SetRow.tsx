@@ -62,7 +62,7 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
         aria-label={removing ? `Keep set ${index + 1}` : `Set ${index + 1}: remove`}
         className={cn(
           // The number is narrow, so the tap area reaches a little past it on both sides
-          'relative flex h-11 items-center justify-center text-sm font-semibold after:absolute after:inset-y-0 after:-left-2 after:-right-1',
+          'relative flex h-11 select-none items-center justify-center text-sm font-semibold after:absolute after:inset-y-0 after:-left-2 after:-right-1',
           removing ? 'text-destructive' : set.done ? 'text-primary' : 'text-muted-foreground',
         )}
       >
@@ -86,7 +86,8 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
             type="button"
             onClick={onUseLast}
             disabled={!last}
-            className="truncate text-left text-sm text-muted-foreground disabled:opacity-60"
+            // With nothing to copy it lets a press through to the row (which can be held to move the set)
+            className="select-none truncate text-left text-sm text-muted-foreground disabled:pointer-events-none disabled:opacity-60"
             aria-label="Copy previous set"
           >
             {describeLast(last, mode, unit)}
@@ -114,6 +115,7 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
       <button
         type="button"
         onClick={onToggleDone}
+        onPointerDown={e => e.stopPropagation()} // a slow tick is still a tick, not a hold on the row
         aria-label={set.done ? 'Mark set not done' : 'Mark set done'}
         aria-pressed={set.done}
         className={cn(

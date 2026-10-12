@@ -14,3 +14,10 @@ export function swapped<T>(list: readonly T[], i: number, j: number): T[] {
   ;[next[i], next[j]] = [next[j], next[i]]
   return next
 }
+
+/** A copy of `list` with the item at `from` taken out and put in at `to`, the ones between moving over. */
+export function moved<T>(list: readonly T[], from: number, to: number): T[] {
+  const next = [...list]
+  next.splice(to, 0, ...next.splice(from, 1))
+  return next
+}
