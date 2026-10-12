@@ -10,6 +10,7 @@ export const XP = {
   KCAL_TARGET_HIT: 30,
   PROTEIN_TARGET_HIT: 20,
   WEEKLY_RECAP: 25,
+  DAILY_QUEST: 40, // every objective of the day's quest done
 } as const
 
 export function xpForLevel(level: number): number {

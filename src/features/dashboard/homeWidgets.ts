@@ -1,4 +1,4 @@
-import { Dumbbell, Footprints, Flame, GlassWater, Pill, PieChart, Trophy, Medal, Star, Users, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Footprints, Flame, GlassWater, Pill, PieChart, Swords, Trophy, Medal, Star, Users, type LucideIcon } from 'lucide-react'
 import type { HomeWidgetId, Settings } from '@/types'
 
 export interface HomeWidgetDef {
@@ -13,6 +13,7 @@ export interface HomeWidgetDef {
 /** Every card the Home screen can show, in default order. */
 export const HOME_WIDGETS: HomeWidgetDef[] = [
   { id: 'workout',   label: 'Today’s workout', description: 'Scheduled routine or what you trained', icon: Dumbbell },
+  { id: 'quest',     label: 'Daily quest',     description: 'Today’s objectives, and XP for clearing them', icon: Swords },
   { id: 'steps',     label: 'Steps',           description: 'Steps vs your daily goal',              icon: Footprints, tile: true },
   { id: 'calories',  label: 'Calories',        description: 'Food logged vs your target',            icon: Flame,      tile: true },
   { id: 'water',     label: 'Water',           description: 'One-tap glass counter',                 icon: GlassWater, tile: true },
