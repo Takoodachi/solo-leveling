@@ -18,8 +18,8 @@ import { summaryStats } from './summaryStats'
  * A workout's summary screen as a picture: the owner's name and photo, then the screen's own
  * cards in its order (the figures and the body map, rank ups, new bests, every exercise set by
  * set), drawn on a canvas in the theme's colours. It's laid out in CSS pixels on a phone-wide
- * page, with the same sizes as the screen, and drawn 1080 px wide. The workout's notes stay
- * off it; everything else on it is already on the screen.
+ * page, with the same sizes as the screen, and drawn 1080 px wide. The workout's notes, heart
+ * rate and calorie estimate stay off it; everything else on it is already on the screen.
  */
 
 export interface WorkoutShare {
@@ -348,7 +348,7 @@ function summaryBlock(ctx: Ctx, workout: WorkoutWithSets, c: Colors): Block {
   const col = (INNER - 24) / 2
   const VALUE: Type = { size: 18, line: 28, weight: 500 }
   setType(ctx, SM)
-  const cells = summaryStats(workout).map(([label, value]) => ({ label: wrap(ctx, label, col, 3), value }))
+  const cells = summaryStats(workout, { shared: true }).map(([label, value]) => ({ label: wrap(ctx, label, col, 3), value }))
   const cellH = (cell: (typeof cells)[number]) => cell.label.length * SM.line + 4 + VALUE.line
   const rows: { cells: typeof cells; height: number }[] = []
   for (let i = 0; i < cells.length; i += 2) {
