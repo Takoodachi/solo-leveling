@@ -6,6 +6,8 @@ import { est1RM, setVolume } from '@/lib/workoutMath'
 import { lastNDays, toDateStr } from '@/lib/date'
 
 export interface WeekVolume {
+  /** The week's Monday (YYYY-MM-DD). */
+  date: string
   label: string
   volume: number
   workouts: number
@@ -22,7 +24,7 @@ export function useWeeklyVolume(weeks: number): WeekVolume[] | undefined {
     const weekOf = (date: string) => toDateStr(startOfWeek(parseISO(date), { weekStartsOn: 1 }))
     const workoutWeek = new Map(workouts.map(w => [w.uuid, weekOf(w.date)]))
 
-    const buckets = new Map(starts.map(s => [toDateStr(s), { label: format(s, 'MMM d'), volume: 0, workouts: 0 }]))
+    const buckets = new Map(starts.map(s => [toDateStr(s), { date: toDateStr(s), label: format(s, 'MMM d'), volume: 0, workouts: 0 }]))
     for (const w of workouts) {
       const b = buckets.get(weekOf(w.date))
       if (b) b.workouts += 1

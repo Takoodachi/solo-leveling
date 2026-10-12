@@ -3,7 +3,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import { formatShortDate } from '@/lib/date'
 import Segmented from '@/components/Segmented'
 import ChartCard from '@/features/analytics/components/ChartCard'
-import { tooltipStyle, axisTick } from '@/features/analytics/chartStyles'
+import { tooltipStyle, axisTick, dayLabel } from '@/features/analytics/chartStyles'
 import { TIERS, rankFor } from '@/features/ranks/tiers'
 import type { LeaderboardSnapshot } from '../types'
 
@@ -24,7 +24,7 @@ export default function CompareChart({ them, name, me }: Props) {
   const [series, setSeries] = useState<Series>('o')
   const dates = [...new Set([...(them.history ?? []), ...(me?.history ?? [])].map(p => p.d))].sort()
   const at = (s: LeaderboardSnapshot | undefined, d: string) => s?.history?.find(p => p.d === d)?.[series] ?? null
-  const data = dates.map(d => ({ label: formatShortDate(d), them: at(them, d), you: at(me, d) }))
+  const data = dates.map(d => ({ date: d, label: formatShortDate(d), them: at(them, d), you: at(me, d) }))
   const values = data.flatMap(p => [p.them, p.you]).filter((v): v is number => v != null)
   const lo = values.length ? Math.max(0, Math.floor((Math.min(...values) - 50) / 100) * 100) : 0
   const hi = values.length ? Math.min(1000, Math.ceil((Math.max(...values) + 50) / 100) * 100) : 1000
@@ -55,6 +55,7 @@ export default function CompareChart({ them, name, me }: Props) {
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  labelFormatter={(l, p) => `Week ending ${dayLabel(l, p)}`}
                   formatter={(v, key) => [`${rankFor(Number(v)).label} · ${v} pts`, key === 'you' ? 'You' : name]}
                 />
                 {me && <Line type="monotone" dataKey="you" stroke={YOU} strokeWidth={2} strokeDasharray="5 4" dot={false} connectNulls isAnimationActive={false} />}
