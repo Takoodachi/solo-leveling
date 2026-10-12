@@ -60,6 +60,7 @@ export default function RanksPage() {
       {ranks && (ranks.status === 'ready' ? (
         <>
           <Segmented value={tab} onChange={setTab} options={TABS} className="-mt-2" />
+          <div key={tab} className="flex animate-fade-in flex-col gap-6">
           {tab === 'overview' && (
             <>
               <RankHero ranks={ranks} />
@@ -94,6 +95,7 @@ export default function RanksPage() {
               {ladder}
             </>
           )}
+          </div>
         </>
       ) : (
         <>

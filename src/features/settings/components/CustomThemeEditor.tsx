@@ -8,6 +8,7 @@ import { CUSTOM_RANGES, cleanCustomTheme, customTokens, hsl, parseHsl, withMode,
 import { CUSTOM_THEME } from '../themes'
 import { paintTheme, repaintSavedTheme } from '../hooks/useTheme'
 import ColorSliders from './ColorSliders'
+import Collapse from '@/components/Collapse'
 
 type Part = 'accent' | 'background' | 'gradient'
 
@@ -67,8 +68,7 @@ export default function CustomThemeEditor({ initial, onSave, onCancel }: Props) 
                 </span>
                 <ChevronDown size={18} className={cn('shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-180')} />
               </button>
-              {expanded && (
-                <>
+              <Collapse open={expanded}>
                   <ColorSliders
                     label={part.label}
                     value={value}
@@ -80,8 +80,7 @@ export default function CustomThemeEditor({ initial, onSave, onCancel }: Props) 
                       Follow the accent
                     </button>
                   )}
-                </>
-              )}
+              </Collapse>
             </div>
           )
         })}

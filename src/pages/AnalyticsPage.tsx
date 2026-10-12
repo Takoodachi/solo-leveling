@@ -71,20 +71,22 @@ export default function AnalyticsPage() {
       <PageHeader back={isTab ? undefined : '/home'} title="Analytics" />
       <Segmented value={tab} onChange={setTab} options={TABS} />
 
-      {tab === 'muscles' && <SetVolumeCard />}
-      {tab === 'strength' && (
-        <>
-          <WeeklyVolumeCard />
-          <OneRmCard />
-        </>
-      )}
-      {tab === 'food' && (
-        <>
-          <MacroAdherenceCard />
-          <WeightTrendCard />
-          <StepsCard />
-        </>
-      )}
+      <div key={tab} className="flex animate-fade-in flex-col gap-4">
+        {tab === 'muscles' && <SetVolumeCard />}
+        {tab === 'strength' && (
+          <>
+            <WeeklyVolumeCard />
+            <OneRmCard />
+          </>
+        )}
+        {tab === 'food' && (
+          <>
+            <MacroAdherenceCard />
+            <WeightTrendCard />
+            <StepsCard />
+          </>
+        )}
+      </div>
     </div>
   )
 }

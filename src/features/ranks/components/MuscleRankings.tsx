@@ -1,3 +1,4 @@
+import Collapse from '@/components/Collapse'
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,7 +40,7 @@ export default function MuscleRankings({ groups, selected, onSelect }: Props) {
               </span>
               <ChevronDown size={18} className={cn('shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-180')} />
             </button>
-            {expanded && (
+            <Collapse open={expanded}>
               <ul className="flex flex-col gap-1 px-3 pb-3">
                 {g.regions.map(r => (
                   <li key={r.key}>
@@ -60,7 +61,7 @@ export default function MuscleRankings({ groups, selected, onSelect }: Props) {
                   </li>
                 ))}
               </ul>
-            )}
+            </Collapse>
           </li>
         )
       })}

@@ -159,8 +159,9 @@ export default function ActiveWorkoutPage() {
           <div ref={attach} className="relative flex flex-col gap-3">
             {draft.blocks.map((block, idx) => {
               const card = {
+                block,
                 // While one card is in the air they all fold to their headers, so the workout fits the screen
-                block: from == null ? block : { ...block, collapsed: true },
+                folded: from != null,
                 blockIdx: idx,
                 isFirst: idx === 0,
                 isLast: idx === draft.blocks.length - 1,
