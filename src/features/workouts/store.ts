@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { db } from '@/db'
-import { swapped } from '@/lib/utils'
+import { moved } from '@/lib/utils'
 import type { Exercise, WeightUnit } from '@/types'
 import { applyFill, type HintFill } from './progression'
 import { type WorkoutDraft, type BlockDraft, type SetDraft, type LastSet, type LiftTrend, cardioSet, emptySet, numText, setHasValue } from './types'
@@ -26,7 +26,8 @@ interface WorkoutStore {
   removeBlock: (blockIdx: number) => BlockDraft | undefined
   /** Puts a removed block back where it was, if the workout it came from is still the one open. */
   restoreBlock: (block: BlockDraft, blockIdx: number, startedAt: number) => void
-  moveBlock: (blockIdx: number, delta: -1 | 1) => void
+  /** Takes the exercise at `from` to `to`; the ones between move over. */
+  moveBlock: (from: number, to: number) => void
   /** Log this exercise in another unit: its weight fields keep their weight, not their number. */
   setUnit: (blockIdx: number, unit: WeightUnit) => void
   toggleCollapsed: (blockIdx: number) => void
@@ -42,6 +43,8 @@ interface WorkoutStore {
   updateSet: (blockIdx: number, setIdx: number, field: SetField, value: string) => void
   toggleDone: (blockIdx: number, setIdx: number) => boolean
   removeSet: (blockIdx: number, setIdx: number) => void
+  /** Takes a set to another place in its exercise. */
+  moveSet: (blockIdx: number, from: number, to: number) => void
   /** Puts a removed set back where it was, if that exercise is still there in the same workout. */
   restoreSet: (blockIdx: number, setIdx: number, set: SetDraft, exerciseId: string, startedAt: number) => void
   /** Write a progression hint's numbers into the block's sets that aren't done yet. */
@@ -94,13 +97,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return { draft: { ...s.draft, blocks } }
     }),
 
-  moveBlock: (blockIdx, delta) =>
-    set(s => {
-      if (!s.draft) return s
-      const to = blockIdx + delta
-      if (to < 0 || to >= s.draft.blocks.length) return s
-      return { draft: { ...s.draft, blocks: swapped(s.draft.blocks, blockIdx, to) } }
-    }),
+  moveBlock: (from, to) =>
+    set(s => (s.draft?.blocks[from] && s.draft.blocks[to] ? { draft: { ...s.draft, blocks: moved(s.draft.blocks, from, to) } } : s)),
 
   setUnit: (blockIdx, unit) =>
     set(s => {
@@ -196,6 +194,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       if (!s.draft) return s
       return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, sets: b.sets.filter((_, j) => j !== setIdx) })) }
     }),
+
+  moveSet: (blockIdx, from, to) =>
+    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => (b.sets[from] && b.sets[to] ? { ...b, sets: moved(b.sets, from, to) } : b)) } : s)),
 
   restoreSet: (blockIdx, setIdx, removed, exerciseId, startedAt) =>
     set(s => {

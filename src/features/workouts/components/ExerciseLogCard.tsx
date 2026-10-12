@@ -2,6 +2,7 @@ import { Check, Plus, Minus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { WeightUnit } from '@/types'
 import { setModeFor } from '@/lib/workoutMath'
+import { cn } from '@/lib/utils'
 import { useWorkoutStore } from '../store'
 import { setHasValue } from '../types'
 import SetRow from './SetRow'
@@ -12,6 +13,7 @@ import UnitToggle from './UnitToggle'
 import { applyFill, suggestProgress } from '../progression'
 import { lastSetsIn, setsInKg } from '../units'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
+import { useHoldToMove } from '../hooks/useHoldToMove'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
 import RankBadge from '@/features/ranks/components/RankBadge'
@@ -28,7 +30,9 @@ interface Props extends BlockCardProps {
 
 export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...card }: Props) {
   const { block, blockIdx } = card
-  const { addSet, removeSet, restoreSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, draft } = useWorkoutStore()
+  const { addSet, removeSet, restoreSet, moveSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, draft } = useWorkoutStore()
+  // Hold a set (anywhere but its fields and its tick) to carry it to another place in the exercise
+  const { attach, handle, style, from } = useHoldToMove((from, to) => moveSet(blockIdx, from, to))
   const { settings } = useSettings()
   // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
   const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
@@ -116,20 +120,26 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
         <span className="text-center">✓</span>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div ref={attach} className="relative flex flex-col gap-1">
         {block.sets.map((set, setIdx) => (
-          <SetRow
+          <div
             key={set.uuid}
-            index={setIdx}
-            set={set}
-            mode={mode}
-            unit={block.unit}
-            last={lastSets?.[setIdx]}
-            onChange={(field, value) => updateSet(blockIdx, setIdx, field, value)}
-            onToggleDone={() => handleToggle(setIdx)}
-            onUseLast={() => copyLast(setIdx)}
-            onRemove={block.sets.length > 1 ? () => handleRemoveSet(setIdx) : undefined}
-          />
+            {...handle(setIdx)}
+            style={style(setIdx)}
+            className={cn('rounded-2xl', from === setIdx && 'wallpaper-solid bg-card shadow-lg ring-1 ring-primary/50')}
+          >
+            <SetRow
+              index={setIdx}
+              set={set}
+              mode={mode}
+              unit={block.unit}
+              last={lastSets?.[setIdx]}
+              onChange={(field, value) => updateSet(blockIdx, setIdx, field, value)}
+              onToggleDone={() => handleToggle(setIdx)}
+              onUseLast={() => copyLast(setIdx)}
+              onRemove={block.sets.length > 1 ? () => handleRemoveSet(setIdx) : undefined}
+            />
+          </div>
         ))}
       </div>
 

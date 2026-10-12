@@ -1,4 +1,6 @@
+import { differenceInYears } from 'date-fns'
 import type { Exercise, TrainingLevel, VolumeMuscle } from '@/types'
+import { parseDate } from '@/lib/date'
 
 /**
  * Weekly set volume per muscle against volume landmarks (Renaissance
@@ -51,6 +53,13 @@ export const TRAINING_LEVELS: { value: TrainingLevel; label: string; blurb: stri
   { value: 'intermediate', label: 'Intermediate', blurb: '1–3 years: moderate volume for continued progress', scale: 1 },
   { value: 'advanced', label: 'Advanced', blurb: '3+ years: more volume needed to keep growing', scale: 1.25 },
 ]
+
+/** The level a start date comes to, by the bands the levels describe: under a year, one to three, more. */
+export function levelSince(since: string | undefined, now: Date): TrainingLevel | undefined {
+  const years = since ? differenceInYears(now, parseDate(since)) : NaN
+  if (Number.isNaN(years)) return undefined
+  return years < 1 ? 'beginner' : years < 3 ? 'intermediate' : 'advanced'
+}
 
 /** General ranges by training level (sets / week), shown in the guidelines. */
 export const LEVEL_GUIDE = [

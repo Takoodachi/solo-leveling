@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
 import type { BlockDraft } from '../types'
+import type { HoldHandle } from '../hooks/useHoldToMove'
 import BlockHeader from './BlockHeader'
 import ExerciseNote from './ExerciseNote'
 
@@ -13,6 +14,8 @@ export interface BlockCardProps {
   onShowInfo: () => void
   /** Swap this exercise for another, in the same place. Left off where that makes no sense (editing a past workout). */
   onReplace?: () => void
+  /** Goes on the header: hold it to carry the card to another place. */
+  hold?: HoldHandle
 }
 
 interface Props extends BlockCardProps {
@@ -22,7 +25,7 @@ interface Props extends BlockCardProps {
 }
 
 /** A logger card: the header (fold, move, remove), your note with the way to swap the exercise out, then its fields. */
-export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, subtitle, children }: Props) {
+export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, hold, subtitle, children }: Props) {
   return (
     <section className="rounded-3xl bg-card p-4">
       <BlockHeader
@@ -33,6 +36,7 @@ export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo
         isLast={isLast}
         collapsed={block.collapsed}
         onShowInfo={onShowInfo}
+        hold={hold}
       />
       {!block.collapsed && (
         <>

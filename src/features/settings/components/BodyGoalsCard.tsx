@@ -1,12 +1,16 @@
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import NumberStepper from '@/components/NumberStepper'
 import Segmented from '@/components/Segmented'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
+import { TRAINING_LEVELS, levelSince } from '@/features/analytics/volume'
 import { useExpenditure } from '@/features/nutrition/expenditure'
 import { useTargets } from '@/features/nutrition/hooks/useTargets'
+import { useNow } from '@/hooks/useNow'
+import { toDateStr } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { countsSteps } from '@/lib/stepCalories'
 import { useSettings } from '../hooks/useSettings'
@@ -31,9 +35,11 @@ export default function BodyGoalsCard() {
   const { metrics } = useBodyMetrics(1)
   const { updateTargets } = useTargets()
   const measured = useExpenditure()
+  const now = useNow()
 
   const weight = metrics[0]?.weightKg
-  const { heightCm, sex, goalType } = settings ?? {}
+  const { heightCm, sex, goalType, trainingSince } = settings ?? {}
+  const level = TRAINING_LEVELS.find(l => l.value === levelSince(trainingSince, now))
   const bmi = weight && heightCm ? Math.round((weight / (heightCm / 100) ** 2) * 10) / 10 : null
   const cat = bmi ? bmiCategory(bmi) : null
   const known = weight && heightCm && sex ? { weight, heightCm, sex } : null
@@ -65,6 +71,15 @@ export default function BodyGoalsCard() {
           <span className="flex items-center gap-2 font-semibold">{bmi}<Badge variant="outline" className={cn('text-xs', cat.color)}>{cat.label}</Badge></span>
         </div>
       )}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="training-since">Training since</Label>
+        <Input id="training-since" type="date" max={toDateStr(now)} value={trainingSince ?? ''} onChange={e => void updateSettings({ trainingSince: e.target.value })} />
+        <p className="text-xs text-muted-foreground">
+          {level
+            ? `${level.label}: the weekly set targets on Analytics follow from this. Clear the date to pick the level there yourself.`
+            : 'Roughly when you started lifting. It decides whether Analytics holds your weekly sets to a beginner’s, an intermediate’s or an advanced lifter’s targets.'}
+        </p>
+      </div>
       <div className="flex flex-col gap-1.5">
         <Label>Goal</Label>
         <Segmented size="sm" value={goalType ?? ('' as GoalType)} options={GOALS} onChange={v => void updateSettings({ goalType: v })} className="bg-secondary" />

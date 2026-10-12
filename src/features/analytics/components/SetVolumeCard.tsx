@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { addDays, format, startOfWeek, subWeeks } from 'date-fns'
 import { CalendarDays, ChevronLeft, ChevronRight, Info, SlidersHorizontal } from 'lucide-react'
 import Segmented from '@/components/Segmented'
 import { useNow } from '@/hooks/useNow'
-import { toDateStr } from '@/lib/date'
+import { parseDate, toDateStr } from '@/lib/date'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useMuscleVolume } from '../hooks/useMuscleVolume'
 import {
-  DEFAULT_RADAR, MIN_RADAR_MUSCLES, STATUS, TRAINING_LEVELS, VOLUME_MUSCLES, formatSets, landmarksOf, statusOf, thresholdsFor,
+  DEFAULT_RADAR, MIN_RADAR_MUSCLES, STATUS, TRAINING_LEVELS, VOLUME_MUSCLES, formatSets, landmarksOf, levelSince, statusOf, thresholdsFor,
   type TrainingLevel, type VolumeMuscle,
 } from '../volume'
 import VolumeRadar from './VolumeRadar'
@@ -29,7 +30,10 @@ export default function SetVolumeCard() {
 
   const start = subWeeks(startOfWeek(now, { weekStartsOn: 1 }), weeksBack)
   const volume = useMuscleVolume(toDateStr(start))
-  const level: TrainingLevel = settings?.trainingLevel ?? 'intermediate'
+  // When they started training says the level, once it's been given (Profile); until then it's picked here
+  const since = settings?.trainingSince
+  const sinceLevel = levelSince(since, now)
+  const level: TrainingLevel = sinceLevel ?? settings?.trainingLevel ?? 'intermediate'
   const saved = (settings?.radarMuscles ?? []).filter(k => VOLUME_MUSCLES.some(m => m.key === k))
   const shown = saved.length >= MIN_RADAR_MUSCLES ? saved : [...DEFAULT_RADAR]
 
@@ -53,13 +57,22 @@ export default function SetVolumeCard() {
         </button>
       </div>
 
-      <Segmented
-        size="sm"
-        value={level}
-        options={TRAINING_LEVELS}
-        onChange={v => void updateSettings({ trainingLevel: v })}
-        className="bg-secondary"
-      />
+      {since && sinceLevel ? (
+        <p className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-secondary px-4 text-sm">
+          <span>
+            <b>{TRAINING_LEVELS.find(l => l.value === level)?.label}</b> · training since {format(parseDate(since), 'MMM yyyy')}
+          </span>
+          <Link to="/profile#body-goals" className="flex h-11 items-center font-semibold text-primary">Change</Link>
+        </p>
+      ) : (
+        <Segmented
+          size="sm"
+          value={level}
+          options={TRAINING_LEVELS}
+          onChange={v => void updateSettings({ trainingLevel: v })}
+          className="bg-secondary"
+        />
+      )}
       <p className="mt-2 px-1 text-xs text-muted-foreground">{TRAINING_LEVELS.find(l => l.value === level)?.blurb}</p>
 
       <div className="mt-4 flex items-center rounded-2xl bg-secondary">

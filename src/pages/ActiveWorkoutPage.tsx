@@ -4,12 +4,14 @@ import { format, parseISO } from 'date-fns'
 import { Plus, X, Timer, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
 import { useRestTimer, requestNotificationPermission } from '@/features/workouts/hooks/useRestTimer'
 import { useWakeLock } from '@/features/workouts/hooks/useWakeLock'
 import { useElapsed } from '@/features/workouts/hooks/useElapsed'
+import { useHoldToMove } from '@/features/workouts/hooks/useHoldToMove'
 import { blockHistory } from '@/features/workouts/hooks/useWorkoutHistory'
 import ExerciseLogCard from '@/features/workouts/components/ExerciseLogCard'
 import CardioLogCard from '@/features/workouts/components/CardioLogCard'
@@ -27,7 +29,9 @@ import type { Exercise } from '@/types'
 
 export default function ActiveWorkoutPage() {
   const navigate = useNavigate()
-  const { draft, restored, addBlock, replaceBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
+  const { draft, restored, addBlock, replaceBlock, moveBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
+  // Hold an exercise's name to carry its card to another place in the workout
+  const { attach, handle, style, from } = useHoldToMove(moveBlock)
   const { finish } = useActiveWorkout()
   const { saveEdits, cancelEditing } = useEditWorkout()
   const { settings } = useSettings()
@@ -151,28 +155,41 @@ export default function ActiveWorkoutPage() {
           </div>
         )}
 
-        {draft.blocks.map((block, idx) => {
-          const key = `${block.exercise.uuid}-${idx}`
-          const card = {
-            block,
-            blockIdx: idx,
-            isFirst: idx === 0,
-            isLast: idx === draft.blocks.length - 1,
-            onShowInfo: () => setInfo(block.exercise),
-            onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
-          }
-          return setModeFor(block.exercise) === 'cardio' ? (
-            <CardioLogCard
-              key={key}
-              {...card}
-              bodyKg={ranks?.bodyKg ?? undefined}
-              runRank={ranks?.running?.rank}
-              sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
-            />
-          ) : (
-            <ExerciseLogCard key={key} {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
-          )
-        })}
+        {draft.blocks.length > 0 && (
+          <div ref={attach} className="relative flex flex-col gap-3">
+            {draft.blocks.map((block, idx) => {
+              const card = {
+                // While one card is in the air they all fold to their headers, so the workout fits the screen
+                block: from == null ? block : { ...block, collapsed: true },
+                blockIdx: idx,
+                isFirst: idx === 0,
+                isLast: idx === draft.blocks.length - 1,
+                onShowInfo: () => setInfo(block.exercise),
+                onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
+                hold: handle(idx),
+              }
+              return (
+                <div
+                  key={`${block.exercise.uuid}-${idx}`}
+                  style={style(idx)}
+                  // The scroll margins keep a card that has just landed clear of the header and the rest timer
+                  className={cn('scroll-mb-28 scroll-mt-24 rounded-3xl', from === idx && 'wallpaper-solid bg-card shadow-2xl ring-2 ring-primary/60')}
+                >
+                  {setModeFor(block.exercise) === 'cardio' ? (
+                    <CardioLogCard
+                      {...card}
+                      bodyKg={ranks?.bodyKg ?? undefined}
+                      runRank={ranks?.running?.rank}
+                      sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
+                    />
+                  ) : (
+                    <ExerciseLogCard {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         <Button variant="secondary" size="lg" className="gap-2" onClick={() => setPickerOpen(true)}>
           <Plus size={18} />

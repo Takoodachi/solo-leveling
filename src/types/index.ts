@@ -137,7 +137,8 @@ export interface Settings {
   homeWidgets?: HomeWidgetId[] // Home cards in display order (unset = all, default order)
   waterGoalMl?: number
   waterGlassMl?: number
-  trainingLevel?: TrainingLevel // weekly set-volume targets (unset = intermediate)
+  trainingLevel?: TrainingLevel // weekly set-volume targets, picked by hand (unset = intermediate); `trainingSince` goes before it
+  trainingSince?: string // YYYY-MM-DD, roughly when they started training: the level follows from it (`levelSince`; '' = cleared)
   radarMuscles?: VolumeMuscle[] // muscles on the volume radar (unset = default twelve)
   shareOnLeaderboard?: boolean // friends leaderboard (unset = shared)
   theme?: string // colour palette id (features/settings/themes.ts; unset = the default dark theme)
