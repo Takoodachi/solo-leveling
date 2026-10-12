@@ -60,10 +60,20 @@ export function useBarcodeLookup() {
     }
   }
 
-  /** Open a product found by name for the same review: your saved entry if it was saved before. */
+  /**
+   * Open a product found by name for the same review: your saved entry if it was saved before,
+   * else the product in full (the search only knows it per 100 g; the product has its package
+   * serving). If that can't be fetched, what the search found is still enough to go on.
+   */
   async function review(found: ScannedFood): Promise<void> {
     const saved = await db.foods.get(barcodeFoodId(found.barcode))
-    setScan(saved ? fromSaved(found.barcode, saved) : found)
+    if (saved) return setScan(fromSaved(found.barcode, saved))
+    setLookingUp(true)
+    try {
+      setScan((await lookupBarcode(found.barcode).catch(() => null)) ?? found)
+    } finally {
+      setLookingUp(false)
+    }
   }
 
   return { scan, lookingUp, lookup, recheck, review, clear: () => setScan(null) }
