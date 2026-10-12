@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Trophy, Trash2, Pencil } from 'lucide-react'
+import { Trophy, Trash2, Pencil, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
+import ShareWorkoutDialog from '@/features/workouts/components/ShareWorkoutDialog'
 import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
 import { canEditWorkout, EDIT_WINDOW_DAYS, useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
 import { useLbExercises } from '@/features/workouts/hooks/useExerciseNote'
@@ -30,6 +31,8 @@ function groupByExercise(sets: WorkoutSetWithExercise[]) {
   }
   return groups
 }
+
+const NONE: never[] = []
 
 /** A workout just finished opens with its rank-ups, full screen; the summary comes in once they've played. */
 export default function WorkoutSummaryPage() {
@@ -54,6 +57,7 @@ function WorkoutSummary() {
   const now = useNow()
   const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
   const [replay, setReplay] = useState<RankUp | null>(null)
+  const [sharing, setSharing] = useState(false)
   const lbExercises = useLbExercises()
   const stillness = useReducedMotion()
   const celebrate = state?.celebrate === true
@@ -79,9 +83,12 @@ function WorkoutSummary() {
   }
 
   const editable = canEditWorkout(workout.date, now)
-  const bests = celebrate ? state.newBests : (computed?.bests ?? [])
+  // Stable empties: the share card redraws whenever these change
+  const bests = celebrate ? state.newBests : (computed?.bests ?? NONE)
   // Older router state (before ranks existed) has no rankUps.
-  const rankUps = celebrate ? (state.rankUps ?? []) : (computed?.rankUps ?? [])
+  const rankUps = celebrate ? (state.rankUps ?? NONE) : (computed?.rankUps ?? NONE)
+  // In history, wait for the bests and rank-ups so the card has them
+  const canShare = celebrate || computed !== null
 
   async function handleDelete() {
     if (!workout || !window.confirm('Delete this workout? This can’t be undone.')) return
@@ -99,6 +106,11 @@ function WorkoutSummary() {
           back="/workouts"
           eyebrow={format(parseISO(workout.date), 'EEEE, d MMMM')}
           title={workout.name ?? 'Workout'}
+          action={
+            <Button variant="ghost" size="icon" className="shrink-0 rounded-full text-muted-foreground" aria-label="Share workout" disabled={!canShare} onClick={() => setSharing(true)}>
+              <Share2 size={20} />
+            </Button>
+          }
         />
       )}
 
@@ -141,6 +153,9 @@ function WorkoutSummary() {
 
       <div className="flex flex-col gap-2">
         {celebrate && <Button size="lg" onClick={() => navigate('/home', { replace: true })}>Done</Button>}
+        <Button variant="secondary" size="lg" className="gap-2" disabled={!canShare} onClick={() => setSharing(true)}>
+          <Share2 size={16} /> Share workout
+        </Button>
         {editable && (
           <Button variant={celebrate ? 'ghost' : 'secondary'} size={celebrate ? 'default' : 'lg'} className="gap-2" onClick={() => void startEditing(workout.uuid)}>
             <Pencil size={16} /> Edit workout
@@ -155,6 +170,7 @@ function WorkoutSummary() {
           </>
         )}
       </div>
+      <ShareWorkoutDialog open={sharing} onOpenChange={setSharing} workout={workout} bests={bests} rankUps={rankUps} lb={lbExercises} />
     </FullScreen>
   )
 }
