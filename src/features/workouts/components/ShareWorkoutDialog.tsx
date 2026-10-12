@@ -32,11 +32,11 @@ export default function ShareWorkoutDialog({ open, onOpenChange, workout, bests,
       open={open}
       onOpenChange={onOpenChange}
       title="Share this workout"
-      description="Exercises, sets, time, new bests and rank-ups. Notes and heart rate stay private."
+      description="The summary as a picture, with your name and photo. Your notes stay off it."
       make={make}
       fileName={`solo-leveling-workout-${workout.date}.png`}
       text={`${title}: ${line}`}
-      alt={`Workout card: ${title}, ${line}`}
+      alt={`Workout summary: ${title}, ${line}`}
     />
   )
 }

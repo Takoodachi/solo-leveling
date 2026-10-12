@@ -16,7 +16,7 @@ export const MUTED = '#9b9ba3'
 const BG = '#0a0a0b'
 const SURFACE = '#18181b'
 export const HEADING = '"Outfit Variable", "Inter Variable", system-ui, sans-serif'
-const BODY = '"Inter Variable", system-ui, sans-serif'
+export const BODY = '"Inter Variable", system-ui, sans-serif'
 /** Where the footer's baseline sits; content stops above it. */
 export const FOOTER_Y = CARD_H - 64
 
@@ -46,7 +46,7 @@ const themeColor = (name: string, fallback: string) => {
   return v ? `hsl(${v})` : fallback
 }
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+export function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise(resolve => {
     const img = new Image()
     img.onload = () => resolve(img)
@@ -68,7 +68,7 @@ export function fit(ctx: Ctx, text: string, width: number): string {
 }
 
 /** Word-wrapped lines, at most `max`, the last one ellipsised if it doesn't all fit. */
-function wrap(ctx: Ctx, text: string, width: number, max: number): string[] {
+export function wrap(ctx: Ctx, text: string, width: number, max: number): string[] {
   const lines: string[] = []
   let line = ''
   const words = text.split(' ')
@@ -86,7 +86,7 @@ function wrap(ctx: Ctx, text: string, width: number, max: number): string[] {
 }
 
 /** The Ascent mark (components/Logo.tsx geometry), `size` px square at (x, y). */
-function logo(ctx: Ctx, x: number, y: number, size: number, top: string, rest: string) {
+export function logo(ctx: Ctx, x: number, y: number, size: number, top: string, rest: string) {
   const s = size / 72
   const chevron = (cy: number, color: string) => {
     const pts = [[50, cy], [80, cy + 30], [67, cy + 30], [50, cy + 13], [33, cy + 30], [20, cy + 30]]

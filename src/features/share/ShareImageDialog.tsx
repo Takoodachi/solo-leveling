@@ -67,9 +67,11 @@ function Content({ title, description, make, fileName, text, alt, onClose }: Omi
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
-      <div className="aspect-[4/5] w-full shrink-0 overflow-hidden rounded-2xl bg-secondary">
-        {card && 'url' in card && <img src={card.url} alt={alt} className="h-full w-full object-cover" />}
-        {card && 'error' in card && <p className="p-6 text-sm text-muted-foreground">{card.error}</p>}
+      {/* A tall image (a workout's whole summary) scrolls inside the preview */}
+      <div className="max-h-[55dvh] w-full overflow-y-auto overscroll-contain rounded-2xl bg-secondary">
+        {card && 'url' in card
+          ? <img src={card.url} alt={alt} className="block h-auto w-full" />
+          : <div className="aspect-[4/5]">{card && <p className="p-6 text-sm text-muted-foreground">{card.error}</p>}</div>}
       </div>
       <Button size="lg" className="shrink-0 gap-2" onClick={() => void share()} disabled={!card || !('blob' in card) || sharing}>
         <Share2 size={18} /> {card ? (sharing ? 'Opening…' : 'Share') : 'Making the image…'}

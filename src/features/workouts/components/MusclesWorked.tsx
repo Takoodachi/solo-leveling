@@ -2,13 +2,9 @@ import type { ReactNode } from 'react'
 import type { WorkoutSetWithExercise } from '@/types'
 import { REGION_LABEL, type MuscleRegion } from '@/features/ranks/standards'
 import { BACK, BODY_FILL, BODY_LINE, CENTER_BACK, CENTER_FRONT, FRONT, HALVES, MUSCLE_FILL, MUSCLE_LINE, VIEWBOX, bodyInk, type Shape } from '@/features/ranks/components/bodygraphShapes'
-import { musclesWorked } from '../musclesWorked'
+import { LISTED, MIN_ALPHA, musclesWorked } from '../musclesWorked'
 
 const accent = (alpha: number) => `hsl(var(--primary) / ${alpha})`
-/** How many muscles the list beside the figures names. */
-const LISTED = 5
-/** The faintest a worked muscle gets, so a helper muscle still shows. */
-const MIN_ALPHA = 0.28
 
 interface FigureProps {
   label: string
