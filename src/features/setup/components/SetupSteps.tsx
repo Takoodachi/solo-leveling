@@ -55,6 +55,11 @@ export function BodyStep({ form, onChange }: StepProps) {
             <Input id="setup-weight" inputMode="decimal" value={form.weightKg} onChange={e => onChange({ weightKg: e.target.value })} placeholder="70" enterKeyHint="done" />
           </div>
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="setup-since">When did you start lifting? (roughly)</Label>
+          <Input id="setup-since" type="date" value={form.trainingSince} onChange={e => onChange({ trainingSince: e.target.value })} />
+          <p className="text-xs text-muted-foreground">New to it or years in: it sets how many sets a week Analytics aims you at.</p>
+        </div>
       </div>
     </>
   )

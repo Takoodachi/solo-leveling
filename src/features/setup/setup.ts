@@ -14,11 +14,13 @@ export interface SetupForm {
   sex?: Sex
   heightCm: string
   weightKg: string
+  /** YYYY-MM-DD, or empty. */
+  trainingSince: string
   goal: GoalType
   workoutsPerWeek: number
 }
 
-export const EMPTY_SETUP: SetupForm = { name: '', heightCm: '', weightKg: '', goal: 'maintain', workoutsPerWeek: 3 }
+export const EMPTY_SETUP: SetupForm = { name: '', heightCm: '', weightKg: '', trainingSince: '', goal: 'maintain', workoutsPerWeek: 3 }
 
 /** A number typed into the form, if it's one a person could be. */
 const within = (text: string, low: number, high: number): number | undefined => {
@@ -51,7 +53,7 @@ export function useNeedsSetup(ready: boolean): boolean {
 }
 
 /**
- * Save what was filled in (null = skipped): name, body and goal to settings, the weight as
+ * Save what was filled in (null = skipped): name, body, training start and goal to settings, the weight as
  * today's weigh-in, and suggested targets when there's enough to work them out. Writing the
  * settings, even with nothing in them, is what marks the account as set up.
  */
@@ -63,6 +65,7 @@ export async function finishSetup(form: SetupForm | null): Promise<void> {
     if (form.name.trim()) settings.displayName = form.name.trim().slice(0, 40)
     if (form.sex) settings.sex = form.sex
     if (height) settings.heightCm = Math.round(height)
+    if (form.trainingSince) settings.trainingSince = form.trainingSince
     settings.goalType = form.goal
     settings.weeklyWorkoutGoal = form.workoutsPerWeek
     if (weight) await logWeight(today(), Math.round(weight * 10) / 10)
