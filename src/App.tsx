@@ -31,6 +31,7 @@ const ProfilePage = lazyAhead(() => import('@/pages/ProfilePage'))
 const RanksPage = lazyAhead(() => import('@/pages/RanksPage'))
 const LeaderboardPage = lazyAhead(() => import('@/pages/LeaderboardPage'))
 const WorkoutHistoryPage = lazyAhead(() => import('@/pages/WorkoutHistoryPage'))
+const NutritionHistoryPage = lazyAhead(() => import('@/pages/NutritionHistoryPage'))
 const RoutineDetailPage = lazyAhead(() => import('@/pages/RoutineDetailPage'))
 const RoutineEditPage = lazyAhead(() => import('@/pages/RoutineEditPage'))
 const ActiveWorkoutPage = lazyAhead(() => import('@/pages/ActiveWorkoutPage'))
@@ -121,6 +122,7 @@ function AppRoutes() {
         <Route path="workouts/active" element={<ActiveWorkoutPage />} />
         <Route path="workouts/plan" element={<PlanPage />} />
         <Route path="workouts/history" element={<WorkoutHistoryPage />} />
+        <Route path="nutrition/history" element={<NutritionHistoryPage />} />
         <Route path="workouts/routine/new" element={<RoutineEditPage />} />
         <Route path="workouts/routine/:id" element={<RoutineDetailPage />} />
         <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />

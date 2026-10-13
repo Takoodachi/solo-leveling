@@ -14,15 +14,20 @@ interface Props {
   firstMonth: string
   /** One line under the grid: what the month added up to. */
   summary: string
+  /** What a filled-in day stands for, read out after its date ("2 workouts" unless given). */
+  label?: (count: number) => string
   onMonth: (month: string) => void
   onSelect: (day: string | null) => void
 }
 
+const workouts = (count: number) => `${count} ${count === 1 ? 'workout' : 'workouts'}`
+
 /**
  * A month at a glance, Monday first: the days with a workout are filled in, and tapping one
- * narrows the list to it. Days without one are just days (nothing marks a miss).
+ * narrows the list to it. Days without one are just days (nothing marks a miss). The food
+ * history is the same calendar, with the days food was logged on.
  */
-export default function HistoryCalendar({ month, trained, selected, today, firstMonth, summary, onMonth, onSelect }: Props) {
+export default function HistoryCalendar({ month, trained, selected, today, firstMonth, summary, label = workouts, onMonth, onSelect }: Props) {
   return (
     <section className="rounded-3xl bg-card p-3">
       <MonthGrid
@@ -39,7 +44,7 @@ export default function HistoryCalendar({ month, trained, selected, today, first
               disabled={count === 0}
               onClick={() => onSelect(isSelected ? null : day)}
               aria-pressed={count > 0 ? isSelected : undefined}
-              aria-label={`${format(date, 'EEEE d MMMM')}${count ? `, ${count} ${count === 1 ? 'workout' : 'workouts'}` : ''}`}
+              aria-label={`${format(date, 'EEEE d MMMM')}${count ? `, ${label(count)}` : ''}`}
               className={cn(
                 'relative flex h-10 w-10 items-center justify-center rounded-full text-sm tabular-nums transition-colors',
                 count > 0 ? 'bg-foreground font-bold text-background' : 'text-muted-foreground',
