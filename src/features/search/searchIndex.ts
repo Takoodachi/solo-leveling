@@ -42,6 +42,7 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'frequency', title: 'Training frequency goal', subtitle: 'Workouts › Plan', keywords: 'workouts per week weekly goal', Icon: Target, to: '/workouts/plan#frequency' },
   { id: 'rest', title: 'Rest timer', subtitle: 'Workouts › Plan', keywords: 'rest seconds between sets', Icon: Timer, to: '/workouts/plan#rest-timer' },
   { id: 'nutrition', title: 'Nutrition', subtitle: 'Food log, meals and calories', keywords: 'food eat diet meals calories kcal macros', Icon: UtensilsCrossed, to: '/nutrition' },
+  { id: 'food-history', title: 'Food history', subtitle: 'Nutrition', keywords: 'past days meals ate eaten log calendar', Icon: History, to: '/nutrition/history' },
   { id: 'analytics', title: 'Analytics', subtitle: 'Charts and progress', keywords: 'stats graphs charts progress', Icon: ChartColumn, to: '/analytics' },
   { id: 'set-volume', title: 'Set volume radar', subtitle: 'Analytics', keywords: 'weekly analysis sets per muscle mev mav mrv volume landmarks', Icon: Radar, to: '/analytics#set-volume' },
   { id: 'training-volume', title: 'Training volume', subtitle: 'Analytics', keywords: 'tonnage weekly volume kg lifted', Icon: ChartColumn, to: '/analytics#training-volume' },

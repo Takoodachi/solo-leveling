@@ -1,5 +1,5 @@
-import { useSearchParams } from 'react-router-dom'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { CalendarDays, ChevronLeft, ChevronRight, History } from 'lucide-react'
 import { addDays, parseISO } from 'date-fns'
 import PageHeader from '@/components/PageHeader'
 import DatePicker from '@/components/DatePicker'
@@ -17,6 +17,7 @@ import { useNow } from '@/hooks/useNow'
 import type { MealType } from '@/types'
 
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
 
 /** Best-guess meal for a quick add from the + menu. */
 function mealForNow(hour: number): MealType {
@@ -32,12 +33,14 @@ export default function NutritionPage() {
   // The day on show belongs to the visit: opened afresh (its tab, "Log food" from +) it is today,
   // and Back finds the day that was being looked at. Until one is picked it follows the clock:
   // kept app-wide, "Log food" went to whichever day was looked at last, days later too.
-  const [picked, setPicked] = useEntryState<string | null>('nutrition-day', null)
+  // A link can ask for a day (`?date=`: the food history's "Open this day").
+  const [params, setParams] = useSearchParams()
+  const asked = ISO_DAY.test(params.get('date') ?? '') ? params.get('date') : null
+  const [picked, setPicked] = useEntryState<string | null>('nutrition-day', asked)
   const selectedDate = picked ?? todayStr
   const setDate = (date: string) => setPicked(date === todayStr ? null : date)
   const { logs, totals, byMeal } = useDailyLog(selectedDate)
   const budget = useCalorieBudget(selectedDate)
-  const [params, setParams] = useSearchParams()
   const quickAdd = params.get('add') === '1'
   const isTab = useIsNavTab('/nutrition')
 
@@ -47,7 +50,16 @@ export default function NutritionPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader back={isTab ? undefined : '/home'} title="Nutrition" />
+      <PageHeader
+        // Opened on a day from the history: Back goes there, even where Nutrition is a tab
+        back={asked ? '/nutrition/history' : isTab ? undefined : '/home'}
+        title="Nutrition"
+        action={
+          <Link to="/nutrition/history" className="flex h-11 items-center gap-2 rounded-2xl bg-card px-3.5 text-sm font-semibold" aria-label="Food history">
+            <History size={18} /> History
+          </Link>
+        }
+      />
 
       <div className="flex items-center justify-between rounded-full bg-card p-1">
         <button type="button" onClick={() => shift(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-accent" aria-label="Previous day">
