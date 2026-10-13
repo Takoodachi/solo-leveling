@@ -69,8 +69,9 @@ export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
   return (
     <>
       <div ref={stripRef} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-2 bg-background/90 px-4 py-2 backdrop-blur-xl', !stuck && 'wallpaper-clear')}>
-        <div className="flex items-center gap-2">
-          <label className="wallpaper-solid flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-card px-4 focus-within:ring-2 focus-within:ring-primary">
+        <div className="flex items-center">
+          {/* rounded-3xl on a field this tall is a pill, and it makes the field a card to the card styles (index.css) */}
+          <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-3xl bg-card px-4 focus-within:ring-2 focus-within:ring-primary">
             <Search size={18} className="shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
@@ -102,11 +103,18 @@ export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
               </button>
             )}
           </label>
-          {open && (
-            <button type="button" onClick={close} className="h-12 shrink-0 px-1 text-sm font-semibold text-primary">
-              Cancel
-            </button>
-          )}
+          {/* Always there, so the field gives way to it instead of jumping */}
+          <button
+            type="button"
+            onClick={close}
+            inert={!open}
+            className={cn(
+              'h-12 shrink-0 overflow-hidden whitespace-nowrap text-sm font-semibold text-primary transition-[max-width,opacity,padding] duration-200 ease-out',
+              open ? 'max-w-24 pl-3 pr-1 opacity-100' : 'max-w-0 opacity-0',
+            )}
+          >
+            Cancel
+          </button>
         </div>
       </div>
 

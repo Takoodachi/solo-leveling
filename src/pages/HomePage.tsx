@@ -67,7 +67,7 @@ export default function HomePage() {
       <LogStepsSheet open={logging === 'steps'} onOpenChange={doneLogging} />
       <WaterSheet open={logging === 'water'} onOpenChange={doneLogging} date={todayStr} today={todayStr} />
       {!searching && (
-        <>
+        <div className="flex animate-fade-in flex-col gap-5">
           <Segmented value={tab} options={TABS} onChange={setTab} className={showSearch ? undefined : 'mt-2'} />
 
           {days && (
@@ -113,7 +113,7 @@ export default function HomePage() {
               </div>
             )
           )}
-        </>
+        </div>
       )}
     </div>
   )

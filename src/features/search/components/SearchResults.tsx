@@ -11,7 +11,7 @@ interface Props {
 export default function SearchResults({ query, groups, onPick }: Props) {
   if (groups.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-1 rounded-3xl bg-card px-6 py-10 text-center">
+      <div className="flex animate-fade-in flex-col items-center gap-1 rounded-3xl bg-card px-6 py-10 text-center">
         <p className="font-semibold">Nothing found for “{query.trim()}”</p>
         <p className="text-sm text-muted-foreground">Try a page, a setting, an exercise, a food or a routine.</p>
       </div>
@@ -20,8 +20,13 @@ export default function SearchResults({ query, groups, onPick }: Props) {
 
   return (
     <div className="flex flex-col gap-5" role="region" aria-label="Search results">
-      {groups.map(g => (
-        <section key={g.key} className="flex flex-col gap-2">
+      {/* Each group drops in from under the field, one after the other; a group already there stays put while typing */}
+      {groups.map((g, i) => (
+        <section
+          key={g.key}
+          className="flex animate-in flex-col gap-2 duration-300 fade-in-0 slide-in-from-top-4 fill-mode-backwards"
+          style={{ animationDelay: `${Math.min(i, 5) * 40}ms` }}
+        >
           <h2 className="eyebrow px-1 text-muted-foreground">{g.label}</h2>
           <div className="flex flex-col overflow-hidden rounded-3xl bg-card">
             {g.items.map(item => (
