@@ -3,6 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import DatePicker from '@/components/DatePicker'
+import { useNow } from '@/hooks/useNow'
+import { toDateStr } from '@/lib/date'
 import type { FinishOptions } from '../hooks/useActiveWorkout'
 
 interface Props {
@@ -22,6 +25,9 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
   const [heartRate, setHeartRate] = useState(editing?.avgHeartRate ? String(editing.avgHeartRate) : '')
   const [notes, setNotes] = useState(editing?.notes ?? '')
   const [saving, setSaving] = useState(false)
+  // The day it was done, when that isn't today: a workout written down after the fact
+  const [date, setDate] = useState<string | null>(null)
+  const today = toDateStr(useNow())
 
   const durationValue = duration ?? String(Math.max(1, elapsedMin))
 
@@ -34,6 +40,7 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
         durationMin: Math.max(1, Math.round(Number(durationValue) || elapsedMin || 1)),
         avgHeartRate: hr > 0 ? Math.round(hr) : undefined,
         notes,
+        date: date ?? undefined,
       })
     } finally {
       setSaving(false)
@@ -58,6 +65,12 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
         )}
 
         <form onSubmit={submit} className="flex flex-col gap-4">
+          {!editing && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fw-date">Date</Label>
+              <DatePicker id="fw-date" value={date ?? today} max={today} onChange={day => setDate(day === today ? null : day)} />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="fw-duration">Duration (min)</Label>
