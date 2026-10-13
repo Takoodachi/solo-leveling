@@ -30,7 +30,8 @@ function summarize(items: MealItem[], foods: Map<string, Food>): MealSummary {
 
 async function foodMap(ids: string[]): Promise<Map<string, Food>> {
   const foods = await db.foods.bulkGet([...new Set(ids)])
-  return new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
+  // A removed food is left out of a meal, like one that no longer exists
+  return new Map(foods.flatMap(f => (f && !f.removed ? [[f.uuid, f]] : [])))
 }
 
 /**

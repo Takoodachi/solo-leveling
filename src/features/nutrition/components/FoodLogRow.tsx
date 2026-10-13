@@ -6,7 +6,7 @@ import { amountLabel } from '../logFoods'
 
 interface Props {
   entry: FoodLogWithFood
-  /** Tapping the food opens its amount to correct it. */
+  /** Tapping the food opens its amount and meal to correct them. */
   onEdit: () => void
   onDelete: () => void
 }
@@ -22,7 +22,7 @@ export default function FoodLogRow({ entry, onEdit, onDelete }: Props) {
         type="button"
         onClick={onEdit}
         className="-mx-2 flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl px-2 py-2 text-left transition-colors active:bg-accent/60"
-        aria-label={`${entry.food.name}, ${servingLabel}: change amount`}
+        aria-label={`${entry.food.name}, ${servingLabel}: change amount or meal`}
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{entry.food.name}</span>
@@ -33,11 +33,11 @@ export default function FoodLogRow({ entry, onEdit, onDelete }: Props) {
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+        className="-mr-2 h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive"
         onClick={onDelete}
         aria-label="Remove food"
       >
-        <Trash2 size={14} />
+        <Trash2 size={16} />
       </Button>
     </div>
   )

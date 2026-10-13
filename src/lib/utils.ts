@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * For a dialog's or sheet's `onPointerDownOutside`: a press on a toast (its Undo) is not a press
+ * outside, so what's open stays open.
+ */
+export const keepOpenForToast = (e: Event) => {
+  if (e.target instanceof Element && e.target.closest('[data-sonner-toaster]')) e.preventDefault()
+}
+
 /** `n`, kept within [low, high]. */
 export const clamp = (n: number, [low, high]: readonly [number, number]) => Math.min(high, Math.max(low, n))
 

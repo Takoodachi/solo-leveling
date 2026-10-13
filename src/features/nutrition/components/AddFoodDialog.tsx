@@ -14,10 +14,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import Segmented from '@/components/Segmented'
 import { toDateStr } from '@/lib/date'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/authStore'
-import { useFoods, saveScannedFood, barcodeFoodId } from '../hooks/useFoods'
+import { useFoods, saveScannedFood, removeCustomFood, barcodeFoodId } from '../hooks/useFoods'
 import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
 import { useOnlineFoodSearch, onlineKey, MIN_ONLINE_QUERY } from '../hooks/useOnlineFoodSearch'
 import type { ReviewedFood, ScannedFood } from '../openFoodFacts'
@@ -31,7 +32,7 @@ import QuickAddCalories from './QuickAddCalories'
 import FoodAmountFields from './FoodAmountFields'
 import { amountDraft, servingsOf, EMPTY_AMOUNT, type AmountDraft } from '../foodAmount'
 import { useSavedMeals, type SavedMealWithSummary } from '../hooks/useMeals'
-import { logMealItems, unlogFoods, amountLabel } from '../logFoods'
+import { logMealItems, unlogFoods, amountLabel, MEAL_OPTIONS } from '../logFoods'
 import type { Food, MealType } from '@/types'
 import { QUICK_ADD_FOOD } from '@/data/basics'
 
@@ -39,6 +40,7 @@ interface Props {
   open: boolean
   onClose: () => void
   date: string
+  /** The meal it opens on; the dialog can pick another. */
   mealType: MealType
   /** Pre-filled search (from search on Home). */
   initialQuery?: string
@@ -72,6 +74,9 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
   const [added, setAdded] = useState<Added[]>([])
+  // The meal picked in the dialog: opened from +, the meal is only a guess from the time of day
+  const [pickedMeal, setPickedMeal] = useState<MealType | null>(null)
+  const into = pickedMeal ?? mealType
   const savedMeals = useSavedMeals()
   const { foods, searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
   const barcode = useBarcodeLookup()
@@ -118,7 +123,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   )
 
   async function logFood(food: Food, n: number) {
-    const uuid = await addFoodLog({ date, foodId: food.uuid, servings: n, mealType })
+    const uuid = await addFoodLog({ date, foodId: food.uuid, servings: n, mealType: into })
     setAdded(a => [...a, { label: `${food.name}, ${amountLabel(food, n)}`, kcal: food.kcalPerServing * n, uuids: [uuid] }])
   }
 
@@ -131,7 +136,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   }
 
   async function handleAddMeal(meal: SavedMealWithSummary) {
-    const uuids = await logMealItems(meal.items, date, mealType)
+    const uuids = await logMealItems(meal.items, date, into)
     setAdded(a => [...a, { label: meal.name, kcal: meal.kcal, uuids }])
     setQuery('')
   }
@@ -168,6 +173,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     setAiLoading(false)
     setAiResult(null)
     setAdded([])
+    setPickedMeal(null)
     barcode.clear()
     onlineSearch.clear()
     onClose()
@@ -208,7 +214,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
       isFavorite: false,
       notes: food.notes || undefined,
     })
-    await addFoodLog({ date, foodId: saved.uuid, servings: 1, mealType })
+    await addFoodLog({ date, foodId: saved.uuid, servings: 1, mealType: into })
     handleClose()
   }
 
@@ -278,7 +284,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
       <Dialog open={open} onOpenChange={open => !open && handleClose()}>
         <DialogContent className="max-w-sm gap-0 p-0">
           <DialogHeader className="p-4 pb-3">
-            <DialogTitle>Quick add — {mealType}</DialogTitle>
+            <DialogTitle>Quick add — {into}</DialogTitle>
           </DialogHeader>
           <QuickAddCalories
             onBack={() => setShowQuick(false)}
@@ -300,7 +306,12 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
             <DialogTitle>Create Food</DialogTitle>
           </DialogHeader>
           <CustomFoodForm
-            onSuccess={() => setShowCustom(false)}
+            initialName={query.trim()}
+            // Straight to its amount: it was made to be logged
+            onSuccess={food => {
+              setShowCustom(false)
+              handleFoodSelect(food)
+            }}
             onCancel={() => setShowCustom(false)}
           />
         </DialogContent>
@@ -313,7 +324,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
       <Dialog open={open} onOpenChange={open => !open && handleClose()}>
         <DialogContent className="max-w-sm p-0 gap-0">
           <DialogHeader className="p-4 pb-2">
-            <DialogTitle>Confirm & Log — {mealType}</DialogTitle>
+            <DialogTitle>Confirm & Log — {into}</DialogTitle>
           </DialogHeader>
           <AiFoodConfirm
             parsed={aiResult}
@@ -331,8 +342,11 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
           search field and the buttons under the list have to stay on screen */}
       <DialogContent className="flex max-w-sm flex-col gap-0 p-0">
         <DialogHeader className="shrink-0 p-4 pb-2">
-          <DialogTitle>Add Food — {mealType}</DialogTitle>
+          <DialogTitle>Add food</DialogTitle>
         </DialogHeader>
+        <div className="shrink-0 px-4 pb-3">
+          <Segmented size="sm" value={into} options={MEAL_OPTIONS} onChange={setPickedMeal} className="bg-secondary" />
+        </div>
 
         {selected ? (
           <div className="px-4 pb-4 flex flex-col gap-4">
@@ -350,6 +364,19 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
               <Button variant="outline" className="flex-1" onClick={() => setSelected(null)}>Back</Button>
               <Button className="flex-1" onClick={handleAdd}>Add</Button>
             </div>
+            {selected.isCustom && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-mt-2 text-muted-foreground"
+                onClick={() => {
+                  void removeCustomFood(selected)
+                  setSelected(null)
+                }}
+              >
+                Remove from my foods
+              </Button>
+            )}
           </div>
         ) : (
           <>

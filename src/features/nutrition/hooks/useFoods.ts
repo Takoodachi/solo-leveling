@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { toast } from 'sonner'
 import { db } from '@/db'
 import type { Food } from '@/types'
 import { requestSync } from '@/lib/sync'
 import { normalize } from '@/lib/search'
-import { logFoods, unlogFoods, type NewFoodLog } from '../logFoods'
+import { logFoods, type NewFoodLog } from '../logFoods'
 import type { ReviewedFood } from '../openFoodFacts'
 import { isQuickAdd } from '../foodAmount'
 
@@ -47,10 +48,22 @@ export async function saveScannedFood(scan: ReviewedFood): Promise<Food> {
   return food
 }
 
+/**
+ * Take a custom food off every list, with an Undo. The row stays, flagged: every total is
+ * worked out from the food behind each log, so deleting it would empty the days it was eaten on.
+ * (Scanning a removed product again saves it afresh, which brings it back.)
+ */
+export async function removeCustomFood(food: Food): Promise<void> {
+  const set = (removed: boolean) => db.foods.update(food.uuid, { removed, updatedAt: Date.now(), syncPending: true }).then(() => requestSync())
+  await set(true)
+  toast(`Removed ${food.name}`, { action: { label: 'Undo', onClick: () => void set(false) } })
+}
+
 export function useFoods() {
-  const foods = useLiveQuery(() => db.foods.orderBy('name').toArray(), [])
+  // Foods to pick from: a removed one is only still there for the days it was logged on
+  const foods = useLiveQuery(() => db.foods.orderBy('name').filter(f => !f.removed).toArray(), [])
   // Booleans aren't indexable in IndexedDB, so filter instead of where().
-  const favorites = useLiveQuery(() => db.foods.filter(f => f.isFavorite).toArray(), [])
+  const favorites = useLiveQuery(() => db.foods.filter(f => f.isFavorite && !f.removed).toArray(), [])
 
   /** Every word must match; accents don't matter, so "pho bo" finds "Phở bò". */
   function searchFoods(query: string): Food[] {
@@ -95,10 +108,6 @@ export function useFoods() {
     return uuid
   }
 
-  async function removeFoodLog(logUuid: string): Promise<void> {
-    await unlogFoods([logUuid])
-  }
-
   return {
     foods: foods ?? [],
     favorites: favorites ?? [],
@@ -106,6 +115,5 @@ export function useFoods() {
     toggleFavorite,
     addCustomFood,
     addFoodLog,
-    removeFoodLog,
   }
 }

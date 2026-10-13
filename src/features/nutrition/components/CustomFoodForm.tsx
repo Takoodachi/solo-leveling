@@ -11,7 +11,7 @@ import { useFoods } from '../hooks/useFoods'
 import { macrosFromIngredients, totalGrams } from '@/lib/macroCalc'
 import IngredientRow from './IngredientRow'
 import IngredientPicker from './IngredientPicker'
-import type { FoodIngredient } from '@/types'
+import type { Food, FoodIngredient } from '@/types'
 
 const directSchema = z.object({
   name:           z.string().min(1, 'Name is required'),
@@ -26,11 +26,17 @@ const directSchema = z.object({
 type DirectValues = z.infer<typeof directSchema>
 
 interface Props {
-  onSuccess: () => void
+  /** What was typed in the search before coming here. */
+  initialName?: string
+  onSuccess: (food: Food) => void
   onCancel: () => void
 }
 
-export default function CustomFoodForm({ onSuccess, onCancel }: Props) {
+// A macro left blank is none of it (only the name and the calories have to be given)
+const blankIsZero = (v: string) => (v === '' ? 0 : Number(v))
+const NUMBERS = [['kcalPerServing', 'Calories'], ['protein', 'Protein (g)'], ['carbs', 'Carbs (g)'], ['fat', 'Fat (g)']] as const
+
+export default function CustomFoodForm({ initialName = '', onSuccess, onCancel }: Props) {
   const { addCustomFood, foods } = useFoods()
   const [mode, setMode] = useState<'direct' | 'recipe'>('direct')
 
@@ -45,30 +51,28 @@ export default function CustomFoodForm({ onSuccess, onCancel }: Props) {
         className="bg-secondary"
       />
       {mode === 'direct'
-        ? <DirectForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} />
-        : <RecipeForm onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} foods={foods} />}
+        ? <DirectForm initialName={initialName} onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} />
+        : <RecipeForm initialName={initialName} onSuccess={onSuccess} onCancel={onCancel} addCustomFood={addCustomFood} foods={foods} />}
     </div>
   )
 }
 
 // ── Direct (existing) form ────────────────────────────────────────────
 function DirectForm({
+  initialName,
   onSuccess,
   onCancel,
   addCustomFood,
-}: {
-  onSuccess: () => void
-  onCancel: () => void
+}: Required<Props> & {
   addCustomFood: ReturnType<typeof useFoods>['addCustomFood']
 }) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<DirectValues>({
     resolver: zodResolver(directSchema),
-    defaultValues: { servingSize: 100, servingUnit: 'g' },
+    defaultValues: { name: initialName, servingSize: 100, servingUnit: 'g' },
   })
 
   async function onSubmit(data: DirectValues) {
-    await addCustomFood({ ...data, isFavorite: false })
-    onSuccess()
+    onSuccess(await addCustomFood({ ...data, isFavorite: false }))
   }
 
   return (
@@ -80,23 +84,19 @@ function DirectForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <Label>Calories</Label>
-          <Input type="number" inputMode="decimal" {...register('kcalPerServing', { valueAsNumber: true })} />
-          {errors.kcalPerServing && <p className="text-xs text-destructive">{errors.kcalPerServing.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label>Protein (g)</Label>
-          <Input type="number" inputMode="decimal" {...register('protein', { valueAsNumber: true })} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label>Carbs (g)</Label>
-          <Input type="number" inputMode="decimal" {...register('carbs', { valueAsNumber: true })} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label>Fat (g)</Label>
-          <Input type="number" inputMode="decimal" {...register('fat', { valueAsNumber: true })} />
-        </div>
+        {NUMBERS.map(([field, label]) => (
+          <div key={field} className="flex flex-col gap-1">
+            <Label>{label}</Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="any"
+              placeholder={field === 'kcalPerServing' ? undefined : '0'}
+              {...register(field, field === 'kcalPerServing' ? { valueAsNumber: true } : { setValueAs: blankIsZero })}
+            />
+            {errors[field] && <p className="text-xs text-destructive">{errors[field].message}</p>}
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -108,6 +108,7 @@ function DirectForm({
         <div className="flex flex-col gap-1">
           <Label>Unit</Label>
           <Input {...register('servingUnit')} placeholder="g / ml / piece" />
+          {errors.servingUnit && <p className="text-xs text-destructive">{errors.servingUnit.message}</p>}
         </div>
       </div>
 
@@ -121,17 +122,16 @@ function DirectForm({
 
 // ── Recipe (ingredient-composed) form ─────────────────────────────────
 function RecipeForm({
+  initialName,
   onSuccess,
   onCancel,
   addCustomFood,
   foods,
-}: {
-  onSuccess: () => void
-  onCancel: () => void
+}: Required<Props> & {
   addCustomFood: ReturnType<typeof useFoods>['addCustomFood']
   foods: ReturnType<typeof useFoods>['foods']
 }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(initialName)
   const [ingredients, setIngredients] = useState<FoodIngredient[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -161,7 +161,7 @@ function RecipeForm({
     if (!name.trim() || ingredients.length === 0 || totalG <= 0) return
     setSaving(true)
     try {
-      await addCustomFood({
+      onSuccess(await addCustomFood({
         name: name.trim(),
         kcalPerServing: totals.kcal,
         protein: totals.protein,
@@ -171,8 +171,7 @@ function RecipeForm({
         servingUnit: 'g',
         isFavorite: false,
         ingredients,
-      })
-      onSuccess()
+      }))
     } finally {
       setSaving(false)
     }
