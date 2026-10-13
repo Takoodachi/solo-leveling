@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { useRise } from '@/hooks/useRise'
 
 interface Props {
   /** 0–1 */
@@ -24,14 +25,16 @@ export default function ProgressRing({
 }: Props) {
   const r = (size - stroke) / 2
   const pct = Math.max(0, Math.min(1, value))
+  const rise = useRise('ring', 'arc')
 
   return (
     <div className={cn('relative inline-flex shrink-0 items-center justify-center', className)} style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
         {pct > 0 && (
-          // The arc is measured as 1 (pathLength), so drawing it in and moving it are plain CSS (.ring-arc)
+          // The arc is measured as 1 (pathLength), so filling it (useRise) and moving it (.ring-arc) need no geometry
           <circle
+            ref={rise}
             cx={size / 2}
             cy={size / 2}
             r={r}

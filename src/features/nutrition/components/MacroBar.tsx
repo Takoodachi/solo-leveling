@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { clampPercent } from '@/lib/format'
+import { useRise } from '@/hooks/useRise'
 
 interface Props {
   label: string
@@ -12,6 +13,7 @@ interface Props {
 export default function MacroBar({ label, value, target, unit = 'g', colorClass }: Props) {
   const percent = clampPercent(value, target)
   const over = target > 0 && value > target
+  const rise = useRise('macro')
 
   return (
     <div className="flex flex-col gap-1">
@@ -29,7 +31,7 @@ export default function MacroBar({ label, value, target, unit = 'g', colorClass 
         aria-valuemax={100}
         className="h-2 w-full overflow-hidden rounded-full bg-secondary"
       >
-        <div className={cn('h-full transition-all', over ? 'bg-destructive' : 'bg-primary')} style={{ width: `${percent}%` }} />
+        <div ref={rise} className={cn('h-full transition-all', over ? 'bg-destructive' : 'bg-primary')} style={{ width: `${percent}%` }} />
       </div>
     </div>
   )

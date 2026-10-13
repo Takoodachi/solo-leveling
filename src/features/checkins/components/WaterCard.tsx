@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useSettings, DEFAULT_WATER_GOAL_ML, DEFAULT_WATER_GLASS_ML } from '@/features/settings/hooks/useSettings'
 import { setWater, useWater } from '../useCheckins'
 import WaterSheet from './WaterSheet'
+import { useRise } from '@/hooks/useRise'
 
 /** Home tile: one tap on + adds a glass; tapping the tile opens the water sheet. */
 export default function WaterCard({ date, today }: { date: string; today: string }) {
@@ -14,6 +15,7 @@ export default function WaterCard({ date, today }: { date: string; today: string
   const [open, setOpen] = useState(false)
   const future = date > today
   const pct = goal > 0 ? Math.min(1, ml / goal) : 0
+  const rise = useRise('water')
 
   async function addGlass() {
     const total = await setWater(date, current => current + glass)
@@ -42,7 +44,7 @@ export default function WaterCard({ date, today }: { date: string; today: string
           <p className="text-sm text-muted-foreground tabular-nums">{ml.toLocaleString()} / {goal.toLocaleString()} ml</p>
         </button>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-          <div className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
+          <div ref={rise} className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
         </div>
       </div>
       <WaterSheet open={open} onOpenChange={setOpen} date={date} today={today} />

@@ -7,6 +7,7 @@ import { clampPercent } from '@/lib/format'
 import { useSettings } from '../hooks/useSettings'
 import { xpFill } from '@/features/gamification/xpFill'
 import AvatarPicker from './AvatarPicker'
+import { useRise } from '@/hooks/useRise'
 
 export default function ProfileCard() {
   const { settings, updateSettings } = useSettings()
@@ -17,6 +18,7 @@ export default function ProfileCard() {
 
   const name = settings?.displayName?.trim() || email?.split('@')[0] || ''
   const needed = xpForLevel(level)
+  const rise = useRise('xp')
 
   async function saveName() {
     await updateSettings({ displayName: draft.trim() || undefined })
@@ -56,7 +58,7 @@ export default function ProfileCard() {
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
-          <div className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(clampPercent(xp, needed))} />
+          <div ref={rise} className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(clampPercent(xp, needed))} />
         </div>
       </div>
 
