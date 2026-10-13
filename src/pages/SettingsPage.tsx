@@ -27,7 +27,7 @@ import { REMINDERS, reminderPrefs } from '@/features/reminders/reminders'
 import { isAndroidApp } from '@/lib/native'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
-const APP_VERSION = '0.3.0'
+const APP_VERSION = '0.4.0'
 
 /**
  * App settings (the Settings tab). Who you are and your goals live on Profile. Every section is
