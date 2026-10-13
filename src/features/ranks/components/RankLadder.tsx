@@ -20,7 +20,7 @@ export default function RankLadder() {
       <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-foreground/85">
         <li>Every set gets a <b>1–1000 strength rating</b> from its estimated 1RM (Epley, reps capped at 20), compared with lifters of your sex at your bodyweight on that day.</li>
         <li>For lifts, roughly: 200 = beginner, 350 = novice, 500 = intermediate (the median gym-goer, Platinum), 700 = advanced (Champion), 900 = elite, the top 5% of lifters (Olympian).</li>
-        <li>Each tier has three divisions (III → II → I). A lift’s rank is its <b>best set ever</b>, so ranks never drop.</li>
+        <li>Each tier has three divisions, climbed I → II → III (the gems under an emblem count them); past III comes the next tier’s I. A lift’s rank is its <b>best set ever</b>, so ranks never drop.</li>
         <li>Each lift ranks the <b>muscles it trains most</b> (a deadlift ranks lower back, glutes and hamstrings). A muscle takes its best lift, and a group takes its best muscle. Train every muscle to fill in the bodygraph.</li>
         <li>Your <b>overall rank</b> blends the six groups (legs and back count most) once three are ranked.</li>
         <li>Dumbbell lifts use the weight of <b>one</b> dumbbell. For pull-ups, dips and push-ups, enter only <b>added</b> weight (or assistance for assisted versions). Planks and hangs are rated by hold time.</li>

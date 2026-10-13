@@ -27,7 +27,7 @@ export default function Highlights({ entries }: { entries: LeaderboardEntry[] })
         return (
           <li key={`${h.who.userId}-${h.name}-${i}`}>
             <Link to={profileLink(h.who)} className="flex items-center gap-3 py-3">
-              <RankBadge tier={rank.tier.key} size={34} />
+              <RankBadge tier={rank.tier.key} division={rank.division} size={34} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">
                   <b>{h.who.me ? 'You' : h.who.name}</b> · {h.name}

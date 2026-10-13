@@ -5,6 +5,7 @@ import type { DailyNutrition } from '@/types'
 import type { CalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
 import StepCaloriesSheet from '@/features/dashboard/components/StepCaloriesSheet'
 import MacroBar from './MacroBar'
+import { useRise } from '@/hooks/useRise'
 
 interface Props {
   totals: DailyNutrition
@@ -17,6 +18,7 @@ export default function CalorieSummary({ totals, budget }: Props) {
   const { targets, burn } = budget
   const net = totals.kcal - (burn?.kcal ?? 0)
   const pct = targets.kcal > 0 ? Math.max(0, Math.min(1, net / targets.kcal)) : 0
+  const rise = useRise('kcal')
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl bg-card p-5">
@@ -33,7 +35,7 @@ export default function CalorieSummary({ totals, budget }: Props) {
         )}
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-secondary">
-        <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
+        <div ref={rise} className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
       </div>
       <MacroBar label="Protein" value={totals.protein} target={targets.protein} colorClass="text-primary" />
       <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} colorClass="text-carbs" />

@@ -12,7 +12,8 @@ export const CARD_STYLES: { id: CardStyle; name: string; blurb: string }[] = [
   { id: 'glass', name: 'Glass', blurb: 'Frosted, see-through cards over a glow in your theme’s colours, or over your background photo.' },
   { id: 'outline', name: 'Outline', blurb: 'No fill, just a thin line around each card.' },
   { id: 'glow', name: 'Glow', blurb: 'Each card catches a wash of your theme’s colour.' },
-  { id: 'bold', name: 'Bold', blurb: 'Thick outlines and hard shadows.' },
+  { id: 'raised', name: 'Raised', blurb: 'Cards lifted off the page: a lit top edge and a soft shadow underneath.' },
+  { id: 'aura', name: 'Aura', blurb: 'A thin line in your theme’s gradient around each card, with a faint glow.' },
 ]
 
 const KEY = 'solo:cardStyle'

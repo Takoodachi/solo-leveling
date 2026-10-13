@@ -3,11 +3,13 @@ import { Flame, Star } from 'lucide-react'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { clampPercent } from '@/lib/format'
 import { xpFill } from '@/features/gamification/xpFill'
+import { useRise } from '@/hooks/useRise'
 
 export default function StreakLevelCard() {
   const { xp, level, currentStreak } = useGamification()
   const needed = xpForLevel(level)
   const pct = clampPercent(xp, needed)
+  const rise = useRise('xp')
 
   return (
     <Link to="/profile" className="grid grid-cols-[auto_1fr] items-center gap-4 rounded-3xl bg-card p-4">
@@ -24,7 +26,7 @@ export default function StreakLevelCard() {
           <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(pct)} />
+          <div ref={rise} className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(pct)} />
         </div>
       </div>
     </Link>

@@ -2,6 +2,7 @@ import { Trophy } from 'lucide-react'
 import { differenceInHours, endOfDay, parseISO, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useNow } from '@/hooks/useNow'
+import { useRise } from '@/hooks/useRise'
 import { CHALLENGE_METRICS } from '../metrics'
 import type { ChallengeWithProgress } from '../hooks/useChallenges'
 
@@ -24,6 +25,7 @@ export default function ChallengeCard({ challenge: c, onClick }: Props) {
   const now = useNow()
   const meta = CHALLENGE_METRICS[c.metric]
   const pct = c.target > 0 ? Math.min(1, c.progress / c.target) : 0
+  const rise = useRise(`challenge:${c.uuid}`)
 
   // A plain div when used inside a link (a button can't nest in an <a>).
   const Root = onClick ? 'button' : 'div'
@@ -46,6 +48,7 @@ export default function ChallengeCard({ challenge: c, onClick }: Props) {
         </div>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted-foreground/40">
           <div
+            ref={rise}
             className={cn('h-full rounded-full transition-[width] duration-700', c.status === 'completed' ? 'bg-emerald-400' : 'bg-primary')}
             style={{ width: `${pct * 100}%` }}
           />

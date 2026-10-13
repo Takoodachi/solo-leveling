@@ -35,7 +35,7 @@ export default function RankUpsSection({ ups, animate = false, onReplay }: Props
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', damping: 9, stiffness: 220, delay }}
               >
-                <RankBadge tier={u.to.tier.key} size={u.id === 'overall' ? 60 : 46} />
+                <RankBadge tier={u.to.tier.key} division={u.to.division} size={u.id === 'overall' ? 60 : 46} />
               </motion.div>
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2">

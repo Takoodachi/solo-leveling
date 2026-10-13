@@ -56,7 +56,7 @@ export default function FriendPage() {
         style={overall ? { background: `radial-gradient(closest-side at 50% 32%, ${overall.tier.color}33, transparent)` } : undefined}
       >
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 14, stiffness: 160 }}>
-          <RankBadge tier={overall?.tier.key ?? 'wood'} size={120} locked={!overall} />
+          <RankBadge tier={overall?.tier.key ?? 'wood'} division={overall?.division} size={120} locked={!overall} />
         </motion.div>
         <h2 className="font-heading text-2xl font-bold uppercase tracking-wide" style={overall ? { color: ink(overall.tier.color) } : undefined}>
           {overall?.label ?? 'Unranked'}

@@ -21,7 +21,7 @@ export default function RegionDetail({ region, suggest = true }: { region: Regio
 
   return (
     <div className="flex items-center gap-3 rounded-3xl bg-card p-4">
-      <RankBadge tier={region.rank?.tier.key ?? 'wood'} size={52} locked={!region.rank} />
+      <RankBadge tier={region.rank?.tier.key ?? 'wood'} division={region.rank?.division} size={52} locked={!region.rank} />
       <div className="min-w-0 flex-1">
         <p className="flex items-baseline justify-between gap-2">
           <span className="truncate font-semibold">{region.label}</span>

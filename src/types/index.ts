@@ -114,7 +114,7 @@ export interface CustomTheme {
 
 export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced'
 /** How cards are drawn (features/settings/cardStyle.ts). */
-export type CardStyle = 'solid' | 'glass' | 'outline' | 'glow' | 'bold'
+export type CardStyle = 'solid' | 'glass' | 'outline' | 'glow' | 'raised' | 'aura'
 export type VolumeMuscle =
   | 'chest' | 'shoulders' | 'triceps' | 'biceps' | 'forearms' | 'abs'
   | 'quads' | 'adductors' | 'abductors' | 'glutes' | 'hamstrings' | 'calves'

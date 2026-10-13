@@ -30,7 +30,7 @@ export default function MuscleRankings({ groups, selected, onSelect }: Props) {
             style={complete ? { backgroundColor: `color-mix(in srgb, ${g.rank!.tier.color} 16%, hsl(var(--card)))` } : undefined}
           >
             <button type="button" onClick={() => setOpen(expanded ? null : g.key)} className="flex w-full items-center gap-3 p-3 pr-4 text-left" aria-expanded={expanded}>
-              <RankBadge tier={g.rank?.tier.key ?? 'wood'} size={44} locked={!g.rank} />
+              <RankBadge tier={g.rank?.tier.key ?? 'wood'} division={g.rank?.division} size={44} locked={!g.rank} />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{g.label}</span>
                 <span className="block text-xs">

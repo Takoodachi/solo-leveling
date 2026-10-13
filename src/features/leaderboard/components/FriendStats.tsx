@@ -13,7 +13,7 @@ export function TopLifts({ s }: { s: LeaderboardSnapshot }) {
         const rank = rankFor(l.rating)
         return (
           <li key={l.name} className="flex items-center gap-3 py-3">
-            <RankBadge tier={rank.tier.key} size={36} />
+            <RankBadge tier={rank.tier.key} division={rank.division} size={36} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium">{l.name}</span>
               <span className="block text-xs text-muted-foreground">{l.best} · {formatShortDate(l.date)}</span>

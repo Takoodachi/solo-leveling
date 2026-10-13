@@ -6,13 +6,14 @@ import { CARD_STYLES, applyCardStyle, cardStyleOf } from '../cardStyle'
 import { useSettings } from '../hooks/useSettings'
 
 // The small card in each choice, drawn by hand in the theme's colours: the real rules hang off
-// <html>, so they can't be shown five ways at once. Keep these looking like index.css's.
+// <html>, so they can't be shown six ways at once. Keep these looking like index.css's.
 const PREVIEW: Record<CardStyle, CSSProperties> = {
   solid: { background: 'hsl(var(--card))' },
   glass: { background: 'hsl(var(--card) / 0.45)', boxShadow: 'inset 0 0 0 1px hsl(var(--foreground) / 0.12), inset 0 1px 0 hsl(0 0% 100% / 0.3)' },
   outline: { boxShadow: 'inset 0 0 0 1.5px hsl(var(--foreground) / 0.3)' },
   glow: { background: 'linear-gradient(140deg, hsl(var(--brand-from) / 0.4), hsl(var(--card)) 75%)', boxShadow: 'inset 0 0 0 1px hsl(var(--primary) / 0.35)' },
-  bold: { background: 'hsl(var(--card))', boxShadow: '0 0 0 2px hsl(var(--foreground) / 0.9), 3px 3px 0 1px hsl(var(--primary))' },
+  raised: { background: 'linear-gradient(180deg, hsl(var(--foreground) / 0.12), transparent 75%), hsl(var(--card))', boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.3), 0 6px 9px -4px hsl(0 0% 0% / 0.55)' },
+  aura: { background: 'hsl(var(--card))', boxShadow: 'inset 1.5px 1.5px 0 hsl(var(--brand-from) / 0.9), inset -1.5px -1.5px 0 hsl(var(--brand-to) / 0.8), 0 0 10px -2px hsl(var(--primary) / 0.6)' },
 }
 const GLOW = 'radial-gradient(60% 75% at 12% 15%, hsl(var(--brand-from) / 0.75), transparent 70%), radial-gradient(55% 70% at 92% 85%, hsl(var(--brand-to) / 0.65), transparent 70%)'
 

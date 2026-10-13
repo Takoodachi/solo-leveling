@@ -196,13 +196,6 @@
   :root[data-card] .bg-card:not([role='dialog'], .wallpaper-solid) {
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000), var(--card-edge, 0 0 #0000);
   }
-  :root[data-card] .bg-card .bg-card:not([role='dialog'], .wallpaper-solid) {
-    --card-edge: 0 0 #0000;
-    background-color: transparent;
-    background-image: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 
   /* Glass: see-through cards with a lit top edge. They sit on the user's photo, or on the glow
      below when there is none (Wallpaper draws either). Only a photo is blurred behind them: the
@@ -262,13 +255,47 @@
     background-image: linear-gradient(140deg, hsl(var(--brand-from) / 0.2), hsl(var(--brand-to) / 0.06) 55%, transparent 85%);
   }
 
-  /* Bold: a thick outline in the text colour, and a hard shadow in the accent under real cards
-     (not under chips and other small things, where it would be most of the element). */
-  :root[data-card='bold'] {
-    --card-edge: 0 0 0 2px hsl(var(--foreground) / 0.9);
+  /* Raised: lifted off the page. A dark screen can't show a shadow, so there the lift is light:
+     a lit top edge and a surface that is a little brighter toward the top. On a light theme it
+     is mostly the soft shadow, which only real cards cast (chips sit too close together). */
+  :root[data-card='raised'] {
+    --card-rim: inset 0 1px 0 hsl(0 0% 100% / 0.9), inset 0 0 0 1px hsl(var(--foreground) / 0.05);
+    --card-lift: 0 1px 2px hsl(0 0% 0% / 0.07), 0 14px 22px -14px hsl(0 0% 0% / 0.3);
+    --card-sheen: hsl(0 0% 100% / 0.55);
+    --card-edge: var(--card-rim);
   }
-  :root[data-card='bold'] .bg-card:is(.rounded-3xl, .rounded-2xl):not([role='dialog'], .wallpaper-solid) {
-    --card-edge: 0 0 0 2px hsl(var(--foreground) / 0.9), 5px 5px 0 1px hsl(var(--primary));
+  :root[data-card='raised'].dark {
+    --card-rim: inset 0 1px 0 hsl(0 0% 100% / 0.14), inset 0 0 0 1px hsl(0 0% 100% / 0.04);
+    --card-lift: 0 14px 24px -12px hsl(0 0% 0% / 0.85);
+    --card-sheen: hsl(0 0% 100% / 0.06);
+  }
+  :root[data-card='raised'] .bg-card:not([role='dialog'], .wallpaper-solid) {
+    background-image: linear-gradient(180deg, var(--card-sheen), transparent 70%);
+  }
+  :root[data-card='raised'] .bg-card:is(.rounded-3xl, .rounded-2xl):not([role='dialog'], .wallpaper-solid) {
+    --card-edge: var(--card-rim), var(--card-lift);
+  }
+
+  /* Aura: a thin line around each card in the theme's gradient, one colour coming from the top
+     left and the other from the bottom right (two offset shadows: a border can't be a gradient
+     without changing the card's size), with a faint glow of the accent around it. That is for
+     real cards; chips and other small things only get a quiet line, or a row of them shouts. */
+  :root[data-card='aura'] {
+    --card-rim: inset 1.5px 1.5px 0 hsl(var(--brand-from) / 0.85), inset -1.5px -1.5px 0 hsl(var(--brand-to) / 0.7), inset 0 0 0 1px hsl(var(--primary) / 0.3);
+    --card-edge: inset 0 0 0 1px hsl(var(--primary) / 0.22);
+  }
+  :root[data-card='aura'] .bg-card:is(.rounded-3xl, .rounded-2xl):not([role='dialog'], .wallpaper-solid) {
+    --card-edge: var(--card-rim), 0 0 22px -6px hsl(var(--primary) / 0.5);
+  }
+
+  /* A card inside a card is part of the one around it, in every style (the class is doubled so
+     this outweighs each style's own rules above). */
+  :root[data-card] .bg-card .bg-card.bg-card:not([role='dialog'], .wallpaper-solid) {
+    --card-edge: 0 0 #0000;
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   /* Small uppercase label used for dates and section links ("VIEW ALL"). */
@@ -315,13 +342,9 @@
   .bar-fill {
     background-image: linear-gradient(90deg, var(--from), var(--to));
   }
-  /* A progress ring's arc (ProgressRing; its length is measured as 1): drawn in when it first
-     shows, and moved, not redrawn, when the number changes. */
+  /* A progress ring's arc (ProgressRing; its length is measured as 1): moved, not redrawn, when
+     the number changes. Filling it when the app is opened is hooks/useRise. */
   .ring-arc {
-    animation: ring-arc 0.9s ease-out backwards;
     transition: stroke-dasharray 0.9s ease-out;
-  }
-  @keyframes ring-arc {
-    from { stroke-dasharray: 0 1; }
   }
 }

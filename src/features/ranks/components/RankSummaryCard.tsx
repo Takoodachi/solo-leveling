@@ -42,7 +42,7 @@ export default function RankSummaryCard() {
 
   return (
     <Link to="/ranks" className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-3xl bg-card p-4">
-      <RankBadge tier={shown?.tier.key ?? 'wood'} size={64} locked={!shown} />
+      <RankBadge tier={shown?.tier.key ?? 'wood'} division={shown?.division} size={64} locked={!shown} />
       <div className="min-w-0">
         <p className="eyebrow truncate text-muted-foreground">{eyebrow}</p>
         {body}

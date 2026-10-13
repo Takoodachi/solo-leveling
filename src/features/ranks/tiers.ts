@@ -22,7 +22,8 @@ export const TIERS: readonly Tier[] = [
 ]
 
 export const MAX_RATING = 1000
-const DIVISIONS = ['III', 'II', 'I'] as const
+/** A tier's divisions from the bottom up: I is where the tier starts, III is its top, and past III is the next tier's I. */
+export const DIVISIONS = ['I', 'II', 'III'] as const
 /** 8 tiers × 3 divisions, then Olympian (no divisions). */
 export const TOP_STEP = (TIERS.length - 1) * DIVISIONS.length
 
@@ -30,7 +31,7 @@ export interface RankInfo {
   rating: number
   tier: Tier
   division: (typeof DIVISIONS)[number] | null
-  /** Position on the 25-step ladder (Wood III = 0 … Olympian = 24). Compare these for rank-ups. */
+  /** Position on the 25-step ladder (Wood I = 0 … Olympian = 24). Compare these for rank-ups. */
   step: number
   label: string
   /** Rating where the next division starts, or null at Olympian. */

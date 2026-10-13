@@ -215,7 +215,7 @@ export function drawTiles(ctx: Ctx, y: number, tiles: Tile[], perRow = 2): numbe
 export async function drawRankRow(ctx: Ctx, y: number, r: { eyebrow: string; rank: RankInfo; note: string }): Promise<number> {
   const h = 150
   surface(ctx, PAD, y, CARD_W - PAD * 2, h)
-  const badge = await badgeImage(r.rank.tier.key, 132).catch(() => null)
+  const badge = await badgeImage(r.rank.tier.key, 132, r.rank.division).catch(() => null)
   if (badge) {
     ctx.save()
     ctx.shadowColor = r.rank.tier.color

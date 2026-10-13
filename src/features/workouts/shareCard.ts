@@ -501,7 +501,7 @@ export async function renderWorkoutCard(share: WorkoutShare, owner: CardOwner): 
   const [photo, badges] = await Promise.all([
     owner.avatar ? loadImage(owner.avatar) : null,
     // Emblems drawn at the size they'll have on the image, so they stay sharp
-    Promise.all(rankUps.map(u => badgeImage(u.to.tier.key, Math.ceil((u.id === 'overall' ? 60 : 46) * 1.2 * (OUT_W / W))).catch(() => null))),
+    Promise.all(rankUps.map(u => badgeImage(u.to.tier.key, Math.ceil((u.id === 'overall' ? 60 : 46) * 1.2 * (OUT_W / W)), u.to.division).catch(() => null))),
   ])
 
   const canvas = document.createElement('canvas')
