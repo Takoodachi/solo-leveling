@@ -45,7 +45,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'foods',
     table: () => t(db.foods),
-    columns: ['uuid', 'name', 'kcalPerServing', 'protein', 'carbs', 'fat', 'servingSize', 'servingUnit', 'isCustom', 'isFavorite', 'ingredients', 'notes', 'updatedAt'],
+    columns: ['uuid', 'name', 'kcalPerServing', 'protein', 'carbs', 'fat', 'servingSize', 'servingUnit', 'isCustom', 'isFavorite', 'ingredients', 'notes', 'removed', 'updatedAt'],
   },
   {
     remote: 'food_log',
@@ -275,7 +275,9 @@ class SyncService {
     if (pending.length === 0) return
 
     for (const part of chunk(pending, PUSH_CHUNK)) {
-      const records = part.map(r => toRemote(r as Record<string, unknown>, spec.columns, userId))
+      // deleted: false, because a row here is alive: one deleted and then written again under the
+      // same id (a weigh-in's is its date) would otherwise stay deleted on the server
+      const records = part.map(r => ({ ...toRemote(r as Record<string, unknown>, spec.columns, userId), deleted: false }))
       const { error } = await sb.from(spec.remote).upsert(records, { onConflict: 'user_id,uuid' })
       if (error) throw error
 
