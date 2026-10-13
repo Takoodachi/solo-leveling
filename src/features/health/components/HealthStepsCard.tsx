@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useNow } from '@/hooks/useNow'
 import type { HealthStatus } from '../healthSteps'
-import { rememberHealth } from '../healthPrefs'
 import HealthStepsDiagnosis from './HealthStepsDiagnosis'
 import BackgroundStepsRow from './BackgroundStepsRow'
 import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
@@ -19,7 +18,7 @@ const BLURB: Record<Status, string> = {
   error: 'Couldn’t reach Health Connect.',
   unavailable: 'Health Connect isn’t set up on this phone. It’s built into Android 14 and newer; older versions get it from the Play Store.',
   'needs-permission': 'Import your daily steps automatically. In Samsung Health, turn on Settings → Health Connect first, then allow step access here.',
-  connected: 'Steps update whenever you open the app. Days you’ve typed in yourself are only raised, never lowered. Your account remembers this link: after a reinstall, the app asks for access again by itself.',
+  connected: 'Steps update whenever you open the app. Days you’ve typed in yourself are only raised, never lowered. After a reinstall, the app asks for access again by itself.',
 }
 
 /** Settings (Android app only): connect Samsung Health steps through Health Connect. */
@@ -68,7 +67,6 @@ export default function HealthStepsCard() {
       const h = await load()
       if (await h.connect()) {
         setStatus('connected')
-        void rememberHealth({ steps: true })
         await importNow()
       } else {
         toast('Step access wasn’t allowed. You can turn it on in Health Connect.')

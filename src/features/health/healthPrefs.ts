@@ -2,10 +2,10 @@ import type { HealthPrefs } from '@/types'
 import { changeSettings } from '@/features/settings/hooks/useSettings'
 
 /**
- * What the account remembers of the Android app's Samsung Health link (`settings.health`).
- * Access itself belongs to an install: Android forgets it when the app is removed. The account
- * keeping a note of it is what lets a fresh install ask again by itself, once signed in,
- * instead of leaving it to be found and switched on in Settings a second time.
+ * What the account remembers of the Android app's Samsung Health link (`settings.health`):
+ * whether steps were kept syncing in the background. Access itself belongs to an install, and
+ * Android forgets it when the app is removed; the account keeping a note is what lets a fresh
+ * install ask for that again by itself (see `useHealthStepsSync`).
  *
  * No plugin is imported here, so this is safe to import anywhere (unlike `healthSteps`).
  */
@@ -15,14 +15,15 @@ export const rememberHealth = (now: HealthPrefs) =>
     return keys.every(k => s?.health?.[k] === now[k]) ? null : { health: { ...s?.health, ...now } }
   })
 
+// (named when Health Connect's were the only questions asked this way)
 const ASKED_KEY = 'solo:healthAsked'
 
 /**
  * True the first time it is called for `what` on this install, false ever after: the app asks
- * by itself once and never nags. (Android stops showing the question after two refusals, so a
- * question at every launch would also use up the chances to say yes from Settings.)
+ * by itself once and never nags. (Android stops showing a question after two refusals, so one
+ * at every launch would also use up the chances to say yes from Settings.)
  */
-export function firstAsk(what: keyof HealthPrefs): boolean {
+export function firstAsk(what: 'notifications' | 'camera' | 'steps' | 'background'): boolean {
   try {
     const asked = (localStorage.getItem(ASKED_KEY) ?? '').split(',').filter(Boolean)
     if (asked.includes(what)) return false

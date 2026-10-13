@@ -18,6 +18,7 @@ export interface Food {
   isFavorite: boolean
   ingredients?: FoodIngredient[]
   notes?: string
+  removed?: boolean // taken off the food lists; the row stays, so the days it was logged on still add up
   updatedAt: number
   syncPending?: boolean
 }
@@ -122,8 +123,7 @@ export type VolumeMuscle =
 
 /** What the account remembers of the Android app's Samsung Health link (features/health/healthPrefs.ts). */
 export interface HealthPrefs {
-  steps?: boolean // steps are imported from Health Connect
-  background?: boolean // and kept syncing while the app is closed
+  background?: boolean // steps were kept syncing while the app is closed
 }
 
 export interface Settings {
@@ -158,7 +158,7 @@ export interface Settings {
   customTheme?: CustomTheme // the user's own palette, on screen when theme = 'custom'
   cardStyle?: CardStyle // how cards are drawn (unset = solid; read it through `cardStyleOf`)
   achievementGoals?: string[] // achievement keys picked as goals (features/gamification/goals.ts)
-  health?: HealthPrefs // the Android app's Samsung Health link, so a fresh install asks for access by itself
+  health?: HealthPrefs // the Android app's Samsung Health link, so a fresh install asks for background access again by itself
   updatedAt?: number
   syncPending?: boolean
 }
