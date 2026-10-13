@@ -120,6 +120,12 @@ export type VolumeMuscle =
   | 'quads' | 'adductors' | 'abductors' | 'glutes' | 'hamstrings' | 'calves'
   | 'lower-back' | 'traps' | 'lats'
 
+/** What the account remembers of the Android app's Samsung Health link (features/health/healthPrefs.ts). */
+export interface HealthPrefs {
+  steps?: boolean // steps are imported from Health Connect
+  background?: boolean // and kept syncing while the app is closed
+}
+
 export interface Settings {
   id: 1
   displayName?: string
@@ -152,6 +158,7 @@ export interface Settings {
   customTheme?: CustomTheme // the user's own palette, on screen when theme = 'custom'
   cardStyle?: CardStyle // how cards are drawn (unset = solid; read it through `cardStyleOf`)
   achievementGoals?: string[] // achievement keys picked as goals (features/gamification/goals.ts)
+  health?: HealthPrefs // the Android app's Samsung Health link, so a fresh install asks for access by itself
   updatedAt?: number
   syncPending?: boolean
 }

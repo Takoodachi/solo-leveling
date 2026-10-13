@@ -13,6 +13,9 @@ public class MainActivity extends BridgeActivity {
         // Shortcuts and background step sync (must be registered before the bridge starts)
         registerPlugin(SoloPlugin.class);
         super.onCreate(savedInstanceState);
+        // No bar down the side while scrolling: the WebView draws its own, whatever the page's CSS says
+        getBridge().getWebView().setVerticalScrollBarEnabled(false);
+        getBridge().getWebView().setHorizontalScrollBarEnabled(false);
     }
 
     @Override

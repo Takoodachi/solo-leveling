@@ -99,6 +99,15 @@
     /* No rubber-band scroll of the whole app shell (iOS/Android). */
     overscroll-behavior: none;
   }
+  /* No scrollbars, anywhere: the app scrolls like a phone app, and a bar down the side of the
+     page reads as a web page. (The Android app's own bar is the WebView's, not the page's, and
+     is switched off in MainActivity.) */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
   /* Search links land on #sections: keep them clear of the status bar. */
   [id] {
     scroll-margin-top: calc(env(safe-area-inset-top) + 1rem);
