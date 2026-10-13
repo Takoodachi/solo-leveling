@@ -17,9 +17,12 @@ export interface WorkoutSummary extends Workout {
   volume: number
 }
 
-export function useWorkoutList(limit = 1000): WorkoutSummary[] | undefined {
+/** Past workouts, newest first; with `date`, that day's only. */
+export function useWorkoutList(limit = 1000, date?: string): WorkoutSummary[] | undefined {
   return useLiveQuery(async () => {
-    const workouts = await db.workouts.orderBy('createdAt').reverse().limit(limit).toArray()
+    const workouts = date
+      ? await db.workouts.where('date').equals(date).toArray()
+      : await db.workouts.orderBy('createdAt').reverse().limit(limit).toArray()
     if (workouts.length === 0) return []
 
     const sets = await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray()
@@ -41,7 +44,7 @@ export function useWorkoutList(limit = 1000): WorkoutSummary[] | undefined {
       const distanceKm = ws.reduce((sum, s) => sum + (cardioIds.has(s.exerciseId) ? (s.distanceKm ?? 0) : 0), 0)
       return { ...w, setCount: ws.length, liftSetCount: liftSets.length, distanceKm, exerciseNames: names, volume: totalVolume(liftSets) }
     })
-  }, [limit])
+  }, [limit, date])
 }
 
 export async function getWorkoutWithSets(uuid: string): Promise<WorkoutWithSets | null> {

@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { parseISO } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import DatePicker from '@/components/DatePicker'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import Segmented from '@/components/Segmented'
@@ -45,6 +46,10 @@ export default function RecapPage() {
         eyebrow={periodLabel(period, start)}
         action={
           <div className="flex">
+            {/* Any day: the week, month or year it falls in */}
+            <DatePicker value={start} max={today} onChange={day => show(period, periodStart(period, parseISO(day)))} aria-label="Pick a date" className={arrow}>
+              <CalendarDays size={20} />
+            </DatePicker>
             <button type="button" className={arrow} onClick={() => show(period, shiftPeriod(period, start, -1))} aria-label={`${period} before`}><ChevronLeft size={20} /></button>
             <button type="button" className={arrow} onClick={() => show(period, shiftPeriod(period, start, 1))} disabled={current} aria-label={`${period} after`}><ChevronRight size={20} /></button>
           </div>

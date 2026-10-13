@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { addDays, format, startOfWeek, subWeeks } from 'date-fns'
+import { addDays, differenceInCalendarWeeks, format, parseISO, startOfWeek, subWeeks } from 'date-fns'
 import { CalendarDays, ChevronLeft, ChevronRight, Info, SlidersHorizontal } from 'lucide-react'
 import Segmented from '@/components/Segmented'
+import DatePicker from '@/components/DatePicker'
 import { useNow } from '@/hooks/useNow'
 import { parseDate, toDateStr } from '@/lib/date'
 import { useSettings } from '@/features/settings/hooks/useSettings'
@@ -79,10 +80,16 @@ export default function SetVolumeCard() {
         <button type="button" className={navBtn} onClick={() => setWeeksBack(w => w + 1)} aria-label="Previous week">
           <ChevronLeft size={20} />
         </button>
-        <p className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wide tabular-nums">
+        <DatePicker
+          value={toDateStr(start)}
+          max={toDateStr(now)}
+          onChange={day => setWeeksBack(differenceInCalendarWeeks(now, parseISO(day), { weekStartsOn: 1 }))}
+          aria-label={`Week of ${format(start, 'MMMM d')}: pick another week`}
+          className="flex h-11 flex-1 items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wide tabular-nums"
+        >
           <CalendarDays size={16} className="text-muted-foreground" />
           {format(start, 'MMM d')} – {format(addDays(start, 6), 'MMM d')}
-        </p>
+        </DatePicker>
         <button type="button" className={navBtn} disabled={weeksBack === 0} onClick={() => setWeeksBack(w => w - 1)} aria-label="Next week">
           <ChevronRight size={20} />
         </button>

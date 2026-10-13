@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import DatePicker from '@/components/DatePicker'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
 import { axisTick, tooltipStyle, dayLabel } from '@/features/analytics/chartStyles'
 import { useBodyMetrics } from './useBodyMetrics'
@@ -68,14 +69,10 @@ export default function WeightLogPage() {
       {/* Log weight */}
       <div className="flex flex-col gap-3 rounded-3xl bg-card p-4">
         <h2 className="font-medium text-sm">Log weight</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-[3fr_2fr] gap-3">
           <div className="flex flex-col gap-1">
-            <Label>Date</Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-            />
+            <Label htmlFor="weight-date">Date</Label>
+            <DatePicker id="weight-date" value={date} onChange={setDate} max={today()} />
           </div>
           <div className="flex flex-col gap-1">
             <Label>Weight (kg)</Label>
@@ -126,16 +123,17 @@ export default function WeightLogPage() {
           <p className="text-sm text-muted-foreground text-center py-4">No entries yet</p>
         )}
         {metrics.map(m => (
-          <div key={m.uuid} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+          <div key={m.uuid} className="flex items-center justify-between border-b border-border last:border-0">
             <span className="text-sm">{formatShortDate(m.date)}</span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <span className="text-sm font-medium">{m.weightKg} kg</span>
               <button
-                onClick={() => deleteMetric(m.uuid)}
-                className="text-muted-foreground hover:text-destructive transition-colors"
-                aria-label="Delete entry"
+                type="button"
+                onClick={() => void deleteMetric(m)}
+                className="-mr-3 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-destructive"
+                aria-label={`Delete ${formatShortDate(m.date)}`}
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </button>
             </div>
           </div>
