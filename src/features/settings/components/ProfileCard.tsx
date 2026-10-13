@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { CalendarCheck, Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { useAuthStore } from '@/features/auth/authStore'
 import { clampPercent } from '@/lib/format'
 import { useSettings } from '../hooks/useSettings'
 import { xpFill } from '@/features/gamification/xpFill'
+import { useStartDate } from '@/features/gamification/startDate'
 import AvatarPicker from './AvatarPicker'
 import { useRise } from '@/hooks/useRise'
 
@@ -19,6 +21,7 @@ export default function ProfileCard() {
   const name = settings?.displayName?.trim() || email?.split('@')[0] || ''
   const needed = xpForLevel(level)
   const rise = useRise('xp')
+  const started = useStartDate()
 
   async function saveName() {
     await updateSettings({ displayName: draft.trim() || undefined })
@@ -51,6 +54,13 @@ export default function ProfileCard() {
           )}
         </div>
       </div>
+
+      {started && (
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarCheck size={16} className="shrink-0 text-primary" />
+          <span>Started leveling up since: <b className="font-semibold text-foreground">{format(parseISO(started), 'MMM d, yyyy')}</b></span>
+        </p>
+      )}
 
       <div className="mt-5">
         <div className="flex items-center justify-between text-sm">
