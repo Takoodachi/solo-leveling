@@ -2,11 +2,10 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { buzz } from '@/lib/haptics'
 import type { RankUp } from '../computeRanks'
+import { DIVISIONS } from '../tiers'
 import { centered, ceremonyKind, KIND_LABEL, sceneSubject, sceneTiming, sceneXp, tint } from '../rankUpCeremony'
 import RankBadge from './RankBadge'
 import { Burst, ChargeRing, Glow, Rays } from './RankUpEffects'
-
-const DIVISIONS = ['III', 'II', 'I'] as const
 
 function subline(up: RankUp): string {
   if (up.from) return `Up from ${up.from.label}`
@@ -75,7 +74,7 @@ export default function RankUpScene({ up }: { up: RankUp }) {
             animate={{ x: [0, -1, 1, -2, 2, -3, 3, -4, 4, 0], y: [0, 1, -1, 1, -2, 2, -2, 3, -3, 0] }}
             transition={{ delay: t.charge, duration: t.burst - t.charge, ease: 'linear' }}
           >
-            <RankBadge tier={(up.from ?? up.to).tier.key} size={size} locked={!up.from} />
+            <RankBadge tier={(up.from ?? up.to).tier.key} division={up.from?.division} size={size} locked={!up.from} />
           </motion.div>
         </motion.div>
 
@@ -93,7 +92,7 @@ export default function RankUpScene({ up }: { up: RankUp }) {
             animate={{ y: [0, -5, 0] }}
             transition={{ delay: t.burst + 0.8, duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <RankBadge tier={up.to.tier.key} size={size} />
+            <RankBadge tier={up.to.tier.key} division={up.to.division} size={size} />
           </motion.div>
         </motion.div>
       </div>

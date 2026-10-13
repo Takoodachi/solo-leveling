@@ -23,7 +23,7 @@ export default function RunningRankCard({ running, sex, regions }: Props) {
   return (
     <div className="flex flex-col gap-4 rounded-3xl bg-card p-4">
       <div className="flex items-center gap-3">
-        <RankBadge tier={rank?.tier.key ?? 'wood'} size={56} locked={!rank} />
+        <RankBadge tier={rank?.tier.key ?? 'wood'} division={rank?.division} size={56} locked={!rank} />
         <div className="min-w-0 flex-1">
           <p className="flex items-baseline justify-between gap-2">
             <span className="font-semibold">Running</span>

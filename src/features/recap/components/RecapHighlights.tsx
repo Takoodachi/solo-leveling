@@ -16,7 +16,7 @@ export default function RecapHighlights({ recap }: { recap: Recap }) {
       <h2 className="text-lg font-semibold">Highlights</h2>
       {rank && (
         <Link to="/ranks" className="flex items-center gap-3 rounded-3xl bg-card p-4">
-          <RankBadge tier={rank.to.tier.key} size={48} />
+          <RankBadge tier={rank.to.tier.key} division={rank.to.division} size={48} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold" style={{ color: ink(rank.to.tier.color) }}>{rank.to.label}</p>
             <p className="text-sm text-muted-foreground">

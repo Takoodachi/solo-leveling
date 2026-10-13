@@ -16,7 +16,7 @@ export default function LiftRankList({ ranks }: { ranks: RanksSnapshot }) {
         const target = ranks.sex && ranks.bodyKg ? nextRankTarget(l.exerciseId, l.rank, ranks.sex, ranks.bodyKg) : null
         return (
           <li key={l.exerciseId} className="flex items-center gap-3 py-3.5">
-            <RankBadge tier={l.rank.tier.key} size={44} />
+            <RankBadge tier={l.rank.tier.key} division={l.rank.division} size={44} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="truncate font-semibold">{l.name}</p>

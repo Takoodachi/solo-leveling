@@ -188,7 +188,7 @@ export async function renderRecapCard(recap: Recap, owner: CardOwner, current: b
     const { from: was, to: now } = recap.rank
     const h = 150
     card(ctx, PAD, y, W - PAD * 2, h)
-    const badge = await badgeImage(now.tier.key, 132).catch(() => null)
+    const badge = await badgeImage(now.tier.key, 132, now.division).catch(() => null)
     if (badge) {
       ctx.save()
       ctx.shadowColor = now.tier.color

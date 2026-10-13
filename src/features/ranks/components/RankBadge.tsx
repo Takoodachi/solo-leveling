@@ -1,9 +1,11 @@
 import { cn } from '@/lib/utils'
-import type { TierKey } from '../tiers'
-import { BADGES, toneColor, type Layer, type Palette } from './badgeArt'
+import type { RankInfo, TierKey } from '../tiers'
+import { BADGES, HELM_OVER_GEMS, divisionGems, toneColor, type Layer, type Palette } from './badgeArt'
 
 interface Props {
   tier: TierKey
+  /** The division within the tier: its gems go under the helm. Left out, the emblem stands for the tier as a whole. */
+  division?: RankInfo['division']
   size?: number
   /** Unranked: greyed-out silhouette. */
   locked?: boolean
@@ -11,6 +13,8 @@ interface Props {
 }
 
 const MIRROR = 'translate(100 0) scale(-1 1)'
+// Smaller than this, gems would be specks, and the helm is better at its full size
+const GEMS_FROM = 34
 
 /**
  * Halo for the glowing tiers. Strengths come from index.css: dark themes keep a soft
@@ -36,9 +40,10 @@ function Piece({ layer: l, pal }: { layer: Layer; pal: Palette }) {
   )
 }
 
-/** Tier emblem: a different helmet per tier, from a plain nasal helm to a winged, haloed sun helm. */
-export default function RankBadge({ tier, size = 48, locked = false, className }: Props) {
+/** Rank emblem: a different helmet per tier, from a plain nasal helm to a winged, haloed sun helm, over one to three gems for the division. */
+export default function RankBadge({ tier, division, size = 48, locked = false, className }: Props) {
   const { pal, layers } = BADGES[tier]
+  const gems = locked || size < GEMS_FROM ? [] : divisionGems(tier, division)
   return (
     <svg
       viewBox="0 0 100 100"
@@ -49,7 +54,10 @@ export default function RankBadge({ tier, size = 48, locked = false, className }
       className={cn('shrink-0 overflow-visible', locked && 'opacity-35 grayscale', className)}
       style={pal.glow && !locked && size >= 40 ? { filter: glowFilter(pal.glow, size) } : undefined}
     >
-      {layers.map((l, i) => <Piece key={i} layer={l} pal={pal} />)}
+      <g transform={gems.length ? HELM_OVER_GEMS : undefined}>
+        {layers.map((l, i) => <Piece key={i} layer={l} pal={pal} />)}
+      </g>
+      {gems.map((g, i) => <path key={i} d={g.d} fill={g.fill} stroke={g.stroke ?? 'none'} strokeWidth={1.2} strokeLinejoin="round" opacity={g.o} />)}
     </svg>
   )
 }

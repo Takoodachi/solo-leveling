@@ -1,9 +1,10 @@
-import type { TierKey } from '../tiers'
+import { DIVISIONS, TIERS, type RankInfo, type TierKey } from '../tiers'
 
 /**
  * Rank emblems: a different helmet per tier, more elaborate the higher it goes
  * (nasal helm → Corinthian → great helm → plumed centurion → crystal warden →
- * kabuto → war king → dread lord → winged sun helm).
+ * kabuto → war king → dread lord → winged sun helm). A division within a tier is
+ * marked by the gems under the helm (`divisionGems`).
  *
  * Flat-shaded on a 100×100 artboard. Most shapes are drawn as their left half
  * with `mirror`: the left copy takes `fill` (lit) and the mirrored right copy
@@ -316,4 +317,29 @@ export const BADGES: Record<TierKey, BadgeArt> = {
     pal: { hi: '#ffffff', lt: '#e3f4ff', dk: '#9ccbea', rim: '#0b2e4a', core: '#ffffff', eye: '#8cecff', a0: '#fff3c4', a1: '#f2c94c', a2: '#b07f0c', glow: '#6fd0ff' },
     layers: OLYMPIAN,
   },
+}
+
+/** With gems under it the helm is drawn a little smaller, from its top, to make room for them. */
+export const HELM_OVER_GEMS = 'translate(50 0) scale(0.86) translate(-50 0)'
+
+export interface Gem {
+  d: string
+  fill: string
+  stroke?: string
+  o?: number
+}
+
+/**
+ * The marks of a division: as many cut gems under the helm as its number (one for I, two for
+ * II, three for III, the top of the tier), in the tier's colour, so the emblem grows as the
+ * tier is climbed. Olympian has no divisions and no gems. Each gem is two shapes: its body and
+ * a lit facet.
+ */
+export function divisionGems(tier: TierKey, division: RankInfo['division'] | undefined): Gem[] {
+  const count = division ? DIVISIONS.indexOf(division) + 1 : 0
+  const color = TIERS.find(t => t.key === tier)?.color ?? BADGES[tier].pal.lt
+  return Array.from({ length: count }, (_, i) => 50 + (i - (count - 1) / 2) * 12).flatMap(x => [
+    { d: `M${x},87 L${x + 4.6},93 L${x},99 L${x - 4.6},93 Z`, fill: color, stroke: BADGES[tier].pal.rim },
+    { d: `M${x},87 L${x - 4.6},93 L${x},93 Z`, fill: '#fff', o: 0.5 },
+  ])
 }
