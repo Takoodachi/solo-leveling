@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { useNow } from '@/hooks/useNow'
 import { soloPlugin, type BackgroundStepsStatus } from '@/lib/native'
 import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
+import { rememberHealth } from '../healthPrefs'
 
 /** `old-app`: an Android app built before background sync existed. */
 type State = BackgroundStepsStatus | 'old-app' | null
@@ -33,6 +34,7 @@ export default function BackgroundStepsRow() {
       if (!plugin) return
       const next = await (on ? plugin.enableBackgroundSteps() : plugin.disableBackgroundSteps())
       setState(next)
+      void rememberHealth({ background: next.enabled })
       if (on && !next.enabled) {
         toast('Background access wasn’t allowed', { description: 'Turn on “Access data in the background” for Solo Leveling in Health Connect.', duration: 8000 })
       }
