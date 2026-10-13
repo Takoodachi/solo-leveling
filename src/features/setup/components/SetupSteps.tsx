@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import DatePicker from '@/components/DatePicker'
 import Logo from '@/components/Logo'
 import NumberStepper from '@/components/NumberStepper'
 import Segmented from '@/components/Segmented'
@@ -67,7 +68,7 @@ export function BodyStep({ form, onChange }: StepProps) {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="setup-since">When did you start lifting? (roughly)</Label>
-          <Input id="setup-since" type="date" value={form.trainingSince} onChange={e => onChange({ trainingSince: e.target.value })} />
+          <DatePicker id="setup-since" value={form.trainingSince || undefined} onChange={day => onChange({ trainingSince: day })} onClear={() => onChange({ trainingSince: '' })} />
           <p className="text-xs text-muted-foreground">New to it or years in: it sets how many sets a week Analytics aims you at.</p>
         </div>
       </div>

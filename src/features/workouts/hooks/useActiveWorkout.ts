@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { parseISO, startOfDay } from 'date-fns'
 import { db } from '@/db'
 import type { Routine, WorkoutSet } from '@/types'
 import type { RoutineTemplate } from '@/data/routineTemplates'
@@ -21,6 +22,8 @@ export interface FinishOptions {
   durationMin: number
   avgHeartRate?: number
   notes?: string
+  /** The day it was done (YYYY-MM-DD), when that isn't today. */
+  date?: string
 }
 
 /** Passed to the summary screen via router state right after finishing. */
@@ -106,6 +109,9 @@ export function useActiveWorkout() {
 
     const now = Date.now()
     const workoutUuid = crypto.randomUUID()
+    // Written down after the fact: it goes in the history on its own day, at the hour it was entered
+    const day = opts.date ?? today()
+    const startedAt = day === today() ? draft.startedAt : parseISO(day).getTime() + (draft.startedAt - startOfDay(draft.startedAt).getTime())
     const cardioIds = new Set(draft.blocks.filter(b => setModeFor(b.exercise) === 'cardio').map(b => b.exercise.uuid))
     const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) =>
       block.sets
@@ -137,13 +143,13 @@ export function useActiveWorkout() {
     await db.transaction('rw', db.workouts, db.workoutSets, async () => {
       await db.workouts.add({
         uuid: workoutUuid,
-        date: today(),
+        date: day,
         name: draft.name.trim() || 'Workout',
         routineId: draft.routineId,
         notes: opts.notes?.trim() ?? draft.notes,
         durationMin: opts.durationMin,
-        startedAt: draft.startedAt,
-        createdAt: draft.startedAt,
+        startedAt,
+        createdAt: startedAt,
         avgHeartRate: opts.avgHeartRate,
         kcalEst,
         updatedAt: now,
@@ -157,7 +163,7 @@ export function useActiveWorkout() {
     const newBests = saved ? await findNewBests(saved) : []
     const rankUps = saved ? await findRankUps(saved) : []
 
-    await updateStreak()
+    if (day === today()) await updateStreak() // a day that has passed can't be added to the streak
     const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
     const xp = XP.WORKOUT + (sets.length - cardioSets.length) * XP.PER_SET + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
     const xpResult = await grantXp(xp)

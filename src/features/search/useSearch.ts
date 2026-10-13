@@ -38,7 +38,7 @@ function useSearchData(enabled: boolean) {
     const [routines, exercises, foods, workouts, challenges, liftedSets] = await Promise.all([
       db.routines.toArray(),
       db.exercises.toArray(),
-      db.foods.filter(f => !isQuickAdd(f)).toArray(),
+      db.foods.filter(f => !isQuickAdd(f) && !f.removed).toArray(),
       db.workouts.orderBy('createdAt').reverse().limit(300).toArray(),
       db.challenges.toArray(),
       db.workoutSets.filter(s => !!s.weight && !!s.reps).toArray(),

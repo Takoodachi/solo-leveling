@@ -13,11 +13,11 @@ export interface HomeWidgetDef {
 /** Every card the Home screen can show, in default order. */
 export const HOME_WIDGETS: HomeWidgetDef[] = [
   { id: 'workout',   label: 'Today’s workout', description: 'Scheduled routine or what you trained', icon: Dumbbell },
-  { id: 'quest',     label: 'Daily quest',     description: 'Today’s objectives, and XP for clearing them', icon: Swords },
   { id: 'steps',     label: 'Steps',           description: 'Steps vs your daily goal',              icon: Footprints, tile: true },
   { id: 'calories',  label: 'Calories',        description: 'Food logged vs your target',            icon: Flame,      tile: true },
   { id: 'water',     label: 'Water',           description: 'One-tap glass counter',                 icon: GlassWater, tile: true },
   { id: 'creatine',  label: 'Creatine',        description: 'Daily check-off',                       icon: Pill,       tile: true },
+  { id: 'quest',     label: 'Daily quest',     description: 'Today’s objectives, and XP for clearing them', icon: Swords },
   { id: 'macros',    label: 'Macros',          description: 'Protein, carbs and fat',                icon: PieChart },
   { id: 'challenge', label: 'Challenge',       description: 'Your active personal challenge',        icon: Trophy },
   { id: 'rank',      label: 'Strength rank',   description: 'Overall rank and progress',             icon: Medal },
@@ -37,6 +37,17 @@ export function homeWidgetsFrom(settings: Settings | undefined): HomeWidgetId[] 
   if (settings?.homeWidgets) return [...new Set(settings.homeWidgets)].filter(id => BY_ID.has(id))
   // Before customization existed, the creatine card could be switched off on its own.
   return DEFAULT_HOME_WIDGETS.filter(id => id !== 'creatine' || settings?.creatineEnabled !== false)
+}
+
+/**
+ * `ids` with the quest moved to just under the last tracker tile, when it sits above one. It
+ * used to come first, which kept the trackers below the first screen.
+ */
+export function questBelowTiles(ids: HomeWidgetId[]): HomeWidgetId[] {
+  const quest = ids.indexOf('quest')
+  const lastTile = ids.findLastIndex(id => BY_ID.get(id)?.tile)
+  if (quest < 0 || lastTile < quest) return ids
+  return [...ids.slice(0, quest), ...ids.slice(quest + 1, lastTile + 1), 'quest', ...ids.slice(lastTile + 1)]
 }
 
 /** Rows for the Home grid: consecutive tiles pair up, a lone tile spans the row. */

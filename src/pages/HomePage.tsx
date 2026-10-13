@@ -5,7 +5,8 @@ import { useNow } from '@/hooks/useNow'
 import { formatDisplayDate, toDateStr, weekDates } from '@/lib/date'
 import { parseISO } from 'date-fns'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { CalendarDays, ChevronRight } from 'lucide-react'
+import DatePicker from '@/components/DatePicker'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
@@ -40,12 +41,15 @@ export default function HomePage() {
   const [params, setParams] = useSearchParams()
   const logging = params.get('log')
   const doneLogging = (open: boolean) => { if (!open) setParams({}, { replace: true }) }
-  const week = weekDates(now)
-  const selected = picked && week.includes(picked) ? picked : todayStr
+  // Any day can be on show (the calendar by the date) and the strip is that day's week; until
+  // one is picked it follows the clock
+  const selected = picked ?? todayStr
+  const week = weekDates(parseISO(selected))
+  const pick = (day: string) => setPicked(day === todayStr ? null : day)
 
   const days = useWeekSummary(week)
   const routines = useRoutines()
-  const workouts = useWorkoutList(30)
+  const completed = useWorkoutList(1000, selected) ?? []
   const { settings } = useSettings()
   const budget = useCalorieBudget(selected)
 
@@ -53,7 +57,6 @@ export default function HomePage() {
   const weekday = parseISO(selected).getDay()
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const routine = routines.find(r => r.scheduleDays.includes(weekday))
-  const completed = (workouts ?? []).filter(w => w.date === selected)
   const showSearch = settings?.showSearch !== false
   const kcalProgress = budget.targets.kcal > 0 ? netKcal(day?.kcal ?? 0, budget.burn) / budget.targets.kcal : 0
 
@@ -77,7 +80,7 @@ export default function HomePage() {
               today={todayStr}
               kcalProgress={kcalProgress}
               scheduledWeekdays={scheduled}
-              onSelect={setPicked}
+              onSelect={pick}
             />
           )}
 
@@ -85,7 +88,18 @@ export default function HomePage() {
             <div key="today" className="flex animate-fade-in flex-col gap-5">
               <ResumeBanner />
               <RecapBanner now={now} />
-              <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>{formatDisplayDate(selected)}</SectionHeader>
+              <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>
+                <DatePicker
+                  value={selected}
+                  onChange={pick}
+                  max={weekDates(now)[6]}
+                  aria-label={`${formatDisplayDate(selected)}: pick another day`}
+                  className="-my-2 -ml-2 flex h-11 items-center gap-2 rounded-full px-2 hover:bg-accent"
+                >
+                  {formatDisplayDate(selected)}
+                  <CalendarDays size={18} className="text-muted-foreground" />
+                </DatePicker>
+              </SectionHeader>
               <TodayWidgets
                 selected={selected}
                 today={todayStr}

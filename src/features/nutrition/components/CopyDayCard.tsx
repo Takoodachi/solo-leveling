@@ -12,7 +12,7 @@ export default function CopyDayCard({ date }: { date: string }) {
   const prev = toDateStr(subDays(parseISO(date), 1))
   const yesterday = useLiveQuery(async () => {
     const logs = await db.foodLog.where('date').equals(prev).toArray()
-    const foods = await db.foods.bulkGet(logs.map(l => l.foodId))
+    const foods = (await db.foods.bulkGet(logs.map(l => l.foodId))).map(f => (f?.removed ? undefined : f))
     const kept = logs.filter((_, i) => foods[i])
     const kcal = logs.reduce((sum, l, i) => sum + (foods[i] ? foods[i].kcalPerServing * l.servings : 0), 0)
     return kept.length > 0 ? { logs: kept, kcal } : null

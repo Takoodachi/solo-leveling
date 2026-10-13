@@ -6,9 +6,8 @@ import AddFoodDialog from './AddFoodDialog'
 import EditFoodLogDialog from './EditFoodLogDialog'
 import MealOptionRow from './MealOptionRow'
 import MealsSheet from './MealsSheet'
-import { useFoods } from '../hooks/useFoods'
 import { useRecentMeals, pastDayLabel } from '../hooks/useMeals'
-import { logMealItems, toastLogged, itemCount, MEAL_LABELS } from '../logFoods'
+import { logMealItems, removeFoodLog, toastLogged, itemCount, MEAL_LABELS } from '../logFoods'
 import { formatKcal } from '@/lib/format'
 import type { FoodLogWithFood, MealType } from '@/types'
 
@@ -23,7 +22,6 @@ export default function MealSection({ mealType, entries, date }: Props) {
   const [showAdd, setShowAdd] = useState(false)
   const [showMeals, setShowMeals] = useState(false)
   const [editing, setEditing] = useState<FoodLogWithFood | null>(null)
-  const { removeFoodLog } = useFoods()
   const recent = useRecentMeals(mealType, date) ?? []
   const last = recent[0]
 
@@ -60,7 +58,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
               key={entry.uuid}
               entry={entry}
               onEdit={() => setEditing(entry)}
-              onDelete={() => void removeFoodLog(entry.uuid)}
+              onDelete={() => void removeFoodLog(entry)}
             />
           ))}
 

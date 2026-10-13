@@ -19,6 +19,15 @@ export type DeviceNotify =
 /** Tells the scheduler to deliver the plan again (useReminderScheduler listens). */
 export const REMINDERS_CHANGED = 'solo:reminders-changed'
 
+/** Android app: ask to show notifications and, if that's allowed, switch this phone's reminders on. */
+export async function allowNativeNotifications(): Promise<boolean> {
+  if (!(await requestNativeNotify())) return false
+  localStorage.setItem(NATIVE_ON_KEY, '1')
+  resetDelivery()
+  window.dispatchEvent(new Event(REMINDERS_CHANGED))
+  return true
+}
+
 async function read(userId: string | null): Promise<DeviceNotify> {
   if (isAndroidApp()) {
     const state = await nativeNotifyState()
@@ -50,11 +59,10 @@ export function useDeviceNotifications() {
     try {
       let next: DeviceNotify
       if (isAndroidApp()) {
-        if (on && !(await requestNativeNotify())) next = 'blocked'
+        if (on) next = (await allowNativeNotifications()) ? 'on' : 'blocked'
         else {
-          if (on) localStorage.setItem(NATIVE_ON_KEY, '1')
-          else localStorage.removeItem(NATIVE_ON_KEY)
-          next = on ? 'on' : 'off'
+          localStorage.removeItem(NATIVE_ON_KEY)
+          next = 'off'
         }
       } else if (on) {
         const result = await subscribePush()

@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import DatePicker from '@/components/DatePicker'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import NumberStepper from '@/components/NumberStepper'
@@ -73,7 +73,13 @@ export default function BodyGoalsCard() {
       )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="training-since">Training since</Label>
-        <Input id="training-since" type="date" max={toDateStr(now)} value={trainingSince ?? ''} onChange={e => void updateSettings({ trainingSince: e.target.value })} />
+        <DatePicker
+          id="training-since"
+          value={trainingSince || undefined}
+          max={toDateStr(now)}
+          onChange={day => void updateSettings({ trainingSince: day })}
+          onClear={() => void updateSettings({ trainingSince: '' })}
+        />
         <p className="text-xs text-muted-foreground">
           {level
             ? `${level.label}: the weekly set targets on Analytics follow from this. Clear the date to pick the level there yourself.`
