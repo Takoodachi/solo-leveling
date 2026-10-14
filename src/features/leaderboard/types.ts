@@ -1,9 +1,10 @@
 import type { MuscleGroup, MuscleRegion } from '@/features/ranks/standards'
+import type { Exercise, ExerciseType, RoutineCategory, RoutineLevel } from '@/types'
 
 /**
  * What an account shares with friends, built on the device and published as one
  * JSON row. Ratings are 1–1000 (turn into tiers with `rankFor`). Never contains
- * food, body weight or notes. Readers must tolerate missing fields (older clients).
+ * food, body weight or notes (a shared routine leaves its notes behind). Readers must tolerate missing fields (older clients).
  */
 export interface LeaderboardSnapshot {
   v: 1
@@ -27,6 +28,31 @@ export interface LeaderboardSnapshot {
   highlights: Highlight[]
   /** Profile photo: a small JPEG data URL (absent = initials). Check with safeAvatar before drawing. */
   avatar?: string
+  /** Their routines, for friends to look through and copy. Read a friend's through cleanSharedRoutines. */
+  routines?: SharedRoutine[]
+}
+
+/** A routine as friends see it: no notes, and its custom exercises described, since other devices don't have them. */
+export interface SharedRoutine {
+  id: string
+  name: string
+  category: RoutineCategory
+  level: RoutineLevel
+  /** Its own time estimate, when one was set. */
+  mins?: number
+  /** Weekdays it's planned on, 0 = Sunday. */
+  days: number[]
+  items: SharedRoutineItem[]
+}
+
+export interface SharedRoutineItem {
+  /** The exercise's id: every device knows the built-in ones. */
+  id: string
+  sets: number
+  reps: number
+  rest: number
+  /** A custom exercise, described. */
+  ex?: { name: string; category: string; type: ExerciseType; unit: Exercise['defaultUnit'] }
 }
 
 export interface SharedLift {
