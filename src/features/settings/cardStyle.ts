@@ -34,6 +34,8 @@ export function applyCardStyle(id: unknown): void {
 
 /** Paint the style this device last used (before React renders, so cards don't change look as the app opens). */
 export function applyCachedCardStyle(): void {
+  // Android (Chrome, and the app's WebView) can't be trusted with a blur behind a card: see glass in index.css
+  if (/Android/i.test(navigator.userAgent)) document.documentElement.dataset.os = 'android'
   try {
     applyCardStyle(localStorage.getItem(KEY))
   } catch {
