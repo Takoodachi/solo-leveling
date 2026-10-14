@@ -65,7 +65,7 @@ src/
     search/         # universal search on Home: searchIndex.ts (pages, #sections, actions), useSearch (+ routines, exercises, foods, workouts, challenges, friends), HomeSearch
   db/               # Dexie schema (versions 1–18), seed + wipe
   lib/              # Pure utilities + services: sync.ts, syncStatus.ts, native.ts (isAndroidApp, soloPlugin), localNotifications.ts, shareImage.ts (share sheet / Web Share / download), haptics.ts, workoutMath.ts, macroTargets.ts, streak.ts, xp.ts, lazyAhead.ts (screens fetched ahead of time), …
-  data/             # Static seed data: foods (~285, incl. Vietnamese dishes; foodsMore.ts), exercises (306; exerciseVariations.ts), routine templates; basics.ts = the two things a screen may import from the catalog (see *Loading fast*)
+  data/             # Static seed data: foods (~285, incl. Vietnamese dishes; foodsMore.ts), exercises (307; exerciseVariations.ts), routine templates; basics.ts = the two things a screen may import from the catalog (see *Loading fast*)
   pages/            # Route-level components
   hooks/            # Cross-feature hooks (useNow, useOnline, useGoBack, useNavTabs, useHashScroll, useNativeLinks, useAndroidBack, useVisibleViewport, useEntryState, usePageTab, useRefreshOnReturn, useRise)
   types/            # Shared types
