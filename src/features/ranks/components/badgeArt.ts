@@ -113,14 +113,6 @@ const KABUTO_DIAMOND: Layer[] = [
   { d: 'M50,36.5 L54.5,36.5 L50,43 Z', fill: 'dk', stroke: 'none', o: 0.6 },
 ]
 
-/** Polygon through `points`, rotated `deg` (clockwise) about the artboard centre. */
-function poly(points: [number, number][], deg = 0): string {
-  const a = (deg * Math.PI) / 180
-  const c = Math.cos(a)
-  const sn = Math.sin(a)
-  return `M${points.map(([x, y]) => `${(50 + (x - 50) * c - (y - 50) * sn).toFixed(2)},${(50 + (x - 50) * sn + (y - 50) * c).toFixed(2)}`).join(' L')} Z`
-}
-
 const CRYSTAL: Layer[] = [
   // Crystal warden: a faceted helm cut like a gem, V visor, brow diamond, a fan of crystal shards
   { d: 'M38,30 L27,6 L35,10 L43,27 Z', fill: 'a0', fillR: 'a1', mirror: true, w: 1.1 },
@@ -139,23 +131,25 @@ const CRYSTAL: Layer[] = [
   { d: 'M50,33 L57,33 L50,43 Z', fill: 'dk', stroke: 'none', o: 0.6 },
 ]
 
-// Greatsword pointing up; drawn rotated so two of them cross behind the helm
-// Greatsword drawn upright, then turned so the two cross behind the helm point-down
-const SWORD_BLADE_L: [number, number][] = [[50, 6], [46.5, 13], [46.5, 72], [50, 72]]
-const SWORD_BLADE_R: [number, number][] = [[50, 6], [53.5, 13], [53.5, 72], [50, 72]]
-const SWORD_GUARD: [number, number][] = [[37, 71.5], [63, 71.5], [61, 76.5], [39, 76.5]]
-const SWORD_GRIP: [number, number][] = [[48.2, 76.5], [51.8, 76.5], [51.8, 86], [48.2, 86]]
-const SWORD_POMMEL: [number, number][] = [[50, 85], [53.2, 89], [50, 93], [46.8, 89]]
-const TILT = 115
+/** A greatsword laid along the line from its pommel (hx, hy) to its point (tx, ty); `mirror` crosses a second one over it. */
+function sword(hx: number, hy: number, tx: number, ty: number): Layer[] {
+  const len = Math.hypot(tx - hx, ty - hy)
+  const [ux, uy] = [(tx - hx) / len, (ty - hy) / len]
+  const pt = (d: number, side: number) => `${(hx + ux * d - uy * side).toFixed(2)},${(hy + uy * d + ux * side).toFixed(2)}`
+  const bar = (d0: number, d1: number, w: number) => `M${pt(d0, -w)} L${pt(d1, -w)} L${pt(d1, w)} L${pt(d0, w)} Z`
+  return [
+    { d: `M${pt(16, 0)} L${pt(16, -3.4)} L${pt(len - 7, -3.4)} L${pt(len, 0)} Z`, fill: 'core', mirror: true, w: 1 },
+    { d: `M${pt(16, 0)} L${pt(16, 3.4)} L${pt(len - 7, 3.4)} L${pt(len, 0)} Z`, fill: 'lt', mirror: true, w: 1 },
+    { d: bar(12, 16.5, 10), fill: 'a1', mirror: true, w: 1 },
+    { d: bar(3.5, 12, 1.7), fill: 'a2', mirror: true, w: 0.9 },
+    { d: `M${pt(0, 0)} L${pt(2.6, -2.6)} L${pt(5.2, 0)} L${pt(2.6, 2.6)} Z`, fill: 'a0', mirror: true, w: 0.9 },
+  ]
+}
 
 const CHAMPION: Layer[] = [
-  // War king: greatswords crossed point-down, a heavy close helm with a sharp jaw, a forged five-spike crown
-  { d: poly(SWORD_BLADE_L, TILT), fill: 'core', mirror: true, w: 1.1 },
-  { d: poly(SWORD_BLADE_R, TILT), fill: 'lt', mirror: true, w: 1.1 },
-  { d: poly(SWORD_GUARD, TILT), fill: 'a1', mirror: true, w: 1.1 },
-  { d: poly(SWORD_GRIP, TILT), fill: 'a2', mirror: true, w: 1 },
-  { d: poly(SWORD_POMMEL, TILT), fill: 'a0', mirror: true, w: 1 },
-  { d: 'M41,75 L50,81 L59,75 L56,84 L50,91 L44,84 Z', fill: 'dk', w: 1.3 },
+  // War king: greatswords crossed behind, gold hilts up by the crown, a gold collar, a heavy close helm with a sharp jaw, a forged five-spike crown
+  ...sword(12, 21, 82, 92),
+  { d: 'M50,80 C45,79 41,77.5 38,74.5 L39.5,81 C42.5,84.5 46,86.5 50,87 Z', fill: 'a1', fillR: 'a2', mirror: true, w: 1.2 },
   { d: 'M50,21 C40,21 32,27 30,38 L29,55 L33,66 L42,75.5 L50,81 Z', ...shade, w: 2.3 },
   { d: 'M31,54 L34.5,64 L43,72.5', fill: 'none', mirror: true, w: 1, o: 0.45 },
   { d: 'M31,44 L69,44 L67.5,51 L57,57 L50,70 L43,57 L32.5,51 Z', fill: 'dk', w: 1.5 },
