@@ -15,7 +15,7 @@ export default function ShareCard() {
       <div className="min-w-0 flex-1">
         <p className="font-medium">Share on the leaderboard</p>
         <p className="text-xs text-muted-foreground">
-          Friends see you as “{leaderboardName(settings, email)}”: photo, ranks, bodygraph, best lifts, level, streak and this week’s training.
+          Friends see you as “{leaderboardName(settings, email)}”: photo, ranks, bodygraph, best lifts, level, streak, this week’s training and your routines, which they can copy.
           Never your food, weight or notes.
         </p>
       </div>

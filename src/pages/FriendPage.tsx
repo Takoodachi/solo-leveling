@@ -18,6 +18,8 @@ import HeadToHead from '@/features/leaderboard/components/HeadToHead'
 import Avatar from '@/features/leaderboard/components/Avatar'
 import CompareChart from '@/features/leaderboard/components/CompareChart'
 import { TopLifts, WeekTiles } from '@/features/leaderboard/components/FriendStats'
+import SharedRoutines from '@/features/leaderboard/components/SharedRoutines'
+import { cleanSharedRoutines } from '@/features/leaderboard/sharedRoutines'
 import { ink } from '@/lib/colors'
 
 /** A friend's shared profile (or your own, as friends see it). */
@@ -44,6 +46,7 @@ export default function FriendPage() {
   const overall = s.overall != null ? rankFor(s.overall) : null
   const regions = regionsOf(s)
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
+  const routines = cleanSharedRoutines(s.routines)
 
   return (
     <FullScreen className="flex flex-col gap-6">
@@ -89,6 +92,13 @@ export default function FriendPage() {
         <h2 className="text-lg font-semibold">This week</h2>
         <WeekTiles s={s} weekStart={weekStart} />
       </section>
+
+      {routines.length > 0 && (
+        <section id="routines" className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">{self ? 'Your routines' : 'Their routines'}</h2>
+          <SharedRoutines routines={routines} name={entry.name} self={self} />
+        </section>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Best lifts</h2>

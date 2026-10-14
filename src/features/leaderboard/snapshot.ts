@@ -5,7 +5,7 @@ import { toDateStr } from '@/lib/date'
 import { formatClock, formatKm } from '@/lib/cardio'
 import { computeRanks, describeBest, rankHistory } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
-import type { Highlight, LeaderboardSnapshot } from './types'
+import type { Highlight, LeaderboardSnapshot, SharedRoutine } from './types'
 
 const HISTORY_WEEKS = 12
 const HIGHLIGHT_DAYS = 14
@@ -33,12 +33,30 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
   }
 }
 
+/** Every routine, its custom exercises described (a friend's device doesn't have them) and its notes left out. */
+async function sharedRoutines(): Promise<SharedRoutine[]> {
+  const [routines, custom] = await Promise.all([db.routines.orderBy('name').toArray(), db.exercises.filter(e => e.isCustom).toArray()])
+  const customById = new Map(custom.map(e => [e.uuid, e]))
+  return routines.map(r => ({
+    id: r.uuid,
+    name: r.name,
+    category: r.category,
+    level: r.level,
+    ...(r.estDurationMin ? { mins: r.estDurationMin } : {}),
+    days: r.scheduleDays,
+    items: r.exercises.map(x => {
+      const c = customById.get(x.exerciseId)
+      return { id: x.exerciseId, sets: x.sets, reps: x.reps, rest: x.restSec, ...(c ? { ex: { name: c.name, category: c.category, type: c.type, unit: c.defaultUnit } } : {}) }
+    }),
+  }))
+}
+
 /** Everything this account shares on the leaderboard, from local data. */
 export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnapshot> {
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const since = toDateStr(subDays(now, HIGHLIGHT_DAYS))
-  const [ranks, history, stats, week, settings] = await Promise.all([
-    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1),
+  const [ranks, history, stats, week, settings, routines] = await Promise.all([
+    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1), sharedRoutines(),
   ])
 
   const run = ranks.running
@@ -72,5 +90,6 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
     week,
     highlights: highlights.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
     ...(settings?.avatar ? { avatar: settings.avatar } : {}),
+    ...(routines.length ? { routines } : {}),
   }
 }

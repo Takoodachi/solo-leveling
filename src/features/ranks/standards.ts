@@ -175,6 +175,7 @@ const BASE: Record<string, Standard> = {
   'ex-crunch': reps(['abs'], 0.3, [15, 30, 50, 75, 100], [10, 25, 40, 60, 85]),
   'ex-dragon-flag': reps(['abs'], 0.7, [1, 2, 5, 9, 14], [1, 2, 4, 7, 11]),
   'ex-hanging-windshield-wiper': reps(['obliques', 'abs'], 0.4, [1, 4, 10, 16, 24], [1, 3, 6, 11, 18]),
+  'ex-decline-crunch': reps(['abs'], 0.35, [10, 22, 38, 55, 75], [7, 16, 28, 42, 58]),
   // Legs
   'ex-barbell-back-squat': SQUAT,
   'ex-adductor-machine': HIP_ADDUCTION,
@@ -191,6 +192,12 @@ const BASE: Record<string, Standard> = {
   'ex-nordic-curl': reps(['hamstrings'], 0.7, [1, 3, 6, 10, 15], [1, 2, 4, 7, 11]),
   'ex-glute-ham-raise': reps(['hamstrings'], 0.7, [1, 5, 10, 16, 24], [1, 3, 7, 12, 18]),
   'ex-wall-sit': hold(['quads'], [20, 45, 90, 150, 240], [20, 45, 80, 140, 220]),
+  // Eccentrics: lowered over 3–5 s, so fewer reps than the full movement at the same rank
+  // (negatives are easier than the full pull-up or dip, so they take more)
+  'ex-eccentric-bodyweight-squat': reps(['quads', 'glutes'], 0.7, [5, 12, 20, 30, 42], [4, 10, 17, 26, 36]),
+  'ex-eccentric-pull-up': reps(['lats', 'biceps'], 1, [2, 8, 18, 28, 38], [1, 5, 12, 20, 28]),
+  'ex-eccentric-push-up': reps(['chest'], 0.65, [4, 12, 24, 38, 52], [1, 6, 14, 24, 34]),
+  'ex-eccentric-dip': reps(['triceps', 'chest'], 0.95, [2, 8, 16, 26, 36], [1, 4, 10, 17, 25]),
 }
 
 interface Derived { like: string; factor: number; regions?: readonly MuscleRegion[] }
@@ -208,6 +215,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-machine-chest-press':     { like: 'ex-barbell-bench-press', factor: 1.05 },
   'ex-machine-incline-press':   { like: 'ex-barbell-bench-press', factor: 0.9 },
   'ex-jm-press':                { like: 'ex-barbell-bench-press', factor: 0.55, regions: ['triceps'] },
+  'ex-eccentric-bench-press':   { like: 'ex-barbell-bench-press', factor: 0.85 },
   'ex-incline-dumbbell-press':  { like: 'ex-dumbbell-bench-press', factor: 0.85 },
   'ex-decline-dumbbell-press':  { like: 'ex-dumbbell-bench-press', factor: 1 },
   'ex-dumbbell-floor-press':    { like: 'ex-dumbbell-bench-press', factor: 0.9 },
@@ -219,6 +227,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-snatch-grip-deadlift':    { like: 'ex-conventional-deadlift', factor: 0.85, regions: ['traps', 'lower-back', 'glutes'] },
   'ex-dumbbell-deadlift':       { like: 'ex-conventional-deadlift', factor: 0.4 },
   'ex-power-clean':             { like: 'ex-conventional-deadlift', factor: 0.55, regions: ['traps', 'glutes'] },
+  'ex-kettlebell-deadlift':     { like: 'ex-conventional-deadlift', factor: 0.3, regions: ['glutes', 'hamstrings'] },
   'ex-good-morning':            { like: 'ex-barbell-back-squat', factor: 0.5, regions: ['lower-back', 'hamstrings'] },
   'ex-pendlay-row':             { like: 'ex-barbell-row', factor: 0.95 },
   'ex-t-bar-row':               { like: 'ex-barbell-row', factor: 1 },
@@ -247,6 +256,8 @@ const DERIVED: Record<string, Derived> = {
   'ex-arnold-press':            { like: 'ex-overhead-press', factor: 0.38 },
   'ex-kettlebell-press':        { like: 'ex-overhead-press', factor: 0.4 },
   'ex-upright-row':             { like: 'ex-overhead-press', factor: 0.72, regions: ['side-delts', 'traps'] },
+  'ex-cable-upright-row':       { like: 'ex-overhead-press', factor: 0.65, regions: ['side-delts', 'traps'] },
+  'ex-dumbbell-upright-row':    { like: 'ex-overhead-press', factor: 0.3, regions: ['side-delts', 'traps'] },
   'ex-front-raise':             { like: 'ex-lateral-raise', factor: 1.05, regions: ['front-delts'] },
   'ex-plate-front-raise':       { like: 'ex-lateral-raise', factor: 1.4, regions: ['front-delts'] },
   'ex-cable-front-raise':       { like: 'ex-lateral-raise', factor: 0.9, regions: ['front-delts'] },
@@ -271,6 +282,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-spider-curl':             { like: 'ex-dumbbell-curl', factor: 0.8 },
   'ex-hammer-curl':             { like: 'ex-dumbbell-curl', factor: 1.1, regions: ['biceps', 'forearms'] },
   'ex-cross-body-hammer-curl':  { like: 'ex-dumbbell-curl', factor: 1.1, regions: ['biceps', 'forearms'] },
+  'ex-incline-hammer-curl':     { like: 'ex-dumbbell-curl', factor: 0.95, regions: ['biceps', 'forearms'] },
   'ex-rope-hammer-curl':        { like: 'ex-dumbbell-curl', factor: 1.8, regions: ['forearms', 'biceps'] },
   'ex-zottman-curl':            { like: 'ex-dumbbell-curl', factor: 0.85, regions: ['biceps', 'forearms'] },
   'ex-reverse-curl':            { like: 'ex-dumbbell-curl', factor: 1.6, regions: ['forearms'] },
@@ -284,6 +296,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-overhead-tricep-extension': { like: 'ex-tricep-pushdown', factor: 0.55 },
   'ex-cable-overhead-extension': { like: 'ex-tricep-pushdown', factor: 0.75 },
   'ex-tricep-kickback':         { like: 'ex-tricep-pushdown', factor: 0.2 },
+  'ex-cable-tricep-kickback':   { like: 'ex-tricep-pushdown', factor: 0.22 },
   'ex-machine-dip':             { like: 'ex-tricep-pushdown', factor: 1.8 },
   // Core
   'ex-machine-crunch':          { like: 'ex-cable-crunch', factor: 1.1 },
@@ -292,6 +305,11 @@ const DERIVED: Record<string, Derived> = {
   // Legs
   'ex-barbell-front-squat':     { like: 'ex-barbell-back-squat', factor: 0.8 },
   'ex-pause-squat':             { like: 'ex-barbell-back-squat', factor: 0.88 },
+  'ex-eccentric-squat':         { like: 'ex-barbell-back-squat', factor: 0.8 },
+  'ex-dumbbell-squat':          { like: 'ex-barbell-back-squat', factor: 0.3 },
+  'ex-heel-elevated-goblet-squat': { like: 'ex-barbell-back-squat', factor: 0.32, regions: ['quads'] },
+  'ex-smith-split-squat':       { like: 'ex-barbell-back-squat', factor: 0.45 },
+  'ex-ffe-split-squat':         { like: 'ex-barbell-back-squat', factor: 0.27 },
   'ex-box-squat':               { like: 'ex-barbell-back-squat', factor: 0.95 },
   'ex-smith-machine-squat':     { like: 'ex-barbell-back-squat', factor: 1 },
   'ex-hack-squat':              { like: 'ex-barbell-back-squat', factor: 1 },
