@@ -86,7 +86,7 @@ const DB_BENCH = load(['chest'], [19, 28, 40, 53, 68], [7, 12, 19, 28, 38])
 const DB_CURL = load(['biceps'], [8, 14, 22, 32, 42], [4, 7, 12, 18, 24])
 const PUSHDOWN = load(['triceps'], [22, 36, 56, 80, 107], [9, 17, 28, 42, 59])
 const LATERAL = load(['side-delts'], [5, 10, 16, 25, 34], [3, 6, 9, 13, 17])
-const LEG_PRESS = load(['quads'], [109, 162, 230, 309, 395], [49, 87, 140, 204, 277])
+const LEG_PRESS = load(['quads', 'glutes'], [109, 162, 230, 309, 395], [49, 87, 140, 204, 277])
 const HIP_THRUST = load(['glutes'], [56, 96, 149, 213, 285], [35, 63, 100, 147, 199])
 const LEG_EXT = load(['quads'], [48, 72, 103, 140, 180], [22, 38, 59, 86, 115])
 const PEC_DECK = load(['chest'], [42, 63, 89, 119, 152], [10, 18, 30, 44, 60]) // Strength Level "Machine Chest Fly"
@@ -104,8 +104,12 @@ const WOOD_CHOP = load(['obliques'], [10, 18, 28, 40, 52], [5, 10, 16, 23, 30])
 const SIDE_BEND = load(['obliques'], [16, 26, 38, 50, 65], [8, 14, 20, 28, 36])
 // Median gym lifter ≈ 28 bodyweight reps (men) / 24 (women), per Strength Level.
 const BACK_EXTENSION = reps(['lower-back', 'glutes'], 0.6, [4, 14, 28, 45, 62], [3, 12, 24, 38, 53])
-// Seated stack machine, rated by the pin number.
-const BACK_EXTENSION_MACHINE = load(['lower-back'], [25, 45, 75, 110, 150], [12, 25, 43, 65, 90])
+// Seated stack machine, rated by the pin number. It extends the hips as well as the spine.
+const BACK_EXTENSION_MACHINE = load(['lower-back', 'glutes'], [25, 45, 75, 110, 150], [12, 25, 43, 65, 90])
+// Reverse hyper machine: the plates on its arm, swung up by the glutes.
+const REVERSE_HYPER = load(['glutes', 'lower-back'], [20, 40, 65, 95, 130], [12, 24, 40, 60, 82])
+// Kettlebell swing: one bell, est. 1RM from the reps (24 kg × 15 ≈ the median lifter).
+const KB_SWING = load(['glutes', 'hamstrings'], [20, 28, 38, 50, 64], [10, 16, 24, 32, 40])
 const CHIN_UP = { ...PULL_UP, regions: ['lats', 'biceps'] } satisfies RepsStandard
 
 const BASE: Record<string, Standard> = {
@@ -181,6 +185,10 @@ const BASE: Record<string, Standard> = {
   'ex-leg-extension': LEG_EXT,
   'ex-standing-calf-raise': CALF_RAISE,
   'ex-pistol-squat': reps(['quads', 'glutes'], 0.85, [-2, 1, 5, 10, 18], [-4, -1, 3, 7, 13]),
+  'ex-lunge': reps(['quads', 'glutes'], 0.6, [10, 20, 30, 45, 60], [8, 16, 26, 40, 55]), // reps per leg
+  'ex-single-leg-hip-thrust': reps(['glutes'], 0.6, [5, 12, 20, 30, 40], [5, 12, 20, 30, 40]), // reps per leg
+  'ex-reverse-hyperextension': REVERSE_HYPER,
+  'ex-kettlebell-swing': KB_SWING,
   'ex-nordic-curl': reps(['hamstrings'], 0.7, [1, 3, 6, 10, 15], [1, 2, 4, 7, 11]),
   'ex-glute-ham-raise': reps(['hamstrings'], 0.7, [1, 5, 10, 16, 24], [1, 3, 7, 12, 18]),
   'ex-wall-sit': hold(['quads'], [20, 45, 90, 150, 240], [20, 45, 80, 140, 220]),
@@ -295,7 +303,7 @@ const DERIVED: Record<string, Derived> = {
   'ex-pallof-press':            { like: 'ex-wood-chop', factor: 0.9 },
   'ex-weighted-russian-twist':  { like: 'ex-wood-chop', factor: 0.55 },
   // Legs
-  'ex-barbell-front-squat':     { like: 'ex-barbell-back-squat', factor: 0.8, regions: ['quads'] },
+  'ex-barbell-front-squat':     { like: 'ex-barbell-back-squat', factor: 0.8 },
   'ex-pause-squat':             { like: 'ex-barbell-back-squat', factor: 0.88 },
   'ex-eccentric-squat':         { like: 'ex-barbell-back-squat', factor: 0.8 },
   'ex-dumbbell-squat':          { like: 'ex-barbell-back-squat', factor: 0.3 },
@@ -304,12 +312,14 @@ const DERIVED: Record<string, Derived> = {
   'ex-ffe-split-squat':         { like: 'ex-barbell-back-squat', factor: 0.27 },
   'ex-box-squat':               { like: 'ex-barbell-back-squat', factor: 0.95 },
   'ex-smith-machine-squat':     { like: 'ex-barbell-back-squat', factor: 1 },
-  'ex-hack-squat':              { like: 'ex-barbell-back-squat', factor: 1, regions: ['quads'] },
+  'ex-hack-squat':              { like: 'ex-barbell-back-squat', factor: 1 },
   'ex-pendulum-squat':          { like: 'ex-barbell-back-squat', factor: 1, regions: ['quads'] },
   'ex-belt-squat':              { like: 'ex-barbell-back-squat', factor: 1 },
   'ex-safety-bar-squat':        { like: 'ex-barbell-back-squat', factor: 0.9 },
   'ex-zercher-squat':           { like: 'ex-barbell-back-squat', factor: 0.8 },
   'ex-goblet-squat':            { like: 'ex-barbell-back-squat', factor: 0.35 },
+  'ex-sumo-squat':              { like: 'ex-barbell-back-squat', factor: 0.35, regions: ['glutes', 'adductors', 'quads'] }, // one dumbbell, like the goblet
+  'ex-landmine-squat':          { like: 'ex-barbell-back-squat', factor: 0.5 }, // the plates on the bar's end
   'ex-barbell-lunge':           { like: 'ex-barbell-back-squat', factor: 0.6 },
   'ex-bulgarian-split-squat':   { like: 'ex-barbell-back-squat', factor: 0.25 },
   'ex-split-squat':             { like: 'ex-barbell-back-squat', factor: 0.3 },
@@ -317,14 +327,18 @@ const DERIVED: Record<string, Derived> = {
   'ex-dumbbell-lunge':          { like: 'ex-barbell-back-squat', factor: 0.28 },
   'ex-walking-lunge':           { like: 'ex-barbell-back-squat', factor: 0.28 },
   'ex-step-up':                 { like: 'ex-barbell-back-squat', factor: 0.25 },
+  'ex-curtsy-lunge':            { like: 'ex-barbell-back-squat', factor: 0.2, regions: ['glutes', 'quads'] },
+  'ex-lateral-lunge':           { like: 'ex-barbell-back-squat', factor: 0.2, regions: ['adductors', 'glutes'] },
   'ex-single-leg-leg-press':    { like: 'ex-leg-press', factor: 0.55 },
   'ex-romanian-deadlift':       { like: 'ex-conventional-deadlift', factor: 0.78, regions: ['hamstrings', 'glutes'] },
   'ex-stiff-leg-deadlift':      { like: 'ex-conventional-deadlift', factor: 0.75, regions: ['hamstrings', 'glutes'] },
   'ex-dumbbell-rdl':            { like: 'ex-conventional-deadlift', factor: 0.35, regions: ['hamstrings', 'glutes'] },
+  'ex-single-leg-rdl':          { like: 'ex-conventional-deadlift', factor: 0.2, regions: ['hamstrings', 'glutes'] }, // one dumbbell
   'ex-glute-bridge':            { like: 'ex-barbell-hip-thrust', factor: 0.9 },
   'ex-hip-thrust-machine':      { like: 'ex-barbell-hip-thrust', factor: 1 },
   'ex-smith-hip-thrust':        { like: 'ex-barbell-hip-thrust', factor: 1 },
   'ex-cable-kickback':          { like: 'ex-barbell-hip-thrust', factor: 0.2 },
+  'ex-glute-kickback-machine':  { like: 'ex-barbell-hip-thrust', factor: 0.45 },
   'ex-cable-pull-through':      { like: 'ex-barbell-hip-thrust', factor: 0.35, regions: ['glutes', 'hamstrings'] },
   'ex-leg-curl':                { like: 'ex-leg-extension', factor: 0.7, regions: ['hamstrings'] },
   'ex-lying-leg-curl':          { like: 'ex-leg-extension', factor: 0.65, regions: ['hamstrings'] },
