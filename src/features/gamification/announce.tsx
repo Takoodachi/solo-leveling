@@ -1,8 +1,13 @@
 import { toast } from 'sonner'
 import { db } from '@/db'
 import type { AchievementDef } from './achievements'
+import { celebrate } from './celebration'
+import AchievementToast from './components/AchievementToast'
 
-/** Tell the user what was just unlocked: one toast each, or one for the lot when it's a pile (an update that added many). */
+/**
+ * Tell the user what was just unlocked: one toast each, which opens the achievement full screen
+ * when tapped, or one for the lot when it's a pile (an update that added many).
+ */
 export async function announceAchievements(unlocked: AchievementDef[]): Promise<void> {
   if (unlocked.length === 0) return
   if (unlocked.length > 3) {
@@ -11,5 +16,17 @@ export async function announceAchievements(unlocked: AchievementDef[]): Promise<
     return
   }
   const goals = new Set((await db.settings.get(1))?.achievementGoals ?? [])
-  for (const a of unlocked) toast.success(`${goals.has(a.key) ? 'Goal reached' : 'Achievement unlocked'}: ${a.title}`, { icon: a.icon })
+  for (const a of unlocked) {
+    const goal = goals.has(a.key)
+    toast.custom(id => (
+      <AchievementToast
+        def={a}
+        goal={goal}
+        onOpen={() => {
+          toast.dismiss(id)
+          celebrate(a.key, goal)
+        }}
+      />
+    ), { duration: 6000 })
+  }
 }

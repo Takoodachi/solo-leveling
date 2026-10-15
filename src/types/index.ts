@@ -96,7 +96,7 @@ export interface ReminderPref {
   days?: ReminderDays
 }
 
-export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
+export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'rank' | 'leaderboard' | 'streak'
 
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
 export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'
@@ -227,6 +227,8 @@ export interface Routine {
   notes?: string
   exercises: RoutineExercise[]
   scheduleDays: number[] // 0 = Sunday … 6 = Saturday
+  /** Shared with friends: it travels in the leaderboard snapshot for them to copy. */
+  shared?: boolean
   updatedAt: number
   syncPending?: boolean
 }

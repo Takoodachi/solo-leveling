@@ -87,7 +87,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'routines',
     table: () => t(db.routines),
-    columns: ['uuid', 'name', 'category', 'level', 'estDurationMin', 'notes', 'exercises', 'scheduleDays', 'updatedAt'],
+    columns: ['uuid', 'name', 'category', 'level', 'estDurationMin', 'notes', 'exercises', 'scheduleDays', 'shared', 'updatedAt'],
     normalize: row => ({ ...row, exercises: row.exercises ?? [], scheduleDays: row.scheduleDays ?? [] }),
   },
   {

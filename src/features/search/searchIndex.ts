@@ -1,5 +1,5 @@
 import {
-  Award, Bell, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye, Flag,
+  Award, Bell, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye,
   Footprints, GlassWater, Goal, History, House, LayoutGrid, Lightbulb, ListPlus, Medal, PanelBottom, Palette, PersonStanding,
   Play, Radar, Ruler, Scale, Settings, Smartphone, Target, Timer, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
   type LucideIcon,
@@ -12,7 +12,7 @@ import type { Exercise } from '@/types'
 /** Things a result can do besides opening a page (they open sheets on Home). */
 export type SearchAction = 'log-steps' | 'log-water' | 'customize-home'
 
-export type SearchGroup = 'actions' | 'pages' | 'routines' | 'exercises' | 'foods' | 'workouts' | 'challenges' | 'friends'
+export type SearchGroup = 'actions' | 'pages' | 'routines' | 'exercises' | 'foods' | 'workouts' | 'friends'
 
 export interface SearchItem {
   id: string
@@ -58,7 +58,6 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'ranked-lifts', title: 'Ranked lifts', subtitle: 'Ranks', keywords: 'next division target lifts', Icon: Dumbbell, to: '/ranks#lifts' },
   { id: 'how-ranks', title: 'How ranks work', subtitle: 'Ranks', keywords: 'tiers ladder wood bronze silver gold platinum diamond champion titan olympian', Icon: Medal, to: '/ranks#how-ranks-work' },
   { id: 'leaderboard', title: 'Leaderboard', subtitle: 'Friends, podium and crowns', keywords: 'friends compete ranking podium crowns highlights', Icon: Trophy, to: '/leaderboard' },
-  { id: 'challenges', title: 'Challenges', subtitle: 'Personal goals with a deadline', keywords: 'goal target deadline', Icon: Flag, to: '/challenges' },
   { id: 'profile', title: 'Profile', subtitle: 'Name, photo, level and XP', keywords: 'me avatar photo name level xp', Icon: UserRound, to: '/profile' },
   { id: 'achievements', title: 'Achievements', subtitle: 'Profile', keywords: `badges unlocked ${ACHIEVEMENT_DEFS.map(a => a.title).join(' ')}`, Icon: Award, to: '/profile#achievements' },
   { id: 'body-goals', title: 'Body & goals', subtitle: 'Profile', keywords: 'height sex age activity goal bodyweight', Icon: Ruler, to: '/profile#body-goals' },
@@ -76,7 +75,7 @@ export const PAGE_ENTRIES: Entry[] = [
 ]
 
 /** Shown before typing: the main screens. */
-export const JUMP_TO = ['workouts', 'nutrition', 'analytics', 'ranks', 'leaderboard', 'challenges', 'profile', 'settings']
+export const JUMP_TO = ['workouts', 'nutrition', 'analytics', 'ranks', 'leaderboard', 'profile', 'settings']
 
 export function actionEntries(draft: 'none' | 'workout' | 'editing'): Entry[] {
   const workout: Entry = draft === 'none'

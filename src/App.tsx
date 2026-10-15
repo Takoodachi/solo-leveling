@@ -16,6 +16,7 @@ import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
+import { useCelebration } from '@/features/gamification/celebration'
 import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
 import LoginPage from '@/features/auth/LoginPage'
@@ -37,7 +38,6 @@ const RoutineEditPage = lazyAhead(() => import('@/pages/RoutineEditPage'))
 const ActiveWorkoutPage = lazyAhead(() => import('@/pages/ActiveWorkoutPage'))
 const WorkoutSummaryPage = lazyAhead(() => import('@/pages/WorkoutSummaryPage'))
 const PlanPage = lazyAhead(() => import('@/pages/PlanPage'))
-const ChallengesPage = lazyAhead(() => import('@/pages/ChallengesPage'))
 const FriendPage = lazyAhead(() => import('@/pages/FriendPage'))
 const WeightLogPage = lazyAhead(() => import('@/features/bodyMetrics/WeightLogPage'))
 const RecapPage = lazyAhead(() => import('@/pages/RecapPage'))
@@ -127,7 +127,6 @@ function AppRoutes() {
         <Route path="workouts/routine/:id" element={<RoutineDetailPage />} />
         <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />
         <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
-        <Route path="challenges" element={<ChallengesPage />} />
         <Route path="leaderboard/:id" element={<FriendPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
         <Route path="recap" element={<RecapPage />} />
@@ -139,6 +138,14 @@ function AppRoutes() {
       </Routes>
     </Suspense>
   )
+}
+
+// Loaded the first time an achievement's toast is tapped (it brings framer-motion with it)
+const AchievementCelebration = lazy(() => import('@/features/gamification/components/AchievementCelebration'))
+
+function Celebration() {
+  const on = useCelebration(s => s.key != null)
+  return on ? <Suspense fallback={null}><AchievementCelebration /></Suspense> : null
 }
 
 export default function App() {
@@ -153,6 +160,7 @@ export default function App() {
         offset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
         mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
       />
+      <Celebration />
     </BrowserRouter>
   )
 }

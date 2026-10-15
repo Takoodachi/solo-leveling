@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { db } from '@/db'
 import type { Exercise, ExerciseType, RoutineExercise } from '@/types'
 import { requestSync } from '@/lib/sync'
@@ -7,6 +8,7 @@ import { CATEGORIES, LEVELS } from '@/features/workouts/categories'
 import { saveRoutine } from '@/features/workouts/hooks/useRoutines'
 import { createCustomExercise } from '@/features/workouts/hooks/useExercises'
 import type { SharedRoutine, SharedRoutineItem } from './types'
+import { useLeaderboardRows } from './useLeaderboard'
 
 /**
  * Routines that travel in the leaderboard snapshot: a friend's arrive as whatever JSON their
@@ -57,6 +59,18 @@ export function cleanSharedRoutines(raw: unknown): SharedRoutine[] {
       ...(mins ? { mins } : {}),
     }]
   })
+}
+
+/** Each friend's shared routines, checked; friends who share none are left out. */
+export function useFriendsRoutines(): { userId: string; name: string; routines: SharedRoutine[] }[] {
+  const { rows, userId } = useLeaderboardRows()
+  return useMemo(
+    () => (rows ?? []).filter(r => r.userId !== userId).flatMap(r => {
+      const routines = cleanSharedRoutines(r.snapshot.routines)
+      return routines.length ? [{ userId: r.userId, name: r.name, routines }] : []
+    }),
+    [rows, userId],
+  )
 }
 
 /** The exercise behind a shared item, on this device: one with that name and kind if there is one, else a new custom one. */

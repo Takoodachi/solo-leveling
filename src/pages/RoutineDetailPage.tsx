@@ -16,6 +16,7 @@ import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import RoutineExerciseCard from '@/features/workouts/components/RoutineExerciseCard'
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
+import ShareRoutineRow from '@/features/leaderboard/components/ShareRoutineRow'
 import { useGoBack } from '@/hooks/useGoBack'
 
 export default function RoutineDetailPage() {
@@ -89,6 +90,8 @@ export default function RoutineDetailPage() {
             <StatTile Icon={Flame} value={`~${kcal} Kcal`} />
             <StatTile Icon={Dumbbell} value={`${routine.exercises.length} Exercises`} />
           </div>
+
+          {kind === 'routine' && <ShareRoutineRow routine={routine} />}
 
           <div className="flex flex-col gap-3">
             {routine.exercises.map((item, i) => (

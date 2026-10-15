@@ -33,11 +33,11 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
   }
 }
 
-/** Every routine, its custom exercises described (a friend's device doesn't have them) and its notes left out. */
+/** The routines shared with friends, their custom exercises described (a friend's device doesn't have them) and their notes left out. */
 async function sharedRoutines(): Promise<SharedRoutine[]> {
   const [routines, custom] = await Promise.all([db.routines.orderBy('name').toArray(), db.exercises.filter(e => e.isCustom).toArray()])
   const customById = new Map(custom.map(e => [e.uuid, e]))
-  return routines.map(r => ({
+  return routines.filter(r => r.shared).map(r => ({
     id: r.uuid,
     name: r.name,
     category: r.category,
