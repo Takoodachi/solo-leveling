@@ -16,16 +16,18 @@ interface Props {
   /** The friend's name; your own (self) routines are shown without the buttons. */
   name: string
   self: boolean
+  /** Opened from the start (the routine a shared link points at). */
+  initialOpen?: string | null
 }
 
 const dayList = (days: number[]) => WEEK_ORDER.filter(d => days.includes(d)).map(d => WEEKDAY_SHORT[d]).join(' · ')
 
 /** A friend's routines: what's in each, a tap to make one yours, or their whole week. */
-export default function SharedRoutines({ routines, name, self }: Props) {
+export default function SharedRoutines({ routines, name, self, initialOpen = null }: Props) {
   const navigate = useNavigate()
   const exerciseMap = useExerciseMap()
   const minutesFor = useRoutineMinutes()
-  const [open, setOpen] = useState<string | null>(null)
+  const [open, setOpen] = useState<string | null>(initialOpen)
   // Their routine's id → your copy's, for the ones added on this visit
   const [copies, setCopies] = useState<Record<string, string>>({})
   const [asking, setAsking] = useState(false)
@@ -50,12 +52,12 @@ export default function SharedRoutines({ routines, name, self }: Props) {
         const isOpen = open === r.id
         const minutes = minutesFor({ exercises: r.items.map(i => ({ exerciseId: i.id, sets: i.sets, reps: i.reps, restSec: i.rest })), estDurationMin: r.mins })
         return (
-          <div key={r.id} className="rounded-3xl bg-card">
+          <div key={r.id} className="rounded-2xl bg-secondary">
             <button
               type="button"
               onClick={() => setOpen(isOpen ? null : r.id)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-3 rounded-3xl p-4 text-left"
+              className="flex w-full items-center gap-3 rounded-2xl p-4 text-left"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                 <cat.Icon size={20} />

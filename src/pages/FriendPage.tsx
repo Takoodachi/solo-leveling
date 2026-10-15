@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { startOfWeek } from 'date-fns'
 import { motion } from 'framer-motion'
-import { Flame } from 'lucide-react'
+import { ClipboardList, Flame } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import { toDateStr } from '@/lib/date'
@@ -18,7 +18,7 @@ import HeadToHead from '@/features/leaderboard/components/HeadToHead'
 import Avatar from '@/features/leaderboard/components/Avatar'
 import CompareChart from '@/features/leaderboard/components/CompareChart'
 import { TopLifts, WeekTiles } from '@/features/leaderboard/components/FriendStats'
-import SharedRoutines from '@/features/leaderboard/components/SharedRoutines'
+import FriendRoutinesSheet from '@/features/leaderboard/components/FriendRoutinesSheet'
 import { cleanSharedRoutines } from '@/features/leaderboard/sharedRoutines'
 import { ink } from '@/lib/colors'
 
@@ -28,7 +28,12 @@ export default function FriendPage() {
   const now = useNow()
   const lb = useLeaderboard()
   const [selected, setSelected] = useState<MuscleRegion | null>(null)
-  const entry = id === 'me' ? lb.me : (lb.rows ?? []).find(e => e.userId === id)
+  // A shared link (?routine=<id> or ?plan=1) opens the routines on arrival
+  const [params] = useSearchParams()
+  const linked = params.get('routine')
+  const [showRoutines, setShowRoutines] = useState(() => linked != null || params.has('plan'))
+  const self = id === 'me' || id === lb.userId
+  const entry = self ? lb.me : (lb.rows ?? []).find(e => e.userId === id)
 
   if (!entry) {
     return (
@@ -42,7 +47,6 @@ export default function FriendPage() {
   }
 
   const s = entry.snapshot
-  const self = id === 'me'
   const overall = s.overall != null ? rankFor(s.overall) : null
   const regions = regionsOf(s)
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
@@ -74,7 +78,14 @@ export default function FriendPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Bodygraph</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Bodygraph</h2>
+          {routines.length > 0 && (
+            <button type="button" onClick={() => setShowRoutines(true)} className="flex h-10 items-center gap-1.5 rounded-full bg-card px-3.5 text-sm font-semibold">
+              <ClipboardList size={16} className="text-primary" /> {routines.some(r => r.days.length) ? 'Routines & plan' : 'Routines'}
+            </button>
+          )}
+        </div>
         <Bodygraph regions={regions} selected={selected} onSelect={setSelected} />
         <RegionDetail region={regions.find(r => r.key === selected) ?? null} suggest={false} />
       </section>
@@ -93,17 +104,12 @@ export default function FriendPage() {
         <WeekTiles s={s} weekStart={weekStart} />
       </section>
 
-      {routines.length > 0 && (
-        <section id="routines" className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">{self ? 'Your routines' : 'Their routines'}</h2>
-          <SharedRoutines routines={routines} name={entry.name} self={self} />
-        </section>
-      )}
-
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Best lifts</h2>
         <TopLifts s={s} />
       </section>
+
+      <FriendRoutinesSheet open={showRoutines} onClose={() => setShowRoutines(false)} routines={routines} name={entry.name} self={self} linked={linked} />
     </FullScreen>
   )
 }

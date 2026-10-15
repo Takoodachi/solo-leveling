@@ -149,6 +149,7 @@ export interface Settings {
   trainingSince?: string // YYYY-MM-DD, roughly when they started training: the level follows from it (`levelSince`; '' = cleared)
   radarMuscles?: VolumeMuscle[] // muscles on the volume radar (unset = default twelve)
   shareOnLeaderboard?: boolean // friends leaderboard (unset = shared)
+  shareRoutines?: boolean // your routines on your leaderboard profile (unset = shown)
   theme?: string // colour palette id (features/settings/themes.ts; unset = the default dark theme)
   navTabs?: NavTabId[] // the two bottom-bar slots beside + (unset = workouts, analytics)
   avatar?: string // profile photo: a small JPEG data URL (≈10 KB), shared on the leaderboard
@@ -227,8 +228,6 @@ export interface Routine {
   notes?: string
   exercises: RoutineExercise[]
   scheduleDays: number[] // 0 = Sunday … 6 = Saturday
-  /** Shared with friends: it travels in the leaderboard snapshot for them to copy. */
-  shared?: boolean
   updatedAt: number
   syncPending?: boolean
 }

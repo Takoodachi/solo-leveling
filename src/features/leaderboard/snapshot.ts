@@ -5,6 +5,7 @@ import { toDateStr } from '@/lib/date'
 import { formatClock, formatKm } from '@/lib/cardio'
 import { computeRanks, describeBest, rankHistory } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
+import { showsRoutines } from './api'
 import type { Highlight, LeaderboardSnapshot, SharedRoutine } from './types'
 
 const HISTORY_WEEKS = 12
@@ -33,11 +34,11 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
   }
 }
 
-/** The routines shared with friends, their custom exercises described (a friend's device doesn't have them) and their notes left out. */
-async function sharedRoutines(): Promise<SharedRoutine[]> {
+/** Your routines as friends see them, their custom exercises described (a friend's device doesn't have them) and their notes left out. */
+async function myRoutines(): Promise<SharedRoutine[]> {
   const [routines, custom] = await Promise.all([db.routines.orderBy('name').toArray(), db.exercises.filter(e => e.isCustom).toArray()])
   const customById = new Map(custom.map(e => [e.uuid, e]))
-  return routines.filter(r => r.shared).map(r => ({
+  return routines.map(r => ({
     id: r.uuid,
     name: r.name,
     category: r.category,
@@ -56,7 +57,7 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const since = toDateStr(subDays(now, HIGHLIGHT_DAYS))
   const [ranks, history, stats, week, settings, routines] = await Promise.all([
-    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1), sharedRoutines(),
+    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1), myRoutines(),
   ])
 
   const run = ranks.running
@@ -90,6 +91,6 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
     week,
     highlights: highlights.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
     ...(settings?.avatar ? { avatar: settings.avatar } : {}),
-    ...(routines.length ? { routines } : {}),
+    ...(routines.length && showsRoutines(settings) ? { routines } : {}),
   }
 }

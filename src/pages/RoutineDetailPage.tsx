@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronLeft, Clock, Flame, Dumbbell, Pencil } from 'lucide-react'
+import { ChevronLeft, Clock, Flame, Dumbbell, Pencil, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import RoutineExerciseCard from '@/features/workouts/components/RoutineExerciseCard'
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
-import ShareRoutineRow from '@/features/leaderboard/components/ShareRoutineRow'
+import { useShareRoutineLink } from '@/features/leaderboard/useShareRoutineLink'
 import { useGoBack } from '@/hooks/useGoBack'
 
 export default function RoutineDetailPage() {
@@ -28,6 +28,7 @@ export default function RoutineDetailPage() {
   const minutesFor = useRoutineMinutes()
   const latestWeight = useLiveQuery(() => db.bodyMetrics.orderBy('date').last(), [])
   const { startFromRoutine } = useActiveWorkout()
+  const shareLink = useShareRoutineLink()
   const [info, setInfo] = useState<Exercise | null>(null)
 
   if (data === undefined) return null
@@ -65,9 +66,14 @@ export default function RoutineDetailPage() {
             <ChevronLeft size={26} /> Back
           </button>
           {kind === 'routine' && (
-            <Link to={`/workouts/routine/${routine.uuid}/edit`} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Edit routine">
-              <Pencil size={18} />
-            </Link>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => void shareLink({ routineId: routine.uuid, title: routine.name })} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Share routine">
+                <Share2 size={18} />
+              </button>
+              <Link to={`/workouts/routine/${routine.uuid}/edit`} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Edit routine">
+                <Pencil size={18} />
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -90,8 +96,6 @@ export default function RoutineDetailPage() {
             <StatTile Icon={Flame} value={`~${kcal} Kcal`} />
             <StatTile Icon={Dumbbell} value={`${routine.exercises.length} Exercises`} />
           </div>
-
-          {kind === 'routine' && <ShareRoutineRow routine={routine} />}
 
           <div className="flex flex-col gap-3">
             {routine.exercises.map((item, i) => (

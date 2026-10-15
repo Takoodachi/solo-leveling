@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, ChevronRight, Repeat, CalendarDays, Pencil, Moon } from 'lucide-react'
+import { Bell, ChevronRight, Repeat, CalendarDays, Pencil, Moon, Share2 } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import NumberStepper from '@/components/NumberStepper'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import { useSettings, updateSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
@@ -12,6 +13,7 @@ import { CATEGORY_META, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/ca
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import DayRoutineSheet from '@/features/workouts/components/DayRoutineSheet'
 import { reminderPrefs } from '@/features/reminders/reminders'
+import { useShareRoutineLink } from '@/features/leaderboard/useShareRoutineLink'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -21,6 +23,7 @@ export default function PlanPage() {
   const { settings } = useSettings()
   const [editingDay, setEditingDay] = useState<number | null>(null)
   const [editingGoal, setEditingGoal] = useState(false)
+  const shareLink = useShareRoutineLink()
 
   const byDay = new Map(WEEK_ORDER.map(d => [d, routines.find(r => r.scheduleDays.includes(d))]))
   const trainingDays = WEEK_ORDER.filter(d => byDay.get(d))
@@ -30,7 +33,15 @@ export default function PlanPage() {
 
   return (
     <FullScreen className="flex flex-col gap-6">
-      <PageHeader back="/workouts" title="Your plan" />
+      <PageHeader
+        back="/workouts"
+        title="Your plan"
+        action={
+          <Button variant="ghost" size="icon" className="shrink-0 rounded-full text-muted-foreground" aria-label="Share plan" onClick={() => void shareLink({ title: 'My weekly plan' })}>
+            <Share2 size={20} />
+          </Button>
+        }
+      />
 
       <div className="relative min-h-[140px] overflow-hidden rounded-3xl bg-card p-5">
         <RoutineArt category="core" />
