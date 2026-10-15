@@ -16,6 +16,7 @@ import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
+import { useCelebration } from '@/features/gamification/celebration'
 import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
 import LoginPage from '@/features/auth/LoginPage'
@@ -139,6 +140,14 @@ function AppRoutes() {
   )
 }
 
+// Loaded the first time an achievement's toast is tapped (it brings framer-motion with it)
+const AchievementCelebration = lazy(() => import('@/features/gamification/components/AchievementCelebration'))
+
+function Celebration() {
+  const on = useCelebration(s => s.key != null)
+  return on ? <Suspense fallback={null}><AchievementCelebration /></Suspense> : null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -151,6 +160,7 @@ export default function App() {
         offset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
         mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
       />
+      <Celebration />
     </BrowserRouter>
   )
 }
