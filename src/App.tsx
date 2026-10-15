@@ -37,7 +37,6 @@ const RoutineEditPage = lazyAhead(() => import('@/pages/RoutineEditPage'))
 const ActiveWorkoutPage = lazyAhead(() => import('@/pages/ActiveWorkoutPage'))
 const WorkoutSummaryPage = lazyAhead(() => import('@/pages/WorkoutSummaryPage'))
 const PlanPage = lazyAhead(() => import('@/pages/PlanPage'))
-const ChallengesPage = lazyAhead(() => import('@/pages/ChallengesPage'))
 const FriendPage = lazyAhead(() => import('@/pages/FriendPage'))
 const WeightLogPage = lazyAhead(() => import('@/features/bodyMetrics/WeightLogPage'))
 const RecapPage = lazyAhead(() => import('@/pages/RecapPage'))
@@ -127,7 +126,6 @@ function AppRoutes() {
         <Route path="workouts/routine/:id" element={<RoutineDetailPage />} />
         <Route path="workouts/routine/:id/edit" element={<RoutineEditPage />} />
         <Route path="workouts/summary/:id" element={<WorkoutSummaryPage />} />
-        <Route path="challenges" element={<ChallengesPage />} />
         <Route path="leaderboard/:id" element={<FriendPage />} />
         <Route path="analytics/weight" element={<WeightLogPage />} />
         <Route path="recap" element={<RecapPage />} />

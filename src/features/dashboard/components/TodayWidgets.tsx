@@ -1,12 +1,8 @@
 import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, SlidersHorizontal } from 'lucide-react'
-import SectionHeader from '@/components/SectionHeader'
+import { SlidersHorizontal } from 'lucide-react'
 import type { HomeWidgetId, Routine } from '@/types'
 import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
 import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSettings'
-import { useChallenges } from '@/features/challenges/hooks/useChallenges'
-import ChallengeCard from '@/features/challenges/components/ChallengeCard'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
 import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
 import CreatineCard from '@/features/checkins/components/CreatineCard'
@@ -33,11 +29,9 @@ interface Props {
 export default function TodayWidgets({ selected, today, steps, budget, routine, completed, onCustomize }: Props) {
   const { settings } = useSettings()
   const { totals } = useDailyLog(selected)
-  const challenges = useChallenges()
   if (!settings) return null // wait for the saved layout instead of flashing the default one
 
   const ids = homeWidgetsFrom(settings)
-  const challenge = challenges?.find(c => c.status === 'active')
 
   function render(id: HomeWidgetId) {
     switch (id) {
@@ -55,19 +49,6 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
         return <CreatineCard date={selected} today={today} />
       case 'macros':
         return <MacrosCard totals={totals} budget={budget} />
-      case 'challenge':
-        return (
-          <section className="flex flex-col gap-3">
-            <SectionHeader actionLabel="View all" to="/challenges">Challenges</SectionHeader>
-            {challenge ? (
-              <Link to="/challenges" className="block"><ChallengeCard challenge={challenge} /></Link>
-            ) : (
-              <Link to="/challenges" className="flex items-center gap-3 rounded-3xl border border-dashed border-foreground/10 p-5 text-muted-foreground">
-                <Plus size={20} /> Set yourself a personal challenge
-              </Link>
-            )}
-          </section>
-        )
       case 'rank':
         return <RankSummaryCard />
       case 'leaderboard':

@@ -96,7 +96,7 @@ export interface ReminderPref {
   days?: ReminderDays
 }
 
-export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'challenge' | 'rank' | 'leaderboard' | 'streak'
+export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'rank' | 'leaderboard' | 'streak'
 
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
 export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'

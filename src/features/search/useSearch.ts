@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, parseISO } from 'date-fns'
-import { Dumbbell, Flag, History, ListChecks, UserRound, UtensilsCrossed } from 'lucide-react'
+import { Dumbbell, History, ListChecks, UserRound, UtensilsCrossed } from 'lucide-react'
 import { db } from '@/db'
 import { ROUTINE_TEMPLATES } from '@/data/routineTemplates'
 import { matchScore } from '@/lib/search'
@@ -24,7 +24,6 @@ const GROUPS: { key: SearchGroup; label: string; limit: number }[] = [
   { key: 'exercises', label: 'Exercises', limit: 6 },
   { key: 'foods', label: 'Foods', limit: 5 },
   { key: 'workouts', label: 'Past workouts', limit: 4 },
-  { key: 'challenges', label: 'Challenges', limit: 3 },
   { key: 'friends', label: 'Friends', limit: 3 },
 ]
 
@@ -35,15 +34,14 @@ const MIN_CHARS_LONG_LISTS = 2
 function useSearchData(enabled: boolean) {
   return useLiveQuery(async () => {
     if (!enabled) return null
-    const [routines, exercises, foods, workouts, challenges, liftedSets] = await Promise.all([
+    const [routines, exercises, foods, workouts, liftedSets] = await Promise.all([
       db.routines.toArray(),
       db.exercises.toArray(),
       db.foods.filter(f => !isQuickAdd(f) && !f.removed).toArray(),
       db.workouts.orderBy('createdAt').reverse().limit(300).toArray(),
-      db.challenges.toArray(),
       db.workoutSets.filter(s => !!s.weight && !!s.reps).toArray(),
     ])
-    return { routines, exercises, foods, workouts, challenges, lifted: new Set(liftedSets.map(s => s.exerciseId)) }
+    return { routines, exercises, foods, workouts, lifted: new Set(liftedSets.map(s => s.exerciseId)) }
   }, [enabled])
 }
 
@@ -88,9 +86,6 @@ export function useSearch(query: string, enabled: boolean): ResultGroup[] {
         id: w.uuid, group: 'workouts', title: w.name || 'Workout', subtitle: `${format(date, 'EEE d MMM yyyy')} · ${w.durationMin} min`,
         keywords: `workout session ${format(date, 'EEEE d MMMM')}`, Icon: History, to: `/workouts/summary/${w.uuid}`,
       })
-    }
-    for (const c of data.challenges) {
-      add({ id: c.uuid, group: 'challenges', title: c.title, subtitle: `Challenge · ends ${format(parseISO(c.endDate), 'd MMM')}`, keywords: 'challenge goal', Icon: Flag, to: '/challenges' })
     }
     if (q.length >= MIN_CHARS_LONG_LISTS) {
       for (const e of data.exercises) {
