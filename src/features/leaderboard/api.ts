@@ -28,6 +28,11 @@ export function isSharing(settings: Settings | undefined): boolean {
   return settings?.shareOnLeaderboard !== false
 }
 
+/** Your routines on your profile, for friends to open and copy (unset = shown). */
+export function showsRoutines(settings: Settings | undefined): boolean {
+  return settings?.shareRoutines !== false
+}
+
 const publishedKey = (userId: string) => `solo:leaderboard:${userId}`
 
 /**

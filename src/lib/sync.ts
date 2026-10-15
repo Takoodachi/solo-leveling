@@ -87,7 +87,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'routines',
     table: () => t(db.routines),
-    columns: ['uuid', 'name', 'category', 'level', 'estDurationMin', 'notes', 'exercises', 'scheduleDays', 'shared', 'updatedAt'],
+    columns: ['uuid', 'name', 'category', 'level', 'estDurationMin', 'notes', 'exercises', 'scheduleDays', 'updatedAt'],
     normalize: row => ({ ...row, exercises: row.exercises ?? [], scheduleDays: row.scheduleDays ?? [] }),
   },
   {
@@ -132,7 +132,7 @@ const SINGLETONS: SingletonSpec[] = [
     columns: [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays', 'reminders',
-      'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'theme', 'navTabs', 'avatar', 'showSearch',
+      'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'shareRoutines', 'theme', 'navTabs', 'avatar', 'showSearch',
       'workoutTips', 'appShortcuts', 'customTheme', 'achievementGoals', 'trainingSince', 'cardStyle', 'health', 'updatedAt',
     ],
   },
