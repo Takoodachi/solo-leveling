@@ -227,6 +227,8 @@ export interface Routine {
   notes?: string
   exercises: RoutineExercise[]
   scheduleDays: number[] // 0 = Sunday … 6 = Saturday
+  /** Shared with friends: it travels in the leaderboard snapshot for them to copy. */
+  shared?: boolean
   updatedAt: number
   syncPending?: boolean
 }

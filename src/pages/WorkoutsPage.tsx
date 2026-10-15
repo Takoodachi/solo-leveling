@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Plus } from 'lucide-react'
+import { CalendarDays, ChevronDown, LayoutTemplate, Plus } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
+import Collapse from '@/components/Collapse'
+import { useEntryState } from '@/hooks/useEntryState'
+import { cn } from '@/lib/utils'
 import { useIsNavTab } from '@/hooks/useNavTabs'
 import SectionHeader from '@/components/SectionHeader'
 import { Button } from '@/components/ui/button'
@@ -16,12 +19,17 @@ import RoutineCard from '@/features/workouts/components/RoutineCard'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
 import StartWorkoutSheet from '@/features/workouts/components/StartWorkoutSheet'
 import WorkoutHistoryRow from '@/features/workouts/components/WorkoutHistoryRow'
+import SharedRoutines from '@/features/leaderboard/components/SharedRoutines'
+import { useFriendsRoutines } from '@/features/leaderboard/sharedRoutines'
 
 function scheduleLabel(days: number[]): string | undefined {
   if (days.length === 0) return undefined
   if (days.length === 7) return 'Every day'
   return WEEK_ORDER.filter(d => days.includes(d)).map(d => WEEKDAY_SHORT[d]).join(' · ')
 }
+
+const footer = (r: { scheduleDays: number[]; shared?: boolean }) =>
+  [scheduleLabel(r.scheduleDays), r.shared && 'Shared with friends'].filter(Boolean).join(' · ') || undefined
 
 export default function WorkoutsPage() {
   const routines = useRoutines()
@@ -30,6 +38,10 @@ export default function WorkoutsPage() {
   const [category, setCategory] = useState<RoutineCategory | null>(null)
   const [params, setParams] = useSearchParams()
   const startOpen = params.get('start') === '1'
+  // Templates (and what friends share) wait behind a button; open, they stay open for Back from one
+  const [browsing, setBrowsing] = useEntryState('workouts-templates', false)
+  const friends = useFriendsRoutines()
+  const fromFriends = friends.reduce((n, f) => n + f.routines.length, 0)
 
   const byCategory = <T extends { category: RoutineCategory }>(list: T[]) =>
     category ? list.filter(r => r.category === category) : list
@@ -66,7 +78,7 @@ export default function WorkoutsPage() {
         {myRoutines.length === 0 ? (
           <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">
             {routines.length === 0
-              ? 'No routines yet. Save a template below or build your own.'
+              ? 'No routines yet. Build your own, or start from a template below.'
               : 'No routines in this category.'}
           </p>
         ) : (
@@ -78,27 +90,11 @@ export default function WorkoutsPage() {
               category={r.category}
               level={r.level}
               minutes={minutesFor(r)}
-              footer={scheduleLabel(r.scheduleDays)}
+              footer={footer(r)}
             />
           ))
         )}
       </section>
-
-      {templates.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <SectionHeader>Templates</SectionHeader>
-          {templates.map(t => (
-            <RoutineCard
-              key={t.uuid}
-              to={`/workouts/routine/${t.uuid}`}
-              name={t.name}
-              category={t.category}
-              level={t.level}
-              minutes={minutesFor(t)}
-            />
-          ))}
-        </section>
-      )}
 
       {recent && recent.length > 0 && (
         <section className="flex flex-col gap-3">
@@ -106,6 +102,49 @@ export default function WorkoutsPage() {
           {recent.map(w => <WorkoutHistoryRow key={w.uuid} workout={w} />)}
         </section>
       )}
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setBrowsing(!browsing)}
+          aria-expanded={browsing}
+          className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+            <LayoutTemplate size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Need a template for workouts?</span>
+            <span className="block text-xs text-muted-foreground">
+              {fromFriends ? `${ROUTINE_TEMPLATES.length} ready-made, and ${fromFriends} shared by friends` : `${ROUTINE_TEMPLATES.length} ready-made routines to start from`}
+            </span>
+          </span>
+          <ChevronDown size={18} className={cn('shrink-0 text-muted-foreground transition-transform duration-200', browsing && 'rotate-180')} />
+        </button>
+        <Collapse open={browsing} className="flex flex-col gap-6 pt-6">
+          {friends.map(f => (
+            <section key={f.userId} className="flex flex-col gap-3">
+              <SectionHeader>From {f.name}</SectionHeader>
+              <SharedRoutines routines={f.routines} name={f.name} self={false} />
+            </section>
+          ))}
+          <section className="flex flex-col gap-3">
+            <SectionHeader>Templates</SectionHeader>
+            {templates.length === 0 ? (
+              <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">No templates in this category.</p>
+            ) : templates.map(t => (
+              <RoutineCard
+                key={t.uuid}
+                to={`/workouts/routine/${t.uuid}`}
+                name={t.name}
+                category={t.category}
+                level={t.level}
+                minutes={minutesFor(t)}
+              />
+            ))}
+          </section>
+        </Collapse>
+      </div>
 
       <StartWorkoutSheet
         open={startOpen}
