@@ -189,9 +189,10 @@ export function applyTheme(id: string | undefined | null, custom?: unknown, reme
   root.classList.toggle('dark', t.mode === 'dark')
   root.style.colorScheme = t.mode
   root.dataset.theme = t.id
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hslToHex(t.vars.background))
+  const background = hslToHex(t.vars.background)
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', background)
   document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', t.mode)
-  setSystemBarStyle(t.mode)
+  setSystemBarStyle(t.mode, background)
   if (!remember) return
   try {
     localStorage.setItem(THEME_KEY, t.id)

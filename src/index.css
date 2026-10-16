@@ -196,6 +196,12 @@
   /* The status bar's scrim is there for content scrolling under the clock: at the top of a page
      there is none, and it would be a band across the photo (Wallpaper sets data-scrolled). */
   :root[data-wallpaper]:not([data-scrolled]) .status-scrim { opacity: 0; }
+  /* Android (data-os, set before the first render): nothing is blurred behind the bars or under a
+     dialog either. Each blur re-reads everything under it on every frame of a scroll, and Android's
+     compositor has dropped whole frames (a black screen on a fast fling to the top) and drawn empty
+     boxes (see glass below) under that load. The bars keep enough of the page colour to read on. */
+  :root[data-os='android'] :is(.backdrop-blur, .backdrop-blur-sm, .backdrop-blur-xl) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  :root[data-os='android'] :is(.bg-background\/85, .bg-background\/90):not(.wallpaper-clear) { background-color: hsl(var(--background) / 0.96); }
   /* ── Card styles (Settings → Theme; features/settings/cardStyle.ts puts data-card on <html>) ──
      Every card is `bg-card`, so a style is a few rules on that class and no component knows
      about it. Left alone: dialogs and sheets; anything marked `wallpaper-solid`, which has to

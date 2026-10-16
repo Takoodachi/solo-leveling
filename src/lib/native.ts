@@ -81,6 +81,8 @@ interface SoloPlugin {
   handleBack(options: { enabled: boolean }): Promise<void>
   /** Out to the launcher, the app kept alive: Back with nowhere left to go. Since in-app Back. */
   leaveApp(): Promise<void>
+  /** The window's and the WebView's own background ("#rrggbb"), shown wherever the page isn't drawn. Since the theme-coloured background. */
+  setBackground(options: { color: string }): Promise<void>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -104,6 +106,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     setShortcuts: options => native.setShortcuts(options),
     handleBack: options => native.handleBack(options),
     leaveApp: () => native.leaveApp(),
+    setBackground: options => native.setBackground(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -196,12 +199,17 @@ export function leaveApp(): void {
   void soloPlugin().then(plugin => plugin?.leaveApp()).catch(() => {})
 }
 
-/** The Android status and navigation bars are see-through: light icons on dark themes, dark on light ones. */
-export function setSystemBarStyle(mode: 'dark' | 'light'): void {
+/**
+ * The Android status and navigation bars are see-through: light icons on dark themes, dark on light
+ * ones. `background` ("#rrggbb") also becomes the app's own colour behind the page (an APK from before
+ * that keeps its near-black).
+ */
+export function setSystemBarStyle(mode: 'dark' | 'light', background?: string): void {
   if (!isAndroidApp()) return
   void import('@capacitor/core')
     .then(({ SystemBars, SystemBarsStyle }) =>
       SystemBars.setStyle({ style: mode === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light }),
     )
     .catch(() => {}) // cosmetic only
+  if (background && soloHas('setBackground')) void soloPlugin().then(plugin => plugin?.setBackground({ color: background })).catch(() => {})
 }

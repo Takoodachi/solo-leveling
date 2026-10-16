@@ -50,6 +50,9 @@ interface Props {
 const BarcodeScanner = lazy(() => import('./BarcodeScanner'))
 
 const RECENT_WINDOW_DAYS = 14
+// A phone or tablet: no focus on the search by itself there, or the on-screen keyboard comes up on
+// opening and again after every food added (the list view remounts it), covering the recent foods
+const TOUCH = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
 const AI_FOOD_ENABLED = import.meta.env.VITE_ENABLE_AI_FOOD === 'true'
 
 function daysAgoIso(days: number): string {
@@ -432,7 +435,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   className="pl-9"
-                  autoFocus={!aiAvailable}
+                  autoFocus={!aiAvailable && !TOUCH}
                 />
               </div>
               <Button

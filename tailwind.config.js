@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
+  // hover: styles only on devices that hover; on a phone a tapped row kept its hover colour
+  future: { hoverOnlyWhenSupported: true },
   content: [
     './index.html',
     './src/**/*.{ts,tsx}',

@@ -1,15 +1,17 @@
 import { useEffect } from 'react'
+import { isAndroidApp } from '@/lib/native'
 
 /**
  * Tells CSS which part of the page the on-screen keyboard leaves in view: `--visible-top` and
  * `--visible-height` on <html> (index.css has the defaults, the whole page), which dialogs sit
- * inside (ui/dialog.tsx). The Android app shrinks the page itself for the keyboard, so nothing is
- * set there; iPhones and Chrome keep the page as it was and only shrink the visual viewport.
+ * inside (ui/dialog.tsx). The Android app shrinks the page itself for the keyboard, so this stays
+ * out of it (while the page resizes, the two disagree for a frame and a dialog was squeezed to a
+ * sliver); iPhones and Chrome keep the page as it was and only shrink the visual viewport.
  */
 export function useVisibleViewport(): void {
   useEffect(() => {
     const viewport = window.visualViewport
-    if (!viewport) return
+    if (!viewport || isAndroidApp()) return
     const style = document.documentElement.style
 
     const update = () => {
