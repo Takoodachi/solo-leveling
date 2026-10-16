@@ -2,7 +2,7 @@ import { Label } from '@/components/ui/label'
 import NumberStepper from '@/components/NumberStepper'
 import { cn } from '@/lib/utils'
 import type { Food } from '@/types'
-import { computeMacros, isQuickAdd, servingsOf, usesGrams, type AmountDraft } from '../foodAmount'
+import { computeMacros, isQuickAdd, ozLabel, ozOf, rememberUnit, servingsOf, usesOz, type AmountDraft } from '../foodAmount'
 
 interface Props {
   food: Food
@@ -10,32 +10,32 @@ interface Props {
   onChange: (draft: AmountDraft) => void
 }
 
-/** How much of a food: grams or servings, with what that comes to underneath. Used when adding and when correcting. */
+/** How much of a food: grams, ounces or servings, with what that comes to underneath. Used when adding and when correcting. */
 export default function FoodAmountFields({ food, draft, onChange }: Props) {
   const macros = computeMacros(food, servingsOf(food, draft))
 
   return (
     <>
       <div className="flex flex-col gap-2">
-        {usesGrams(food) && !isQuickAdd(food) && (
+        {usesOz(food) && (
           <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
-            {(['grams', 'servings'] as const).map(m => (
+            {(['grams', 'oz', 'servings'] as const).map(m => (
               <button
                 key={m}
                 type="button"
-                onClick={() => onChange({ ...draft, mode: m })}
+                onClick={() => { rememberUnit(m); onChange({ ...draft, mode: m }) }}
                 className={cn(
                   'px-3 py-1 rounded text-xs font-medium transition-colors',
                   draft.mode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
                 )}
               >
-                {m === 'grams' ? `${food.servingUnit}` : 'Servings'}
+                {m === 'grams' ? food.servingUnit : m === 'oz' ? ozLabel(food) : 'Servings'}
               </button>
             ))}
           </div>
         )}
 
-        <Label>{isQuickAdd(food) ? 'Calories' : draft.mode === 'grams' ? `Amount (${food.servingUnit})` : 'Servings'}</Label>
+        <Label>{isQuickAdd(food) ? 'Calories' : draft.mode === 'grams' ? `Amount (${food.servingUnit})` : draft.mode === 'oz' ? `Amount (${ozLabel(food)})` : 'Servings'}</Label>
 
         {draft.mode === 'grams' ? (
           <NumberStepper
@@ -45,6 +45,15 @@ export default function FoodAmountFields({ food, draft, onChange }: Props) {
             min={0}
             inputMode="decimal"
             placeholder={String(food.servingSize)}
+          />
+        ) : draft.mode === 'oz' ? (
+          <NumberStepper
+            value={draft.oz}
+            onChange={oz => onChange({ ...draft, oz })}
+            step={0.5}
+            min={0}
+            inputMode="decimal"
+            placeholder={String(ozOf(food, 1))}
           />
         ) : (
           <NumberStepper

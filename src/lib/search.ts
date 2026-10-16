@@ -1,6 +1,6 @@
-/** Lowercase and strip accents, so "pho" finds "Phở" and "dui ga" finds "Đùi gà". */
+/** Lowercase and strip accents and apostrophes, so "pho" finds "Phở", "dui ga" finds "Đùi gà" and "mcdonalds" finds "McDonald's". */
 export function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/['’]/g, '').toLowerCase()
 }
 
 /**
