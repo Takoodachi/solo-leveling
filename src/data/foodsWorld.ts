@@ -1,0 +1,235 @@
+import type { Food } from '@/types'
+import { f } from './foodsMore'
+
+/**
+ * Built-in foods from Japan, the US and Vietnam (October 2026), merged into BUILT_IN_FOODS.
+ *
+ * - Chain and convenience-store items (McDonald's, Chick-fil-A, Chipotle, Starbucks, Yoshinoya,
+ *   FamilyMart, Lawson…): the chains' own published nutrition, rounded; menus change, so treat
+ *   them as close, not exact. Packaged items follow their labels (fibre-heavy bars list more
+ *   carbs than their calories suggest, as the label does).
+ * - Dishes: typical restaurant or home portions; calories follow published per-portion figures
+ *   (USDA, Japan's food composition tables, Vietnamese calorie guides) and macros are estimated
+ *   from typical recipes so they add up to the calories. Portions vary a lot.
+ * - Plain ingredients: per 100 g, from USDA FoodData Central / Japan's tables.
+ *
+ * Japanese names carry the romaji, the Japanese and the English; Vietnamese ones the Vietnamese
+ * and the English. Search ignores accents and apostrophes ("mcdonalds", "gyudon", "bun bo").
+ */
+export const WORLD_FOODS: Food[] = [
+  // ── Japan: rice bowls & plates ───────────────────────────────────
+  f('food-jp-gohan',            'Gohan ご飯 (Japanese rice, 1 bowl 150 g)',          234, 3.8, 53,  0.5, 1,   'bowl'),
+  f('food-jp-gyudon',           'Gyūdon 牛丼 (beef bowl, regular)',                  635, 20,  92,  20,  1,   'bowl'),
+  f('food-jp-katsudon',         'Katsudon カツ丼 (pork cutlet & egg bowl)',          870, 35,  110, 32,  1,   'bowl'),
+  f('food-jp-oyakodon',         'Oyakodon 親子丼 (chicken & egg bowl)',              640, 30,  95,  15,  1,   'bowl'),
+  f('food-jp-unadon',           'Unadon うな丼 (grilled eel bowl)',                  720, 30,  100, 22,  1,   'bowl'),
+  f('food-jp-kaisendon',        'Kaisendon 海鮮丼 (sashimi rice bowl)',              580, 35,  85,  10,  1,   'bowl'),
+  f('food-jp-curry-rice',       'Karē raisu カレーライス (Japanese curry rice)',     740, 18,  110, 25,  1,   'plate'),
+  f('food-jp-katsu-curry',      'Katsu karē カツカレー (pork cutlet curry rice)',    1000, 35, 120, 42,  1,   'plate'),
+  f('food-jp-omurice',          'Omuraisu オムライス (omelette rice)',               740, 22,  90,  32,  1,   'plate'),
+  f('food-jp-hambagu',          'Hambāgu ハンバーグ (hamburg steak with sauce)',     450, 25,  15,  32,  1,   'piece'),
+  f('food-jp-tonkatsu',         'Tonkatsu とんかつ (pork cutlet, 150 g, no rice)',  470, 30,  18,  31,  1,   'serving'),
+  f('food-jp-makunouchi',       'Makunouchi bentō 幕の内弁当 (bento box)',           700, 25,  100, 22,  1,   'box'),
+  f('food-jp-sukiyaki',         'Sukiyaki すき焼き (1 serving, no rice)',            640, 32,  45,  36,  1,   'serving'),
+  f('food-jp-yakisoba',         'Yakisoba 焼きそば (fried noodles)',                 540, 15,  75,  20,  1,   'plate'),
+  f('food-jp-okonomiyaki',      'Okonomiyaki お好み焼き (savory pancake)',           550, 20,  55,  27,  1,   'piece'),
+
+  // ── Japan: noodles ───────────────────────────────────────────────
+  f('food-jp-ramen-tonkotsu',   'Tonkotsu rāmen 豚骨ラーメン (pork bone ramen)',     800, 30,  85,  37,  1,   'bowl'),
+  f('food-jp-ramen-shoyu',      'Shōyu rāmen 醤油ラーメン (soy sauce ramen)',        500, 22,  70,  14,  1,   'bowl'),
+  f('food-jp-ramen-miso',       'Miso rāmen 味噌ラーメン (miso ramen)',              650, 25,  80,  25,  1,   'bowl'),
+  f('food-jp-tsukemen',         'Tsukemen つけ麺 (dipping ramen)',                   750, 30,  105, 22,  1,   'bowl'),
+  f('food-jp-cup-noodle',       'Cup Noodle カップヌードル (Nissin original)',       351, 10.5, 44.5, 14.6, 1, 'cup'),
+  f('food-jp-kake-udon',        'Kake udon かけうどん (udon in broth)',              300, 9,   62,  1.5, 1,   'bowl'),
+  f('food-jp-kitsune-udon',     'Kitsune udon きつねうどん (udon with fried tofu)',  420, 13,  68,  10,  1,   'bowl'),
+  f('food-jp-tempura-udon',     'Tenpura udon 天ぷらうどん (udon with shrimp tempura)', 520, 16, 75, 16,  1,   'bowl'),
+  f('food-jp-zaru-soba',        'Zaru soba ざるそば (cold soba)',                    320, 12,  62,  2,   1,   'serving'),
+
+  // ── Japan: sushi & seafood ───────────────────────────────────────
+  f('food-jp-nigiri-salmon',    'Nigiri, salmon サーモン握り (1 piece)',             55,  3,   7,   1.7, 1,   'piece'),
+  f('food-jp-nigiri-tuna',      'Nigiri, tuna まぐろ握り (1 piece)',                 46,  4,   7,   0.2, 1,   'piece'),
+  f('food-jp-nigiri-ebi',       'Nigiri, shrimp えび握り (1 piece)',                 40,  3,   7,   0.1, 1,   'piece'),
+  f('food-jp-nigiri-tamago',    'Nigiri, egg 玉子握り (1 piece)',                    60,  2.5, 9,   1.5, 1,   'piece'),
+  f('food-jp-california-roll',  'California roll (8 pieces)',                        255, 9,   38,  7,   1,   'roll'),
+  f('food-jp-spicy-tuna-roll',  'Spicy tuna roll (8 pieces)',                        290, 13,  37,  10,  1,   'roll'),
+  f('food-jp-sashimi-salmon',   'Sashimi, salmon サーモン刺身',                      208, 20,  0,   13,  100, 'g'),
+  f('food-jp-sashimi-tuna',     'Sashimi, tuna まぐろ刺身 (lean)',                   125, 26,  0,   1.4, 100, 'g'),
+  f('food-jp-ebi-tempura',      'Ebi tenpura 海老天ぷら (shrimp tempura, 2 pieces)', 180, 9,   12,  11,  1,   'serving'),
+
+  // ── Japan: small plates & sides ──────────────────────────────────
+  f('food-jp-karaage',          'Karaage 唐揚げ (Japanese fried chicken)',           290, 18,  12,  19,  100, 'g'),
+  f('food-jp-gyoza',            'Gyōza 餃子 (pan-fried, 6 pieces)',                  300, 11,  30,  15,  1,   'serving'),
+  f('food-jp-takoyaki',         'Takoyaki たこ焼き (6 pieces)',                      260, 9,   30,  12,  1,   'serving'),
+  f('food-jp-yakitori',         'Yakitori 焼き鳥 (chicken thigh skewer, tare)',      80,  7,   3,   4.5, 1,   'skewer'),
+  f('food-jp-teriyaki-chicken', 'Teriyaki chicken 照り焼きチキン',                   200, 22,  8,   9,   100, 'g'),
+  f('food-jp-oden',             'Oden おでん (5 assorted items)',                    250, 18,  18,  11,  1,   'serving'),
+  f('food-jp-natto',            'Nattō 納豆 (1 pack, 45 g)',                         90,  7.4, 5.4, 4.5, 1,   'pack'),
+  f('food-jp-tamagoyaki',       'Tamagoyaki 卵焼き (rolled omelette, 2 slices)',     90,  6,   4,   5.5, 1,   'serving'),
+  f('food-jp-tofu-silken',      'Tofu, silken 絹ごし豆腐 (đậu hũ non)',              56,  5,   2,   3,   100, 'g'),
+  f('food-jp-salad-chicken',    'Salad chicken サラダチキン (convenience store pack)', 117, 25, 1,   1.5, 1,   'pack'),
+  f('food-jp-umeboshi',         'Umeboshi 梅干し (pickled plum, 1)',                 4,   0.1, 0.8, 0,   1,   'piece'),
+
+  // ── Japan: convenience store (konbini) ───────────────────────────
+  f('food-jp-onigiri-salmon',   'Onigiri, salmon おにぎり 鮭',                       181, 5,   37,  1.5, 1,   'piece'),
+  f('food-jp-onigiri-tuna-mayo','Onigiri, tuna mayo おにぎり ツナマヨ',              227, 5,   36,  7,   1,   'piece'),
+  f('food-jp-onigiri-ume',      'Onigiri, umeboshi おにぎり 梅',                     168, 3,   38,  0.5, 1,   'piece'),
+  f('food-jp-famichiki',        'Famichiki ファミチキ (FamilyMart)',                 252, 12.5, 15, 16,  1,   'piece'),
+  f('food-jp-karaage-kun',      'Karaage-kun からあげクン (Lawson, 5 pieces)',       220, 14.5, 8,  14.5, 1,  'pack'),
+  f('food-jp-tamago-sando',     'Tamago sando たまごサンド (egg sandwich)',          330, 11,  25,  21,  1,   'pack'),
+  f('food-jp-katsu-sando',      'Katsu sando カツサンド (pork cutlet sandwich)',     450, 18,  45,  22,  1,   'pack'),
+  f('food-jp-nikuman',          'Nikuman 肉まん (steamed pork bun)',                 240, 9,   35,  7,   1,   'piece'),
+  f('food-jp-melon-pan',        'Melon pan メロンパン',                              360, 7,   55,  12.5, 1,  'piece'),
+  f('food-jp-curry-pan',        'Karē pan カレーパン (curry bread)',                 320, 7,   32,  18,  1,   'piece'),
+  f('food-jp-shokupan',         'Shokupan 食パン (milk bread, 1 thick slice)',       158, 5.3, 28,  2.6, 1,   'slice'),
+
+  // ── Japan: sweets & snacks ───────────────────────────────────────
+  f('food-jp-mochi',            'Mochi 餅 (plain, 1 piece)',                         112, 2,   25,  0.3, 1,   'piece'),
+  f('food-jp-daifuku',          'Daifuku 大福 (red bean mochi)',                     165, 3,   37,  0.3, 1,   'piece'),
+  f('food-jp-dorayaki',         'Dorayaki どら焼き',                                 230, 5,   47,  2.5, 1,   'piece'),
+  f('food-jp-taiyaki',          'Taiyaki たい焼き',                                  220, 5,   45,  2.5, 1,   'piece'),
+  f('food-jp-senbei',           'Senbei せんべい (rice cracker, 2)',                 75,  1.5, 17,  0.2, 1,   'serving'),
+  f('food-jp-pocky',            'Pocky ポッキー (1 bag, 36 g)',                      182, 3,   24,  8,   1,   'bag'),
+
+  // ── Japan: drinks ────────────────────────────────────────────────
+  f('food-jp-pocari',           'Pocari Sweat ポカリスエット (500 ml)',              125, 0,   31,  0,   1,   'bottle'),
+  f('food-jp-calpis-water',     'Calpis Water カルピスウォーター (500 ml)',          225, 0,   55,  0,   1,   'bottle'),
+  f('food-jp-matcha-latte',     'Matcha latte 抹茶ラテ (350 ml)',                    200, 9,   28,  6,   1,   'cup'),
+  f('food-jp-beer',             'Japanese beer ビール (Asahi / Kirin / Sapporo, 350 ml)', 147, 1, 10.5, 0, 1,  'can'),
+  f('food-jp-sake',             'Sake 日本酒 (1 gō, 180 ml)',                        196, 0.5, 8.8, 0,   1,   'serving'),
+  f('food-jp-chuhai',           'Chūhai チューハイ (lemon, 9%, 350 ml)',             175, 0,   3,   0,   1,   'can'),
+
+  // ── US: fast food & chains ───────────────────────────────────────
+  f('food-us-big-mac',          'Big Mac (McDonald\'s)',                             590, 25,  46,  34,  1,   'burger'),
+  f('food-us-quarter-pounder',  'Quarter Pounder with Cheese (McDonald\'s)',         520, 30,  42,  26,  1,   'burger'),
+  f('food-us-mcd-cheeseburger', 'Cheeseburger (McDonald\'s)',                        300, 15,  32,  13,  1,   'burger'),
+  f('food-us-mcchicken',        'McChicken (McDonald\'s)',                           400, 14,  39,  21,  1,   'sandwich'),
+  f('food-us-filet-o-fish',     'Filet-O-Fish (McDonald\'s)',                        390, 16,  38,  19,  1,   'sandwich'),
+  f('food-us-mcnuggets-10',     'Chicken McNuggets, 10 pieces (McDonald\'s)',        410, 23,  26,  24,  1,   'serving'),
+  f('food-us-egg-mcmuffin',     'Egg McMuffin (McDonald\'s)',                        310, 17,  30,  13,  1,   'sandwich'),
+  f('food-us-sausage-mcmuffin', 'Sausage McMuffin with Egg (McDonald\'s)',           480, 20,  30,  31,  1,   'sandwich'),
+  f('food-us-hash-brown',       'Hash Brown (McDonald\'s)',                          140, 1,   16,  8,   1,   'piece'),
+  f('food-us-hotcakes',         'Hotcakes with butter & syrup (McDonald\'s)',        580, 9,   101, 15,  1,   'serving'),
+  f('food-us-mcflurry-oreo',    'McFlurry with Oreo, regular (McDonald\'s)',         510, 12,  80,  16,  1,   'cup'),
+  f('food-us-whopper',          'Whopper (Burger King)',                             670, 31,  51,  40,  1,   'burger'),
+  f('food-us-daves-single',     'Dave\'s Single (Wendy\'s)',                         590, 29,  39,  37,  1,   'burger'),
+  f('food-us-double-double',    'Double-Double (In-N-Out)',                          610, 34,  41,  34,  1,   'burger'),
+  f('food-us-cfa-sandwich',     'Chicken Sandwich (Chick-fil-A)',                    420, 29,  41,  18,  1,   'sandwich'),
+  f('food-us-cfa-spicy',        'Spicy Chicken Sandwich (Chick-fil-A)',              450, 28,  42,  19,  1,   'sandwich'),
+  f('food-us-cfa-nuggets-8',    'Nuggets, 8 count (Chick-fil-A)',                    250, 27,  11,  11,  1,   'serving'),
+  f('food-us-cfa-grilled-8',    'Grilled Nuggets, 8 count (Chick-fil-A)',            130, 25,  1,   3,   1,   'serving'),
+  f('food-us-cfa-waffle-fries', 'Waffle Fries, medium (Chick-fil-A)',                420, 5,   45,  24,  1,   'serving'),
+  f('food-us-cfa-sauce',        'Chick-fil-A Sauce (1 packet)',                      140, 0,   6,   13,  1,   'packet'),
+  f('food-us-chipotle-bowl',    'Chicken Burrito Bowl (Chipotle: rice, beans, salsa, cheese)', 660, 50, 68, 21, 1, 'bowl'),
+  f('food-us-chipotle-burrito', 'Chicken Burrito (Chipotle: rice, beans, salsa, cheese)', 980, 58, 118, 30, 1, 'burrito'),
+  f('food-us-chipotle-guac',    'Guacamole, side (Chipotle)',                        230, 2,   8,   22,  1,   'side'),
+  f('food-us-chipotle-chips',   'Chips (Chipotle)',                                  540, 7,   73,  25,  1,   'bag'),
+  f('food-us-crunchy-taco',     'Crunchy Taco (Taco Bell)',                          170, 8,   13,  9,   1,   'taco'),
+  f('food-us-bean-burrito',     'Bean Burrito (Taco Bell)',                          350, 13,  54,  9,   1,   'burrito'),
+  f('food-us-crunchwrap',       'Crunchwrap Supreme (Taco Bell)',                    530, 16,  71,  21,  1,   'piece'),
+  f('food-us-tb-quesadilla',    'Chicken Quesadilla (Taco Bell)',                    510, 26,  37,  27,  1,   'piece'),
+  f('food-us-orange-chicken',   'Orange Chicken (Panda Express)',                    490, 25,  51,  23,  1,   'entrée'),
+  f('food-us-broccoli-beef',    'Broccoli Beef (Panda Express)',                     150, 9,   13,  7,   1,   'entrée'),
+  f('food-us-kung-pao',         'Kung Pao Chicken (Panda Express)',                  290, 16,  14,  19,  1,   'entrée'),
+  f('food-us-panda-chow-mein',  'Chow Mein (Panda Express)',                         510, 13,  80,  20,  1,   'side'),
+  f('food-us-panda-fried-rice', 'Fried Rice (Panda Express)',                        520, 11,  85,  16,  1,   'side'),
+  f('food-us-kfc-breast',       'Fried Chicken Breast, original (KFC)',              390, 39,  11,  21,  1,   'piece'),
+  f('food-us-pepperoni-pizza',  'Pepperoni Pizza (1 slice, large)',                  300, 13,  34,  12,  1,   'slice'),
+  f('food-us-italian-bmt',      'Italian B.M.T. (Subway, 6-inch)',                   410, 20,  44,  17,  1,   'sub'),
+
+  // ── US: coffee chains ────────────────────────────────────────────
+  f('food-us-sbux-latte',       'Caffè Latte, grande 2% (Starbucks)',                190, 13,  19,  7,   1,   'cup'),
+  f('food-us-sbux-caramel-mac', 'Caramel Macchiato, grande 2% (Starbucks)',          250, 10,  35,  7,   1,   'cup'),
+  f('food-us-sbux-frapp',       'Caramel Frappuccino, grande (Starbucks)',           380, 5,   55,  16,  1,   'cup'),
+  f('food-us-sbux-psl',         'Pumpkin Spice Latte, grande 2% (Starbucks)',        390, 14,  52,  14,  1,   'cup'),
+  f('food-us-sbux-shaken-esp',  'Iced Brown Sugar Oatmilk Shaken Espresso, grande (Starbucks)', 120, 1, 20, 3, 1, 'cup'),
+  f('food-us-sbux-matcha',      'Matcha Tea Latte, grande 2% (Starbucks)',           240, 12,  34,  7,   1,   'cup'),
+
+  // ── US: home-style & diner ───────────────────────────────────────
+  f('food-us-pbj',              'Peanut Butter & Jelly Sandwich',                    400, 13,  48,  17,  1,   'sandwich'),
+  f('food-us-grilled-cheese',   'Grilled Cheese Sandwich',                           440, 15,  30,  29,  1,   'sandwich'),
+  f('food-us-blt',              'BLT Sandwich',                                      350, 14,  30,  19,  1,   'sandwich'),
+  f('food-us-club-sandwich',    'Club Sandwich',                                     590, 32,  45,  31,  1,   'sandwich'),
+  f('food-us-philly',           'Philly Cheesesteak',                                650, 40,  50,  32,  1,   'sandwich'),
+  f('food-us-pulled-pork',      'Pulled Pork Sandwich (BBQ)',                        510, 30,  50,  21,  1,   'sandwich'),
+  f('food-us-corn-dog',         'Corn Dog',                                          280, 9,   28,  15,  1,   'piece'),
+  f('food-us-buffalo-wings',    'Buffalo Wings (6, with sauce)',                     520, 40,  2,   39,  1,   'serving'),
+  f('food-us-bbq-ribs',         'BBQ Pork Ribs (with sauce)',                        290, 20,  9,   19,  100, 'g'),
+  f('food-us-meatloaf',         'Meatloaf (1 slice)',                                300, 22,  12,  18,  1,   'slice'),
+  f('food-us-chili',            'Chili con Carne (1 cup, with beans)',               290, 20,  26,  12,  1,   'cup'),
+  f('food-us-clam-chowder',     'New England Clam Chowder (1 cup)',                  200, 7,   17,  12,  1,   'cup'),
+  f('food-us-cobb-salad',       'Cobb Salad',                                        520, 35,  12,  37,  1,   'bowl'),
+  f('food-us-mashed-potatoes',  'Mashed Potatoes (1 cup, milk & butter)',            240, 4,   35,  9,   1,   'cup'),
+  f('food-us-coleslaw',         'Coleslaw (½ cup)',                                  110, 1,   12,  7,   1,   'serving'),
+  f('food-us-cornbread',        'Cornbread (1 piece)',                               190, 4,   28,  7,   1,   'piece'),
+  f('food-us-biscuit',          'Buttermilk Biscuit',                                210, 4,   26,  10,  1,   'piece'),
+  f('food-us-biscuits-gravy',   'Biscuits & Gravy (2 biscuits)',                     600, 13,  56,  36,  1,   'serving'),
+  f('food-us-ground-turkey',    'Ground Turkey (93% lean, cooked)',                  176, 23,  0,   9,   100, 'g'),
+
+  // ── US: breakfast ────────────────────────────────────────────────
+  f('food-us-breakfast-burrito','Breakfast Burrito (egg, sausage, cheese)',          520, 22,  45,  28,  1,   'burrito'),
+  f('food-us-eggs-benedict',    'Eggs Benedict (2)',                                 650, 30,  30,  45,  1,   'serving'),
+  f('food-us-french-toast',     'French Toast (2 slices)',                           380, 13,  45,  16,  1,   'serving'),
+  f('food-us-avocado-toast',    'Avocado Toast (1 slice)',                           250, 6,   24,  15,  1,   'slice'),
+  f('food-us-cheerios',         'Cheerios (1 cup, 28 g)',                            100, 3.5, 20,  2,   1,   'cup'),
+  f('food-us-pop-tart',         'Pop-Tart (frosted, 1 pastry)',                      190, 2,   35,  5,   1,   'pastry'),
+
+  // ── US: protein & snacks ─────────────────────────────────────────
+  f('food-us-core-power',       'Fairlife Core Power (26 g protein, 414 ml)',        170, 26,  8,   4.5, 1,   'bottle'),
+  f('food-us-premier-protein',  'Premier Protein Shake (325 ml)',                    160, 30,  5,   3,   1,   'bottle'),
+  f('food-us-quest-bar',        'Quest Protein Bar',                                 190, 21,  22,  8,   1,   'bar'),
+  f('food-us-clif-bar',         'Clif Bar',                                          250, 10,  44,  5,   1,   'bar'),
+  f('food-us-rxbar',            'RXBAR',                                             210, 12,  24,  9,   1,   'bar'),
+  f('food-us-kind-bar',         'KIND Bar (dark chocolate nuts & sea salt)',         180, 6,   16,  15,  1,   'bar'),
+  f('food-us-snickers',         'Snickers Bar',                                      250, 4,   33,  12,  1,   'bar'),
+  f('food-us-reeses',           'Reese\'s Peanut Butter Cups (2)',                   210, 5,   24,  13,  1,   'pack'),
+  f('food-us-doritos',          'Doritos (1 oz, 28 g)',                              150, 2,   18,  8,   1,   'serving'),
+  f('food-us-cheez-it',         'Cheez-It (30 g)',                                   150, 3,   17,  8,   1,   'serving'),
+  f('food-us-pringles',         'Pringles (28 g)',                                   150, 1,   15,  9,   1,   'serving'),
+  f('food-us-cookie',           'Chocolate Chip Cookie (1 medium, 30 g)',            140, 2,   19,  7,   1,   'cookie'),
+  f('food-us-brownie',          'Brownie (1 square)',                                240, 3,   30,  12,  1,   'piece'),
+  f('food-us-apple-pie',        'Apple Pie (1 slice)',                               410, 4,   58,  19,  1,   'slice'),
+  f('food-us-cheesecake',       'Cheesecake (New York, 1 slice)',                    400, 7,   32,  28,  1,   'slice'),
+  f('food-us-milkshake',        'Milkshake (vanilla, 470 ml)',                       560, 12,  80,  22,  1,   'cup'),
+
+  // ── US: drinks ───────────────────────────────────────────────────
+  f('food-us-lemonade',         'Lemonade (470 ml)',                                 220, 0,   58,  0,   1,   'cup'),
+  f('food-us-dr-pepper',        'Dr Pepper (355 ml can)',                            150, 0,   40,  0,   1,   'can'),
+  f('food-us-light-beer',       'Light Beer (355 ml)',                               103, 1,   6,   0,   1,   'can'),
+  f('food-us-white-wine',       'White Wine (150 ml glass)',                         120, 0,   4,   0,   1,   'glass'),
+  f('food-us-spirits',          'Spirits, 40% (44 ml shot)',                         97,  0,   0,   0,   1,   'shot'),
+
+  // ── Vietnam: more dishes ─────────────────────────────────────────
+  f('food-vn-banh-mi-xiu-mai',  'Bánh mì xíu mại (meatball bánh mì)',                520, 22,  60,  21,  1,   'sandwich'),
+  f('food-vn-banh-mi-khong',    'Bánh mì không (plain Vietnamese roll)',             220, 7,   44,  1.5, 1,   'roll'),
+  f('food-vn-pho-cuon',         'Phở cuốn (rolled pho, 3 rolls)',                    300, 15,  40,  8,   1,   'serving'),
+  f('food-vn-pho-xao',          'Phở xào (stir-fried pho noodles with beef)',        650, 28,  80,  24,  1,   'plate'),
+  f('food-vn-mi-xao-bo',        'Mì xào bò (stir-fried noodles with beef)',          650, 28,  75,  26,  1,   'plate'),
+  f('food-vn-bun-mam',          'Bún mắm (fermented fish noodle soup)',              490, 28,  60,  15,  1,   'bowl'),
+  f('food-vn-bun-ca',           'Bún cá (fish noodle soup)',                         420, 25,  58,  9,   1,   'bowl'),
+  f('food-vn-bun-bo-nam-bo',    'Bún bò Nam Bộ (beef vermicelli salad)',             550, 28,  65,  20,  1,   'bowl'),
+  f('food-vn-mien-ga',          'Miến gà (glass noodle chicken soup)',               380, 25,  50,  8,   1,   'bowl'),
+  f('food-vn-banh-canh-cua',    'Bánh canh cua (crab thick noodle soup)',            480, 25,  60,  15,  1,   'bowl'),
+  f('food-vn-chao-ga',          'Cháo gà (chicken rice porridge)',                   300, 18,  42,  6,   1,   'bowl'),
+  f('food-vn-chao-long',        'Cháo lòng (pork offal porridge)',                   400, 20,  40,  17,  1,   'bowl'),
+  f('food-vn-com-rang-dua-bo',  'Cơm rang dưa bò (fried rice, pickled greens & beef)', 700, 28, 85, 27, 1,   'plate'),
+  f('food-vn-com-van-phong',    'Cơm văn phòng (office lunch: rice, meat, veg, soup)', 640, 28, 90, 18, 1,   'tray'),
+  f('food-vn-banh-trang-tron',  'Bánh tráng trộn (rice paper salad)',                350, 10,  45,  14,  1,   'bag'),
+  f('food-vn-banh-trang-nuong', 'Bánh tráng nướng (grilled rice paper)',             300, 9,   33,  15,  1,   'piece'),
+  f('food-vn-banh-bot-loc',     'Bánh bột lọc (tapioca dumplings, 10 pcs)',          300, 9,   55,  4,   1,   'serving'),
+  f('food-vn-banh-gio',         'Bánh giò (pyramid rice dumpling)',                  350, 12,  45,  13,  1,   'piece'),
+  f('food-vn-banh-trung-thu',   'Bánh trung thu (mooncake, ¼ cake)',                 160, 3,   25,  5.5, 1,   'piece'),
+  f('food-vn-goi-ga',           'Gỏi gà (chicken cabbage salad)',                    300, 25,  15,  15,  1,   'plate'),
+  f('food-vn-dau-hu-sot-ca',    'Đậu hũ sốt cà chua (tofu in tomato sauce)',         250, 14,  12,  16,  1,   'plate'),
+  f('food-vn-trung-chien',      'Trứng chiên (fried eggs / omelette, 2 eggs)',       200, 13,  1,   16,  1,   'serving'),
+  f('food-vn-thit-luoc',        'Thịt luộc (boiled pork)',                           240, 25,  0,   15.5, 100, 'g'),
+  f('food-vn-suon-xao-chua-ngot','Sườn xào chua ngọt (sweet & sour pork ribs)',      500, 25,  25,  33,  1,   'plate'),
+  f('food-vn-canh-rau',         'Canh rau (clear vegetable soup)',                   40,  2,   5,   1.5, 1,   'bowl'),
+  f('food-vn-che-ba-mau',       'Chè ba màu (three-color dessert)',                  350, 5,   70,  6,   1,   'cup'),
+  f('food-vn-che-thai',         'Chè Thái (Thai-style fruit dessert)',               350, 3,   60,  11,  1,   'cup'),
+  f('food-vn-sua-chua',         'Sữa chua (Vietnamese yogurt, sweetened)',           100, 3.5, 15,  3,   100, 'g'),
+  f('food-vn-sua-dau-nanh',     'Sữa đậu nành (sweetened soy milk, 250 ml)',         130, 7,   17,  4,   1,   'cup'),
+  f('food-vn-tra-tac',          'Trà tắc / trà chanh (sweet kumquat or lime tea, 500 ml)', 150, 0, 38, 0, 1,  'cup'),
+  f('food-vn-ca-phe-muoi',      'Cà phê muối (salt coffee)',                         220, 4,   25,  12,  1,   'cup'),
+  f('food-vn-ca-phe-trung',     'Cà phê trứng (egg coffee)',                         250, 7,   25,  14,  1,   'cup'),
+  f('food-vn-bia',              'Bia (Vietnamese lager, 330 ml can)',                140, 1,   11,  0,   1,   'can'),
+]
