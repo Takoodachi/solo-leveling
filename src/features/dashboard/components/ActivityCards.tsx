@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Footprints, Flame } from 'lucide-react'
 import ProgressRing from '@/components/ProgressRing'
+import CountUp from '@/components/CountUp'
 import LogStepsSheet from './LogStepsSheet'
+
+const percent = (n: number) => `${Math.round(n)}%`
 
 interface StepsProps {
   date: string
@@ -20,12 +23,12 @@ export function StepsCard({ date, steps, goal }: StepsProps) {
         <div className="flex items-start justify-between">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Footprints size={20} /></span>
           <ProgressRing value={pct} size={64} stroke={4}>
-            <span className="text-sm font-medium">{Math.round(pct * 100)}%</span>
+            <span className="text-sm font-medium tabular-nums"><CountUp value={pct * 100} rise="ring" format={percent} /></span>
           </ProgressRing>
         </div>
         <div>
           <p className="font-semibold">Steps</p>
-          <p className="text-sm text-muted-foreground tabular-nums">{steps.toLocaleString()} / {goal.toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground tabular-nums"><CountUp value={steps} rise="ring" /> / {goal.toLocaleString()}</p>
         </div>
       </button>
       <LogStepsSheet open={open} onOpenChange={setOpen} date={date} />
@@ -66,7 +69,7 @@ export function CaloriesCard({ eaten, burned, target, macros, macroTargets }: Ca
       </div>
       <div>
         <p className="font-semibold">Calories</p>
-        <p className="text-sm text-muted-foreground tabular-nums">{Math.round(eaten - burned).toLocaleString()} / {target.toLocaleString()} kcal</p>
+        <p className="text-sm text-muted-foreground tabular-nums"><CountUp value={eaten - burned} rise="kcal-tile" /> / {target.toLocaleString()} kcal</p>
         {burned > 0 && <p className="text-xs text-muted-foreground tabular-nums">incl. −{burned.toLocaleString()} from steps</p>}
       </div>
     </Link>

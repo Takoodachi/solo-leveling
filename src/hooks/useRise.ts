@@ -22,6 +22,20 @@ document.addEventListener('visibilitychange', () => {
   }
 })
 
+/** How a bar rises: shared with the numbers that count up beside it (`CountUp`). */
+export const RISE = { delay: 200, duration: 1000, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+
+/**
+ * Whether `name` (a page's path and a bar's id) is in its first rise since the app was opened:
+ * true for the moments after it first shows, then false until the app is opened again.
+ */
+export function rising(name: string): boolean {
+  const now = Date.now()
+  const first = risen.get(name) ?? now
+  risen.set(name, first)
+  return now - first <= FRESH_MS && !matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 /**
  * A ref for a progress bar's fill: it fills up from nothing the first time it is shown after
  * the app is opened, and is simply there on every visit after that. The fill is the small
@@ -45,11 +59,7 @@ export function useRise(id: string, what: keyof typeof FROM = 'width') {
         el.style.transitionProperty = ''
       }, SETTLE_MS)
       const rise = () => {
-        const now = Date.now()
-        const first = risen.get(name) ?? now
-        risen.set(name, first)
-        if (now - first > FRESH_MS || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-        el.animate([FROM[what], {}], { duration: 1000, delay: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' })
+        if (rising(name)) el.animate([FROM[what], {}], { ...RISE, fill: 'backwards' })
       }
       rise()
       onScreen.add(rise)

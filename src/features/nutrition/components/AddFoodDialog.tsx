@@ -454,6 +454,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
             <div className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', 'min-h-[7.5rem] overflow-y-auto overscroll-contain')}>
               <div className="px-2 pb-2">
                 <FoodResults
+                  key={query} // a new search starts at its first page
                   foods={results}
                   meals={mealResults}
                   recent={recentMap}

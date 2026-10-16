@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Bookmark, Plus, Star } from 'lucide-react'
 import { formatKcal } from '@/lib/format'
 import type { Food } from '@/types'
@@ -21,8 +22,12 @@ interface Props {
   onToggleFavorite: (food: Food) => void
 }
 
-/** Search results in the add-food dialog: saved meals first, then foods (recent ones on top). */
+// Foods drawn at once: all ~480 took seconds to open on a phone and froze each keystroke
+const PAGE = 40
+
+/** Search results in the add-food dialog: saved meals first, then foods (recent ones on top), a page at a time. */
 export default function FoodResults({ foods, meals, recent, onSelect, onQuickAdd, onAddMeal, onToggleFavorite }: Props) {
+  const [shown, setShown] = useState(PAGE)
   if (foods.length === 0 && meals.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No foods found</p>
   }
@@ -42,7 +47,7 @@ export default function FoodResults({ foods, meals, recent, onSelect, onQuickAdd
           ))}
         </div>
       )}
-      {foods.map(food => {
+      {foods.slice(0, shown).map(food => {
         const last = recent.get(food.uuid)
         return (
           // Row, quick add and favorite star are sibling buttons (a button can't contain a button).
@@ -81,6 +86,11 @@ export default function FoodResults({ foods, meals, recent, onSelect, onQuickAdd
           </div>
         )
       })}
+      {foods.length > shown && (
+        <button type="button" onClick={() => setShown(n => n + PAGE * 2)} className="w-full rounded-xl py-3 text-sm font-semibold text-primary active:bg-accent">
+          Show more ({foods.length - shown})
+        </button>
+      )}
     </>
   )
 }
