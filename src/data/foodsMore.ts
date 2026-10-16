@@ -12,7 +12,7 @@ import type { Food } from '@/types'
  * Names carry the Vietnamese and English names; search ignores accents.
  */
 
-function f(uuid: string, name: string, kcal: number, protein: number, carbs: number, fat: number, servingSize: number, servingUnit: string): Food {
+export function f(uuid: string, name: string, kcal: number, protein: number, carbs: number, fat: number, servingSize: number, servingUnit: string): Food {
   return { uuid, name, kcalPerServing: kcal, protein, carbs, fat, servingSize, servingUnit, isCustom: false, isFavorite: false, updatedAt: 0 }
 }
 
