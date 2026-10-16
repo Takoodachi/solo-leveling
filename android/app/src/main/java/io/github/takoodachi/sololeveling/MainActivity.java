@@ -1,6 +1,7 @@
 package io.github.takoodachi.sololeveling;
 
 import android.os.Bundle;
+import android.view.View;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -16,6 +17,9 @@ public class MainActivity extends BridgeActivity {
         // No bar down the side while scrolling: the WebView draws its own, whatever the page's CSS says
         getBridge().getWebView().setVerticalScrollBarEnabled(false);
         getBridge().getWebView().setHorizontalScrollBarEnabled(false);
+        // No stretch at the ends of a scroll: the WebView applies Android's, whatever the page's CSS
+        // says, and a fast fling to the top could black the screen out for a moment
+        getBridge().getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
     }
 
     @Override

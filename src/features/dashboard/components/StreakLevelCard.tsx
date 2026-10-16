@@ -4,6 +4,7 @@ import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { clampPercent } from '@/lib/format'
 import { xpFill } from '@/features/gamification/xpFill'
 import { useRise } from '@/hooks/useRise'
+import CountUp from '@/components/CountUp'
 
 export default function StreakLevelCard() {
   const { xp, level, currentStreak } = useGamification()
@@ -23,7 +24,7 @@ export default function StreakLevelCard() {
       <div className="min-w-0">
         <div className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-1.5 font-semibold"><Star size={15} className="fill-amber-400 text-amber-500 dark:fill-amber-300 dark:text-amber-300" />Level {level}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">{xp} / {needed} XP</span>
+          <span className="text-xs text-muted-foreground tabular-nums"><CountUp value={xp} rise="xp" /> / {needed.toLocaleString()} XP</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
           <div ref={rise} className="bar-fill h-full rounded-full transition-[width] duration-700" style={xpFill(pct)} />

@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
 import Logo from '@/components/Logo'
@@ -10,6 +10,7 @@ import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
+import { useScrollMemory } from '@/hooks/useScrollMemory'
 import { useNativeLinks } from '@/hooks/useNativeLinks'
 import { useAndroidBack } from '@/hooks/useAndroidBack'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
@@ -56,12 +57,8 @@ function LaunchScreen() {
 }
 
 /** Screens scroll the document, so start each new screen at the top. */
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  // Block body: newer browsers return a Promise from scrollTo, which must not become the effect's cleanup.
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+function ScrollMemory() {
+  useScrollMemory()
   return null
 }
 
@@ -151,7 +148,7 @@ function Celebration() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
+      <ScrollMemory />
       <Wallpaper />
       <StatusBarScrim />
       <AppRoutes />

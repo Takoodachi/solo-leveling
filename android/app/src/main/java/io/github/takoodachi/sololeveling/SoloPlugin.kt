@@ -2,6 +2,7 @@ package io.github.takoodachi.sololeveling
 
 import android.content.ClipData
 import android.content.Intent
+import android.graphics.Color
 import android.util.Base64
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -27,7 +28,8 @@ import java.io.File
  * - step sync while the app is closed is switched on and off here ([StepsSync]);
  * - images go to Android's share sheet (the WebView has no Web Share API);
  * - creatine and water reminders with a log button are handed over here ([QuickLog]);
- * - Android's Back (the edge swipe or the button) goes to the site as a `back` event.
+ * - Android's Back (the edge swipe or the button) goes to the site as a `back` event;
+ * - the app's own background follows the site's theme ([setBackground]).
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
@@ -156,6 +158,25 @@ class SoloPlugin : Plugin() {
         val enabled = call.getBoolean("enabled", true) ?: true
         activity.runOnUiThread {
             back.isEnabled = enabled
+            call.resolve()
+        }
+    }
+
+    /**
+     * The colour behind the page: the window's and the WebView's own. It shows wherever the page
+     * isn't drawn for a moment (the strip the keyboard leaves as it slides away, a frame the
+     * compositor drops), and was always near-black, a flash on a light theme. Now it's the theme's.
+     */
+    @PluginMethod
+    fun setBackground(call: PluginCall) {
+        val color = try {
+            Color.parseColor(call.getString("color") ?: return call.reject("No colour"))
+        } catch (e: IllegalArgumentException) {
+            return call.reject("Not a colour")
+        }
+        activity.runOnUiThread {
+            activity.window.decorView.setBackgroundColor(color)
+            bridge.webView.setBackgroundColor(color)
             call.resolve()
         }
     }

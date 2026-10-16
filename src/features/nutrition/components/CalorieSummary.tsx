@@ -6,6 +6,7 @@ import type { CalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
 import StepCaloriesSheet from '@/features/dashboard/components/StepCaloriesSheet'
 import MacroBar from './MacroBar'
 import { useRise } from '@/hooks/useRise'
+import CountUp from '@/components/CountUp'
 
 interface Props {
   totals: DailyNutrition
@@ -24,7 +25,7 @@ export default function CalorieSummary({ totals, budget }: Props) {
     <div className="flex flex-col gap-4 rounded-3xl bg-card p-5">
       <div>
         <div className="flex items-baseline justify-between">
-          <span className="font-heading text-3xl font-bold tabular-nums">{formatKcal(net)}</span>
+          <span className="font-heading text-3xl font-bold tabular-nums"><CountUp value={net} rise="kcal" /></span>
           <span className="text-sm text-muted-foreground">/ {formatKcal(targets.kcal)} kcal</span>
         </div>
         {burn && (
