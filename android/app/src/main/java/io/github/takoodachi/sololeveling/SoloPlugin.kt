@@ -1,9 +1,11 @@
 package io.github.takoodachi.sololeveling
 
 import android.content.ClipData
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.util.Base64
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
@@ -158,6 +160,20 @@ class SoloPlugin : Plugin() {
         val enabled = call.getBoolean("enabled", true) ?: true
         activity.runOnUiThread {
             back.isEnabled = enabled
+            call.resolve()
+        }
+    }
+
+    /**
+     * Raises the keyboard for the field the page has just focused. A focus that no tap on the page
+     * led to (a reminder opening the weigh-in) leaves it down in a WebView.
+     */
+    @PluginMethod
+    fun showKeyboard(call: PluginCall) {
+        activity.runOnUiThread {
+            val view = bridge.webView
+            view.requestFocus()
+            (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, 0)
             call.resolve()
         }
     }

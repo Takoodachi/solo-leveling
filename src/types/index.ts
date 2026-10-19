@@ -228,6 +228,8 @@ export interface Routine {
   notes?: string
   exercises: RoutineExercise[]
   scheduleDays: number[] // 0 = Sunday … 6 = Saturday
+  /** A photo of the user's own behind the routine (a JPEG data URL, about 100 KB); synced, never shared. */
+  image?: string
   updatedAt: number
   syncPending?: boolean
 }

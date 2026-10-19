@@ -15,10 +15,12 @@ interface Props {
   minutes: number
   /** Extra line under the chips, e.g. scheduled days. */
   footer?: ReactNode
+  /** The routine's own photo. */
+  image?: string
   className?: string
 }
 
-export default function RoutineCard({ to, name, category, level, minutes, footer, className }: Props) {
+export default function RoutineCard({ to, name, category, level, minutes, footer, image, className }: Props) {
   const cat = CATEGORY_META[category]
   const lvl = LEVEL_META[level]
   return (
@@ -29,7 +31,7 @@ export default function RoutineCard({ to, name, category, level, minutes, footer
         className,
       )}
     >
-      <RoutineArt category={category} />
+      <RoutineArt category={category} image={image} />
       <div className="relative flex h-full flex-col gap-3">
         <Badge variant="tag" className="w-fit gap-1.5">
           <cat.Icon size={13} />

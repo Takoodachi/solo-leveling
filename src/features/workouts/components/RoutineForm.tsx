@@ -9,6 +9,8 @@ import { CATEGORIES, CATEGORY_META, LEVELS, LEVEL_META, WEEKDAY_SHORT, WEEK_ORDE
 import { useExerciseMap } from '../hooks/useExercises'
 import ExercisePickerSheet from './ExercisePickerSheet'
 import RoutineExerciseEditor from './RoutineExerciseEditor'
+import RoutinePhotoField from './RoutinePhotoField'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 /** Defaults for a newly added exercise: cardio is one 20-minute entry, timed holds 3 × 1 min, lifts 3 × 10. */
 function newRoutineExercise(ex: Exercise): RoutineExercise {
@@ -32,6 +34,7 @@ export default function RoutineForm({ initial, onSave, onDelete }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const exerciseMap = useExerciseMap()
+  useUnsavedChanges('routine', JSON.stringify(r) !== JSON.stringify(initial), 'this routine')
 
   const patch = (p: Partial<RoutineDraft>) => setR(prev => ({ ...prev, ...p }))
   const setItem = (i: number, next: RoutineExercise) => patch({ exercises: r.exercises.map((x, j) => (j === i ? next : x)) })
@@ -59,6 +62,7 @@ export default function RoutineForm({ initial, onSave, onDelete }: Props) {
         <Label htmlFor="rt-notes">Description</Label>
         <Input id="rt-notes" value={r.notes ?? ''} onChange={e => patch({ notes: e.target.value })} placeholder="Optional" />
       </div>
+      <RoutinePhotoField category={r.category} image={r.image} onChange={image => patch({ image })} />
       <div className="flex flex-col gap-2">
         <Label>Type</Label>
         <div className="flex flex-wrap gap-2">

@@ -9,7 +9,7 @@ import { parseDate, toDateStr } from '@/lib/date'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useMuscleVolume } from '../hooks/useMuscleVolume'
 import {
-  DEFAULT_RADAR, MIN_RADAR_MUSCLES, STATUS, TRAINING_LEVELS, VOLUME_MUSCLES, formatSets, landmarksOf, levelSince, statusOf, thresholdsFor,
+  DEFAULT_RADAR, MIN_RADAR_MUSCLES, OFF_CHART, STATUS, radarMax, TRAINING_LEVELS, VOLUME_MUSCLES, formatSets, landmarksOf, levelSince, statusOf, thresholdsFor,
   type TrainingLevel, type VolumeMuscle,
 } from '../volume'
 import VolumeRadar from './VolumeRadar'
@@ -105,6 +105,11 @@ export default function SetVolumeCard() {
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} /> {s.label}
           </li>
         ))}
+        {axes.some(a => a.sets > radarMax(axes.map(x => x.t))) && (
+          <li className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: OFF_CHART }} /> Past the chart’s edge
+          </li>
+        )}
       </ul>
 
       <div className="mt-3 min-h-11 rounded-2xl bg-secondary/60 px-4 py-2.5 text-center text-sm">

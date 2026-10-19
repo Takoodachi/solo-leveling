@@ -10,6 +10,7 @@ import { xpFill } from '@/features/gamification/xpFill'
 import { useStartDate } from '@/features/gamification/startDate'
 import AvatarPicker from './AvatarPicker'
 import { useRise } from '@/hooks/useRise'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import CountUp from '@/components/CountUp'
 
 export default function ProfileCard() {
@@ -20,6 +21,7 @@ export default function ProfileCard() {
   const [draft, setDraft] = useState('')
 
   const name = settings?.displayName?.trim() || email?.split('@')[0] || ''
+  useUnsavedChanges('profile-name', editing && draft.trim() !== (settings?.displayName ?? '').trim(), 'your name')
   const needed = xpForLevel(level)
   const rise = useRise('xp')
   const started = useStartDate()

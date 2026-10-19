@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { useNavigate } from 'react-router-dom'
 import { formatDistance } from 'date-fns'
 import { Cloud, CloudOff, RefreshCw, KeyRound, LogOut, LogIn } from 'lucide-react'
@@ -20,6 +21,7 @@ export default function AccountCard() {
   const [pwOpen, setPwOpen] = useState(false)
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
+  useUnsavedChanges('password', pwOpen && pw.length > 0, 'your new password')
 
   if (!isConfigured) return null
 

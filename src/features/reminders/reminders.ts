@@ -24,10 +24,10 @@ export interface ReminderDef {
 
 export const REMINDERS: ReminderDef[] = [
   { kind: 'workout', label: 'Workout', description: 'When it’s time to train', time: '17:30', title: 'Time to train', body: 'Tap to start your workout.', url: '/workouts?start=1' },
-  { kind: 'creatine', label: 'Creatine', description: 'Until you’ve ticked it off', time: '09:00', title: 'Creatine', body: 'Take it and tick it off.', url: '/home' },
+  { kind: 'creatine', label: 'Creatine', description: 'Until you’ve ticked it off', time: '09:00', title: 'Creatine', body: 'Take it and tick it off.', url: '/home#creatine' },
   { kind: 'food', label: 'Log your food', description: 'If nothing is logged by then', time: '20:00', title: 'Log today’s food', body: 'Nothing logged yet today.', url: '/nutrition?add=1' },
-  { kind: 'weight', label: 'Weigh-in', description: 'If you haven’t weighed in that day', time: '07:30', title: 'Weigh-in', body: 'Step on the scale and log it.', url: '/analytics/weight' },
-  { kind: 'water', label: 'Water', description: 'If you’re short of your goal', time: '15:00', title: 'Water check', body: 'Have a glass and log it.', url: '/home' },
+  { kind: 'weight', label: 'Weigh-in', description: 'If you haven’t weighed in that day', time: '07:30', title: 'Weigh-in', body: 'Step on the scale and log it.', url: '/analytics/weight?log=1' },
+  { kind: 'water', label: 'Water', description: 'If you’re short of your goal', time: '15:00', title: 'Water check', body: 'Have a glass and log it.', url: '/home?log=water' },
   { kind: 'recap', label: 'Weekly recap', description: 'Every Monday', time: '09:00', title: 'Your weekly recap is ready', body: 'See how last week went.', url: '/recap' },
 ]
 

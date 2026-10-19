@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
+import LeaveGuard from '@/components/LeaveGuard'
 import Logo from '@/components/Logo'
 import { lazyAhead, loadAhead } from '@/lib/lazyAhead'
 import { useAuthInit } from '@/features/auth/useAuthInit'
@@ -17,6 +18,7 @@ import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
+import { useCaffeineWatch } from '@/features/nutrition/caffeine'
 import { useCelebration } from '@/features/gamification/celebration'
 import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
@@ -81,6 +83,7 @@ function AppRoutes() {
   useHealthStepsSync(ready)
   useReminderScheduler(ready)
   useDailyQuestReward(ready)
+  useCaffeineWatch(ready)
   const needsSetup = useNeedsSetup(ready)
   useEffect(() => {
     if (ready && !needsSetup) loadAhead()
@@ -145,9 +148,9 @@ function Celebration() {
   return on ? <Suspense fallback={null}><AchievementCelebration /></Suspense> : null
 }
 
-export default function App() {
+function Root() {
   return (
-    <BrowserRouter>
+    <>
       <ScrollMemory />
       <Wallpaper />
       <StatusBarScrim />
@@ -158,6 +161,15 @@ export default function App() {
         mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
       />
       <Celebration />
-    </BrowserRouter>
+      <LeaveGuard />
+    </>
   )
+}
+
+// A data router around the app's own <Routes> (a splat route), because asking before leaving
+// unsaved changes (LeaveGuard → useBlocker) only works in one
+const router = createBrowserRouter([{ path: '*', element: <Root /> }])
+
+export default function App() {
+  return <RouterProvider router={router} />
 }

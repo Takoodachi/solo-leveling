@@ -68,6 +68,15 @@ export const LEVEL_GUIDE = [
   { label: 'Advanced', mev: '12–14', mav: '18–20+', mrv: '22–28' },
 ] as const
 
+/**
+ * The radar's edge: 20 sets, or the top of the highest sweet spot shown if that's more (so the
+ * green zone always fits). It used to stretch to the biggest week, and one 27-set muscle squeezed
+ * every other into the middle. A week past the edge sits on the rim, in `OFF_CHART` red.
+ */
+export const RADAR_CAP = 20
+export const OFF_CHART = '#ef4444'
+export const radarMax = (shown: Thresholds[]) => Math.max(RADAR_CAP, ...shown.map(t => t.mavHigh))
+
 export const STATUS: Record<VolumeStatus, { label: string; color: string }> = {
   below: { label: 'Below MEV', color: '#facc15' },
   growing: { label: 'Growing', color: '#fb923c' },

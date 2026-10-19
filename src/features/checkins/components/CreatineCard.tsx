@@ -23,6 +23,7 @@ export default function CreatineCard({ date, today }: { date: string; today: str
   return (
     <button
       type="button"
+      id="creatine" // the creatine reminder opens /home#creatine
       onClick={() => void handleTap()}
       disabled={future}
       aria-pressed={done}

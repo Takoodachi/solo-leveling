@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -23,6 +24,8 @@ export default function TargetForm() {
     resolver: zodResolver(schema),
     defaultValues: { dailyKcal: 2000, dailyProtein: 150, dailyCarbs: 200, dailyFat: 65 },
   })
+
+  useUnsavedChanges('targets', isDirty, 'your daily targets')
 
   useEffect(() => {
     if (targets) {

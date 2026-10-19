@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '@/db'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, ChevronDown, LayoutTemplate, Plus } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
@@ -42,6 +44,47 @@ export default function WorkoutsPage() {
   const templates = byCategory(ROUTINE_TEMPLATES)
   const isTab = useIsNavTab('/workouts')
   const todayRoutine = routines.find(r => r.scheduleDays.includes(new Date().getDay()))
+  // No routines of their own yet (known, not just still loading): the templates come first
+  const newcomer = useLiveQuery(() => db.routines.count(), []) === 0
+
+  const templatesButton = (
+    <div>
+      <button
+        type="button"
+        onClick={() => setBrowsing(!browsing)}
+        aria-expanded={browsing}
+        className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+          <LayoutTemplate size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Need a template for workouts?</span>
+          <span className="block text-xs text-muted-foreground">
+            {ROUTINE_TEMPLATES.length} ready-made routines to start from
+          </span>
+        </span>
+        <ChevronDown size={18} className={cn('shrink-0 text-muted-foreground transition-transform duration-200', browsing && 'rotate-180')} />
+      </button>
+      <Collapse open={browsing}>
+        <section className="flex flex-col gap-3 pt-6">
+          <SectionHeader>Templates</SectionHeader>
+          {templates.length === 0 ? (
+            <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">No templates in this category.</p>
+          ) : templates.map(t => (
+            <RoutineCard
+              key={t.uuid}
+              to={`/workouts/routine/${t.uuid}`}
+              name={t.name}
+              category={t.category}
+              level={t.level}
+              minutes={minutesFor(t)}
+            />
+          ))}
+        </section>
+      </Collapse>
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,12 +109,14 @@ export default function WorkoutsPage() {
         <Plus size={18} /> Start a workout
       </Button>
 
+      {newcomer && templatesButton}
+
       <section className="flex flex-col gap-3">
         <SectionHeader actionLabel="+ New" to="/workouts/routine/new">My routines</SectionHeader>
         {myRoutines.length === 0 ? (
           <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">
             {routines.length === 0
-              ? 'No routines yet. Build your own, or start from a template below.'
+              ? 'No routines yet. Build your own, or start from a template above.'
               : 'No routines in this category.'}
           </p>
         ) : (
@@ -84,6 +129,7 @@ export default function WorkoutsPage() {
               level={r.level}
               minutes={minutesFor(r)}
               footer={scheduleLabel(r.scheduleDays)}
+              image={r.image}
             />
           ))
         )}
@@ -96,42 +142,7 @@ export default function WorkoutsPage() {
         </section>
       )}
 
-      <div>
-        <button
-          type="button"
-          onClick={() => setBrowsing(!browsing)}
-          aria-expanded={browsing}
-          className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <LayoutTemplate size={20} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold">Need a template for workouts?</span>
-            <span className="block text-xs text-muted-foreground">
-              {ROUTINE_TEMPLATES.length} ready-made routines to start from
-            </span>
-          </span>
-          <ChevronDown size={18} className={cn('shrink-0 text-muted-foreground transition-transform duration-200', browsing && 'rotate-180')} />
-        </button>
-        <Collapse open={browsing} className="flex flex-col gap-6 pt-6">
-          <section className="flex flex-col gap-3">
-            <SectionHeader>Templates</SectionHeader>
-            {templates.length === 0 ? (
-              <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">No templates in this category.</p>
-            ) : templates.map(t => (
-              <RoutineCard
-                key={t.uuid}
-                to={`/workouts/routine/${t.uuid}`}
-                name={t.name}
-                category={t.category}
-                level={t.level}
-                minutes={minutesFor(t)}
-              />
-            ))}
-          </section>
-        </Collapse>
-      </div>
+      {!newcomer && templatesButton}
 
       <StartWorkoutSheet
         open={startOpen}
