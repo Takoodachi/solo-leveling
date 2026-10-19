@@ -83,6 +83,8 @@ interface SoloPlugin {
   leaveApp(): Promise<void>
   /** The window's and the WebView's own background ("#rrggbb"), shown wherever the page isn't drawn. Since the theme-coloured background. */
   setBackground(options: { color: string }): Promise<void>
+  /** Raises the keyboard for the focused field (a focus no tap led to leaves it down). Since the weigh-in reminder. */
+  showKeyboard(): Promise<void>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -107,6 +109,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     handleBack: options => native.handleBack(options),
     leaveApp: () => native.leaveApp(),
     setBackground: options => native.setBackground(options),
+    showKeyboard: () => native.showKeyboard(),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -197,6 +200,11 @@ export function onAndroidBack(onBack: () => void): () => void {
 /** Step out of the Android app to the launcher (Back on the first screen). */
 export function leaveApp(): void {
   void soloPlugin().then(plugin => plugin?.leaveApp()).catch(() => {})
+}
+
+/** In the Android app, raises the keyboard for the field just focused by script (an APK from before 2026-10-19 can't). */
+export function showKeyboard(): void {
+  if (soloHas('showKeyboard')) void soloPlugin().then(plugin => plugin?.showKeyboard()).catch(() => {})
 }
 
 /**

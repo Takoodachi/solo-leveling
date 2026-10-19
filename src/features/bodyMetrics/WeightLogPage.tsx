@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { parseISO, subDays } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
@@ -12,6 +13,8 @@ import { axisTick, tooltipStyle, dayLabel } from '@/features/analytics/chartStyl
 import { useBodyMetrics } from './useBodyMetrics'
 import { today, formatShortDate, toDateStr } from '@/lib/date'
 import { weightSlope, withTrend } from '@/lib/weightTrend'
+import { showKeyboard } from '@/lib/native'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 /** The pace is read over this many days up to the latest weigh-in. */
 const PACE_DAYS = 28
@@ -25,8 +28,18 @@ function pace(kgPerWeek: number): string {
 export default function WeightLogPage() {
   const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
   const [weight, setWeight] = useState('')
+  // The weigh-in reminder opens /analytics/weight?log=1: straight into the field, keyboard up
+  const [params] = useSearchParams()
+  const field = useRef<HTMLInputElement>(null)
+  const fromReminder = params.get('log') === '1'
+  useEffect(() => {
+    if (!fromReminder) return
+    field.current?.focus()
+    showKeyboard() // the Android app: a focus without a tap leaves its keyboard down
+  }, [fromReminder])
   const [date, setDate] = useState(today())
   const [saving, setSaving] = useState(false)
+  useUnsavedChanges('weigh-in', weight.trim() !== '', 'this weigh-in')
 
   async function handleSave() {
     const kg = Number(weight)
@@ -75,8 +88,10 @@ export default function WeightLogPage() {
             <DatePicker id="weight-date" value={date} onChange={setDate} max={today()} />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Weight (kg)</Label>
+            <Label htmlFor="weight-kg">Weight (kg)</Label>
             <Input
+              id="weight-kg"
+              ref={field}
               type="number"
               inputMode="decimal"
               placeholder="70.5"

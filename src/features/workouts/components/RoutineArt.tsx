@@ -7,29 +7,39 @@ interface Props {
   className?: string
   /** Darken from the left so overlaid text stays readable. */
   fade?: 'left' | 'bottom'
+  /** The routine's own photo, drawn instead of the glow. */
+  image?: string
 }
 
 /**
  * Decorative stand-in for the photos in the design: a warm category-tinted glow
  * with a large ghosted icon. Purely presentational (aria-hidden).
  */
-export default function RoutineArt({ category, className, fade = 'left' }: Props) {
+export default function RoutineArt({ category, className, fade = 'left', image }: Props) {
   const { Icon, hue } = CATEGORY_META[category]
+  // Only a picture of the device's own making (a data URL) is drawn
+  const photo = image?.startsWith('data:image/') ? image : undefined
   return (
     <div aria-hidden="true" className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}>
-      <div
-        className="absolute inset-0"
-        style={{
-          // Tinted from the card colour, so it's a dark glow on dark themes and a pastel one on light.
-          background: `radial-gradient(120% 90% at 85% 20%, hsl(${hue} 90% 45% / calc(0.55 * var(--art-glow))), transparent 60%),
-                       radial-gradient(80% 80% at 100% 100%, hsl(${hue + 12} 80% 30% / calc(0.5 * var(--art-glow))), transparent 70%),
-                       linear-gradient(135deg, hsl(var(--card)), color-mix(in oklab, hsl(var(--card)) 82%, hsl(${hue} 60% 40%)))`,
-        }}
-      />
-      <Icon
-        className="absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rotate-[-18deg] text-foreground/[0.08]"
-        strokeWidth={1.2}
-      />
+      {photo ? (
+        <img src={photo} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              // Tinted from the card colour, so it's a dark glow on dark themes and a pastel one on light.
+              background: `radial-gradient(120% 90% at 85% 20%, hsl(${hue} 90% 45% / calc(0.55 * var(--art-glow))), transparent 60%),
+                           radial-gradient(80% 80% at 100% 100%, hsl(${hue + 12} 80% 30% / calc(0.5 * var(--art-glow))), transparent 70%),
+                           linear-gradient(135deg, hsl(var(--card)), color-mix(in oklab, hsl(var(--card)) 82%, hsl(${hue} 60% 40%)))`,
+            }}
+          />
+          <Icon
+            className="absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rotate-[-18deg] text-foreground/[0.08]"
+            strokeWidth={1.2}
+          />
+        </>
+      )}
       <div
         className={cn(
           'absolute inset-0',

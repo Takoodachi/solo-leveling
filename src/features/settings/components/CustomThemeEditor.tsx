@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { ChevronDown } from 'lucide-react'
 import type { CustomTheme } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ interface Props {
 /** Settings → Theme → your own: three colours on a dark or light base. The app itself is the preview. */
 export default function CustomThemeEditor({ initial, onSave, onCancel }: Props) {
   const [draft, setDraft] = useState(initial)
+  useUnsavedChanges('custom-theme', JSON.stringify(draft) !== JSON.stringify(initial), 'your theme')
   const [open, setOpen] = useState<Part | null>('accent')
   const tokens = customTokens(draft)
   const range = CUSTOM_RANGES[draft.mode]

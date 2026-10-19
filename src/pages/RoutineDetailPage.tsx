@@ -56,7 +56,7 @@ export default function RoutineDetailPage() {
     <div className="min-h-dvh overflow-x-clip bg-background pl-safe pr-safe">
       {/* Hero */}
       <div className="relative h-72 pt-safe">
-        <RoutineArt category={routine.category} fade="bottom" />
+        <RoutineArt category={routine.category} fade="bottom" image={'image' in routine ? routine.image : undefined} />
         <div className="relative mx-auto flex max-w-md items-center justify-between px-2 pt-2">
           <button
             type="button"

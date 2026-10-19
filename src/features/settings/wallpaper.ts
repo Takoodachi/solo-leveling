@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { withImage } from '@/lib/image'
+import { shrinkPhoto } from '@/lib/image'
 import { clamp } from '@/lib/utils'
 
 /**
@@ -16,7 +16,6 @@ import { clamp } from '@/lib/utils'
 /** Enough for a phone held upright at 3×; bigger only costs memory. */
 const MAX_SIDE = 1600
 const QUALITY = 0.8
-const MAX_INPUT_BYTES = 25 * 1024 * 1024
 
 export interface WallpaperLook {
   /** 0–1: the share of the theme's background colour over the photo. */
@@ -38,25 +37,7 @@ export function cleanLook(look: Partial<WallpaperLook> | undefined): WallpaperLo
 }
 
 /** Shrink a picked image to a JPEG data URL sized for a screen. Throws a readable message on bad input. */
-export async function wallpaperFromFile(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new Error('That file isn’t an image')
-  if (file.size > MAX_INPUT_BYTES) throw new Error('That image is too large (25 MB max)')
-  try {
-    return await withImage(file, (image, width, height) => {
-      const scale = Math.min(1, MAX_SIDE / Math.max(width, height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.max(1, Math.round(width * scale))
-      canvas.height = Math.max(1, Math.round(height * scale))
-      const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('no canvas')
-      ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-      return canvas.toDataURL('image/jpeg', QUALITY)
-    })
-  } catch {
-    throw new Error('Couldn’t read that image. Try a JPEG or PNG.')
-  }
-}
+export const wallpaperFromFile = (file: File) => shrinkPhoto(file, MAX_SIDE, QUALITY)
 
 /** Put a new photo behind the app, keeping how the last one was shown. */
 export async function saveWallpaper(dataUrl: string): Promise<void> {

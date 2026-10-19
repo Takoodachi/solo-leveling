@@ -1,4 +1,4 @@
-import { STATUS, formatSets, type Thresholds, type VolumeMuscle, type VolumeStatus } from '../volume'
+import { OFF_CHART, STATUS, formatSets, radarMax, type Thresholds, type VolumeMuscle, type VolumeStatus } from '../volume'
 
 export interface RadarAxis {
   key: VolumeMuscle
@@ -23,8 +23,8 @@ const R = 102
 /** Weekly sets per muscle on a shared scale, over the MEV / MAV / MRV zones for each muscle. */
 export default function VolumeRadar({ axes, active, onActive }: Props) {
   const n = axes.length
-  // The outer edge is the highest MRV shown (or a bigger week), so nothing is wasted beyond it.
-  const max = Math.max(5, ...axes.map(a => Math.max(a.t.mrv, a.sets)))
+  // A fixed edge (see radarMax): a big week on one muscle no longer shrinks all the others
+  const max = radarMax(axes.map(a => a.t))
   const angle = (i: number) => -Math.PI / 2 + (2 * Math.PI * i) / n
   const at = (i: number, v: number, extra = 0): [number, number] => {
     const r = (R * Math.min(v, max)) / max + extra
@@ -77,7 +77,7 @@ export default function VolumeRadar({ axes, active, onActive }: Props) {
       />
       {axes.map((a, i) => {
         const [x, y] = at(i, a.sets)
-        return <circle key={a.key} cx={x} cy={y} r={a.key === active ? 6 : 4.5} fill={STATUS[a.status].color} stroke="hsl(var(--card))" strokeWidth={2} />
+        return <circle key={a.key} cx={x} cy={y} r={a.key === active ? 6 : 4.5} fill={a.sets > max ? OFF_CHART : STATUS[a.status].color} stroke="hsl(var(--card))" strokeWidth={2} />
       })}
 
       {/* Labels (also the tap targets) */}
@@ -96,7 +96,7 @@ export default function VolumeRadar({ axes, active, onActive }: Props) {
             opacity={dim ? 0.45 : 1}
           >
             <circle cx={x} cy={top + 11} r={24} fill="transparent" />
-            <text x={x} y={top + 11} textAnchor={anchor} fontSize={13.5} fontWeight={700} fill="hsl(var(--foreground))">{formatSets(a.sets)}</text>
+            <text x={x} y={top + 11} textAnchor={anchor} fontSize={13.5} fontWeight={700} fill={a.sets > max ? OFF_CHART : 'hsl(var(--foreground))'}>{formatSets(a.sets)}</text>
             <text x={x} y={top + 22.5} textAnchor={anchor} fontSize={9} fontWeight={600} letterSpacing="0.04em" fill="hsl(var(--muted-foreground))">
               {a.label.toUpperCase()}
             </text>

@@ -5,6 +5,7 @@ import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
 import RoutineForm, { type RoutineDraft } from '@/features/workouts/components/RoutineForm'
 import { useRoutineOrTemplate, saveRoutine, deleteRoutine } from '@/features/workouts/hooks/useRoutines'
+import { forgetUnsaved } from '@/hooks/useUnsavedChanges'
 
 function blankRoutine(uuid: string): RoutineDraft {
   return { uuid, name: '', category: 'strength', level: 'intermediate', exercises: [], scheduleDays: [] }
@@ -27,6 +28,7 @@ export default function RoutineEditPage() {
 
   async function handleSave(r: RoutineDraft) {
     await saveRoutine(r)
+    forgetUnsaved('routine')
     toast.success(isNew ? 'Routine created' : 'Routine saved')
     navigate(`/workouts/routine/${r.uuid}`, { replace: true })
   }
@@ -34,6 +36,7 @@ export default function RoutineEditPage() {
   async function handleDelete() {
     if (!window.confirm('Delete this routine? Past workouts stay in your history.')) return
     await deleteRoutine(initial.uuid)
+    forgetUnsaved('routine')
     toast.success('Routine deleted')
     navigate('/workouts', { replace: true })
   }
