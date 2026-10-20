@@ -12,6 +12,7 @@ import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import { useScrollMemory } from '@/hooks/useScrollMemory'
+import { useIosSwipeBack } from '@/hooks/useIosSwipeBack'
 import { useNativeLinks } from '@/hooks/useNativeLinks'
 import { useAndroidBack } from '@/hooks/useAndroidBack'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
@@ -19,6 +20,7 @@ import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
 import { useCaffeineWatch } from '@/features/nutrition/caffeine'
+import { useAchievementXpBackfill } from '@/features/gamification/useAchievementXp'
 import { useCelebration } from '@/features/gamification/celebration'
 import { useNeedsSetup } from '@/features/setup/setup'
 import Wallpaper from '@/features/settings/components/Wallpaper'
@@ -84,6 +86,7 @@ function AppRoutes() {
   useReminderScheduler(ready)
   useDailyQuestReward(ready)
   useCaffeineWatch(ready)
+  useAchievementXpBackfill(ready)
   const needsSetup = useNeedsSetup(ready)
   useEffect(() => {
     if (ready && !needsSetup) loadAhead()
@@ -149,6 +152,7 @@ function Celebration() {
 }
 
 function Root() {
+  useIosSwipeBack()
   return (
     <>
       <ScrollMemory />

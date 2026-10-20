@@ -1,9 +1,11 @@
-import { differenceInCalendarDays, parseISO } from 'date-fns'
+import { differenceInCalendarDays, parseISO, startOfWeek } from 'date-fns'
 import { db } from '@/db'
 import { setVolume } from '@/lib/workoutMath'
 import { computeRanks } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
 import { DEFAULT_STEP_GOAL, DEFAULT_WATER_GOAL_ML } from '@/features/settings/hooks/useSettings'
+import { QUICK_ADD_FOOD } from '@/data/basics'
+import { toDateStr } from '@/lib/date'
 import type { AchievementMetric } from './achievements'
 
 export type StatReader = (metric: AchievementMetric) => Promise<number>
@@ -29,14 +31,16 @@ export function achievementStats(): StatReader {
     let volumeKg = 0
     let cardioKm = 0
     let longestRunKm = 0
+    let cardioSessions = 0
     for (const s of sets) {
       if (!cardio.has(s.exerciseId)) volumeKg += setVolume(s)
       else {
+        cardioSessions += 1 // a cardio entry is one set
         cardioKm += s.distanceKm ?? 0
         if (isRunExercise(s.exerciseId)) longestRunKm = Math.max(longestRunKm, s.distanceKm ?? 0)
       }
     }
-    return { sets: sets.length, volumeT: volumeKg / 1000, exercises: ids.length, cardioKm, longestRunKm }
+    return { sets: sets.length, volumeT: volumeKg / 1000, exercises: ids.length, cardioKm, longestRunKm, cardioSessions }
   })
 
   const food = once(async () => {
@@ -54,7 +58,9 @@ export function achievementStats(): StatReader {
       run = i > 0 && differenceInCalendarDays(parseISO(date), parseISO(hit[i - 1])) === 1 ? run + 1 : 1
       proteinRun = Math.max(proteinRun, run)
     })
-    return { foodDays: byDay.size, proteinDays: hit.length, proteinRun }
+    const distinct = new Set(logs.map(l => l.foodId))
+    distinct.delete(QUICK_ADD_FOOD.uuid) // calories with no food behind them
+    return { foodDays: byDay.size, proteinDays: hit.length, proteinRun, foods: distinct.size }
   })
 
   const steps = once(async () => {
@@ -70,7 +76,19 @@ export function achievementStats(): StatReader {
     return {
       waterDays: rows.filter(c => c.key === 'water' && (c.amount ?? 0) >= goal).length,
       creatineDays: rows.filter(c => c.key === 'creatine' && c.done).length,
+      quests: rows.filter(c => c.key === 'quest' && c.done).length,
     }
+  })
+
+  /** Mon–Sun weeks with at least the weekly workout goal's workouts in them. */
+  const goalWeeks = once(async () => {
+    const goal = (await settings())?.weeklyWorkoutGoal ?? 3
+    const perWeek = new Map<string, number>()
+    for (const w of await db.workouts.toArray()) {
+      const week = toDateStr(startOfWeek(parseISO(w.date), { weekStartsOn: 1 }))
+      perWeek.set(week, (perWeek.get(week) ?? 0) + 1)
+    }
+    return [...perWeek.values()].filter(n => n >= goal).length
   })
 
   const ranks = once(() => computeRanks())
@@ -97,6 +115,11 @@ export function achievementStats(): StatReader {
     stepGoalDays: () => steps(),
     waterDays: async () => (await checkins()).waterDays,
     creatineDays: async () => (await checkins()).creatineDays,
+    cardioSessions: async () => (await training()).cardioSessions,
+    goalWeeks: () => goalWeeks(),
+    foods: async () => (await food()).foods,
+    savedMeals: () => db.savedMeals.count(),
+    quests: async () => (await checkins()).quests,
   }
   return metric => read[metric]()
 }

@@ -6,6 +6,7 @@ import type { RoutineCategory, RoutineLevel } from '@/types'
 import { cn } from '@/lib/utils'
 import { CATEGORY_META, LEVEL_META } from '../categories'
 import RoutineArt from './RoutineArt'
+import { toneStyle, usePhotoTone } from '../photoTone'
 
 interface Props {
   to: string
@@ -23,11 +24,14 @@ interface Props {
 export default function RoutineCard({ to, name, category, level, minutes, footer, image, className }: Props) {
   const cat = CATEGORY_META[category]
   const lvl = LEVEL_META[level]
+  // Text and fade in the colours that read over this photo, whatever the theme
+  const tone = usePhotoTone(image, 'left')
   return (
     <Link
       to={to}
+      style={toneStyle(tone)}
       className={cn(
-        'relative block min-h-[148px] overflow-hidden rounded-3xl bg-card p-5 transition-transform active:scale-[0.99]',
+        'relative block min-h-[148px] overflow-hidden rounded-3xl bg-card p-5 text-foreground transition-transform active:scale-[0.99]',
         className,
       )}
     >

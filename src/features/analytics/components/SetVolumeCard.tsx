@@ -13,6 +13,7 @@ import {
   type TrainingLevel, type VolumeMuscle,
 } from '../volume'
 import VolumeRadar from './VolumeRadar'
+import AfterSlide from '@/components/AfterSlide'
 import VolumeBreakdown from './VolumeBreakdown'
 import VolumeGuidelinesSheet from './VolumeGuidelinesSheet'
 import CustomizeRadarSheet from './CustomizeRadarSheet'
@@ -96,7 +97,9 @@ export default function SetVolumeCard() {
       </div>
 
       <div className="-mx-4 mt-2">
-        <VolumeRadar axes={axes} active={active} onActive={setActive} />
+        <AfterSlide className="aspect-[360/316]">
+          <VolumeRadar axes={axes} active={active} onActive={setActive} />
+        </AfterSlide>
       </div>
 
       <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -120,7 +123,7 @@ export default function SetVolumeCard() {
           </>
         ) : volume && volume.totalSets > 0 ? (
           <p className="text-muted-foreground">
-            {volume.totalSets} working sets in {volume.workouts} {volume.workouts === 1 ? 'workout' : 'workouts'}. Tap a muscle for its targets.
+            {formatSets(volume.totalSets)} working sets in {volume.workouts} {volume.workouts === 1 ? 'workout' : 'workouts'}. Tap a muscle for its targets.
           </p>
         ) : (
           <p className="text-muted-foreground">No sets logged this week yet.</p>

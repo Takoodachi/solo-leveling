@@ -125,7 +125,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       // Still the same card, and still done: nothing was unticked or moved meanwhile
       const now = s.draft?.blocks[blockIdx]
       if (!s.draft || !now || now.exercise.uuid !== id || now.collapsed || !now.sets.every(st => st.done)) return s
-      return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, collapsed: true })) }
+      // …and the next exercise still to do opens in its place
+      const next = s.draft.blocks.findIndex((b, i) => i > blockIdx && !b.sets.every(st => st.done))
+      return { draft: { ...s.draft, blocks: s.draft.blocks.map((b, i) => (i === blockIdx ? { ...b, collapsed: true } : i === next ? { ...b, collapsed: false } : b)) } }
     }), FOLD_DELAY_MS)
   },
 

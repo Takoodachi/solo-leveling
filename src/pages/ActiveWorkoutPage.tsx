@@ -5,6 +5,7 @@ import { Plus, X, Timer, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useEnterAnimation } from '@/hooks/useEnterAnimation'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
@@ -28,6 +29,7 @@ import { useRanks } from '@/features/ranks/useRanks'
 import type { Exercise } from '@/types'
 
 export default function ActiveWorkoutPage() {
+  const enter = useEnterAnimation()
   const navigate = useNavigate()
   const { draft, restored, addBlock, replaceBlock, moveBlock, rename, discard, markAllFilledDone } = useWorkoutStore()
   // Hold an exercise's name to carry its card to another place in the workout
@@ -108,130 +110,136 @@ export default function ActiveWorkoutPage() {
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-page pl-safe pr-safe">
-      {/* Header (its own safe-area padding keeps it clear of the status bar while stuck) */}
-      <div className="sticky top-0 z-30 border-b border-foreground/5 bg-background/90 pt-safe backdrop-blur-xl">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
-          <button
-            type="button"
-            onClick={() => setDiscardOpen(true)}
-            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-            aria-label={editing ? 'Discard changes' : 'Discard workout'}
-          >
-            <X size={22} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <input
-              value={draft.name}
-              onChange={e => rename(e.target.value)}
-              className="w-full truncate bg-transparent font-heading text-lg font-bold outline-none"
-              aria-label="Workout name"
-            />
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {editing ? (
-                <>
-                  <Pencil size={12} className="text-primary" />
-                  <span>Editing · {format(parseISO(editing.date), 'EEE d MMM')}</span>
-                </>
-              ) : (
-                <>
-                  <Timer size={12} className="text-primary" />
-                  <span className="tabular-nums">{elapsed.label}</span>
-                </>
-              )}
-              <span>· {doneSets}/{allSets.length} sets</span>
-            </p>
+      <div className={cn('relative', enter)}>
+        {/* Header (its own safe-area padding keeps it clear of the status bar while stuck) */}
+        <div className="sticky top-0 z-30 bg-background/90 pt-safe backdrop-blur-xl">
+          <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setDiscardOpen(true)}
+              className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+              aria-label={editing ? 'Discard changes' : 'Discard workout'}
+            >
+              <X size={22} />
+            </button>
+            <div className="min-w-0 flex-1">
+              <input
+                value={draft.name}
+                onChange={e => rename(e.target.value)}
+                className="w-full truncate bg-transparent font-heading text-lg font-bold outline-none"
+                aria-label="Workout name"
+              />
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {editing ? (
+                  <>
+                    <Pencil size={12} className="text-primary" />
+                    <span>Editing · {format(parseISO(editing.date), 'EEE d MMM')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Timer size={12} className="text-primary" />
+                    <span className="tabular-nums">{elapsed.label}</span>
+                  </>
+                )}
+                <span>· {doneSets}/{allSets.length} sets</span>
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setFinishOpen(true)} disabled={draft.blocks.length === 0}>
+              {editing ? 'Save' : 'Finish'}
+            </Button>
           </div>
-          <Button size="sm" onClick={() => setFinishOpen(true)} disabled={draft.blocks.length === 0}>
-            {editing ? 'Save' : 'Finish'}
+          {/* How far through the workout: sets ticked of all the sets in it */}
+          <div className="h-0.5 bg-foreground/5" role="progressbar" aria-label="Sets done" aria-valuenow={doneSets} aria-valuemin={0} aria-valuemax={allSets.length}>
+            <div className="h-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${allSets.length ? (doneSets / allSets.length) * 100 : 0}%` }} />
+          </div>
+        </div>
+
+        <div className="mx-auto flex max-w-md flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+8rem)] pt-4">
+          {draft.blocks.length === 0 && (
+            <div className="flex flex-col items-center gap-3 rounded-3xl bg-card px-6 py-12 text-center">
+              <p className="font-semibold">Empty workout</p>
+              <p className="text-sm text-muted-foreground">Add your first exercise to start logging sets.</p>
+            </div>
+          )}
+
+          {draft.blocks.length > 0 && (
+            <div ref={attach} className="relative flex flex-col gap-3">
+              {draft.blocks.map((block, idx) => {
+                const card = {
+                  block,
+                  // While one card is in the air they all fold to their headers, so the workout fits the screen
+                  folded: from != null,
+                  blockIdx: idx,
+                  isFirst: idx === 0,
+                  isLast: idx === draft.blocks.length - 1,
+                  onShowInfo: () => setInfo(block.exercise),
+                  onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
+                  hold: handle(idx),
+                }
+                return (
+                  <div
+                    key={`${block.exercise.uuid}-${idx}`}
+                    style={style(idx)}
+                    // The scroll margins keep a card that has just landed clear of the header and the rest timer
+                    className={cn('scroll-mb-28 scroll-mt-24 rounded-3xl', from === idx && 'wallpaper-solid bg-card shadow-2xl ring-2 ring-primary/60')}
+                  >
+                    {setModeFor(block.exercise) === 'cardio' ? (
+                      <CardioLogCard
+                        {...card}
+                        bodyKg={ranks?.bodyKg ?? undefined}
+                        runRank={ranks?.running?.rank}
+                        sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
+                      />
+                    ) : (
+                      <ExerciseLogCard {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <Button variant="secondary" size="lg" className="gap-2" onClick={() => setPickerOpen(true)}>
+            <Plus size={18} />
+            Add exercise
           </Button>
         </div>
+
+        <RestBanner
+          secondsLeft={rest.secondsLeft}
+          totalSeconds={rest.totalSeconds}
+          onAdjust={rest.addSeconds}
+          onSkip={rest.stop}
+        />
+
+        <ExercisePickerSheet open={pickerOpen} onOpenChange={setPickerOpen} onSelect={e => void handleAddExercise(e)} />
+        <ExercisePickerSheet
+          open={!!replacing}
+          onOpenChange={open => !open && setReplacing(null)}
+          onSelect={e => void handleReplace(e)}
+          title={replacing ? `Replace ${replacing.exercise.name}` : 'Replace exercise'}
+          initialCategory={replacing?.exercise.category}
+        />
+        <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
+
+        <FinishWorkoutDialog
+          open={finishOpen}
+          onOpenChange={setFinishOpen}
+          elapsedMin={editing ? editing.durationMin : Math.max(elapsedMin, cardioMin)}
+          doneSets={doneSets}
+          totalSets={allSets.length}
+          onMarkAllDone={markAllFilledDone}
+          editing={editing && { avgHeartRate: editing.avgHeartRate, notes: draft.notes }}
+          onFinish={async opts => {
+            rest.stop()
+            if (!editing) return finish(opts)
+            setLeaving(true)
+            await saveEdits(opts)
+          }}
+        />
+
+        <DiscardWorkoutDialog open={discardOpen} onOpenChange={setDiscardOpen} editing={!!editing} onDiscard={handleDiscard} />
       </div>
-
-      <div className="mx-auto flex max-w-md flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+8rem)] pt-4">
-        {draft.blocks.length === 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-card px-6 py-12 text-center">
-            <p className="font-semibold">Empty workout</p>
-            <p className="text-sm text-muted-foreground">Add your first exercise to start logging sets.</p>
-          </div>
-        )}
-
-        {draft.blocks.length > 0 && (
-          <div ref={attach} className="relative flex flex-col gap-3">
-            {draft.blocks.map((block, idx) => {
-              const card = {
-                block,
-                // While one card is in the air they all fold to their headers, so the workout fits the screen
-                folded: from != null,
-                blockIdx: idx,
-                isFirst: idx === 0,
-                isLast: idx === draft.blocks.length - 1,
-                onShowInfo: () => setInfo(block.exercise),
-                onReplace: editing ? undefined : () => setReplacing({ idx, exercise: block.exercise }),
-                hold: handle(idx),
-              }
-              return (
-                <div
-                  key={`${block.exercise.uuid}-${idx}`}
-                  style={style(idx)}
-                  // The scroll margins keep a card that has just landed clear of the header and the rest timer
-                  className={cn('scroll-mb-28 scroll-mt-24 rounded-3xl', from === idx && 'wallpaper-solid bg-card shadow-2xl ring-2 ring-primary/60')}
-                >
-                  {setModeFor(block.exercise) === 'cardio' ? (
-                    <CardioLogCard
-                      {...card}
-                      bodyKg={ranks?.bodyKg ?? undefined}
-                      runRank={ranks?.running?.rank}
-                      sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
-                    />
-                  ) : (
-                    <ExerciseLogCard {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        <Button variant="secondary" size="lg" className="gap-2" onClick={() => setPickerOpen(true)}>
-          <Plus size={18} />
-          Add exercise
-        </Button>
-      </div>
-
-      <RestBanner
-        secondsLeft={rest.secondsLeft}
-        totalSeconds={rest.totalSeconds}
-        onAdjust={rest.addSeconds}
-        onSkip={rest.stop}
-      />
-
-      <ExercisePickerSheet open={pickerOpen} onOpenChange={setPickerOpen} onSelect={e => void handleAddExercise(e)} />
-      <ExercisePickerSheet
-        open={!!replacing}
-        onOpenChange={open => !open && setReplacing(null)}
-        onSelect={e => void handleReplace(e)}
-        title={replacing ? `Replace ${replacing.exercise.name}` : 'Replace exercise'}
-        initialCategory={replacing?.exercise.category}
-      />
-      <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
-
-      <FinishWorkoutDialog
-        open={finishOpen}
-        onOpenChange={setFinishOpen}
-        elapsedMin={editing ? editing.durationMin : Math.max(elapsedMin, cardioMin)}
-        doneSets={doneSets}
-        totalSets={allSets.length}
-        onMarkAllDone={markAllFilledDone}
-        editing={editing && { avgHeartRate: editing.avgHeartRate, notes: draft.notes }}
-        onFinish={async opts => {
-          rest.stop()
-          if (!editing) return finish(opts)
-          setLeaving(true)
-          await saveEdits(opts)
-        }}
-      />
-
-      <DiscardWorkoutDialog open={discardOpen} onOpenChange={setDiscardOpen} editing={!!editing} onDiscard={handleDiscard} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useCameBack } from '@/hooks/useEnterAnimation'
 import { useNavTabs } from '@/hooks/useNavTabs'
 import { cn } from '@/lib/utils'
 import BottomNav from './BottomNav'
@@ -23,7 +24,9 @@ export default function AppShell() {
   // Slide direction comes from the previous tab (React's "store info from previous renders" pattern).
   const [nav, setNav] = useState({ idx: currentIdx, dir: 1 })
   if (nav.idx !== currentIdx) setNav({ idx: currentIdx, dir: currentIdx >= nav.idx ? 1 : -1 })
-  const dir = nav.idx !== currentIdx ? (currentIdx >= nav.idx ? 1 : -1) : nav.dir
+  // Back always comes in from the left, whichever tab it lands on
+  const back = useCameBack()
+  const dir = back ? -1 : nav.idx !== currentIdx ? (currentIdx >= nav.idx ? 1 : -1) : nav.dir
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-page text-foreground">
