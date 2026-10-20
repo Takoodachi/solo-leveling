@@ -297,7 +297,8 @@ export interface Challenge {
 
 // ── Daily check-ins ───────────────────────────────────────────────────────────
 
-export type CheckinKey = 'creatine' | 'water' | 'quest'
+/** 'achxp': the one row that marks the XP for earlier achievements as paid (lib/achievementEval.ts). */
+export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp'
 
 /**
  * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).

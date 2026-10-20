@@ -75,6 +75,8 @@ export function useActiveWorkout() {
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
         exercise,
+        // Only the first card open: a six-exercise workout was a few thousand pixels of cards not reached yet
+        collapsed: blocks.length > 0,
         restSec: cardio ? 0 : re.restSec,
         targetReps: re.reps,
         lastSets,

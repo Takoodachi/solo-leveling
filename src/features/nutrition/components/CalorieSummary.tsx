@@ -38,9 +38,9 @@ export default function CalorieSummary({ totals, budget }: Props) {
       <div className="h-2 overflow-hidden rounded-full bg-secondary">
         <div ref={rise} className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
       </div>
-      <MacroBar label="Protein" value={totals.protein} target={targets.protein} colorClass="text-primary" />
-      <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} colorClass="text-carbs" />
-      <MacroBar label="Fat" value={totals.fat} target={targets.fat} colorClass="text-fat" />
+      <MacroBar label="Protein" value={totals.protein} target={targets.protein} color="primary" />
+      <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} color="carbs" />
+      <MacroBar label="Fat" value={totals.fat} target={targets.fat} color="fat" />
       {burn && <StepCaloriesSheet open={open} onClose={() => setOpen(false)} eaten={totals.kcal} burn={burn} target={targets.kcal} />}
     </div>
   )

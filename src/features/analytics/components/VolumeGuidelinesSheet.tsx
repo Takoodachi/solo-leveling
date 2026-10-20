@@ -67,7 +67,7 @@ export default function VolumeGuidelinesSheet({ open, onOpenChange }: Props) {
 
         <div className="mt-4 flex flex-col gap-1.5 text-xs italic text-muted-foreground">
           <p>Based on Renaissance Periodization volume landmarks (Israetel et al.). * Not in RP’s tables, so these are conservative estimates.</p>
-          <p>The radar scales these by level (beginner ×0.75, advanced ×1.25). A set counts fully for its target muscles and half for the muscles that assist (front delts from pressing don’t count toward shoulders). Ranges vary between people, so use them as a guide.</p>
+          <p>The radar scales these by level (beginner ×0.75, advanced ×1.25). A set counts fully for its target muscles and half for the muscles that assist (front delts from pressing don’t count toward shoulders). A set of 1–3 reps counts as half a working set: it gives a muscle much less to grow from than one of 5 or more. Ranges vary between people, so use them as a guide.</p>
         </div>
       </SheetContent>
     </Sheet>

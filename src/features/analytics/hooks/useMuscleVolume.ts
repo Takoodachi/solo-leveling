@@ -2,13 +2,13 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { addDays, parseISO } from 'date-fns'
 import { db } from '@/db'
 import { toDateStr } from '@/lib/date'
-import { muscleShares, type VolumeMuscle } from '../volume'
+import { muscleShares, setCredit, type VolumeMuscle } from '../volume'
 
 export interface MuscleVolume {
-  /** Weekly sets per muscle (secondary muscles count half). */
+  /** Weekly working sets per muscle (secondary muscles count half, sets under 4 reps half again). */
   sets: Map<VolumeMuscle, number>
   workouts: number
-  /** Logged working sets (cardio and stretching excluded). */
+  /** Working sets logged (sets under 4 reps count half; cardio and stretching excluded). */
   totalSets: number
 }
 
@@ -25,9 +25,10 @@ export function useMuscleVolume(weekStart: string): MuscleVolume | undefined {
     let totalSets = 0
     for (const s of logged) {
       const share = shares.get(s.exerciseId)
-      if (!share?.size) continue
-      totalSets += 1
-      for (const [m, n] of share) sets.set(m, (sets.get(m) ?? 0) + n)
+      const credit = setCredit(s)
+      if (!share?.size || !credit) continue
+      totalSets += credit
+      for (const [m, n] of share) sets.set(m, (sets.get(m) ?? 0) + n * credit)
     }
     return { sets, workouts: workouts.length, totalSets }
   }, [weekStart])

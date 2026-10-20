@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AfterSlide from '@/components/AfterSlide'
 import { useSearchParams } from 'react-router-dom'
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { formatShortDate } from '@/lib/date'
@@ -18,29 +19,31 @@ export function WeeklyVolumeCard() {
         <p className="py-10 text-center text-sm text-muted-foreground">Finish a workout to see your weekly volume.</p>
       ) : (
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeks} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
-              <defs>
-                <linearGradient id="volBar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 5" />
-              <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={1} />
-              <YAxis tick={axisTick} axisLine={false} tickLine={false} width={44} tickFormatter={compactNumber} />
-              <Tooltip
-                cursor={{ fill: 'hsl(var(--accent))' }}
-                contentStyle={tooltipStyle}
-                labelFormatter={dayLabel}
-                formatter={(v, _k, item) => {
-                  const { workouts } = item.payload as { workouts: number }
-                  return [`${formatVolume(Number(v))} · ${workouts} ${workouts === 1 ? 'workout' : 'workouts'}`, 'Week']
-                }}
-              />
-              <Bar dataKey="volume" fill="url(#volBar)" radius={[8, 8, 8, 8]} maxBarSize={28} />
-            </BarChart>
-          </ResponsiveContainer>
+          <AfterSlide className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeks} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="volBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 5" />
+                <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={1} />
+                <YAxis tick={axisTick} axisLine={false} tickLine={false} width={44} tickFormatter={compactNumber} />
+                <Tooltip
+                  cursor={{ fill: 'hsl(var(--accent))' }}
+                  contentStyle={tooltipStyle}
+                  labelFormatter={dayLabel}
+                  formatter={(v, _k, item) => {
+                    const { workouts } = item.payload as { workouts: number }
+                    return [`${formatVolume(Number(v))} · ${workouts} ${workouts === 1 ? 'workout' : 'workouts'}`, 'Week']
+                  }}
+                />
+                <Bar dataKey="volume" fill="url(#volBar)" radius={[8, 8, 8, 8]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </AfterSlide>
         </div>
       )}
     </ChartCard>
@@ -63,22 +66,24 @@ export function OneRmCard() {
         <>
           <LiftPicker lifts={lifts} selectedId={exerciseId} onSelect={setPicked} />
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={(points ?? []).map(p => ({ ...p, label: formatShortDate(p.date) }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 5" />
-                <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelFormatter={dayLabel}
-                  formatter={(v, _k, item) => {
-                    const p = item.payload as { topWeight: number; topReps: number }
-                    return [`${v} kg (from ${p.topWeight}×${p.topReps})`, 'Est. 1RM']
-                  }}
-                />
-                <Line type="monotone" dataKey="est1RM" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 3, fill: 'hsl(var(--primary))' }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <AfterSlide className="h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={(points ?? []).map(p => ({ ...p, label: formatShortDate(p.date) }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 5" />
+                  <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    labelFormatter={dayLabel}
+                    formatter={(v, _k, item) => {
+                      const p = item.payload as { topWeight: number; topReps: number }
+                      return [`${v} kg (from ${p.topWeight}×${p.topReps})`, 'Est. 1RM']
+                    }}
+                  />
+                  <Line type="monotone" dataKey="est1RM" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 3, fill: 'hsl(var(--primary))' }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </AfterSlide>
           </div>
         </>
       )}

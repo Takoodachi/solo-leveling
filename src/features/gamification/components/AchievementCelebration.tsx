@@ -4,7 +4,7 @@ import { useCloseOnBack } from '@/hooks/useAndroidBack'
 import { buzz } from '@/lib/haptics'
 import { Burst, Glow, Rays, RisingChevrons } from '@/features/ranks/components/RankUpEffects'
 import { centered, type SceneTiming } from '@/features/ranks/rankUpCeremony'
-import { ACHIEVEMENT_CATEGORIES, achievementDef } from '../achievements'
+import { ACHIEVEMENT_CATEGORIES, achievementDef, achievementXp } from '../achievements'
 import { endCelebration, useCelebration } from '../celebration'
 
 // The theme's accent carries the light show; the stage is always dark, like the rank-up sequence's
@@ -80,7 +80,7 @@ export default function AchievementCelebration() {
       </motion.p>
       {category && (
         <motion.p className="relative mt-3 text-xs font-semibold uppercase tracking-widest text-zinc-500" {...rise(0.7)}>
-          {category}
+          {category} · +{achievementXp(def)} XP
         </motion.p>
       )}
       <motion.button

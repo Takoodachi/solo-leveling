@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { progressLabel } from '../achievements'
+import { achievementXp, progressLabel } from '../achievements'
 import { MAX_ACHIEVEMENT_GOALS } from '../goals'
 import type { AchievementView } from '../store'
 
@@ -28,6 +28,7 @@ export default function AchievementSheet({ open, achievement: a, value, isGoal, 
               <span className={a.unlocked ? 'text-6xl' : 'text-6xl opacity-60 grayscale'} aria-hidden="true">{a.icon}</span>
               <SheetTitle className="text-xl">{a.title}</SheetTitle>
               <SheetDescription>{a.description}</SheetDescription>
+              <p className="text-xs font-semibold text-primary">+{achievementXp(a)} XP</p>
             </SheetHeader>
             {a.unlocked ? (
               <p className="py-5 text-center text-sm font-medium">

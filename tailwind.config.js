@@ -61,10 +61,16 @@ export default {
         pop: { '0%': { transform: 'scale(0.6)' }, '60%': { transform: 'scale(1.12)' }, '100%': { transform: 'scale(1)' } },
         // Opacity only: unlike tailwindcss-animate's `animate-in`, no transform, so fixed bars inside stay pinned
         'fade-in': { from: { opacity: '0' } },
+        // A screen opened comes in from the right, one Back returns to from the left (hooks/useEnterAnimation).
+        // `left` on a relative element, not a transform: fixed bars inside stay pinned
+        'push-in': { from: { opacity: '0', left: '22%' }, to: { opacity: '1', left: '0' } },
+        'pop-in': { from: { opacity: '0', left: '-22%' }, to: { opacity: '1', left: '0' } },
       },
       animation: {
         pop: 'pop 0.35s ease-out',
         'fade-in': 'fade-in 0.22s ease-out',
+        'push-in': 'push-in 0.26s cubic-bezier(0.22, 1, 0.36, 1)',
+        'pop-in': 'pop-in 0.26s cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },
   },

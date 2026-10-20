@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import AfterSlide from '@/components/AfterSlide'
 import { ChevronRight } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 import { formatShortDate } from '@/lib/date'
@@ -29,21 +30,23 @@ export function WeightTrendCard() {
     >
       {data.length > 1 ? (
         <div className="h-36">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 6, right: 4, left: -8, bottom: 0 }}>
-              <defs>
-                <linearGradient id="wFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-              <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
-              <Tooltip contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
-              <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
-              <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <AfterSlide className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 6, right: 4, left: -8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="wFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
+                <Tooltip contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+                <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
+                <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </AfterSlide>
         </div>
       ) : (
         <p className="py-6 text-center text-sm text-muted-foreground">Log your weight a couple of times to see the trend.</p>
@@ -63,14 +66,16 @@ export function StepsCard() {
   return (
     <ChartCard id="steps" title="Steps" subtitle={logged.length ? `Avg ${avg.toLocaleString()} on logged days · last 14 days` : 'Last 14 days'}>
       <div className="h-36">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
-            <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={3} />
-            <YAxis tick={axisTick} axisLine={false} tickLine={false} width={40} tickFormatter={compactNumber} />
-            <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={v => [Number(v).toLocaleString(), 'Steps']} />
-            <Bar dataKey="steps" radius={[6, 6, 6, 6]} maxBarSize={16} fill="hsl(var(--primary))" />
-          </BarChart>
-        </ResponsiveContainer>
+        <AfterSlide className="h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
+              <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={3} />
+              <YAxis tick={axisTick} axisLine={false} tickLine={false} width={40} tickFormatter={compactNumber} />
+              <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={v => [Number(v).toLocaleString(), 'Steps']} />
+              <Bar dataKey="steps" radius={[6, 6, 6, 6]} maxBarSize={16} fill="hsl(var(--primary))" />
+            </BarChart>
+          </ResponsiveContainer>
+        </AfterSlide>
       </div>
     </ChartCard>
   )

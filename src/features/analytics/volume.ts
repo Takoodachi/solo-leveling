@@ -1,5 +1,5 @@
 import { differenceInYears } from 'date-fns'
-import type { Exercise, TrainingLevel, VolumeMuscle } from '@/types'
+import type { Exercise, TrainingLevel, VolumeMuscle, WorkoutSet } from '@/types'
 import { parseDate } from '@/lib/date'
 
 /**
@@ -127,6 +127,20 @@ const NAME_TO_MUSCLE: Record<string, VolumeMuscle> = {
   Adductors: 'adductors', Abductors: 'abductors',
   Lats: 'lats', Rhomboids: 'lats', 'Middle Back': 'lats', 'Upper Back': 'lats', Back: 'lats',
   Traps: 'traps', 'Lower Back': 'lower-back',
+}
+
+/** Fewer reps than this and a set counts as half a working set. */
+export const WORKING_REPS = 4
+
+/**
+ * How much of one working set a logged set is worth: a set of 1–3 reps (a heavy single, or one cut
+ * short) gives a muscle far less to grow from than one in the usual 5–30 range taken near failure,
+ * so it counts half, and the radar isn't read as too much training by someone who lifts heavy and
+ * low. A timed hold counts whole; a set with neither reps nor time counts for nothing.
+ */
+export function setCredit(s: Pick<WorkoutSet, 'reps' | 'duration'>): number {
+  if (s.reps != null && s.reps > 0) return s.reps < WORKING_REPS ? 0.5 : 1
+  return s.duration ? 1 : 0
 }
 
 /** Custom exercises carry only a category. */

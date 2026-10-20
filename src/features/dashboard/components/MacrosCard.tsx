@@ -25,9 +25,9 @@ export default function MacrosCard({ totals, budget }: Props) {
         )}
       </div>
       <div className="flex flex-col gap-3">
-        <MacroBar label="Protein" value={totals.protein} target={targets.protein} colorClass="text-primary" />
-        <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} colorClass="text-carbs" />
-        <MacroBar label="Fat" value={totals.fat} target={targets.fat} colorClass="text-fat" />
+        <MacroBar label="Protein" value={totals.protein} target={targets.protein} color="primary" />
+        <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} color="carbs" />
+        <MacroBar label="Fat" value={totals.fat} target={targets.fat} color="fat" />
       </div>
       {burn && <StepCaloriesSheet open={open} onClose={() => setOpen(false)} eaten={totals.kcal} burn={burn} target={targets.kcal} />}
     </div>

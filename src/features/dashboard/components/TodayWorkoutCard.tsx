@@ -8,6 +8,7 @@ import RoutineArt from '@/features/workouts/components/RoutineArt'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import { useWorkoutStore } from '@/features/workouts/store'
+import { toneStyle, usePhotoTone } from '@/features/workouts/photoTone'
 
 interface Props {
   isToday: boolean
@@ -21,6 +22,7 @@ export default function TodayWorkoutCard({ isToday, isFuture, routine, completed
   const { startFromRoutine } = useActiveWorkout()
   const minutesFor = useRoutineMinutes()
   const hasDraft = useWorkoutStore(s => !!s.draft)
+  const tone = usePhotoTone(routine?.image, 'left')
 
   if (completed.length > 0) {
     return (
@@ -54,7 +56,7 @@ export default function TodayWorkoutCard({ isToday, isFuture, routine, completed
   const cat = CATEGORY_META[routine.category]
   const lvl = LEVEL_META[routine.level]
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-card p-5">
+    <div className="relative overflow-hidden rounded-3xl bg-card p-5 text-foreground" style={toneStyle(tone)}>
       <RoutineArt category={routine.category} image={routine.image} />
       <div className="relative flex flex-col gap-3">
         <Badge variant="tag" className="w-fit gap-1.5"><cat.Icon size={13} />{isFuture ? 'Planned' : 'Today'}</Badge>
