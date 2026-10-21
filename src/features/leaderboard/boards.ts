@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { REGION_LABEL, groupOfRegion, type MuscleRegion } from '@/features/ranks/standards'
+import { REGION_LABEL, groupOfRegion, type MuscleGroup, type MuscleRegion } from '@/features/ranks/standards'
 import type { RegionRank } from '@/features/ranks/computeRanks'
 import { formatClock, formatKm } from '@/lib/cardio'
 import { rankFor, type TierKey } from '@/features/ranks/tiers'
@@ -86,6 +86,18 @@ export function regionsOf(s: LeaderboardSnapshot): RegionRank[] {
     const r = s.regions?.[key]
     return { key, label: REGION_LABEL[key], group: groupOfRegion(key), rank: r ? rankFor(r.r) : null, topLift: r?.by || null }
   })
+}
+
+// The owner's call: a back extension or a hip thrust alone shouldn't take the back or the legs on the leaderboard
+const NOT_IN_GROUP: MuscleRegion[] = ['lower-back', 'glutes']
+
+/** A muscle group's rating on the leaderboard: its best region, the lower back and glutes left out. Ranks elsewhere count them. */
+export function groupRating(s: LeaderboardSnapshot, group: MuscleGroup): number | null {
+  if (!s.regions) return s.groups?.[group] ?? null
+  const ratings = (Object.keys(s.regions) as MuscleRegion[])
+    .filter(k => groupOfRegion(k) === group && !NOT_IN_GROUP.includes(k))
+    .map(k => s.regions[k]!.r)
+  return ratings.length ? Math.max(...ratings) : null
 }
 
 export const profileLink = (e: Pick<LeaderboardEntry, 'me' | 'userId'>) => `/leaderboard/${e.me ? 'me' : e.userId}`

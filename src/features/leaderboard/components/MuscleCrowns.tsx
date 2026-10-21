@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Crown } from 'lucide-react'
 import { MUSCLE_GROUPS, type MuscleGroup } from '@/features/ranks/standards'
 import { rankFor } from '@/features/ranks/tiers'
-import { profileLink } from '../boards'
+import { groupRating, profileLink } from '../boards'
 import type { LeaderboardEntry } from '../types'
 import { ink } from '@/lib/colors'
 
@@ -13,7 +13,7 @@ const TERRITORIES: { key: Territory; label: string }[] = [
 ]
 
 const ratingOf = (e: LeaderboardEntry, key: Territory) =>
-  key === 'running' ? e.snapshot.running?.rating ?? 0 : e.snapshot.groups?.[key] ?? 0
+  key === 'running' ? e.snapshot.running?.rating ?? 0 : groupRating(e.snapshot, key) ?? 0
 
 /** Who holds the highest rank in each muscle group (and running) among friends. */
 export default function MuscleCrowns({ entries }: { entries: LeaderboardEntry[] }) {

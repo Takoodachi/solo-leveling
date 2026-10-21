@@ -1,5 +1,6 @@
 import { MUSCLE_GROUPS } from '@/features/ranks/standards'
 import { rankFor } from '@/features/ranks/tiers'
+import { groupRating } from '../boards'
 import type { LeaderboardSnapshot } from '../types'
 import { ink } from '@/lib/colors'
 
@@ -30,7 +31,7 @@ function Side({ rating, win, align }: { rating: number | null; win: boolean; ali
 export default function HeadToHead({ me, them, name }: Props) {
   const rows = [
     { key: 'overall', label: 'Overall', a: me.overall, b: them.overall },
-    ...MUSCLE_GROUPS.map(g => ({ key: g.key, label: g.label, a: me.groups?.[g.key] ?? null, b: them.groups?.[g.key] ?? null })),
+    ...MUSCLE_GROUPS.map(g => ({ key: g.key, label: g.label, a: groupRating(me, g.key), b: groupRating(them, g.key) })),
     { key: 'running', label: 'Running', a: me.running?.rating ?? null, b: them.running?.rating ?? null },
   ]
   const mine = rows.filter(r => (r.a ?? 0) > (r.b ?? 0)).length
