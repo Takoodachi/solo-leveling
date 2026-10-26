@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { holdStage } from '@/features/gamification/celebration'
 import type { RankUp } from '../computeRanks'
 import { KIND_LABEL, ceremonyKind, sceneSubject, sceneTiming } from '../rankUpCeremony'
 import { useTriplePress } from '../useTriplePress'
@@ -38,6 +39,12 @@ function Stage({ ups, onDone }: { ups: RankUp[]; onDone: () => void }) {
     const timer = setTimeout(() => (index + 1 < ups.length ? setIndex(index + 1) : finish()), seconds * 1000)
     return () => clearTimeout(timer)
   }, [index, ups.length, seconds])
+
+  // Toasts and the achievement celebration wait while it's up; let go on the next tick, since StrictMode remounts at once
+  useEffect(() => {
+    holdStage()
+    return () => holdStage(0)
+  }, [])
 
   // Nothing behind the stage should scroll while it's up
   useEffect(() => {

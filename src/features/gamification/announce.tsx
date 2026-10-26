@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { db } from '@/db'
 import type { AchievementDef } from './achievements'
-import { celebrate } from './celebration'
+import { afterStage, celebrate } from './celebration'
 import AchievementToast from './components/AchievementToast'
 
 /**
@@ -12,13 +12,13 @@ export async function announceAchievements(unlocked: AchievementDef[]): Promise<
   if (unlocked.length === 0) return
   if (unlocked.length > 3) {
     const names = unlocked.slice(0, 3).map(a => a.title).join(', ')
-    toast.success(`${unlocked.length} achievements unlocked`, { icon: '🏅', description: `${names} and ${unlocked.length - 3} more. They’re on your Profile.` })
+    afterStage(() => toast.success(`${unlocked.length} achievements unlocked`, { icon: '🏅', description: `${names} and ${unlocked.length - 3} more. They’re on your Profile.` }))
     return
   }
   const goals = new Set((await db.settings.get(1))?.achievementGoals ?? [])
   for (const a of unlocked) {
     const goal = goals.has(a.key)
-    toast.custom(id => (
+    afterStage(() => toast.custom(id => (
       <AchievementToast
         def={a}
         goal={goal}
@@ -27,6 +27,6 @@ export async function announceAchievements(unlocked: AchievementDef[]): Promise<
           celebrate(a.key, goal)
         }}
       />
-    ), { duration: 6000 })
+    ), { duration: 6000 }))
   }
 }

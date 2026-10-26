@@ -1,14 +1,17 @@
 import { Toaster as Sonner } from "sonner"
 import { useActiveTheme } from "@/features/settings/hooks/useTheme"
+import { useStageOn } from "@/features/gamification/celebration"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { mode } = useActiveTheme()
+  // Toasts already up when the rank-up sequence opens stay out of sight under it (new ones wait: afterStage)
+  const stage = useStageOn()
   return (
     <Sonner
       theme={mode}
-      className="toaster group"
+      className={stage ? "toaster group invisible" : "toaster group"}
       toastOptions={{
         classNames: {
           // pointer-events-auto: an open dialog switches them off for everything outside it
