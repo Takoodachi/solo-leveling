@@ -10,9 +10,11 @@ import { updateStreak } from '@/lib/streak'
 import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
+import { afterStage, holdStage } from '@/features/gamification/celebration'
 import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
 import { rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
+import { playsIntro } from '@/features/ranks/useRankUpIntro'
 import { useWorkoutStore } from '../store'
 import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { weightKg, weightText } from '../units'
@@ -164,6 +166,8 @@ export function useActiveWorkout() {
     const saved = await getWorkoutWithSets(workoutUuid)
     const newBests = saved ? await findNewBests(saved) : []
     const rankUps = saved ? await findRankUps(saved) : []
+    // The summary opens with the rank-up sequence: the toasts below wait for it (or 5 s, if it never opens)
+    if (playsIntro(rankUps)) holdStage(5000)
 
     if (day === today()) await updateStreak() // a day that has passed can't be added to the streak
     const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
@@ -172,7 +176,7 @@ export function useActiveWorkout() {
     const achievements = await evaluateAchievements()
     requestSync()
 
-    if (xpResult?.leveledUp) toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' })
+    if (xpResult?.leveledUp) afterStage(() => toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' }))
     await announceAchievements(achievements)
 
     const result: FinishResult = { celebrate: true, xp, newBests, rankUps }

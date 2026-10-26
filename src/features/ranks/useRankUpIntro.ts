@@ -15,13 +15,16 @@ function seen(workoutId: string): boolean {
   }
 }
 
+/** Whether a workout just finished with these rank-ups opens its summary with the sequence. */
+export const playsIntro = (ups: RankUp[]) => !reducedMotion() && ceremonyQueue(ups).length > 0
+
 /**
  * The rank-up scenes to open a just-finished workout's summary with (null = none): played once
  * per workout, and not at all when the device asks for reduced motion (the summary still lists them).
  */
 export function useRankUpIntro(workoutId: string | undefined, ups: RankUp[] | undefined): { intro: RankUp[] | null; endIntro: () => void } {
   const [intro, setIntro] = useState<RankUp[] | null>(() => {
-    if (!workoutId || !ups?.length || reducedMotion() || seen(workoutId)) return null
+    if (!workoutId || !ups?.length || !playsIntro(ups) || seen(workoutId)) return null
     return ceremonyQueue(ups)
   })
 

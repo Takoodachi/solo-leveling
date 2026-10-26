@@ -5,8 +5,9 @@ import { achievementStats } from '@/features/gamification/achievementStats'
 import { grantXp, type GrantXpResult } from '@/lib/xp'
 import { requestSync } from '@/lib/sync'
 import { today } from '@/lib/date'
+import { afterStage } from '@/features/gamification/celebration'
 
-const levelUp = (r: GrantXpResult | null) => r?.leveledUp && toast.success(`Level up! You're now level ${r.newLevel}`, { icon: '⭐' })
+const levelUp = (r: GrantXpResult | null) => r?.leveledUp && afterStage(() => toast.success(`Level up! You're now level ${r.newLevel}`, { icon: '⭐' }))
 
 /**
  * Scan all achievement definitions, unlock any newly-passing ones, pay their XP, and return
