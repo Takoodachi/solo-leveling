@@ -170,6 +170,23 @@ function fromRemote(row: Record<string, unknown>): Record<string, unknown> {
   return out
 }
 
+/**
+ * Sends rows in one request. One value the server can't take (a decimal in a whole-number column)
+ * refuses the whole request, so then they go one at a time: the rest arrive and only that row
+ * stays waiting. Returns the first refusal, if any.
+ */
+export async function sendEachOnRefusal<T>(rows: T[], send: (rows: T[]) => Promise<Error | null>): Promise<Error | null> {
+  const error = await send(rows)
+  if (!error || rows.length === 1 || NETWORK_ERROR.test(error.message)) return error
+  let first: Error | null = null
+  for (const row of rows) {
+    const e = await send([row])
+    if (e && NETWORK_ERROR.test(e.message)) return e
+    first ??= e
+  }
+  return first
+}
+
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = []
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
@@ -274,12 +291,12 @@ class SyncService {
       .toArray()
     if (pending.length === 0) return
 
-    for (const part of chunk(pending, PUSH_CHUNK)) {
+    const send = async (part: SyncRow[]): Promise<Error | null> => {
       // deleted: false, because a row here is alive: one deleted and then written again under the
       // same id (a weigh-in's is its date) would otherwise stay deleted on the server
       const records = part.map(r => ({ ...toRemote(r as Record<string, unknown>, spec.columns, userId), deleted: false }))
       const { error } = await sb.from(spec.remote).upsert(records, { onConflict: 'user_id,uuid' })
-      if (error) throw error
+      if (error) return new Error(error.message)
 
       // Clear the flag only on rows that weren't edited again while we pushed.
       await db.transaction('rw', table, async () => {
@@ -287,6 +304,11 @@ class SyncService {
         const done = current.filter((c, i): c is SyncRow => !!c && c.syncPending === true && c.updatedAt === part[i].updatedAt)
         if (done.length > 0) await table.bulkPut(done.map(c => ({ ...c, syncPending: false })))
       })
+      return null
+    }
+    for (const part of chunk(pending, PUSH_CHUNK)) {
+      const error = await sendEachOnRefusal(part, send)
+      if (error) throw error
     }
   }
 
