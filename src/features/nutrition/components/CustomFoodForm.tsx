@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus } from 'lucide-react'
@@ -12,6 +12,8 @@ import { macrosFromIngredients, totalGrams } from '@/lib/macroCalc'
 import IngredientRow from './IngredientRow'
 import IngredientPicker from './IngredientPicker'
 import type { Food, FoodIngredient } from '@/types'
+import { cn } from '@/lib/utils'
+import { normalUnit } from '../foodAmount'
 
 const directSchema = z.object({
   name:           z.string().min(1, 'Name is required'),
@@ -33,6 +35,8 @@ interface Props {
 }
 
 // A macro left blank is none of it (only the name and the calories have to be given)
+// One tap for the usual units; any other can be typed ("piece", "slice"). In oz or fl oz the food logs in ounces and grams alike
+const QUICK_UNITS = ['g', 'oz', 'ml', 'fl oz', 'serving']
 const blankIsZero = (v: string) => (v === '' ? 0 : Number(v))
 const NUMBERS = [['kcalPerServing', 'Calories'], ['protein', 'Protein (g)'], ['carbs', 'Carbs (g)'], ['fat', 'Fat (g)']] as const
 
@@ -66,13 +70,15 @@ function DirectForm({
 }: Required<Props> & {
   addCustomFood: ReturnType<typeof useFoods>['addCustomFood']
 }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<DirectValues>({
+  const { register, handleSubmit, setValue, control, formState: { errors, isSubmitting } } = useForm<DirectValues>({
     resolver: zodResolver(directSchema),
     defaultValues: { name: initialName, servingSize: 100, servingUnit: 'g' },
   })
 
+  const unit = normalUnit(useWatch({ control, name: 'servingUnit' }) ?? '')
+
   async function onSubmit(data: DirectValues) {
-    onSuccess(await addCustomFood({ ...data, isFavorite: false }))
+    onSuccess(await addCustomFood({ ...data, servingUnit: normalUnit(data.servingUnit), isFavorite: false }))
   }
 
   return (
@@ -107,9 +113,25 @@ function DirectForm({
         </div>
         <div className="flex flex-col gap-1">
           <Label>Unit</Label>
-          <Input {...register('servingUnit')} placeholder="g / ml / piece" />
+          <Input {...register('servingUnit')} placeholder="g / oz / piece" />
           {errors.servingUnit && <p className="text-xs text-destructive">{errors.servingUnit.message}</p>}
         </div>
+      </div>
+      <div className="-mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Unit">
+        {QUICK_UNITS.map(u => (
+          <button
+            key={u}
+            type="button"
+            aria-pressed={unit === u}
+            onClick={() => setValue('servingUnit', u, { shouldValidate: true })}
+            className={cn(
+              'h-8 rounded-full px-3 text-xs font-medium transition-colors',
+              unit === u ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground',
+            )}
+          >
+            {u}
+          </button>
+        ))}
       </div>
 
       <div className="flex gap-2 mt-1">
