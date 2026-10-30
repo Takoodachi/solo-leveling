@@ -7,7 +7,7 @@ import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
 import { checkDailyTargetsAndGrant } from '@/lib/dailyTargetXp'
 import type { Food, FoodLog, FoodLogWithFood, MealType } from '@/types'
-import { isQuickAdd, ozLabel, ozOf, preferredUnit, usesGrams, usesOz } from './foodAmount'
+import { isQuickAdd, metricLabel, metricOf, ozLabel, ozOf, unitFor, usesGrams } from './foodAmount'
 
 export type NewFoodLog = Pick<FoodLog, 'date' | 'foodId' | 'servings' | 'mealType'>
 export interface MealItem { foodId: string; servings: number }
@@ -104,8 +104,7 @@ export function itemCount(n: number): string {
 /** "150 g" (or "5.3 oz", if ounces were picked last) or "2 × 1 slice". */
 export function amountLabel(food: Food, servings: number): string {
   if (isQuickAdd(food)) return 'Calories only'
-  if (usesOz(food) && preferredUnit() === 'oz') return `${ozOf(food, servings)} ${ozLabel(food)}`
-  return usesGrams(food)
-    ? `${Math.round(servings * food.servingSize)} ${food.servingUnit}`
-    : `${Math.round(servings * 100) / 100} × ${food.servingSize} ${food.servingUnit}`
+  // A portion food (a bowl) reads as servings even where its weight is known
+  if (!usesGrams(food)) return `${Math.round(servings * 100) / 100} × ${food.servingSize} ${food.servingUnit}`
+  return unitFor(food) === 'oz' ? `${ozOf(food, servings)} ${ozLabel(food)}` : `${metricOf(food, servings)} ${metricLabel(food)}`
 }

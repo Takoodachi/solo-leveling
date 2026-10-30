@@ -14,6 +14,9 @@ export interface Food {
   fat: number // g
   servingSize: number
   servingUnit: string
+  /** What one serving weighs (g) or, for a drink, holds (ml), for a built-in measured in a portion such as a bowl, so it can be logged in grams and ounces. From the catalog only, never synced. */
+  servingGrams?: number
+  servingMl?: number
   isCustom: boolean
   isFavorite: boolean
   ingredients?: FoodIngredient[]

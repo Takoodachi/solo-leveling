@@ -2,7 +2,7 @@ import { Label } from '@/components/ui/label'
 import NumberStepper from '@/components/NumberStepper'
 import { cn } from '@/lib/utils'
 import type { Food } from '@/types'
-import { computeMacros, isQuickAdd, ozLabel, ozOf, rememberUnit, servingsOf, usesOz, type AmountDraft } from '../foodAmount'
+import { computeMacros, isQuickAdd, metricLabel, metricOf, ozLabel, ozOf, rememberUnit, servingsOf, usesGrams, usesOz, type AmountDraft } from '../foodAmount'
 
 interface Props {
   food: Food
@@ -13,13 +13,15 @@ interface Props {
 /** How much of a food: grams, ounces or servings, with what that comes to underneath. Used when adding and when correcting. */
 export default function FoodAmountFields({ food, draft, onChange }: Props) {
   const macros = computeMacros(food, servingsOf(food, draft))
+  // A portion food (a bowl) offers servings first, then its weight
+  const modes = usesGrams(food) ? (['grams', 'oz', 'servings'] as const) : (['servings', 'grams', 'oz'] as const)
 
   return (
     <>
       <div className="flex flex-col gap-2">
         {usesOz(food) && (
           <div className="flex gap-1 p-0.5 bg-muted rounded-md w-fit">
-            {(['grams', 'oz', 'servings'] as const).map(m => (
+            {modes.map(m => (
               <button
                 key={m}
                 type="button"
@@ -29,13 +31,13 @@ export default function FoodAmountFields({ food, draft, onChange }: Props) {
                   draft.mode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
                 )}
               >
-                {m === 'grams' ? food.servingUnit : m === 'oz' ? ozLabel(food) : 'Servings'}
+                {m === 'grams' ? metricLabel(food) : m === 'oz' ? ozLabel(food) : 'Servings'}
               </button>
             ))}
           </div>
         )}
 
-        <Label>{isQuickAdd(food) ? 'Calories' : draft.mode === 'grams' ? `Amount (${food.servingUnit})` : draft.mode === 'oz' ? `Amount (${ozLabel(food)})` : 'Servings'}</Label>
+        <Label>{isQuickAdd(food) ? 'Calories' : draft.mode === 'grams' ? `Amount (${metricLabel(food)})` : draft.mode === 'oz' ? `Amount (${ozLabel(food)})` : 'Servings'}</Label>
 
         {draft.mode === 'grams' ? (
           <NumberStepper
@@ -44,7 +46,7 @@ export default function FoodAmountFields({ food, draft, onChange }: Props) {
             step={10}
             min={0}
             inputMode="decimal"
-            placeholder={String(food.servingSize)}
+            placeholder={String(metricOf(food, 1))}
           />
         ) : draft.mode === 'oz' ? (
           <NumberStepper

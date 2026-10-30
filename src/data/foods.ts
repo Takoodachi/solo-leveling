@@ -2,6 +2,7 @@ import type { Food } from '@/types'
 import { QUICK_ADD_FOOD } from './basics'
 import { MORE_FOODS } from './foodsMore'
 import { WORLD_FOODS } from './foodsWorld'
+import { withServingMeasure } from './servingMeasures'
 
 const NOW = 0
 
@@ -163,4 +164,4 @@ export const BUILT_IN_FOODS: Food[] = [
   { uuid: 'food-scrambled-eggs',    name: 'Scrambled Eggs (2 eggs)',     kcalPerServing: 200, protein: 14,   carbs: 1.8,  fat: 15,   servingSize: 120, servingUnit: 'g',    isCustom: false, isFavorite: false, updatedAt: NOW },
   ...MORE_FOODS,
   ...WORLD_FOODS,
-]
+].map(withServingMeasure)
