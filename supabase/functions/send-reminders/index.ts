@@ -28,7 +28,7 @@ interface Message {
 
 const publicKey = Deno.env.get('VAPID_PUBLIC_KEY')
 const privateKey = Deno.env.get('VAPID_PRIVATE_KEY')
-const subject = Deno.env.get('VAPID_SUBJECT') ?? 'https://solo-leveling.luongdtran06.workers.dev'
+const subject = Deno.env.get('VAPID_SUBJECT') ?? 'https://solo-leveling.takoodachi.workers.dev'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
