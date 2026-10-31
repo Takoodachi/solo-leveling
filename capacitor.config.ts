@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
   // Bundled into the APK but not loaded while server.url is set
   webDir: 'dist',
   server: {
-    url: devUrl ?? 'https://solo-leveling.luongdtran06.workers.dev',
+    url: devUrl ?? 'https://solo-leveling.takoodachi.workers.dev',
     cleartext: devUrl?.startsWith('http://') ?? false,
   },
   android: {
