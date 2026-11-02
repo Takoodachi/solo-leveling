@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { subDays } from 'date-fns'
-import { Search, ScanLine, Sparkles, Loader2, Check, WifiOff } from 'lucide-react'
+import { Search, ScanLine, Sparkles, Loader2, Check, WifiOff, UtensilsCrossed } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/db'
 import {
@@ -28,6 +28,8 @@ import CustomFoodForm from './CustomFoodForm'
 import AiFoodConfirm, { type AiParsedFood, type ConfirmedFood } from './AiFoodConfirm'
 import FoodResults, { type RecentUse } from './FoodResults'
 import OnlineFoodResults from './OnlineFoodResults'
+import CafeteriaMenu from './CafeteriaMenu'
+import { cafeteriaAvailable } from '../cafeteria'
 import QuickAddCalories from './QuickAddCalories'
 import FoodAmountFields from './FoodAmountFields'
 import { amountDraft, servingsOf, EMPTY_AMOUNT, type AmountDraft } from '../foodAmount'
@@ -73,6 +75,8 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const [showCustom, setShowCustom] = useState(false)
   const [showQuick, setShowQuick] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  // The school cafeteria's menu in place of the food list (Android app only)
+  const [showCafe, setShowCafe] = useState(false)
   const [aiText, setAiText] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
@@ -172,6 +176,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     setShowCustom(false)
     setShowQuick(false)
     setShowScanner(false)
+    setShowCafe(false)
     setAiText('')
     setAiLoading(false)
     setAiResult(null)
@@ -431,7 +436,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search foods…"
+                  placeholder={showCafe ? 'Search the menu…' : 'Search foods…'}
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   className="pl-9"
@@ -453,8 +458,23 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   </span>
                 )}
               </Button>
+              {cafeteriaAvailable() && (
+                <Button
+                  type="button"
+                  variant={showCafe ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setShowCafe(v => !v)}
+                  aria-label="Cafeteria menu"
+                  aria-pressed={showCafe}
+                >
+                  <UtensilsCrossed size={18} />
+                </Button>
+              )}
             </div>
             <div className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', 'min-h-[7.5rem] overflow-y-auto overscroll-contain')}>
+              {showCafe ? (
+                <CafeteriaMenu date={date} mealType={into} query={query} onPick={handleFoodSelect} />
+              ) : (
               <div className="px-2 pb-2">
                 <FoodResults
                   key={query} // a new search starts at its first page
@@ -477,6 +497,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   />
                 )}
               </div>
+              )}
             </div>
             {added.length > 0 && (
               <div className="mx-4 mb-2 flex shrink-0 items-center gap-2 rounded-2xl bg-primary/10 py-1.5 pl-3 pr-1.5">
