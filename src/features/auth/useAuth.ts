@@ -1,7 +1,6 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { syncService, clearSyncCursors } from '@/lib/sync'
 import { wipeLocalData } from '@/db/seed'
-import { grantWeeklyStreakFreeze } from '@/lib/streak'
 import { useAuthStore } from './authStore'
 import { LOCAL_OWNER_KEY } from './useAuthInit'
 import { unsubscribePush } from '@/features/reminders/push'
@@ -69,7 +68,6 @@ async function signOut(): Promise<void> {
 
 function continueWithoutAccount(): void {
   useAuthStore.getState().setLocalMode(true)
-  void grantWeeklyStreakFreeze()
 }
 
 export function useAuth() {

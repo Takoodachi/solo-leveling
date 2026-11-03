@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { syncService, clearSyncCursors } from '@/lib/sync'
-import { grantWeeklyStreakFreeze } from '@/lib/streak'
 import { wipeLocalData } from '@/db/seed'
 import { useAuthStore } from './authStore'
 
@@ -35,7 +34,6 @@ export function useAuthInit(): void {
     if (!isSupabaseConfigured) {
       store.setLocalMode(true)
       store.setLoading(false)
-      void grantWeeklyStreakFreeze()
       return
     }
 
@@ -69,7 +67,6 @@ export function useAuthInit(): void {
       if (!nextId) {
         syncService.setUser(null)
         s.setUserId(null)
-        if (s.localMode) void grantWeeklyStreakFreeze()
         return
       }
       try {
@@ -81,9 +78,8 @@ export function useAuthInit(): void {
       s.setUserId(nextId)
       // Sync in the background: the app is usable right away, and a slow or stalled
       // network can never hold the screen. (The first sync on a new device pulls
-      // every table.) The weekly freeze waits for it so it sees the synced stats.
+      // every table.)
       void syncService.sync(nextId)
-        .then(() => grantWeeklyStreakFreeze())
         .catch(err => console.error('[auth] initial sync failed:', err))
     }
 
@@ -97,7 +93,6 @@ export function useAuthInit(): void {
         if (!data.session && error && useAuthStore.getState().userId) return
         await applySession(data.session)
         const s = useAuthStore.getState()
-        if (!data.session && s.localMode) void grantWeeklyStreakFreeze()
         // The login screen shows a failed-link reason itself; elsewhere, surface it as a toast.
         if (s.linkError && (data.session || s.localMode)) {
           toast.error(s.linkError, { duration: 8000 })

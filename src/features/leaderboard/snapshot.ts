@@ -1,4 +1,5 @@
-import { differenceInCalendarDays, parseISO, startOfWeek, subDays } from 'date-fns'
+import { startOfWeek, subDays } from 'date-fns'
+import { streakAlive } from '@/lib/streak'
 import { db } from '@/db'
 import type { UserStats } from '@/types'
 import { toDateStr } from '@/lib/date'
@@ -12,11 +13,9 @@ const HISTORY_WEEKS = 12
 const HIGHLIGHT_DAYS = 14
 const TOP_LIFTS = 5
 
-/** The streak as it stands today: a streak whose last log is older than the banked freezes cover has lapsed. */
+/** The streak as it stands today: one last logged more than three missed days ago has lapsed. */
 function liveStreak(stats: UserStats | undefined, now: Date): number {
-  if (!stats?.lastLogDate) return 0
-  const gap = differenceInCalendarDays(now, parseISO(stats.lastLogDate))
-  return gap <= 1 + (stats.streakFreezes ?? 0) ? stats.currentStreak : 0
+  return stats && streakAlive(stats.lastLogDate, toDateStr(now)) ? stats.currentStreak : 0
 }
 
 async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week']> {
