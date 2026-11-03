@@ -90,6 +90,8 @@ interface SoloPlugin {
   /** Previous / play-pause / next for whatever is playing. Since the music button. */
   mediaKey(options: { key: MediaKey }): Promise<void>
   musicPlaying(): Promise<{ playing: boolean }>
+  /** This APK's build number (its versionCode). Since the update alert. */
+  appBuild(): Promise<{ build: number }>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -120,6 +122,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     openApp: options => native.openApp(options),
     mediaKey: options => native.mediaKey(options),
     musicPlaying: () => native.musicPlaying(),
+    appBuild: () => native.appBuild(),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -251,4 +254,11 @@ export async function musicPlaying(): Promise<boolean | null> {
   if (!soloHas('musicPlaying')) return null
   const plugin = await soloPlugin()
   return (await plugin?.musicPlaying().catch(() => null))?.playing ?? null
+}
+
+/** The installed APK's build number (src/lib/apkBuild.ts); 0 for one from before builds were reported, or outside the app. */
+export async function apkBuild(): Promise<number> {
+  if (!soloHas('appBuild')) return 0
+  const plugin = await soloPlugin()
+  return (await plugin?.appBuild().catch(() => null))?.build ?? 0
 }

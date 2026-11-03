@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Routes, Route, Navigate } from 're
 import { Toaster } from '@/components/ui/sonner'
 import AppShell from '@/components/AppShell'
 import LeaveGuard from '@/components/LeaveGuard'
+import UpdateAppDialog from '@/components/UpdateAppDialog'
 import Logo from '@/components/Logo'
 import { lazyAhead, loadAhead } from '@/lib/lazyAhead'
 import { useAuthInit } from '@/features/auth/useAuthInit'
@@ -166,6 +167,7 @@ function Root() {
       />
       <Celebration />
       <LeaveGuard />
+      <UpdateAppDialog />
     </>
   )
 }

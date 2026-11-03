@@ -11,6 +11,7 @@ const FROM = { width: { width: 0 }, left: { left: 0 }, arc: { strokeDasharray: '
 /** When each bar first rose since the app was opened, by name. */
 const risen = new Map<string, number>()
 const onScreen = new Set<() => void>()
+const onReopen = new Set<() => void>()
 let hiddenAt = 0
 
 document.addEventListener('visibilitychange', () => {
@@ -19,8 +20,15 @@ document.addEventListener('visibilitychange', () => {
   } else if (hiddenAt && Date.now() - hiddenAt >= AWAY_MS) {
     risen.clear()
     onScreen.forEach(rise => rise())
+    onReopen.forEach(run => run())
   }
 })
+
+/** Runs `run` each time the app is opened again (back after 30 minutes away); returns how to stop. */
+export function whenReopened(run: () => void): () => void {
+  onReopen.add(run)
+  return () => onReopen.delete(run)
+}
 
 /** How a bar rises: shared with the numbers that count up beside it (`CountUp`). */
 export const RISE = { delay: 200, duration: 1000, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
