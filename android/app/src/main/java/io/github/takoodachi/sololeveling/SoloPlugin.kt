@@ -1,10 +1,13 @@
 package io.github.takoodachi.sololeveling
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.media.AudioManager
 import android.util.Base64
+import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -195,6 +198,48 @@ class SoloPlugin : Plugin() {
             bridge.webView.setBackgroundColor(color)
             call.resolve()
         }
+    }
+
+    /**
+     * Opens an installed app by its package, back where it was left (the music player during a
+     * workout); an empty package opens the phone's default music player. `opened` is false when
+     * there's no such app. Packages it may look up are listed under `<queries>` in the manifest.
+     */
+    @PluginMethod
+    fun openApp(call: PluginCall) {
+        val pkg = call.getString("package") ?: ""
+        val intent = if (pkg.isEmpty()) Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MUSIC)
+        else context.packageManager.getLaunchIntentForPackage(pkg)
+        if (intent == null) return call.resolve(JSObject().put("opened", false))
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            activity.startActivity(intent)
+            call.resolve(JSObject().put("opened", true))
+        } catch (e: ActivityNotFoundException) {
+            call.resolve(JSObject().put("opened", false))
+        }
+    }
+
+    /** Previous, play/pause or next for whatever is playing, sent the way headphone buttons send them (no permission needed). */
+    @PluginMethod
+    fun mediaKey(call: PluginCall) {
+        val code = when (call.getString("key")) {
+            "previous" -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+            "playPause" -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+            "next" -> KeyEvent.KEYCODE_MEDIA_NEXT
+            else -> return call.reject("Unknown media key")
+        }
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+        call.resolve()
+    }
+
+    /** Whether any app is playing music right now (the play/pause button's icon). */
+    @PluginMethod
+    fun musicPlaying(call: PluginCall) {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        call.resolve(JSObject().put("playing", audio.isMusicActive))
     }
 
     /** Back with nowhere left to go back to: out to the launcher, the app kept as it is. */

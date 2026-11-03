@@ -85,8 +85,15 @@ interface SoloPlugin {
   setBackground(options: { color: string }): Promise<void>
   /** Raises the keyboard for the focused field (a focus no tap led to leaves it down). Since the weigh-in reminder. */
   showKeyboard(): Promise<void>
+  /** Opens an installed app where it was left; '' = the phone's default music player. Since the music button. */
+  openApp(options: { package: string }): Promise<{ opened: boolean }>
+  /** Previous / play-pause / next for whatever is playing. Since the music button. */
+  mediaKey(options: { key: MediaKey }): Promise<void>
+  musicPlaying(): Promise<{ playing: boolean }>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
+
+export type MediaKey = 'previous' | 'playPause' | 'next'
 
 let solo: SoloPlugin | undefined
 
@@ -110,6 +117,9 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     leaveApp: () => native.leaveApp(),
     setBackground: options => native.setBackground(options),
     showKeyboard: () => native.showKeyboard(),
+    openApp: options => native.openApp(options),
+    mediaKey: options => native.mediaKey(options),
+    musicPlaying: () => native.musicPlaying(),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -220,4 +230,25 @@ export function setSystemBarStyle(mode: 'dark' | 'light', background?: string): 
     )
     .catch(() => {}) // cosmetic only
   if (background && soloHas('setBackground')) void soloPlugin().then(plugin => plugin?.setBackground({ color: background })).catch(() => {})
+}
+
+/** Opens an installed app by its package where it was left ('' = the phone's music player). False without the app, or in an APK from before. */
+export async function openAndroidApp(pkg: string): Promise<boolean> {
+  if (!soloHas('openApp')) return false
+  const plugin = await soloPlugin()
+  return (await plugin?.openApp({ package: pkg }).catch(() => null))?.opened ?? false
+}
+
+/** Media buttons for whatever is playing: the Android app, from the APK built for the music button. */
+export const hasMediaKeys = () => soloHas('mediaKey')
+
+export function sendMediaKey(key: MediaKey): void {
+  void soloPlugin().then(plugin => plugin?.mediaKey({ key })).catch(() => {})
+}
+
+/** Whether some app is playing music (null where that can't be known). */
+export async function musicPlaying(): Promise<boolean | null> {
+  if (!soloHas('musicPlaying')) return null
+  const plugin = await soloPlugin()
+  return (await plugin?.musicPlaying().catch(() => null))?.playing ?? null
 }

@@ -12,6 +12,7 @@ import { CARD_STYLES, cardStyleOf } from '@/features/settings/cardStyle'
 import NavBarCard from '@/features/settings/components/NavBarCard'
 import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import WorkoutPrefsCard from '@/features/settings/components/WorkoutPrefsCard'
+import { musicApp, useMusicApp } from '@/features/workouts/music'
 import AppShortcutsCard from '@/features/settings/components/AppShortcutsCard'
 import ExportButton from '@/features/settings/components/ExportButton'
 import ImportButton from '@/features/settings/components/ImportButton'
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const remindersOn = REMINDERS.filter(r => reminders[r.kind].on).length
   const [left, right] = navTabsFrom(settings)
   const shortcuts = appShortcutsFrom(settings)
+  const music = musicApp(useMusicApp(s => s.id))
 
   return (
     <div className="flex flex-col gap-3">
@@ -63,7 +65,7 @@ export default function SettingsPage() {
       <SettingsSection id="reminders" title="Reminders" summary={remindersOn ? `${remindersOn} on` : 'None on'} Icon={Bell}>
         <RemindersCard />
       </SettingsSection>
-      <SettingsSection id="workouts" title="Workouts" summary={settings?.workoutTips === false ? 'Tips off' : 'Tips on'} Icon={Dumbbell}>
+      <SettingsSection id="workouts" title="Workouts" summary={[settings?.workoutTips === false ? 'Tips off' : 'Tips on', music?.name].filter(Boolean).join(' · ')} Icon={Dumbbell}>
         <WorkoutPrefsCard />
       </SettingsSection>
       <SettingsSection id="theme" title="Theme" summary={`${resolveTheme(settings?.theme, settings?.customTheme).name} · ${CARD_STYLES.find(s => s.id === cardStyleOf(settings?.cardStyle))?.name} cards`} Icon={Palette}>
