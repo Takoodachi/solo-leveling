@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { CalendarCheck, Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
+import { CalendarCheck, Dumbbell, Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { useAuthStore } from '@/features/auth/authStore'
 import { clampPercent } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useSettings } from '../hooks/useSettings'
 import { xpFill } from '@/features/gamification/xpFill'
 import { useStartDate } from '@/features/gamification/startDate'
@@ -64,6 +65,15 @@ export default function ProfileCard() {
           <span>Started leveling up since: <b className="font-semibold text-foreground">{format(parseISO(started), 'MMM d, yyyy')}</b></span>
         </p>
       )}
+      {/* The date Analytics takes the training level from (Body & goals → Training since) */}
+      <p className={cn('flex items-center gap-2 text-sm text-muted-foreground', started ? 'mt-2' : 'mt-4')}>
+        <Dumbbell size={16} className="shrink-0 text-primary" />
+        {settings?.trainingSince ? (
+          <span>Started working out since: <b className="font-semibold text-foreground">{format(parseISO(settings.trainingSince), 'MMM d, yyyy')}</b></span>
+        ) : (
+          <span>Started working out since: add it under Body &amp; goals</span>
+        )}
+      </p>
 
       <div className="mt-5">
         <div className="flex items-center justify-between text-sm">

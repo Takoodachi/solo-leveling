@@ -12,6 +12,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.health.connect.client.PermissionController
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -240,6 +241,13 @@ class SoloPlugin : Plugin() {
     fun musicPlaying(call: PluginCall) {
         val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         call.resolve(JSObject().put("playing", audio.isMusicActive))
+    }
+
+    /** This APK's build number: its versionCode, which build.gradle takes from LATEST_APK in src/lib/apkBuild.ts. */
+    @PluginMethod
+    fun appBuild(call: PluginCall) {
+        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+        call.resolve(JSObject().put("build", PackageInfoCompat.getLongVersionCode(info)))
     }
 
     /** Back with nowhere left to go back to: out to the launcher, the app kept as it is. */
