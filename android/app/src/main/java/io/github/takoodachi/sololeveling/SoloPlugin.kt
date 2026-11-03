@@ -68,6 +68,10 @@ class SoloPlugin : Plugin() {
         announceShortcut(activity.intent)
     }
 
+    override fun handleOnStop() {
+        runCatching { AppIcons.applyPending(context) }
+    }
+
     override fun handleOnNewIntent(intent: Intent) {
         announceShortcut(intent)
     }
@@ -241,6 +245,15 @@ class SoloPlugin : Plugin() {
     fun musicPlaying(call: PluginCall) {
         val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         call.resolve(JSObject().put("playing", audio.isMusicActive))
+    }
+
+    /** The app icon for a theme (its launcher entry's alias, e.g. "IconAbyss"), switched to when the app next leaves the screen. */
+    @PluginMethod
+    fun setAppIcon(call: PluginCall) {
+        val name = call.getString("name")
+        if (name.isNullOrEmpty() || !name.matches(Regex("Icon[A-Za-z]+"))) return call.reject("Unknown icon")
+        AppIcons.request(context, name)
+        call.resolve()
     }
 
     /** This APK's build number: its versionCode, which build.gradle takes from LATEST_APK in src/lib/apkBuild.ts. */
