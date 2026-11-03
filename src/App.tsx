@@ -103,7 +103,7 @@ function AppRoutes() {
   // and not `session`: an account's data on this device shows before its session is checked.
   if (!userId && !localMode) return <LoginPage />
 
-  // An account that has never saved a setting gets three short questions first (skippable, shown once).
+  // An account that has never saved a setting gets the setup questions first (skippable, shown once).
   if (needsSetup) return <Suspense fallback={<LaunchScreen />}><WelcomePage /></Suspense>
 
   // Screens are code-split; the service worker precaches every chunk, so this still works offline.
@@ -125,6 +125,7 @@ function AppRoutes() {
         {/* Full-screen — outside AppShell, no bottom nav */}
         <Route path="workouts/active" element={<ActiveWorkoutPage />} />
         <Route path="workouts/plan" element={<PlanPage />} />
+        <Route path="setup" element={<WelcomePage redo />} />
         <Route path="workouts/history" element={<WorkoutHistoryPage />} />
         <Route path="nutrition/history" element={<NutritionHistoryPage />} />
         <Route path="workouts/routine/new" element={<RoutineEditPage />} />

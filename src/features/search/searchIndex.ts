@@ -1,5 +1,5 @@
 import {
-  Award, Bell, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye,
+  Award, Bell, ClipboardList, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, DatabaseBackup, Dumbbell, Eye,
   Footprints, GlassWater, Goal, History, House, LayoutGrid, Lightbulb, ListPlus, Medal, Music2, PanelBottom, Palette, PersonStanding,
   Play, Radar, Ruler, Scale, Settings, Smartphone, Target, Timer, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
   type LucideIcon,
@@ -71,6 +71,7 @@ export const PAGE_ENTRIES: Entry[] = [
   ...(isAndroidApp() ? [{ id: 'app-icon', title: 'App icon shortcuts', subtitle: 'Settings', keywords: 'long press hold home screen launcher quick actions', Icon: Smartphone, to: '/settings#app-icon' }] : []),
   { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert workout creatine food weigh water recap', Icon: Bell, to: '/settings#reminders' },
   { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs', Icon: PanelBottom, to: '/settings#bottom-bar' },
+  { id: 'setup', title: 'Setup questions', subtitle: 'Settings', keywords: 'survey onboarding personalize personalise redo welcome start again questions plan targets track', Icon: ClipboardList, to: '/setup' },
   { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings', keywords: 'widgets cards customize home search bar hide show', Icon: LayoutGrid, to: '/settings#home-screen' },
   { id: 'backup', title: 'Backup', subtitle: 'Settings', keywords: 'export import json data restore', Icon: DatabaseBackup, to: '/settings#backup' },
 ]

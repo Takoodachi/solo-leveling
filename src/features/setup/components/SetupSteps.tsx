@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Utensils, type LucideIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import DatePicker from '@/components/DatePicker'
@@ -12,15 +12,16 @@ import { Swatch } from '@/features/settings/components/ThemePicker'
 import { THEMES } from '@/features/settings/themes'
 import { paintTheme, useActiveTheme } from '@/features/settings/hooks/useTheme'
 import { homeWidgetDef } from '@/features/dashboard/homeWidgets'
-import { TRACKABLE, setupTargets, type SetupForm } from '../setup'
+import { TRACK_CHOICES, setupTargets, type SetupForm, type TrackChoice } from '../setup'
+import { spreadDays } from '../plans'
 
-interface StepProps {
+export interface StepProps {
   form: SetupForm
   onChange: (patch: Partial<SetupForm>) => void
 }
 
-const title = 'font-heading text-2xl font-bold'
-const lead = 'mt-2 text-sm leading-relaxed text-muted-foreground'
+export const title = 'font-heading text-2xl font-bold'
+export const lead = 'mt-2 text-sm leading-relaxed text-muted-foreground'
 
 export function NameStep({ form, onChange }: StepProps) {
   return (
@@ -105,7 +106,7 @@ export function GoalStep({ form, onChange }: StepProps) {
       </div>
       <div className="mt-6 flex flex-col gap-2">
         <Label>Workouts a week you’re aiming for</Label>
-        <NumberStepper value={String(form.workoutsPerWeek)} min={1} max={7} step={1} inputMode="numeric" onChange={v => onChange({ workoutsPerWeek: Math.max(1, Math.min(7, Math.round(Number(v) || 3))) })} />
+        <NumberStepper value={String(form.workoutsPerWeek)} min={1} max={7} step={1} inputMode="numeric" onChange={v => { const n = Math.max(1, Math.min(7, Math.round(Number(v) || 3))); onChange({ workoutsPerWeek: n, days: spreadDays(n) }) }} />
       </div>
       <p className="mt-6 rounded-2xl bg-card px-4 py-3 text-sm text-muted-foreground">
         {targets ? (
@@ -122,17 +123,24 @@ export function GoalStep({ form, onChange }: StepProps) {
   )
 }
 
-/** What to keep track of: each choice is a card on Home. Steps, calories and water start chosen. */
+/** How each choice reads: food is its own (it brings two cards), the rest are their card. */
+function choiceText(id: TrackChoice, card: Parameters<typeof homeWidgetDef>[0]): { label: string; description: string; icon: LucideIcon } | null {
+  if (id === 'food') return { label: 'Food', description: 'Calories and macros, meal by meal', icon: Utensils }
+  const def = homeWidgetDef(card)
+  return def ? { label: def.label, description: def.description, icon: def.icon } : null
+}
+
+/** What to keep track of: each choice brings its cards to Home, and leaving one out keeps them off. Food, steps and water start chosen. */
 export function TrackStep({ form, onChange }: StepProps) {
-  const toggle = (id: (typeof TRACKABLE)[number]) =>
+  const toggle = (id: TrackChoice) =>
     onChange({ track: form.track.includes(id) ? form.track.filter(t => t !== id) : [...form.track, id] })
   return (
     <>
       <h1 className={title}>What do you want to track?</h1>
-      <p className={lead}>Each one gets a card on your Home screen. The usual three are already picked: add or drop any, now or later (Home → Customize).</p>
+      <p className={lead}>Home shows what you pick and leaves out the rest. The usual three are already picked: add or drop any, now or later (Home → Customize).</p>
       <div className="mt-6 flex flex-col gap-2">
-        {TRACKABLE.map(id => {
-          const def = homeWidgetDef(id)
+        {TRACK_CHOICES.map(({ id, cards }) => {
+          const def = choiceText(id, cards[0])
           if (!def) return null
           const on = form.track.includes(id)
           return (

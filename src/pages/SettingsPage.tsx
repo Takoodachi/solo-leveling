@@ -1,4 +1,5 @@
-import { Bell, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, Trophy } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, Trophy } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Logo from '@/components/Logo'
 import { NAV_CHOICES, navTabsFrom } from '@/components/navTabs'
@@ -79,6 +80,14 @@ export default function SettingsPage() {
       <SettingsSection id="home-screen" title="Home screen" summary={`${homeWidgetsFrom(settings).length} of ${HOME_WIDGETS.length} cards shown`} Icon={LayoutGrid}>
         <HomeLayoutCard />
       </SettingsSection>
+      <Link id="setup" to="/setup" className="flex items-center gap-3 rounded-3xl bg-card p-4 text-left">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary"><ClipboardList size={18} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Setup questions</span>
+          <span className="block truncate text-xs text-muted-foreground">Answer them again to fit Home, targets and your plan</span>
+        </span>
+        <ChevronRight size={20} className="shrink-0 text-muted-foreground" />
+      </Link>
       {isAndroidApp() && (
         <SettingsSection id="app-icon" title="App icon" summary={shortcuts.map(id => APP_SHORTCUTS[id].label).join(' · ') || 'No shortcuts'} Icon={Smartphone}>
           <AppShortcutsCard />
