@@ -36,7 +36,7 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
   function render(id: HomeWidgetId) {
     switch (id) {
       case 'workout':
-        return <TodayWorkoutCard isToday={selected === today} isFuture={selected > today} routine={routine} completed={completed} />
+        return <TodayWorkoutCard date={selected} isToday={selected === today} isFuture={selected > today} routine={routine} completed={completed} />
       case 'quest':
         return <QuestCard date={selected} today={today} />
       case 'steps':

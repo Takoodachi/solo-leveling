@@ -14,6 +14,13 @@ export const keepOpenForToast = (e: Event) => {
 }
 
 /** `n`, kept within [low, high]. */
+/**
+ * Phones and tablets or computers: a photo picked for one is cropped wrong on the other. Anything on
+ * Android is a phone, the app's off-screen background jobs and a phone with a mouse included.
+ */
+export const screenKind = (): 'phone' | 'computer' =>
+  /Android/i.test(navigator.userAgent) || matchMedia('(hover: none)').matches ? 'phone' : 'computer'
+
 export const clamp = (n: number, [low, high]: readonly [number, number]) => Math.min(high, Math.max(low, n))
 
 /** A copy of `list` with the items at `i` and `j` in each other's place. */

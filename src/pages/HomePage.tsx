@@ -9,6 +9,7 @@ import { CalendarDays, ChevronRight } from 'lucide-react'
 import DatePicker from '@/components/DatePicker'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
+import { useCheckinDays } from '@/features/checkins/useCheckins'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
 import { netKcal, useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
@@ -49,6 +50,7 @@ export default function HomePage() {
 
   const days = useWeekSummary(week)
   const routines = useRoutines()
+  const skipped = useCheckinDays('skip', week)
   const completed = useWorkoutList(1000, selected) ?? []
   const { settings } = useSettings()
   const budget = useCalorieBudget(selected)
@@ -80,6 +82,7 @@ export default function HomePage() {
               today={todayStr}
               kcalProgress={kcalProgress}
               scheduledWeekdays={scheduled}
+              skipped={skipped}
               onSelect={pick}
             />
           )}

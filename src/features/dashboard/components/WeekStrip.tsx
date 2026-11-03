@@ -11,6 +11,8 @@ interface Props {
   /** The selected day's net calories as a share of the target. */
   kcalProgress: number
   scheduledWeekdays: Set<number>
+  /** Days whose planned workout was skipped: no dot. */
+  skipped: Set<string>
   onSelect: (date: string) => void
 }
 
@@ -18,14 +20,14 @@ interface Props {
  * Mon–Sun day selector. A white check = trained that day; the selected day shows
  * its calorie progress as an orange arc. Missed days stay neutral (no guilt marks).
  */
-export default function WeekStrip({ days, selected, today, kcalProgress, scheduledWeekdays, onSelect }: Props) {
+export default function WeekStrip({ days, selected, today, kcalProgress, scheduledWeekdays, skipped, onSelect }: Props) {
   return (
     <div className="grid grid-cols-7 gap-1">
       {days.map(d => {
         const date = parseISO(d.date)
         const isSelected = d.date === selected
         const trained = d.workouts > 0
-        const planned = !trained && d.date >= today && scheduledWeekdays.has(date.getDay())
+        const planned = !trained && d.date >= today && scheduledWeekdays.has(date.getDay()) && !skipped.has(d.date)
         return (
           <button
             key={d.date}
