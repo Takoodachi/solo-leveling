@@ -62,8 +62,9 @@ export interface UserStats {
   currentStreak: number
   longestStreak: number
   lastLogDate: string | null // YYYY-MM-DD
+  /** Unused since November 2026 (a 3-day window replaced freezes, lib/streak.ts); still synced as it was. */
   streakFreezes: number
-  freezeWeek?: string // ISO week the last streak freeze was granted, e.g. "2026-W38"
+  freezeWeek?: string
   updatedAt?: number
   syncPending?: boolean
 }

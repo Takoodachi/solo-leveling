@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { CalendarCheck, Dumbbell, Flame, ShieldCheck, Star, Pencil, Check } from 'lucide-react'
+import { CalendarCheck, Dumbbell, Flame, Star, Pencil, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useGamification, xpForLevel } from '@/features/gamification/store'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -17,7 +17,7 @@ import CountUp from '@/components/CountUp'
 export default function ProfileCard() {
   const { settings, updateSettings } = useSettings()
   const email = useAuthStore(s => s.session?.user.email)
-  const { xp, level, currentStreak, longestStreak, streakFreezes } = useGamification()
+  const { xp, level, currentStreak, longestStreak } = useGamification()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
@@ -85,7 +85,7 @@ export default function ProfileCard() {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+      <div className="mt-5 grid grid-cols-2 gap-2 text-center">
         <div className="rounded-2xl bg-secondary py-3">
           <Flame size={18} className="mx-auto fill-primary text-primary" />
           <p className="mt-1 font-semibold">{currentStreak}</p>
@@ -95,11 +95,6 @@ export default function ProfileCard() {
           <Flame size={18} className="mx-auto text-muted-foreground" />
           <p className="mt-1 font-semibold">{longestStreak}</p>
           <p className="text-[11px] text-muted-foreground">Best</p>
-        </div>
-        <div className="rounded-2xl bg-secondary py-3">
-          <ShieldCheck size={18} className="mx-auto text-sky-500 dark:text-sky-400" />
-          <p className="mt-1 font-semibold">{streakFreezes}</p>
-          <p className="text-[11px] text-muted-foreground">Freezes</p>
         </div>
       </div>
     </section>

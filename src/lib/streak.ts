@@ -1,9 +1,21 @@
 import { db } from '@/db'
-import { toDateStr, today } from './date'
-import { requestSync } from './sync'
-import { subDays, parseISO, getISOWeek, getISOWeekYear } from 'date-fns'
+import { today } from './date'
+import { differenceInCalendarDays, parseISO } from 'date-fns'
 
-/** A day counts as "logged" when food or a workout is logged that day. */
+/**
+ * A day counts as "logged" when food or a workout is logged that day, and the streak counts
+ * logged days. It survives up to `STREAK_GRACE_DAYS` missed days in a row (November 2026, at the
+ * owner's request, in place of weekly streak freezes): last logged on the 31st, a log on any of
+ * the 1st to the 4th makes it one longer, while a first log on the 5th starts it again at 1.
+ */
+export const STREAK_GRACE_DAYS = 3
+
+/** Whether a streak last logged on `lastLogDate` still stands on `day` (both YYYY-MM-DD). */
+export function streakAlive(lastLogDate: string | null | undefined, day: string): boolean {
+  return !!lastLogDate && differenceInCalendarDays(parseISO(day), parseISO(lastLogDate)) <= STREAK_GRACE_DAYS + 1
+}
+
+/** Count today as logged (called when food or a workout is logged). */
 export async function updateStreak(): Promise<void> {
   const stats = await db.userStats.get(1)
   if (!stats) return
@@ -11,54 +23,12 @@ export async function updateStreak(): Promise<void> {
   const todayStr = today()
   if (stats.lastLogDate === todayStr) return // already logged today
 
-  const yesterdayStr = toDateStr(subDays(parseISO(todayStr), 1))
-  const wasYesterday = stats.lastLogDate === yesterdayStr
-
-  let { currentStreak, longestStreak, streakFreezes } = stats
-
-  if (wasYesterday) {
-    currentStreak += 1
-  } else if (stats.lastLogDate == null) {
-    currentStreak = 1
-  } else {
-    // Check if we can consume a freeze
-    if (streakFreezes > 0) {
-      streakFreezes -= 1
-      currentStreak += 1
-    } else {
-      currentStreak = 1
-    }
-  }
-
-  if (currentStreak > longestStreak) longestStreak = currentStreak
-
+  const currentStreak = streakAlive(stats.lastLogDate, todayStr) ? stats.currentStreak + 1 : 1
   await db.userStats.update(1, {
     currentStreak,
-    longestStreak,
+    longestStreak: Math.max(stats.longestStreak, currentStreak),
     lastLogDate: todayStr,
-    streakFreezes,
     updatedAt: Date.now(),
     syncPending: true,
   })
-}
-
-/**
- * Grant one streak freeze per ISO week (max 2 banked). The granted week is
- * stored on userStats (synced), so it's granted once per week across devices.
- * Call after the initial sync so a fresh device doesn't grant on stale stats.
- */
-export async function grantWeeklyStreakFreeze(): Promise<void> {
-  const stats = await db.userStats.get(1)
-  if (!stats) return
-  const now = new Date()
-  const weekKey = `${getISOWeekYear(now)}-W${getISOWeek(now)}`
-  if (stats.freezeWeek === weekKey) return
-
-  await db.userStats.update(1, {
-    freezeWeek: weekKey,
-    streakFreezes: Math.min(2, stats.streakFreezes + 1),
-    updatedAt: Date.now(),
-    syncPending: true,
-  })
-  requestSync()
 }

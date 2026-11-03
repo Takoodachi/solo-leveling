@@ -1,5 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { useNow } from '@/hooks/useNow'
+import { toDateStr } from '@/lib/date'
+import { streakAlive } from '@/lib/streak'
 import { ACHIEVEMENT_DEFS, type AchievementDef } from './achievements'
 export { xpForLevel } from '@/lib/xp'
 
@@ -8,6 +11,7 @@ export type AchievementView = AchievementDef & { unlocked: boolean; unlockedAt?:
 
 export function useGamification() {
   const userStats = useLiveQuery(() => db.userStats.get(1), [])
+  const today = toDateStr(useNow())
   const achievements = useLiveQuery(
     () => db.achievements.toArray().then(arr => arr.sort((a, b) => b.unlockedAt - a.unlockedAt)),
     []
@@ -24,9 +28,8 @@ export function useGamification() {
   return {
     xp: userStats?.xp ?? 0,
     level: userStats?.level ?? 1,
-    currentStreak: userStats?.currentStreak ?? 0,
+    currentStreak: userStats && streakAlive(userStats.lastLogDate, today) ? userStats.currentStreak : 0,
     longestStreak: userStats?.longestStreak ?? 0,
-    streakFreezes: userStats?.streakFreezes ?? 0,
     achievements: achievements ?? [],
     allAchievements,
   }
