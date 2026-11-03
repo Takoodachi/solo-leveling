@@ -23,6 +23,8 @@ import ExercisePickerSheet from '@/features/workouts/components/ExercisePickerSh
 import ExerciseInfoSheet from '@/features/workouts/components/ExerciseInfoSheet'
 import RestBanner from '@/features/workouts/components/RestBanner'
 import FinishWorkoutDialog from '@/features/workouts/components/FinishWorkoutDialog'
+import MusicButton from '@/features/workouts/components/MusicButton'
+import MusicControls from '@/features/workouts/components/MusicControls'
 import DiscardWorkoutDialog from '@/features/workouts/components/DiscardWorkoutDialog'
 import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useRanks } from '@/features/ranks/useRanks'
@@ -144,10 +146,12 @@ export default function ActiveWorkoutPage() {
                 <span>· {doneSets}/{allSets.length} sets</span>
               </p>
             </div>
+            {!editing && <MusicButton />}
             <Button size="sm" onClick={() => setFinishOpen(true)} disabled={draft.blocks.length === 0}>
               {editing ? 'Save' : 'Finish'}
             </Button>
           </div>
+          {!editing && <MusicControls />}
           {/* How far through the workout: sets ticked of all the sets in it */}
           <div className="h-0.5 bg-foreground/5" role="progressbar" aria-label="Sets done" aria-valuenow={doneSets} aria-valuemin={0} aria-valuemax={allSets.length}>
             <div className="h-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${allSets.length ? (doneSets / allSets.length) * 100 : 0}%` }} />
