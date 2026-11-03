@@ -21,6 +21,7 @@ import CustomizeHomeSheet from '@/features/dashboard/components/CustomizeHomeShe
 import WeeklyStatsGrid from '@/features/dashboard/components/WeeklyStatsGrid'
 import HomeSearch from '@/features/search/components/HomeSearch'
 import RecapBanner from '@/features/recap/components/RecapBanner'
+import WeeklyCheckInCard from '@/features/nutrition/components/WeeklyCheckInCard'
 import LogStepsSheet from '@/features/dashboard/components/LogStepsSheet'
 import WaterSheet from '@/features/checkins/components/WaterSheet'
 import { lazyAhead } from '@/lib/lazyAhead'
@@ -91,6 +92,7 @@ export default function HomePage() {
             <div key="today" className="flex animate-fade-in flex-col gap-5">
               <ResumeBanner />
               <RecapBanner now={now} />
+              <WeeklyCheckInCard today={todayStr} />
               <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>
                 <DatePicker
                   value={selected}

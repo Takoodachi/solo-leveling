@@ -13,7 +13,7 @@ export async function startDate(): Promise<string | null> {
   const [food, workout, checkin, achievement] = await Promise.all([
     db.foodLog.orderBy('date').first(),
     db.workouts.orderBy('date').first(),
-    db.checkins.orderBy('date').filter(c => c.key !== 'skip').first(),
+    db.checkins.orderBy('date').filter(c => c.key !== 'skip' && c.key !== 'targets').first(),
     db.achievements.orderBy('unlockedAt').first(),
   ])
   const days = [food?.date, workout?.date, checkin?.date, achievement?.unlockedAt ? toDateStr(new Date(achievement.unlockedAt)) : undefined]

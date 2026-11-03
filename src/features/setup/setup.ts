@@ -8,7 +8,7 @@ import { useAuthStore } from '@/features/auth/authStore'
 import { logWeight } from '@/features/bodyMetrics/useBodyMetrics'
 import { DEFAULT_HOME_WIDGETS, homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
 import { updateSettings } from '@/features/settings/hooks/useSettings'
-import { formulaMaintenance, suggestedTargets, type GoalType, type Sex } from '@/features/settings/targetSuggestion'
+import { formulaMaintenance, goalPace, suggestedTargets, type GoalType, type Sex } from '@/features/settings/targetSuggestion'
 import { spreadDays, startPlan, type StarterPlanId } from './plans'
 
 export type TrackChoice = 'food' | 'steps' | 'water' | 'creatine'
@@ -78,7 +78,7 @@ export function setupTargets(form: SetupForm) {
   const weight = weightOf(form)
   if (!form.sex || !height || !weight) return null
   // Steps are subtracted from a fresh account's calories (the default), so walking stays out of the target
-  return suggestedTargets(weight, form.goal, formulaMaintenance(weight, height, form.sex, true))
+  return suggestedTargets(weight, form.goal, formulaMaintenance(weight, height, form.sex, true), goalPace(form.goal, undefined, form.trainingSince, today()), height)
 }
 
 /** The targets as typed, when all four are numbers a day could be. */

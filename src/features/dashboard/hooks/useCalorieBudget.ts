@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { parseISO } from 'date-fns'
 import { db } from '@/db'
 import { today } from '@/lib/date'
-import { targetsForDay, type EffectiveTargets } from '@/lib/macroTargets'
+import { targetsForDay, type DayPlan, type EffectiveTargets } from '@/lib/macroTargets'
 import { loadStepBurns, type StepBurn } from '@/lib/stepCalories'
 
 export interface CalorieBudget {
@@ -14,9 +15,15 @@ export interface CalorieBudget {
 export function useCalorieBudget(date?: string): CalorieBudget {
   const day = date ?? today()
   const data = useLiveQuery(async () => {
-    const [baseline, burns] = await Promise.all([db.targets.get(1), loadStepBurns([day])])
+    const [baseline, burns, settings, routines, skip] = await Promise.all([
+      db.targets.get(1), loadStepBurns([day]), db.settings.get(1), db.routines.toArray(), db.checkins.get(`skip-${day}`),
+    ])
     const burn = burns.get(day) ?? null
-    return { targets: targetsForDay(baseline, burn?.kcal ?? 0), burn }
+    const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
+    const plan: DayPlan | undefined = settings?.trainingDayCarbs !== false && weekdays.size > 0
+      ? { training: weekdays.has(parseISO(day).getDay()) && !skip?.done, perWeek: weekdays.size }
+      : undefined
+    return { targets: targetsForDay(baseline, burn?.kcal ?? 0, plan), burn }
   }, [day])
   return data ?? { targets: targetsForDay(undefined, 0), burn: null }
 }

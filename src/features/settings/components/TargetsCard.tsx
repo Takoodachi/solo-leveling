@@ -25,6 +25,15 @@ export default function TargetsCard() {
           </div>
           <Switch checked={countsSteps(settings)} onCheckedChange={v => void updateSettings({ dynamicTargetsEnabled: v })} aria-label="Subtract step calories" />
         </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label className="text-sm">More carbs on workout days</Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              On days your plan has a workout, carbs take the place of some fat, and rest days give it back. Every day keeps its calories, and the week its carbs.
+            </p>
+          </div>
+          <Switch checked={settings?.trainingDayCarbs !== false} onCheckedChange={v => void updateSettings({ trainingDayCarbs: v })} aria-label="More carbs on workout days" />
+        </div>
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-muted-foreground">Daily step goal</Label>
           <NumberStepper

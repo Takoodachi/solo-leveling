@@ -14,7 +14,7 @@ import { toDateStr } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { countsSteps } from '@/lib/stepCalories'
 import { useSettings } from '../hooks/useSettings'
-import { LOWEST_BELIEVABLE, formulaMaintenance, restingKcal, suggestedTargets, type GoalType, type Sex } from '../targetSuggestion'
+import { CUT_PACES, LOWEST_BELIEVABLE, formulaMaintenance, goalPace, restingKcal, suggestedTargets, type GoalType, type Sex } from '../targetSuggestion'
 import ExpenditureNote from './ExpenditureNote'
 
 const GOALS: { value: GoalType; label: string }[] = [
@@ -51,7 +51,7 @@ export default function BodyGoalsCard() {
   async function apply() {
     if (!known || !goalType) return
     const maintenance = fromLogs ?? formulaMaintenance(known.weight, known.heightCm, known.sex, countsSteps(settings))
-    await updateTargets(suggestedTargets(known.weight, goalType, maintenance))
+    await updateTargets(suggestedTargets(known.weight, goalType, maintenance, goalPace(goalType, settings?.goalPace, trainingSince, toDateStr(now)), known.heightCm))
     toast.success(fromLogs ? 'Targets updated from your logs' : 'Targets updated from your profile')
   }
 
@@ -90,6 +90,16 @@ export default function BodyGoalsCard() {
         <Label>Goal</Label>
         <Segmented size="sm" value={goalType ?? ('' as GoalType)} options={GOALS} onChange={v => void updateSettings({ goalType: v })} className="bg-secondary" />
       </div>
+      {goalType === 'cut' && (
+        <div className="flex flex-col gap-1.5">
+          <Label>Pace (of your weight, a week)</Label>
+          <Segmented size="sm" value={String(settings?.goalPace ?? 0.5)} options={CUT_PACES.map(p => ({ value: String(p), label: `${p}%` }))} onChange={v => void updateSettings({ goalPace: Number(v) })} className="bg-secondary" />
+          <p className="text-xs text-muted-foreground">Slower keeps more muscle. The weekly check-in on Home aims for it.</p>
+        </div>
+      )}
+      {goalType === 'bulk' && (
+        <p className="-mt-3 text-xs text-muted-foreground">Gaining 0.25% of your weight a week, or 0.5% in your first year of lifting, when it builds the most muscle.</p>
+      )}
       {known && goalType ? (
         <div className="flex flex-col gap-2">
           <ExpenditureNote measured={measured} believable={believable} />
