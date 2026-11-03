@@ -92,6 +92,8 @@ interface SoloPlugin {
   musicPlaying(): Promise<{ playing: boolean }>
   /** This APK's build number (its versionCode). Since the update alert. */
   appBuild(): Promise<{ build: number }>
+  /** The app icon for a theme, switched to when the app next leaves the screen. Since the theme icons. */
+  setAppIcon(options: { name: string }): Promise<void>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -123,6 +125,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     mediaKey: options => native.mediaKey(options),
     musicPlaying: () => native.musicPlaying(),
     appBuild: () => native.appBuild(),
+    setAppIcon: options => native.setAppIcon(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -261,4 +264,11 @@ export async function apkBuild(): Promise<number> {
   if (!soloHas('appBuild')) return 0
   const plugin = await soloPlugin()
   return (await plugin?.appBuild().catch(() => null))?.build ?? 0
+}
+
+/** Ask for the app icon of a theme (an alias such as "IconAbyss"); false in an APK without theme icons. */
+export async function setAppIcon(name: string): Promise<boolean> {
+  if (!soloHas('setAppIcon')) return false
+  const plugin = await soloPlugin()
+  return (await plugin?.setAppIcon({ name }).then(() => true).catch(() => false)) ?? false
 }

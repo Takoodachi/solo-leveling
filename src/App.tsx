@@ -18,6 +18,7 @@ import { useNativeLinks } from '@/hooks/useNativeLinks'
 import { useAndroidBack } from '@/hooks/useAndroidBack'
 import { useVisibleViewport } from '@/hooks/useVisibleViewport'
 import { useAppShortcuts } from '@/features/settings/hooks/useAppShortcuts'
+import { useAppIconSync } from '@/features/settings/appIcon'
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { useDailyQuestReward } from '@/features/gamification/useDailyQuest'
 import { useCaffeineWatch } from '@/features/nutrition/caffeine'
@@ -95,6 +96,7 @@ function AppRoutes() {
   useNativeLinks()
   useAndroidBack()
   useAppShortcuts(ready)
+  useAppIconSync(ready)
 
   // Wait for the session check (and any account-switch wipe) before rendering data.
   if (loading || (session && !userId)) return <LaunchScreen />

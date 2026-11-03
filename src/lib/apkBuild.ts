@@ -5,4 +5,4 @@
  * (`SoloPlugin.appBuild`), and the site asks anyone on an older one to install it (UpdateAppDialog).
  * An APK from before builds were reported counts as 0.
  */
-export const LATEST_APK = { build: 2, date: '2026-11-02', news: 'music controls on the workout screen' } as const
+export const LATEST_APK = { build: 3, date: '2026-11-02', news: 'an app icon in your theme’s colours' } as const

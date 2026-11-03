@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * The long-press shortcuts on the app's icon. They're dynamic ones, so Settings → App icon can
@@ -18,6 +20,7 @@ object Shortcuts {
 
     private const val PREFS = "shortcuts"
     private const val PUBLISHED = "published"
+    private const val ITEMS = "items"
     /** Launchers show about four. */
     private const val MAX = 4
 
@@ -53,7 +56,18 @@ object Shortcuts {
                 .build()
         }
         ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(PUBLISHED, true).apply()
+        val saved = JSONArray(items.map { JSONObject().put("id", it.id).put("label", it.label).put("path", it.path).put("icon", it.icon) })
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(PUBLISHED, true).putString(ITEMS, saved.toString()).apply()
+    }
+
+    /** Publish the last ones again (after the launcher entry changed: AppIcons). */
+    fun republish(context: Context) {
+        val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(ITEMS, null)
+        val items = saved?.let { json ->
+            val array = JSONArray(json)
+            (0 until array.length()).map { i -> array.getJSONObject(i).let { Item(it.getString("id"), it.getString("label"), it.getString("path"), it.optString("icon")) } }
+        } ?: DEFAULTS
+        publish(context, items)
     }
 
     /** The original three, once, so the icon isn't bare before the site first loads. */
