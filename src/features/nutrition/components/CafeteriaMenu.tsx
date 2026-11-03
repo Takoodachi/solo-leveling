@@ -37,8 +37,9 @@ export default function CafeteriaMenu({ date, mealType, query, onPick }: Props) 
 
   return (
     <div className="px-2 pb-2">
-      {/* Stays at the top of the list while it scrolls, so the hall can be switched from anywhere */}
-      <div className="sticky top-0 z-10 bg-card px-2 pb-1">
+      {/* Stays at the top of the list while it scrolls, so the hall can be switched from anywhere.
+          wallpaper-solid: as a card inside the dialog's card, the card styles would make it see-through. */}
+      <div className="wallpaper-solid sticky top-0 z-10 bg-card px-2 pb-1">
         <Segmented
           size="sm"
           value={hall}
