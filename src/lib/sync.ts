@@ -112,6 +112,12 @@ const COLLECTIONS: CollectionSpec[] = [
     columns: ['uuid', 'exerciseId', 'text', 'unit', 'updatedAt'],
     normalize: row => ({ text: '', ...row }),
   },
+  {
+    // The photo behind the app and how it's shown, one pair per kind of screen (features/settings/wallpaper.ts)
+    remote: 'wallpapers',
+    table: () => t(db.wallpapers),
+    columns: ['uuid', 'dataUrl', 'dim', 'blur', 'updatedAt'],
+  },
 ]
 
 const SINGLETONS: SingletonSpec[] = [

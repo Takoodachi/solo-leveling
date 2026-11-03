@@ -4,6 +4,7 @@ import type {
   BodyMetric, UserStats, Targets, Achievement, Settings, DailyActivity,
   Exercise, Workout, WorkoutSet, WorkoutDraftRow, Routine, Challenge, PendingDelete, Checkin, SavedMeal, ExerciseNote, WallpaperRow,
 } from '@/types'
+import { screenKind } from '@/lib/utils'
 
 export class SoloLevelingDB extends Dexie {
   foods!:          Table<Food,            string>
@@ -24,7 +25,7 @@ export class SoloLevelingDB extends Dexie {
   checkins!:       Table<Checkin,         string>
   savedMeals!:     Table<SavedMeal,       string>
   exerciseNotes!:  Table<ExerciseNote,    string>
-  wallpaper!:      Table<WallpaperRow,    string>
+  wallpapers!:     Table<WallpaperRow,    string>
 
   constructor() {
     super('SoloLevelingDB')
@@ -83,5 +84,15 @@ export class SoloLevelingDB extends Dexie {
     this.version(18).stores({
       wallpaper: 'key',
     }) // the photo behind the app, on this device only (never synced)
+    this.version(19).stores({
+      wallpapers: 'uuid',
+    }).upgrade(async tx => {
+      // The photo syncs now, so a reinstall brings it back: its rows move to a uuid-keyed table,
+      // named for this kind of screen, and go up at the next sync
+      const kind = screenKind()
+      const rows = (await tx.table('wallpaper').toArray()) as { key: string }[]
+      await tx.table('wallpapers').bulkPut(rows.map(({ key, ...row }) => ({ ...row, uuid: `${key}-${kind}`, syncPending: true })))
+    })
+    this.version(20).stores({ wallpaper: null })
   }
 }

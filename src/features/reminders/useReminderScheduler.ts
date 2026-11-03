@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import { useNow } from '@/hooks/useNow'
+import { addDays, parseISO } from 'date-fns'
 import { toDateStr } from '@/lib/date'
 import { useAuthStore } from '@/features/auth/authStore'
 import { DEFAULT_WATER_GOAL_ML } from '@/features/settings/hooks/useSettings'
-import { planReminders, reminderPrefs, type ReminderFacts, type ReminderPrefs } from './reminders'
+import { PLAN_DAYS, planReminders, reminderPrefs, type ReminderFacts, type ReminderPrefs } from './reminders'
 import { deliverPlan } from './deliver'
 import { refreshPushSubscription } from './push'
 import { REMINDERS_CHANGED } from './useDeviceNotifications'
 
 /** The settings and today's state that decide which nudges are still due. */
 async function loadInputs(today: string): Promise<{ prefs: ReminderPrefs; facts: ReminderFacts }> {
-  const [settings, creatine, water, workouts, food, weighIns, routines, draft] = await Promise.all([
+  const [settings, creatine, water, workouts, food, weighIns, routines, draft, skips] = await Promise.all([
     db.settings.get(1),
     db.checkins.get(`creatine-${today}`),
     db.checkins.get(`water-${today}`),
@@ -21,6 +22,8 @@ async function loadInputs(today: string): Promise<{ prefs: ReminderPrefs; facts:
     db.bodyMetrics.where('date').equals(today).count(),
     db.routines.toArray(),
     db.workoutDrafts.get(1),
+    db.checkins.where('date').between(today, toDateStr(addDays(parseISO(today), PLAN_DAYS - 1)), true, true)
+      .filter(c => c.key === 'skip' && c.done).toArray(),
   ])
   return {
     prefs: reminderPrefs(settings),
@@ -34,6 +37,7 @@ async function loadInputs(today: string): Promise<{ prefs: ReminderPrefs; facts:
         water: (water?.amount ?? 0) >= (settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML),
       },
       routines: Object.fromEntries(routines.flatMap(r => r.scheduleDays.map(d => [d, r.name]))),
+      skipped: skips.map(c => c.date),
     },
   }
 }

@@ -9,7 +9,7 @@ const SLIDERS: { key: keyof WallpaperLook; name: string; hint: string; step: num
   { key: 'blur', name: 'Blur', hint: 'Softens a busy photo', step: 1, shown: n => (n === 0 ? 'Off' : `${n}`) },
 ]
 
-/** Settings → Theme: a photo of your own behind the app, on this device. The app itself is the preview. */
+/** Settings → Theme: a photo of your own behind the app (synced, one per kind of screen). The app itself is the preview. */
 export default function WallpaperCard() {
   const wallpaper = useWallpaper()
   const input = useRef<HTMLInputElement>(null)
@@ -36,7 +36,7 @@ export default function WallpaperCard() {
     <div className="flex flex-col gap-3 rounded-3xl bg-card p-4">
       <div className="px-1">
         <p className="eyebrow text-muted-foreground">Background photo</p>
-        <p className="mt-1 text-xs text-muted-foreground">A picture of your own behind the app. It stays on this device.</p>
+        <p className="mt-1 text-xs text-muted-foreground">A picture of your own behind the app. It’s kept with your account, so a reinstall brings it back; phones and computers each keep their own.</p>
       </div>
 
       <div className="flex items-center gap-3">

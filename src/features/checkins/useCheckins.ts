@@ -29,6 +29,16 @@ export async function tickCheckin(key: CheckinKey, date: string): Promise<boolea
   return true
 }
 
+/** Which of `dates` (in order) have this check-in ticked. */
+export function useCheckinDays(key: CheckinKey, dates: string[]): Set<string> {
+  const [first, last] = [dates[0], dates[dates.length - 1]]
+  const rows = useLiveQuery(
+    () => db.checkins.where('date').between(first, last, true, true).filter(c => c.key === key && c.done).toArray(),
+    [key, first, last],
+  )
+  return new Set(rows?.map(r => r.date))
+}
+
 /** Water drunk on a day, in ml. */
 export function useWater(date: string): number {
   return useLiveQuery(() => db.checkins.get(idFor('water', date)), [date])?.amount ?? 0

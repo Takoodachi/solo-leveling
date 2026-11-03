@@ -267,12 +267,18 @@ export interface WorkoutSet {
 }
 
 /**
- * Local-only: the photo behind the app on this device (`image`) and how it's shown (`look`).
- * Two rows, so changing the look doesn't rewrite the picture. See features/settings/wallpaper.ts.
+ * The photo behind the app (`image-<screen>`) and how it's shown (`look-<screen>`), synced so a
+ * reinstall brings it back; phones and computers keep one each. Two rows, so changing the look
+ * doesn't rewrite the picture. See features/settings/wallpaper.ts.
  */
-export type WallpaperRow =
-  | { key: 'image'; dataUrl: string; updatedAt: number }
-  | { key: 'look'; dim: number; blur: number; updatedAt: number }
+export interface WallpaperRow {
+  uuid: string
+  dataUrl?: string | null
+  dim?: number | null
+  blur?: number | null
+  updatedAt: number
+  syncPending?: boolean
+}
 
 /** Local-only: the in-progress workout, persisted so a reload doesn't lose it. */
 export interface WorkoutDraftRow {
@@ -300,13 +306,17 @@ export interface Challenge {
 
 // ── Daily check-ins ───────────────────────────────────────────────────────────
 
-/** 'achxp': the one row that marks the XP for earlier achievements as paid (lib/achievementEval.ts). */
-export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp'
+/**
+ * 'achxp': the one row that marks the XP for earlier achievements as paid (lib/achievementEval.ts).
+ * 'skip': the day's planned workout is skipped (Home's card; no dot, card or reminder for it).
+ */
+export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip'
 
 /**
  * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).
  * Unticking sets done = false; water keeps a running `amount` in ml.
  * `quest-YYYY-MM-DD` (done) records that the day's quest XP was given, so it's given once.
+ * `skip-YYYY-MM-DD` (done) skips that day's planned workout; undoing it sets done = false.
  */
 export interface Checkin {
   uuid: string

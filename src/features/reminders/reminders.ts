@@ -49,6 +49,8 @@ export interface ReminderFacts {
   done: Partial<Record<ReminderKind, boolean>>
   /** Weekday (0 = Sunday) → the routine scheduled that day. */
   routines: Record<number, string>
+  /** Days (YYYY-MM-DD) whose planned workout was skipped: no workout nudge on them. */
+  skipped?: string[]
 }
 
 export interface PlannedReminder {
@@ -76,6 +78,7 @@ export function planReminders(prefs: ReminderPrefs, facts: ReminderFacts, now: D
       if (i === 0 && facts.done[def.kind]) continue
       if (def.kind === 'recap' && day.getDay() !== 1) continue
       if (def.kind === 'workout' && pref.days !== 'daily' && !routine) continue
+      if (def.kind === 'workout' && facts.skipped?.includes(toDateStr(day))) continue
       const at = new Date(day)
       at.setHours(hours, minutes, 0, 0)
       if (at.getTime() <= now.getTime()) continue
