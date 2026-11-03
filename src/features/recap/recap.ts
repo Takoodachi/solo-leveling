@@ -145,13 +145,13 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
 
   const logged = [
     ...current.map(w => w.date), ...periodSteps.filter(d => d.steps > 0).map(d => d.date), ...logs.map(l => l.date),
-    ...checkins.filter(c => c.done && c.key !== 'skip').map(c => c.date), ...during.map(m => m.date),
+    ...checkins.filter(c => c.done && c.key !== 'skip' && c.key !== 'targets').map(c => c.date), ...during.map(m => m.date),
   ]
   return {
     period,
     dates,
     since: logged.length ? logged.reduce((a, d) => (d < a ? d : a)) : first,
-    empty: current.length === 0 && logs.length === 0 && periodSteps.every(d => d.steps === 0) && during.length === 0 && checkins.every(c => !c.done || c.key === 'skip'),
+    empty: current.length === 0 && logs.length === 0 && periodSteps.every(d => d.steps === 0) && during.length === 0 && checkins.every(c => !c.done || c.key === 'skip' || c.key === 'targets'),
     training,
     previous: { ...trainingOf(earlier, setsOf(earlier), cardio), steps: previousSteps },
     workoutGoal: Math.round(((settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)) * dates.length) / 7),

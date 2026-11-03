@@ -136,6 +136,8 @@ export interface Settings {
   heightCm?: number
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
+  goalPace?: number // a cut's pace, % of body weight a week (0.25 | 0.5 | 0.75; unset = 0.5; targetSuggestion.ts)
+  trainingDayCarbs?: boolean // carbs for fat on planned workout days, back on rest days (unset = on; lib/macroTargets.ts)
   dynamicTargetsEnabled?: boolean // subtract step calories from what was eaten (unset = on; `countsSteps`)
   activityWindowDays?: number // legacy (rolling-average activity targets), unused
   dailyStepGoal?: number
@@ -310,8 +312,9 @@ export interface Challenge {
 /**
  * 'achxp': the one row that marks the XP for earlier achievements as paid (lib/achievementEval.ts).
  * 'skip': the day's planned workout is skipped (Home's card; no dot, card or reminder for it).
+ * 'targets': the week's check-in was answered (`targets-<Monday>`; amount = the kcal applied, 0 = kept).
  */
-export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip'
+export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip' | 'targets'
 
 /**
  * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).

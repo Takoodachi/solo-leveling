@@ -15,7 +15,9 @@ import { weightSlope, type Weighed } from '@/lib/weightTrend'
  *
  * It's only as good as the food log. A day with half its food missing would pull the estimate
  * down, so days far under the person's usual intake are left out as incomplete, and the
- * callers still check the result against a resting body before using it.
+ * callers still check the result against a resting body before using it. Recent days count
+ * more (half as much every two weeks back), so a change in how someone lives shows within
+ * weeks, as in the adaptive apps (MacroFactor weights its trend toward recent readings too).
  */
 
 const WINDOW_DAYS = 28
@@ -27,6 +29,10 @@ const MIN_SPAN_DAYS = 14
 const KCAL_PER_KG = 7700
 /** A logged day under this share of the usual one is taken as partly logged. */
 const PARTIAL_SHARE = 0.5
+/** A day counts half as much this many days further back. */
+const HALF_LIFE_DAYS = 14
+/** The last two weeks, whose logging the weekly check-in needs to be current. */
+const RECENT_DAYS = 14
 
 export type Expenditure =
   | {
@@ -41,6 +47,8 @@ export type Expenditure =
       maintenance: number
       kgPerWeek: number
       foodDays: number
+      /** Of `foodDays`, those in the last two weeks. */
+      recentDays: number
       weighIns: number
     }
   | { ready: false; foodDays: number; weighIns: number; spanDays: number }
@@ -48,22 +56,41 @@ export type Expenditure =
 export const EXPENDITURE_NEEDS = { foodDays: MIN_FOOD_DAYS, weighIns: MIN_WEIGH_INS, spanDays: MIN_SPAN_DAYS, windowDays: WINDOW_DAYS }
 
 const round10 = (n: number) => Math.round(n / 10) * 10
-const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
+/** The mean of `ys`, each counted by its weight. */
+const weightedMean = (ys: number[], ws: number[]) => ys.reduce((sum, y, i) => sum + y * ws[i], 0) / ws.reduce((a, b) => a + b, 0)
 
-/** The estimate from a window's numbers: kcal eaten per day, weigh-ins, and kcal walked per day. */
-export function estimateExpenditure(eatenByDay: Map<string, number>, weighIns: Weighed[], walkedByDay: Map<string, number>): Expenditure {
+/** The best-fit line's slope through (x, y) points, each counted by its weight. */
+function weightedSlope(xs: number[], ys: number[], ws: number[]): number | null {
+  const mx = weightedMean(xs, ws)
+  const my = weightedMean(ys, ws)
+  let top = 0
+  let bottom = 0
+  xs.forEach((x, i) => {
+    top += ws[i] * (x - mx) * (ys[i] - my)
+    bottom += ws[i] * (x - mx) ** 2
+  })
+  return bottom > 0 ? top / bottom : null
+}
+
+/** The estimate from a window's numbers: kcal eaten per day, weigh-ins, and kcal walked per day, as of `today`. */
+export function estimateExpenditure(eatenByDay: Map<string, number>, weighIns: Weighed[], walkedByDay: Map<string, number>, today: string): Expenditure {
   const logged = [...eatenByDay].filter(([, kcal]) => kcal > 0)
   const usual = logged.map(([, kcal]) => kcal).sort((a, b) => a - b)[Math.floor(logged.length / 2)] ?? 0
   const days = logged.filter(([, kcal]) => kcal >= usual * PARTIAL_SHARE)
   const dates = weighIns.map(w => w.date).sort()
   const spanDays = dates.length > 1 ? differenceInCalendarDays(parseISO(dates[dates.length - 1]), parseISO(dates[0])) : 0
-  const slope = weightSlope(weighIns)
+  const age = (date: string) => differenceInCalendarDays(parseISO(today), parseISO(date))
+  const weightOf = (date: string) => 0.5 ** (age(date) / HALF_LIFE_DAYS)
+  const slope = weightSlope(weighIns) != null
+    ? weightedSlope(weighIns.map(w => -age(w.date)), weighIns.map(w => w.weightKg), weighIns.map(w => weightOf(w.date)))
+    : null
   if (days.length < MIN_FOOD_DAYS || weighIns.length < MIN_WEIGH_INS || spanDays < MIN_SPAN_DAYS || slope == null) {
     return { ready: false, foodDays: days.length, weighIns: weighIns.length, spanDays }
   }
 
-  const eaten = mean(days.map(([, kcal]) => kcal))
-  const walked = mean(days.map(([date]) => walkedByDay.get(date) ?? 0))
+  const counted = days.map(([date]) => weightOf(date))
+  const eaten = weightedMean(days.map(([, kcal]) => kcal), counted)
+  const walked = weightedMean(days.map(([date]) => walkedByDay.get(date) ?? 0), counted)
   const kcal = eaten - slope * KCAL_PER_KG
   return {
     ready: true,
@@ -73,6 +100,7 @@ export function estimateExpenditure(eatenByDay: Map<string, number>, weighIns: W
     maintenance: round10(kcal - walked),
     kgPerWeek: Math.round(slope * 7 * 100) / 100,
     foodDays: days.length,
+    recentDays: days.filter(([date]) => age(date) <= RECENT_DAYS).length,
     weighIns: weighIns.length,
   }
 }
@@ -92,7 +120,7 @@ export async function loadExpenditure(today: string): Promise<Expenditure> {
 
   const burns = await loadStepBurns([...eaten.keys()])
   const walked = new Map([...burns].map(([date, burn]) => [date, burn.kcal]))
-  return estimateExpenditure(eaten, weighIns, walked)
+  return estimateExpenditure(eaten, weighIns, walked, today)
 }
 
 /** Live: undefined while it loads. */
