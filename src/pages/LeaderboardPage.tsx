@@ -75,9 +75,12 @@ export default function LeaderboardPage() {
             <MuscleCrowns entries={lb.entries} />
           </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Recent highlights</h2>
-            <Highlights entries={lb.entries} />
+          <section id="highlights" className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Recent highlights</h2>
+              <p className="text-sm text-muted-foreground">New bests from the last two weeks. Tap the hand to high-five a friend’s.</p>
+            </div>
+            <Highlights entries={lb.entries} canHighFive={lb.sharing} />
           </section>
         </>
       )}
