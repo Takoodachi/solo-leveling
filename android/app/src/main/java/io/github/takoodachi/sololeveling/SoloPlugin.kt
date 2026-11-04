@@ -13,7 +13,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.time.TimeRangeFilter
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -26,6 +31,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.time.Instant
 
 /**
  * The app's own bridge to the site (src/lib/native.ts → `soloPlugin()`):
@@ -35,7 +41,9 @@ import java.io.File
  * - images go to Android's share sheet (the WebView has no Web Share API);
  * - creatine and water reminders with a log button are handed over here ([QuickLog]);
  * - Android's Back (the edge swipe or the button) goes to the site as a `back` event;
- * - the app's own background follows the site's theme ([setBackground]).
+ * - the app's own background follows the site's theme ([setBackground]);
+ * - the workout in progress shows as a notification ([WorkoutNotice]), and its heart rate is
+ *   read from Health Connect afterwards ([heartRate]).
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
@@ -263,6 +271,65 @@ class SoloPlugin : Plugin() {
         call.resolve(JSObject().put("build", PackageInfoCompat.getLongVersionCode(info)))
     }
 
+    /** The workout in progress, in the shade and on the lock screen (src/features/workouts/workoutNotice.ts). */
+    @PluginMethod
+    fun workoutNotice(call: PluginCall) {
+        val title = call.getString("title") ?: return call.reject("No title")
+        WorkoutNotice.show(
+            context,
+            WorkoutNotice.State(
+                name = call.getString("name") ?: "",
+                title = title,
+                text = call.getString("text") ?: "",
+                startedAt = call.time("startedAt") ?: System.currentTimeMillis(),
+                restEndsAt = call.time("restEndsAt"),
+            ),
+        )
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun clearWorkoutNotice(call: PluginCall) {
+        WorkoutNotice.clear(context)
+        call.resolve()
+    }
+
+    /**
+     * Heart rate between `start` and `end` (ms) from Health Connect: the watch's readings, which
+     * Samsung Health shares there, often a while after they were taken. Average, highest and how
+     * many readings; `granted` is false without access (src/features/health/workoutHeartRate.ts).
+     */
+    @PluginMethod
+    fun heartRate(call: PluginCall) {
+        val start = call.time("start") ?: return call.reject("No start")
+        val end = call.time("end") ?: return call.reject("No end")
+        if (end <= start) return call.reject("Empty range")
+        scope.launch {
+            try {
+                val client = if (HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) HealthConnectClient.getOrCreate(context) else null
+                if (client == null || HEART_RATE !in client.permissionController.getGrantedPermissions()) {
+                    call.resolve(JSObject().put("granted", false))
+                    return@launch
+                }
+                val result = client.aggregate(
+                    AggregateRequest(
+                        metrics = setOf(HeartRateRecord.BPM_AVG, HeartRateRecord.BPM_MAX, HeartRateRecord.MEASUREMENTS_COUNT),
+                        timeRangeFilter = TimeRangeFilter.between(Instant.ofEpochMilli(start), Instant.ofEpochMilli(end)),
+                    ),
+                )
+                call.resolve(
+                    JSObject()
+                        .put("granted", true)
+                        .put("count", result[HeartRateRecord.MEASUREMENTS_COUNT] ?: 0L)
+                        .put("avg", result[HeartRateRecord.BPM_AVG] ?: JSObject.NULL)
+                        .put("max", result[HeartRateRecord.BPM_MAX] ?: JSObject.NULL),
+                )
+            } catch (e: Exception) {
+                call.reject(e.message ?: "Couldn't read heart rate")
+            }
+        }
+    }
+
     /** Back with nowhere left to go back to: out to the launcher, the app kept as it is. */
     @PluginMethod
     fun leaveApp(call: PluginCall) {
@@ -274,6 +341,13 @@ class SoloPlugin : Plugin() {
     fun disableBackgroundSteps(call: PluginCall) {
         StepsSync.cancel(context)
         resolveStatus(call)
+    }
+
+    /** A time in ms from the site, whichever way the bridge typed the number. */
+    private fun PluginCall.time(name: String): Long? = (data.opt(name) as? Number)?.toLong()
+
+    private companion object {
+        val HEART_RATE = HealthPermission.getReadPermission(HeartRateRecord::class)
     }
 
     private fun resolveStatus(call: PluginCall) {

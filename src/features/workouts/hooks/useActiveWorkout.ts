@@ -5,13 +5,14 @@ import { db } from '@/db'
 import type { Routine, WorkoutSet } from '@/types'
 import type { RoutineTemplate } from '@/data/routineTemplates'
 import { requestSync } from '@/lib/sync'
+import { isAndroidApp } from '@/lib/native'
 import { today } from '@/lib/date'
 import { updateStreak } from '@/lib/streak'
 import { grantXp, XP } from '@/lib/xp'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
 import { afterStage, holdStage } from '@/features/gamification/celebration'
-import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
+import { estimateWorkoutKcal, liftMetFor, liftMetFromHeartRate, setModeFor } from '@/lib/workoutMath'
 import { rpeFor } from '@/lib/cardio'
 import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRanks'
 import { playsIntro } from '@/features/ranks/useRankUpIntro'
@@ -140,7 +141,7 @@ export function useActiveWorkout() {
     const kcalEst = estimateWorkoutKcal({
       durationMin: opts.durationMin,
       bodyKg: latestWeight?.weightKg,
-      liftMet: liftMetFor(draft.category, draft.blocks.map(b => b.exercise)),
+      liftMet: opts.avgHeartRate ? liftMetFromHeartRate(opts.avgHeartRate) : liftMetFor(draft.category, draft.blocks.map(b => b.exercise)),
       cardio: cardioSets,
     })
 
@@ -162,6 +163,12 @@ export function useActiveWorkout() {
       if (sets.length > 0) await db.workoutSets.bulkAdd(sets)
     })
     useWorkoutStore.getState().discard()
+    // Android app: the watch's heart rate for it, from Health Connect, now or once it arrives
+    if (isAndroidApp() && day === today() && !opts.avgHeartRate) {
+      void import('@/features/health/workoutHeartRate')
+        .then(m => m.awaitHeartRate(workoutUuid, draft.startedAt, now))
+        .catch(err => console.warn('[heart rate] failed:', err))
+    }
 
     const saved = await getWorkoutWithSets(workoutUuid)
     const newBests = saved ? await findNewBests(saved) : []
