@@ -81,6 +81,9 @@ function gearOf(name: string): Gear {
   return 'other'
 }
 
+/** Loaded with plates on a bar (the logger's plate calculator). */
+export const isBarbell = (name: string) => gearOf(name.toLowerCase()) === 'barbell'
+
 /** The usual smallest jump on this equipment, until the lifter's own history shows the real one. */
 function defaultStep(gear: Gear, name: string, weight: number, lb: boolean): number {
   const heavy = weight >= (lb ? 225 : 100) && /deadlift|squat|hip thrust|rack pull/.test(name)

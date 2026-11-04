@@ -9,8 +9,9 @@ import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockCard, { type BlockCardProps } from './BlockCard'
 import ProgressHint from './ProgressHint'
+import PlatesButton from './PlatesButton'
 import UnitToggle from './UnitToggle'
-import { applyFill, suggestProgress } from '../progression'
+import { applyFill, isBarbell, suggestProgress } from '../progression'
 import { lastSetsIn, setsInKg } from '../units'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
 import { useHoldToMove } from '../hooks/useHoldToMove'
@@ -45,6 +46,8 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
   const hint = draft?.editing || settings?.workoutTips === false ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg })
   const fill = hint?.fill
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
+  // The plate calculator starts from the next set's weight
+  const nextSet = block.sets.find(s => !s.done) ?? block.sets[block.sets.length - 1]
 
   function handleToggle(setIdx: number) {
     if (!toggleDone(blockIdx, setIdx)) return
@@ -151,6 +154,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
         >
           <Plus size={16} /> Add set
         </button>
+        {mode === 'load' && isBarbell(block.exercise.name) && <PlatesButton unit={block.unit ?? 'kg'} weight={nextSet?.weight ?? ''} />}
         <button
           type="button"
           onClick={() => removeSet(blockIdx, block.sets.length - 1)}
