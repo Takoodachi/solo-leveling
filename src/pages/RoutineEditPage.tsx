@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
@@ -14,17 +14,20 @@ function blankRoutine(uuid: string): RoutineDraft {
 export default function RoutineEditPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const isNew = !id
+  const [params] = useSearchParams()
   const existing = useRoutineOrTemplate(id)
-  // Stable id for a new routine (or a copy of a template) across re-renders.
+  // Stable id for a new routine (or a copy) across re-renders.
   const [newId] = useState(() => crypto.randomUUID())
 
-  if (!isNew && existing === undefined) return null
-  // Templates aren't editable in place; editing starts from a copy.
+  if (id && existing === undefined) return null
+  // Templates aren't editable in place, and ?copy makes a new routine from one of yours: both start
+  // from a copy, saved only when Save is pressed. A copy leaves the plan's days with the original.
   const initial: RoutineDraft =
-    isNew || !existing ? blankRoutine(newId)
+    !id || !existing ? blankRoutine(newId)
       : existing.kind === 'template' ? { ...existing.routine, uuid: newId }
-        : existing.routine
+        : params.has('copy') ? { ...existing.routine, uuid: newId, name: `${existing.routine.name} (copy)`, scheduleDays: [] }
+          : existing.routine
+  const isNew = initial.uuid === newId
 
   async function handleSave(r: RoutineDraft) {
     await saveRoutine(r)

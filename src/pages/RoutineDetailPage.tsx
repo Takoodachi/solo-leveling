@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronLeft, Clock, Flame, Dumbbell, Pencil, Share2 } from 'lucide-react'
+import { ChevronLeft, Clock, Copy, Flame, Dumbbell, Pencil, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -77,6 +77,9 @@ export default function RoutineDetailPage() {
                 <button type="button" onClick={() => void shareLink({ routineId: routine.uuid, title: routine.name })} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Share routine">
                   <Share2 size={18} />
                 </button>
+                <Link to={`/workouts/routine/${routine.uuid}/edit?copy=1`} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Make a copy">
+                  <Copy size={18} />
+                </Link>
                 <Link to={`/workouts/routine/${routine.uuid}/edit`} className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur" aria-label="Edit routine">
                   <Pencil size={18} />
                 </Link>
