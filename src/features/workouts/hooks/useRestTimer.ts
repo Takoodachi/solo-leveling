@@ -17,6 +17,12 @@ function readPersisted(): Persisted | null {
   }
 }
 
+/** Fired on window whenever the rest timer starts, changes or stops (the workout notification follows it). */
+export const REST_EVENT = 'solo:rest'
+
+/** When the running rest ends, or null. */
+export const restEndsAt = (): number | null => readPersisted()?.endAt ?? null
+
 function persist(p: Persisted | null): void {
   try {
     if (p) localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
@@ -24,6 +30,7 @@ function persist(p: Persisted | null): void {
   } catch {
     // storage unavailable — timer still works in memory
   }
+  window.dispatchEvent(new Event(REST_EVENT))
 }
 
 /** Ask the service worker to show a notification at endAt (works while the app is backgrounded, best-effort). */

@@ -23,7 +23,7 @@ const ASKED_KEY = 'solo:healthAsked'
  * by itself once and never nags. (Android stops showing a question after two refusals, so one
  * at every launch would also use up the chances to say yes from Settings.)
  */
-export function firstAsk(what: 'notifications' | 'camera' | 'steps' | 'background'): boolean {
+export function firstAsk(what: 'notifications' | 'camera' | 'steps' | 'heartRate' | 'background'): boolean {
   try {
     const asked = (localStorage.getItem(ASKED_KEY) ?? '').split(',').filter(Boolean)
     if (asked.includes(what)) return false

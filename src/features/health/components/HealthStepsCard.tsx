@@ -7,6 +7,7 @@ import { useNow } from '@/hooks/useNow'
 import type { HealthStatus } from '../healthSteps'
 import HealthStepsDiagnosis from './HealthStepsDiagnosis'
 import BackgroundStepsRow from './BackgroundStepsRow'
+import HeartRateRow from './HeartRateRow'
 import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn'
 
 const load = () => import('../healthSteps')
@@ -123,6 +124,7 @@ export default function HealthStepsCard() {
         </div>
       )}
       {status === 'connected' && <BackgroundStepsRow />}
+      {(status === 'connected' || status === 'needs-permission') && <HeartRateRow />}
       {status === 'connected' && <HealthStepsDiagnosis version={(lastImport ?? 0) + checks} />}
     </div>
   )

@@ -58,6 +58,29 @@ export interface IconShortcut {
   icon: string
 }
 
+/** The workout in progress as the app's notification shows it (WorkoutNotice.kt). */
+export interface WorkoutNoticeState {
+  /** The workout's name, in small type. */
+  name: string
+  /** What's next: an exercise, or "All sets done". Resting, it reads "Rest, then <title>". */
+  title: string
+  /** The next set, e.g. "Set 3 of 4 · 60 kg × 8". */
+  text: string
+  /** The workout's clock counts up from here. */
+  startedAt: number
+  /** While resting, the clock counts down to here instead. */
+  restEndsAt: number | null
+}
+
+/** Heart rate over a stretch of time, from Health Connect (the watch's readings). */
+export interface HeartRateReading {
+  /** False without Health Connect or without heart-rate access. */
+  granted: boolean
+  count?: number
+  avg?: number | null
+  max?: number | null
+}
+
 /** What the plugin tells the site, by event name. */
 interface SoloEvents {
   /** A long-press app shortcut was picked. */
@@ -94,6 +117,11 @@ interface SoloPlugin {
   appBuild(): Promise<{ build: number }>
   /** The app icon for a theme, switched to when the app next leaves the screen. Since the theme icons. */
   setAppIcon(options: { name: string }): Promise<void>
+  /** Shows or updates the workout-in-progress notification. Since the workout notification. */
+  workoutNotice(options: WorkoutNoticeState): Promise<void>
+  clearWorkoutNotice(): Promise<void>
+  /** Heart rate between two times (ms). Since heart rate from the watch. */
+  heartRate(options: { start: number; end: number }): Promise<HeartRateReading>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -126,6 +154,9 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     musicPlaying: () => native.musicPlaying(),
     appBuild: () => native.appBuild(),
     setAppIcon: options => native.setAppIcon(options),
+    workoutNotice: options => native.workoutNotice(options),
+    clearWorkoutNotice: () => native.clearWorkoutNotice(),
+    heartRate: options => native.heartRate(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }

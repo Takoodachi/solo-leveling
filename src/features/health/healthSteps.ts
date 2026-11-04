@@ -12,26 +12,43 @@ import { raiseSteps } from './stepsWriter'
 const DAYS = 14
 const LAST_IMPORT_KEY = 'solo:healthLastImport'
 const READ_STEPS = { permissions: ['READ_STEPS' as const] }
+const READ_HEART_RATE = { permissions: ['READ_HEART_RATE' as const] }
 
 export type HealthStatus = 'unavailable' | 'needs-permission' | 'connected'
 
-function stepsGranted(res: PermissionResponse): boolean {
+function granted(res: PermissionResponse, permission: 'READ_STEPS' | 'READ_HEART_RATE'): boolean {
   // Typed as a list of maps, but Android returns a single map: { READ_STEPS: true }
   const maps: unknown[] = Array.isArray(res.permissions) ? res.permissions : [res.permissions]
-  return maps.some(m => typeof m === 'object' && m !== null && (m as Record<string, unknown>).READ_STEPS === true)
+  return maps.some(m => typeof m === 'object' && m !== null && (m as Record<string, unknown>)[permission] === true)
 }
 
 export async function getStatus(): Promise<HealthStatus> {
   const { available } = await Health.isHealthAvailable()
   if (!available) return 'unavailable'
-  return stepsGranted(await Health.checkHealthPermissions(READ_STEPS)) ? 'connected' : 'needs-permission'
+  return granted(await Health.checkHealthPermissions(READ_STEPS), 'READ_STEPS') ? 'connected' : 'needs-permission'
 }
 
-/** Ask for step access on Health Connect's consent screen. Resolves with whether it was granted. */
-export async function connect(): Promise<boolean> {
+/**
+ * Ask for step access on Health Connect's consent screen (and heart rate on the same screen,
+ * `withHeartRate`). Resolves with whether steps were granted.
+ */
+export async function connect(withHeartRate = false): Promise<boolean> {
   const { available } = await Health.isHealthAvailable()
   if (!available) return false
-  return stepsGranted(await Health.requestHealthPermissions(READ_STEPS))
+  const permissions = withHeartRate ? (['READ_STEPS', 'READ_HEART_RATE'] as const) : READ_STEPS.permissions
+  return granted(await Health.requestHealthPermissions({ permissions: [...permissions] }), 'READ_STEPS')
+}
+
+/** Heart rate for workouts (src/features/health/workoutHeartRate.ts). */
+export async function heartRateAllowed(): Promise<boolean> {
+  const { available } = await Health.isHealthAvailable()
+  return available && granted(await Health.checkHealthPermissions(READ_HEART_RATE), 'READ_HEART_RATE')
+}
+
+/** Asks for heart-rate access unless it's already given. Resolves with whether it is. */
+export async function allowHeartRate(): Promise<boolean> {
+  if (await heartRateAllowed()) return true
+  return granted(await Health.requestHealthPermissions(READ_HEART_RATE), 'READ_HEART_RATE')
 }
 
 export const openHealthConnectSettings = () => Health.openHealthConnectSettings()

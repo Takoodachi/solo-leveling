@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { db } from '@/db'
-import { isAndroidApp, soloPlugin } from '@/lib/native'
+import { isAndroidApp, soloHas, soloPlugin } from '@/lib/native'
 import { nativeNotifyState } from '@/lib/localNotifications'
 import { allowNativeNotifications } from '@/features/reminders/useDeviceNotifications'
 import { firstAsk, rememberHealth } from './healthPrefs'
@@ -51,7 +51,8 @@ async function keepBackground(): Promise<void> {
  * is written.
  *
  * **On a fresh install it asks for everything the app uses, by itself, one question after the
- * other**: notifications, the camera, step access, and background access if the account says
+ * other**: notifications, the camera, step access (with heart rate for workouts on the same
+ * screen), and background access if the account says
  * that was on (`settings.health`, read after the import, which waits for the first sync).
  * Android forgets all of them when the app is removed, and each used to be found again in
  * Settings. Every question is asked once per install (`firstAsk`) and never again after a no.
@@ -60,13 +61,22 @@ export function useHealthStepsSync(ready: boolean): void {
   useEffect(() => {
     if (!ready || !isAndroidApp()) return
     const run = () => {
-      if (busy || document.visibilityState !== 'visible' || Date.now() - lastRun < MIN_GAP_MS) return
+      if (document.visibilityState !== 'visible') return
+      // A finished workout's heart rate may have come in since (cheap when none is waiting)
+      void import('./workoutHeartRate').then(m => m.fillHeartRates()).catch(err => console.warn('[heart rate] failed:', err))
+      if (busy || Date.now() - lastRun < MIN_GAP_MS) return
       busy = true
       void askForDevicePermissions()
         .then(() => import('./healthSteps'))
         .then(async h => {
+          const heart = soloHas('heartRate')
           let status = await h.getStatus()
-          if (status === 'needs-permission' && firstAsk('steps') && (await h.connect())) status = 'connected'
+          if (status === 'needs-permission' && firstAsk('steps')) {
+            if (heart) firstAsk('heartRate') // asked on the same screen
+            if (await h.connect(heart)) status = 'connected'
+          }
+          // An install that had steps before heart rate was read gets the one question once
+          if (status !== 'unavailable' && heart && firstAsk('heartRate')) await h.allowHeartRate()
           // The cooldown only starts once step access is granted, so access given in Health
           // Connect's own screen is picked up as soon as you're back
           if (status !== 'connected') return

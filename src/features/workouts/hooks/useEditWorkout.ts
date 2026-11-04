@@ -7,7 +7,7 @@ import { deleteSynced, requestSync } from '@/lib/sync'
 import { parseDate } from '@/lib/date'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
-import { estimateWorkoutKcal, liftMetFor, setModeFor } from '@/lib/workoutMath'
+import { estimateWorkoutKcal, liftMetFor, liftMetFromHeartRate, setModeFor } from '@/lib/workoutMath'
 import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
@@ -135,7 +135,7 @@ export function useEditWorkout() {
     const kcalEst = estimateWorkoutKcal({
       durationMin: opts.durationMin,
       bodyKg: weighIn?.weightKg,
-      liftMet: liftMetFor(draft.category, draft.blocks.map(b => b.exercise)),
+      liftMet: opts.avgHeartRate ? liftMetFromHeartRate(opts.avgHeartRate) : liftMetFor(draft.category, draft.blocks.map(b => b.exercise)),
       cardio: sets.filter(s => cardioIds.has(s.exerciseId)),
     })
 

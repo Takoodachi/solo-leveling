@@ -64,6 +64,24 @@ export function liftMetFor(category: RoutineCategory | undefined, exercises: Exe
   return exercises.some(e => setModeFor(e) !== 'cardio') ? MET.strength : LIGHT_MET
 }
 
+/** Max heart rate by Tanaka (208 − 0.7 × age) at 25: the app doesn't know anyone's age. */
+const MAX_HR = 190
+
+/**
+ * MET for the lifting part from the session's average heart rate: ACSM's intensity bands by
+ * share of max heart rate (under 57% very light, under 64% light, under 77% moderate, then
+ * vigorous) mapped to the Compendium's resistance-training rates (3.5 light, 5.0 moderate,
+ * 6.0 vigorous). Heart-rate calorie formulas made for steady cardio (Keytel) take lifting's
+ * blood-pressure spikes for work and overestimate it, so the heart rate only picks the band.
+ */
+export function liftMetFromHeartRate(avgBpm: number): number {
+  const share = avgBpm / MAX_HR
+  if (share < 0.57) return LIGHT_MET
+  if (share < 0.64) return 3.5
+  if (share < 0.77) return 5
+  return 6
+}
+
 const WORK_SECONDS_PER_SET = 40
 
 /**

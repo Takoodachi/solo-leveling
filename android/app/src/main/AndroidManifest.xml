@@ -314,10 +314,14 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Quick-log reminders set their alarms again after a restart (the plugin asks for it too) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The workout notification may show as a Live Update on Android 16 (WorkoutNotice); no prompt -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
-    <!-- Health Connect: steps only. The site's code runs with this app's permissions, so the
-         capacitor-health plugin's other read permissions are stripped from the merged manifest. -->
+    <!-- Health Connect: steps, and heart rate for workouts (SoloPlugin.heartRate). The site's code
+         runs with this app's permissions, so the capacitor-health plugin's other read permissions
+         are stripped from the merged manifest. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <!-- Step sync while the app is closed (StepsSyncWorker). Asked for only when it's switched on. -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" tools:node="remove" />
@@ -325,7 +329,6 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED" tools:node="remove" />
-    <uses-permission android:name="android.permission.health.READ_HEART_RATE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_WEIGHT" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_HEIGHT" tools:node="remove" />
