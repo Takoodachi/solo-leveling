@@ -1,5 +1,7 @@
+import { Search } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { Exercise } from '@/types'
 import ExerciseNote from './ExerciseNote'
 import ExerciseHistory from './ExerciseHistory'
@@ -28,6 +30,12 @@ export default function ExerciseInfoSheet({ exercise, onClose }: Props) {
             <p className="text-sm leading-relaxed text-foreground/85">
               {exercise.instructions ?? 'No instructions for this exercise yet.'}
             </p>
+            {/* A new tab in a browser; the Android app hands any outside address to the phone's browser */}
+            <Button asChild variant="secondary" className="mt-4 w-full gap-2">
+              <a href={`https://www.google.com/search?q=${encodeURIComponent(`how to do ${exercise.name}`)}`} target="_blank" rel="noopener noreferrer">
+                <Search size={16} /> How to do it on Google
+              </a>
+            </Button>
             <h4 className="mb-1.5 mt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your note</h4>
             <ExerciseNote key={exercise.uuid} exerciseId={exercise.uuid} cardio={exercise.type === 'cardio'} />
             <ExerciseHistory exercise={exercise} />
