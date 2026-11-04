@@ -9,6 +9,7 @@ import { lazyAhead, loadAhead } from '@/lib/lazyAhead'
 import { useAuthInit } from '@/features/auth/useAuthInit'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
+import { useHighFiveDigest } from '@/features/leaderboard/useHighFiveDigest'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
@@ -76,6 +77,7 @@ function StatusBarScrim() {
 function AppRoutes() {
   useAuthInit()
   useLeaderboardPublisher()
+  useHighFiveDigest()
   useThemeSync()
   useHashScroll()
   useVisibleViewport()

@@ -57,7 +57,7 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'rank-progress', title: 'Rank progress', subtitle: 'Ranks', keywords: 'rank history rating weekly chart', Icon: ChartLine, to: '/ranks#rank-progress' },
   { id: 'ranked-lifts', title: 'Ranked lifts', subtitle: 'Ranks', keywords: 'next division target lifts', Icon: Dumbbell, to: '/ranks#lifts' },
   { id: 'how-ranks', title: 'How ranks work', subtitle: 'Ranks', keywords: 'tiers ladder wood bronze silver gold platinum diamond champion titan olympian', Icon: Medal, to: '/ranks#how-ranks-work' },
-  { id: 'leaderboard', title: 'Leaderboard', subtitle: 'Friends, podium and crowns', keywords: 'friends compete ranking podium crowns highlights', Icon: Trophy, to: '/leaderboard' },
+  { id: 'leaderboard', title: 'Leaderboard', subtitle: 'Friends, podium and crowns', keywords: 'friends compete ranking podium crowns highlights high five high-five', Icon: Trophy, to: '/leaderboard' },
   { id: 'profile', title: 'Profile', subtitle: 'Name, photo, level and XP', keywords: 'me avatar photo name level xp', Icon: UserRound, to: '/profile' },
   { id: 'achievements', title: 'Achievements', subtitle: 'Profile', keywords: `badges unlocked ${ACHIEVEMENT_DEFS.map(a => a.title).join(' ')}`, Icon: Award, to: '/profile#achievements' },
   { id: 'body-goals', title: 'Body & goals', subtitle: 'Profile', keywords: 'height sex age activity goal bodyweight', Icon: Ruler, to: '/profile#body-goals' },
