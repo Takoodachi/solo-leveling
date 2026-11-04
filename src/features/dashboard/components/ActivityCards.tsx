@@ -4,6 +4,7 @@ import { Footprints, Flame } from 'lucide-react'
 import ProgressRing from '@/components/ProgressRing'
 import CountUp from '@/components/CountUp'
 import LogStepsSheet from './LogStepsSheet'
+import { cn } from '@/lib/utils'
 
 const percent = (n: number) => `${Math.round(n)}%`
 
@@ -48,9 +49,10 @@ interface CaloriesProps {
 /** Takes the "heart rate" slot from the design: net calories (eaten − steps) vs target with mini macro bars. */
 export function CaloriesCard({ eaten, burned, target, macros, macroTargets }: CaloriesProps) {
   const bars = [
-    { key: 'P', v: macros.protein / (macroTargets.protein || 1) },
-    { key: 'C', v: macros.carbs / (macroTargets.carbs || 1) },
-    { key: 'F', v: macros.fat / (macroTargets.fat || 1) },
+    // Each in its macro's own colour, as on Nutrition (MacroBar)
+    { key: 'P', v: macros.protein / (macroTargets.protein || 1), text: 'text-primary', fill: 'bg-primary' },
+    { key: 'C', v: macros.carbs / (macroTargets.carbs || 1), text: 'text-carbs', fill: 'bg-carbs' },
+    { key: 'F', v: macros.fat / (macroTargets.fat || 1), text: 'text-fat', fill: 'bg-fat' },
   ]
   return (
     <Link to="/nutrition" className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 active:scale-[0.99]">
@@ -60,9 +62,9 @@ export function CaloriesCard({ eaten, burned, target, macros, macroTargets }: Ca
           {bars.map(b => (
             <div key={b.key} className="flex flex-col items-center gap-1">
               <div className="flex h-10 w-2 items-end overflow-hidden rounded-full bg-secondary">
-                <div className="w-full rounded-full bg-primary" style={{ height: `${Math.min(1, b.v) * 100}%` }} />
+                <div className={cn('w-full rounded-full', b.fill)} style={{ height: `${Math.min(1, b.v) * 100}%` }} />
               </div>
-              <span className="text-[9px] font-semibold text-muted-foreground">{b.key}</span>
+              <span className={cn('text-[9px] font-semibold', b.text)}>{b.key}</span>
             </div>
           ))}
         </div>
