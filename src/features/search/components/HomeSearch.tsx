@@ -68,7 +68,7 @@ export default function HomeSearch({ open, onOpenChange, onCustomize }: Props) {
 
   return (
     <>
-      <div ref={stripRef} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-2 bg-background/90 px-4 py-2 backdrop-blur-xl', !stuck && 'wallpaper-clear')}>
+      <div ref={stripRef} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-2 bg-background/90 px-4 py-2 backdrop-blur-xl transition-colors duration-300 ease-out', !stuck && 'wallpaper-clear')}>
         <div className="flex items-center">
           {/* rounded-3xl on a field this tall is a pill, and it makes the field a card to the card styles (index.css) */}
           <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-3xl bg-card px-4 focus-within:ring-2 focus-within:ring-primary">
