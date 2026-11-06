@@ -12,6 +12,7 @@ import ProgressHint from './ProgressHint'
 import PlatesButton from './PlatesButton'
 import UnitToggle from './UnitToggle'
 import { applyFill, isBarbell, suggestProgress } from '../progression'
+import { orderEffect } from '../fatigue'
 import { lastSetsIn, setsInKg } from '../units'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
 import { useHoldToMove } from '../hooks/useHoldToMove'
@@ -43,7 +44,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
   const lastSets = lastSetsIn(block.lastSets, block.unit)
   const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done), liftRank, rankContext) : liftRank
   // No "what to try today" while correcting a workout that's already happened, or with tips switched off
-  const hint = draft?.editing || settings?.workoutTips === false ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg })
+  const hint = draft?.editing || settings?.workoutTips === false ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg, order: draft ? orderEffect(draft.blocks, blockIdx) : undefined })
   const fill = hint?.fill
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
   // The plate calculator starts from the next set's weight

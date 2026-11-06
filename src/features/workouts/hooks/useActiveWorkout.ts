@@ -73,7 +73,7 @@ export function useActiveWorkout() {
     for (const [i, re] of routine.exercises.entries()) {
       const exercise = exercises[i]
       if (!exercise) continue
-      const { lastSets, trend, unit } = await blockHistory(exercise.uuid)
+      const { lastSets, trend, unit, lastPreload } = await blockHistory(exercise.uuid)
       const base = { exercise, lastSets, unit }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
@@ -85,6 +85,7 @@ export function useActiveWorkout() {
         lastSets,
         trend,
         unit,
+        lastPreload,
         sets: cardio
           ? [prefillCardio(base, Math.max(1, re.sets) * re.reps)]
           : Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),

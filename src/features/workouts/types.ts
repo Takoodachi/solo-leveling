@@ -35,6 +35,9 @@ export type LiftTrend = {
   flat: number
 }
 
+/** Work done before an exercise in a workout on the muscles it uses, in sets, and the exercises it came from, most first (fatigue.ts). */
+export type Preload = { sets: number; after: string[] }
+
 export type BlockDraft = {
   exercise: Exercise
   restSec: number
@@ -43,11 +46,16 @@ export type BlockDraft = {
   sets: SetDraft[]
   lastSets?: LastSet[]
   trend?: LiftTrend
+  /** What came before this exercise in the last workout that had it, so the tips can weigh today's order against it. */
+  lastPreload?: Preload
   /** The unit this exercise is logged in (unset = kg), from its saved choice. See units.ts. */
   unit?: WeightUnit
   /** Folded away in the logger: only its header shows. */
   collapsed?: boolean
 }
+
+/** What a new logger card takes from history (blockHistory). */
+export type BlockHistory = Pick<BlockDraft, 'lastSets' | 'trend' | 'unit' | 'lastPreload'>
 
 /** A saved workout being edited in the logger (instead of a live session). */
 export type EditingInfo = {

@@ -2,6 +2,7 @@ import type { Exercise, WeightUnit } from '@/types'
 import { standardFor } from '@/features/ranks/standards'
 import { resolveBodyKg, setModeFor } from '@/lib/workoutMath'
 import type { LastSet, LiftTrend, PastSession, SetDraft } from './types'
+import type { OrderEffect } from './fatigue'
 import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
 
 /**
@@ -21,6 +22,10 @@ import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
  * - An exercise logged in pounds is worked out in pounds, with the jumps a pound gym has (5 lb on
  *   a bar, 10 on a stack) and targets on the 2.5 lb grid. The hint's text and its fill are then in
  *   pounds too, like the fields they fill.
+ * - Order: when more (or less) work for the same muscles came before it today than last time
+ *   (fatigue.ts), last time's reps are moved by the estimate before anything is decided, so it
+ *   holds the weight where it would have jumped, or jumps where it would have held, and says why.
+ *   Less than half a rep either way changes nothing.
  *
  * Sources: ACSM's progression models (2–10% more load once the target reps are exceeded,
  * smaller jumps for small-muscle and single-joint lifts); Plotkin et al. 2022 (adding reps and
@@ -39,7 +44,8 @@ export interface HintFill {
 }
 
 export interface ProgressHint {
-  kind: 'weight' | 'reps' | 'ease' | 'reset'
+  /** `hold`: today's order means matching last time (or less) is the aim. */
+  kind: 'weight' | 'reps' | 'hold' | 'ease' | 'reset'
   title: string
   why: string
   /** What "Use" writes into the sets not done yet. */
@@ -55,6 +61,8 @@ export interface ProgressInput {
   bodyKg?: number
   /** The unit the exercise is logged in; history (`lastSets`, `trend`) is kg either way. */
   unit?: WeightUnit
+  /** What came before it today against last time (fatigue.ts `orderEffect`). */
+  order?: OrderEffect
 }
 
 /** Same cap as the rank scoring: past this, Epley measures endurance. */
@@ -113,6 +121,25 @@ const list = (reps: number[]) => reps.join(' · ')
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
 const weeksSince = (days: number) => `${Math.round(days / 7)} weeks`
 
+/**
+ * Last time's reps moved to what today's order should allow, and the sentence saying so; the
+ * reps as they were, and no sentence, when that's less than half a rep.
+ */
+function orderShift(reps: number[], order: OrderEffect | undefined): { expect: number[]; note: string } {
+  const shift = order ? (sum(reps) / reps.length) * (order.ratio - 1) : 0
+  if (!order || Math.abs(shift) < 0.5) return { expect: reps, note: '' }
+  const n = Math.round(Math.abs(shift))
+  const count = `${n} rep${n === 1 ? '' : 's'}`
+  const names = (xs: string[]) => xs.slice(0, 2).join(' and ')
+  const note = shift < 0
+    ? ` After ${names(order.today)} today, expect about ${count} fewer than last time.`
+    : ` Fresher than last time${order.last.length ? ` (it came after ${names(order.last)} then)` : ''}, so expect about ${count} more.`
+  return { expect: reps.map(r => r * order.ratio), note }
+}
+
+/** Reps to aim for: one more where the expected reps are short of `need`. */
+const goalsFrom = (expect: number[], need: number) => expect.map(r => (Math.round(r) >= need ? Math.round(r) : Math.round(r) + 1))
+
 /** Reps Epley predicts at `to` kg for someone who did `reps` at `from` kg. */
 function repsAt(from: number, reps: number, to: number): number {
   if (to <= 0) return Infinity
@@ -146,7 +173,7 @@ export function trendOf(sessions: PastSession[], now: number): LiftTrend | undef
   }
 }
 
-export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit }: ProgressInput): ProgressHint | null {
+export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit, order }: ProgressInput): ProgressHint | null {
   if (setModeFor(exercise) !== 'load') return null
   // From here on every weight is in the unit the exercise is logged in
   const lb = isLb(unit)
@@ -160,7 +187,7 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const gapDays = trend?.gapDays ?? 0
   const weights = sets.flatMap(s => ((s.weight ?? 0) > 0 ? [s.weight ?? 0] : []))
   if (weights.length === 0) {
-    return bodyweightHint(sets.map(s => s.reps ?? 0), targetReps ?? (HARD_BODYWEIGHT.test(name) ? 12 : MAX_REPS), gapDays, assisted)
+    return bodyweightHint(sets.map(s => s.reps ?? 0), targetReps ?? (HARD_BODYWEIGHT.test(name) ? 12 : MAX_REPS), gapDays, assisted, order)
   }
 
   // The working weight: the heaviest of the session (with assistance, the least help)
@@ -169,6 +196,9 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const straight = sets.every(s => s.weight === top)
   const least = Math.min(...work)
   const every = work.length > 1 ? ' on every set' : ''
+  // What today's place in the workout should allow at that weight
+  const { expect, note } = orderShift(work, order)
+  const likely = Math.min(...expect)
 
   // Bodyweight moves lift part of the body too, so a small plate is a small jump
   const bodyWeight = fromKg(resolveBodyKg(bodyKg), unit)
@@ -199,12 +229,13 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
     }
   }
 
-  if (least >= need) {
-    const big = after(least) < low
+  if (likely >= need) {
+    const big = after(likely) < low
+    const at = `${kg(top)} ${u}${assisted ? ' of assistance' : ''}`
     return {
       kind: 'weight',
       title: !assisted ? `Go up to ${kg(next)} ${u}` : next > 0 ? `Take some help off: ${kg(next)} ${u}` : 'Try it without assistance',
-      why: `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${kg(top)} ${u}${assisted ? ' of assistance' : ''}. ${
+      why: `${least >= need ? `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${at}.` : `Last time ${list(work)} at ${at}.`}${note} ${
         big ? 'It’s a big jump, so fewer reps at first is fine.' : `Aim for ${low}–${target} reps.`
       }`,
       fill: next > 0 ? { weight: next, from: top } : undefined,
@@ -221,7 +252,9 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
     }
   }
 
-  const goals = work.map(r => (r >= need ? r : r + 1))
+  const goals = goalsFrom(expect, need)
+  // After more related work than last time the aim can be last time's reps, or fewer: no "add reps" then
+  const adding = goals.some((g, i) => g > work[i])
   const then = !assisted ? `go up to ${kg(next)} ${u}` : next > 0 ? `drop to ${kg(next)} ${u} of assistance` : 'try it without assistance'
   // Past the usual target: say why, or the number reads like a mistake
   const heavier = Math.round((moved(next) / moved(top) - 1) * 100)
@@ -231,17 +264,18 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
       ? `Less help is a big step, so build to ${need}${every}, then ${then}.`
       : `${kg(next)} ${u} is ${heavier}% heavier, so build to ${need}${every} first.`
   return {
-    kind: 'reps',
-    title: assisted ? 'Same assistance, add reps' : `Stay at ${kg(top)} ${u}, add reps`,
-    why: `Aim for ${list(goals)} (last time ${list(work)}). ${when}`,
+    kind: adding ? 'reps' : 'hold',
+    title: `${assisted ? 'Same assistance' : `Stay at ${kg(top)} ${u}`}${adding ? ', add reps' : ''}`,
+    why: `Aim for ${list(goals)} (last time ${list(work)}).${note} ${when}`,
     fill: straight ? { weight: top, from: top, reps: goals } : undefined,
   }
 }
 
 /** Reps-only sets: add a rep until every set reaches the target, then make the move harder. */
-function bodyweightHint(reps: number[], targetReps: number, gapDays: number, assisted: boolean): ProgressHint {
+function bodyweightHint(reps: number[], targetReps: number, gapDays: number, assisted: boolean, order?: OrderEffect): ProgressHint {
   const target = Math.max(1, Math.round(targetReps))
   const every = reps.length > 1 ? ' on every set' : ''
+  const { expect, note } = orderShift(reps, order)
   const harder = assisted ? 'use less assistance' : 'add a little weight or try a harder variation'
   if (gapDays >= EASE_AFTER_DAYS) {
     return {
@@ -251,18 +285,19 @@ function bodyweightHint(reps: number[], targetReps: number, gapDays: number, ass
       fill: { reps },
     }
   }
-  if (Math.min(...reps) >= target) {
+  if (Math.min(...expect) >= target) {
     return {
       kind: 'weight',
       title: assisted ? 'Use less assistance' : 'Time to make it harder',
-      why: `You got ${target}${reps.some(r => r > target) ? '+' : ''} reps${every}. Next, ${harder}.`,
+      why: `${Math.min(...reps) >= target ? `You got ${target}${reps.some(r => r > target) ? '+' : ''} reps${every}.` : `Last time ${list(reps)}.`}${note} Next, ${harder}.`,
     }
   }
-  const goals = reps.map(r => (r >= target ? r : r + 1))
+  const goals = goalsFrom(expect, target)
+  const adding = goals.some((g, i) => g > reps[i])
   return {
-    kind: 'reps',
-    title: 'Add a rep',
-    why: `Aim for ${list(goals)} (last time ${list(reps)}). At ${target}${every}, ${harder}.`,
+    kind: adding ? 'reps' : 'hold',
+    title: adding ? 'Add a rep' : 'Match last time',
+    why: `Aim for ${list(goals)} (last time ${list(reps)}).${note} At ${target}${every}, ${harder}.`,
     fill: { reps: goals },
   }
 }

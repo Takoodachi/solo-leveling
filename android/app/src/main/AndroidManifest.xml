@@ -314,8 +314,6 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Quick-log reminders set their alarms again after a restart (the plugin asks for it too) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- The workout notification may show as a Live Update on Android 16 (WorkoutNotice); no prompt -->
-    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <!-- Health Connect: steps, and heart rate for workouts (SoloPlugin.heartRate). The site's code
          runs with this app's permissions, so the capacitor-health plugin's other read permissions

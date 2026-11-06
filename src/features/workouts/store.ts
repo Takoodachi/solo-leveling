@@ -3,7 +3,7 @@ import { db } from '@/db'
 import { moved } from '@/lib/utils'
 import type { Exercise, WeightUnit } from '@/types'
 import { applyFill, type HintFill } from './progression'
-import { type WorkoutDraft, type BlockDraft, type SetDraft, type LastSet, type LiftTrend, cardioSet, emptySet, numText, setHasValue } from './types'
+import { type WorkoutDraft, type BlockDraft, type BlockHistory, type SetDraft, cardioSet, emptySet, numText, setHasValue } from './types'
 import { convertWeightText, weightText } from './units'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
@@ -21,7 +21,7 @@ interface WorkoutStore {
   rename: (name: string) => void
   setNotes: (notes: string) => void
 
-  addBlock: (exercise: Exercise, opts?: { restSec?: number; lastSets?: LastSet[]; trend?: LiftTrend; unit?: WeightUnit }) => void
+  addBlock: (exercise: Exercise, opts?: BlockHistory & { restSec?: number }) => void
   /** Takes the block out and hands it back, so the removal can be undone. */
   removeBlock: (blockIdx: number) => BlockDraft | undefined
   /** Puts a removed block back where it was, if the workout it came from is still the one open. */
@@ -76,7 +76,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit }],
+          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload }],
         },
       }
     }),
