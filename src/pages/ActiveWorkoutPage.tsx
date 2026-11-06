@@ -236,9 +236,9 @@ export default function ActiveWorkoutPage() {
           editing={editing && { avgHeartRate: editing.avgHeartRate, notes: draft.notes }}
           onFinish={async opts => {
             rest.stop()
-            if (!editing) return finish(opts)
+            // Finishing navigates on its own, after the store has cleared: no detour to Workouts in between
             setLeaving(true)
-            await saveEdits(opts)
+            await (editing ? saveEdits(opts) : finish(opts))
           }}
         />
 
