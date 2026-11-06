@@ -163,7 +163,6 @@ export function useActiveWorkout() {
       })
       if (sets.length > 0) await db.workoutSets.bulkAdd(sets)
     })
-    useWorkoutStore.getState().discard()
     // Android app: the watch's heart rate for it, from Health Connect, now or once it arrives
     if (isAndroidApp() && day === today() && !opts.avgHeartRate) {
       void import('@/features/health/workoutHeartRate')
@@ -171,23 +170,34 @@ export function useActiveWorkout() {
         .catch(err => console.warn('[heart rate] failed:', err))
     }
 
-    const saved = await getWorkoutWithSets(workoutUuid)
-    const newBests = saved ? await findNewBests(saved) : []
-    const rankUps = saved ? await findRankUps(saved) : []
-    // The summary opens with the rank-up sequence: the toasts below wait for it (or 5 s, if it never opens)
-    if (playsIntro(rankUps)) holdStage(5000)
+    // Saved. What follows is extras: it must never keep the logger up with a workout already
+    // saved (a second Finish would save it twice), so a failure there still ends on the summary.
+    let result: FinishResult = { celebrate: true, xp: 0, newBests: [], rankUps: [] }
+    try {
+      const saved = await getWorkoutWithSets(workoutUuid)
+      const newBests = saved ? await findNewBests(saved) : []
+      const rankUps = saved ? await findRankUps(saved) : []
+      // The summary opens with the rank-up sequence: the toasts below wait for it (or 5 s, if it never opens)
+      if (playsIntro(rankUps)) holdStage(5000)
 
-    if (day === today()) await updateStreak() // a day that has passed can't be added to the streak
-    const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
-    const xp = XP.WORKOUT + (sets.length - cardioSets.length) * XP.PER_SET + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
-    const xpResult = await grantXp(xp)
-    const achievements = await evaluateAchievements()
-    requestSync()
+      if (day === today()) await updateStreak() // a day that has passed can't be added to the streak
+      const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
+      const xp = XP.WORKOUT + (sets.length - cardioSets.length) * XP.PER_SET + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
+      const xpResult = await grantXp(xp)
+      const achievements = await evaluateAchievements()
+      requestSync()
 
-    if (xpResult?.leveledUp) afterStage(() => toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' }))
-    await announceAchievements(achievements)
+      if (xpResult?.leveledUp) afterStage(() => toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' }))
+      await announceAchievements(achievements)
+      result = { celebrate: true, xp, newBests, rankUps }
+    } catch (err) {
+      console.warn('[finish] after saving:', err)
+    }
 
-    const result: FinishResult = { celebrate: true, xp, newBests, rankUps }
+    // Only now, with everything worked out: the logger (its dialog saying "Saving…") stays up until
+    // the summary takes over. Cleared earlier, it sent you to Workouts for those seconds and then on
+    // to the summary, a jump between screens on a phone.
+    useWorkoutStore.getState().discard()
     navigate(`/workouts/summary/${workoutUuid}`, { replace: true, state: result })
   }
 
