@@ -9,16 +9,22 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 /**
- * The workout in progress as a notification, in the shade and on the lock screen: what's next,
- * and the rest counting down or the workout's time counting up. The site keeps it current
- * (src/features/workouts/workoutNotice.ts → [SoloPlugin.workoutNotice]). The clock runs by
- * itself, and when a rest runs out with the app in the background (its timers frozen there)
- * the switch back to the workout's time is made here. On Android 16 it asks to be a Live
- * Update, so the clock can also show as a chip in the status bar.
+ * The workout in progress as a notification, in the shade and on the lock screen: what's next on
+ * the left, and on the right the rest counting down ("Rest" under it) or the workout's time
+ * counting up (its name under it). The site keeps it current (src/features/workouts/
+ * workoutNotice.ts → [SoloPlugin.workoutNotice]). The clock runs by itself, and when a rest runs
+ * out with the app in the background (its timers frozen there) the switch back to the workout's
+ * time is made here.
+ *
+ * It's a layout of its own (res/layout/notification_workout.xml) because the standard one put
+ * the clock wherever the phone liked: Samsung's lock screen glued it to the end of the title
+ * ("Lat Pulldown00:50") and gave the workout's name a line of its own.
  */
 object WorkoutNotice {
     private const val ID = 9100
@@ -56,22 +62,30 @@ object WorkoutNotice {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
         ensureChannel(context)
+        val now = System.currentTimeMillis()
+        val views = RemoteViews(context.packageName, R.layout.notification_workout).apply {
+            setTextViewText(R.id.notice_title, s.title)
+            setTextViewText(R.id.notice_text, s.text)
+            setTextViewText(R.id.notice_label, if (resting) "Rest" else s.name.ifBlank { "Workout" })
+            // A chronometer counts on the time since boot, not the wall clock
+            val at = if (resting) s.restEndsAt ?: now else s.startedAt
+            setChronometer(R.id.notice_clock, SystemClock.elapsedRealtime() + (at - now), null, true)
+            setChronometerCountDown(R.id.notice_clock, resting)
+        }
         val builder = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_ascent)
             .setColor(ACCENT)
             .setCategory(NotificationCompat.CATEGORY_WORKOUT)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(views)
+            // What a watch, a screen reader or a hidden lock screen gets instead of the layout
             .setContentTitle(if (resting) "Rest, then ${s.title}" else s.title)
             .setContentText(s.text)
-            .setSubText(s.name)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
-            .setChronometerCountDown(resting)
-            .setWhen(if (resting) s.restEndsAt ?: s.startedAt else s.startedAt)
+            .setShowWhen(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setTimeoutAfter(TIMEOUT_MS)
-            .setRequestPromotedOngoing(true)
             .setContentIntent(open(context))
         manager.notify(ID, builder.build())
     }

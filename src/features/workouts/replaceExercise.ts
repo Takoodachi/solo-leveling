@@ -1,6 +1,6 @@
 import type { Exercise } from '@/types'
 import { setModeFor } from '@/lib/workoutMath'
-import { cardioSet, emptySet, numText, type BlockDraft } from './types'
+import { cardioSet, emptySet, numText, type BlockDraft, type BlockHistory } from './types'
 import { weightText } from './units'
 
 /**
@@ -8,7 +8,7 @@ import { weightText } from './units'
  * many sets as were still to do, with the new exercise's own numbers from its last session. The
  * rep target only carries over between exercises logged the same way.
  */
-export function replacementBlock(old: BlockDraft, exercise: Exercise, history: Pick<BlockDraft, 'lastSets' | 'trend' | 'unit'>): BlockDraft {
+export function replacementBlock(old: BlockDraft, exercise: Exercise, history: BlockHistory): BlockDraft {
   const { lastSets, unit } = history
   const mode = setModeFor(exercise)
   if (mode === 'cardio') return { exercise, restSec: 0, sets: [cardioSet(lastSets?.[0])], ...history }

@@ -36,8 +36,8 @@ const SECONDARY_SHARE = 0.5
 const CARDIO_MINUTES_PER_SET = 10
 const CARDIO_MAX_SETS = 6
 
-/** What one logged set (or cardio entry) of this exercise adds to each muscle. */
-function sharesOf(exercise: Exercise): Map<MuscleRegion, number> {
+/** What one logged set (or cardio entry) of this exercise adds to each muscle (also how exercises share muscles, fatigue.ts). */
+export function sharesOf(exercise: Exercise): Map<MuscleRegion, number> {
   const shares = new Map<MuscleRegion, number>()
   const add = (names: readonly string[] | undefined, share: number) => {
     for (const name of names ?? []) {

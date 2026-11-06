@@ -5,7 +5,8 @@ import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { deleteSynced } from '@/lib/sync'
 import { est1RM, totalVolume } from '@/lib/workoutMath'
 import { trendOf } from '../progression'
-import type { BlockDraft, LastSet, PastSession } from '../types'
+import type { BlockHistory, LastSet, PastSession, Preload } from '../types'
+import { preload, workDone } from '../fatigue'
 import { exerciseUnit } from './useExerciseNote'
 
 export interface WorkoutSummary extends Workout {
@@ -92,10 +93,32 @@ export async function lastSessionSets(exerciseId: string, beforeCreatedAt = Infi
   return (await pastSessions(exerciseId, beforeCreatedAt, 1))[0]?.sets
 }
 
-/** What a new logger block needs from history: the "Previous" column, the progression facts and the unit it's logged in. */
-export async function blockHistory(exerciseId: string): Promise<Pick<BlockDraft, 'lastSets' | 'trend' | 'unit'>> {
+/** What came before this exercise in the last workout that had it, on the muscles it uses (fatigue.ts). */
+async function lastPreload(exerciseId: string): Promise<Preload | undefined> {
+  const exercise = await db.exercises.get(exerciseId)
+  const mine = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
+  if (!exercise || mine.length === 0) return undefined
+  const last = (await db.workouts.bulkGet([...new Set(mine.map(s => s.workoutId))]))
+    .filter((w): w is Workout => !!w)
+    .sort((a, b) => b.createdAt - a.createdAt)[0]
+  if (!last) return undefined
+  const all = await db.workoutSets.where('workoutId').equals(last.uuid).toArray()
+  // Sets are saved as block × 100 + position, so the block number is the order
+  const blockOf = (s: WorkoutSet) => Math.floor(s.setIndex / 100)
+  const at = Math.min(...all.filter(s => s.exerciseId === exerciseId).map(blockOf))
+  const earlier = all.filter(s => blockOf(s) < at)
+  const ids = [...new Set(earlier.map(s => s.exerciseId))]
+  const exercises = await db.exercises.bulkGet(ids)
+  return preload(exercise, ids.flatMap((id, i) => {
+    const ex = exercises[i]
+    return ex ? [{ exercise: ex, sets: workDone(ex, earlier.filter(s => s.exerciseId === id).map(s => s.duration ?? 0)) }] : []
+  }))
+}
+
+/** What a new logger block needs from history: the "Previous" column, the progression facts, the unit it's logged in and what came before it last time. */
+export async function blockHistory(exerciseId: string): Promise<BlockHistory> {
   const past = await pastSessions(exerciseId)
-  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId) }
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId), lastPreload: await lastPreload(exerciseId) }
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'
