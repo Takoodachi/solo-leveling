@@ -25,6 +25,7 @@ import RestBanner from '@/features/workouts/components/RestBanner'
 import FinishWorkoutDialog from '@/features/workouts/components/FinishWorkoutDialog'
 import MusicButton from '@/features/workouts/components/MusicButton'
 import MusicControls from '@/features/workouts/components/MusicControls'
+import { useWorkoutLayout } from '@/features/workouts/workoutLayout'
 import DiscardWorkoutDialog from '@/features/workouts/components/DiscardWorkoutDialog'
 import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useRanks } from '@/features/ranks/useRanks'
@@ -43,6 +44,7 @@ export default function ActiveWorkoutPage() {
   // Editing a saved workout: no session clock, rest timer or wake lock.
   const elapsed = useElapsed(draft && !editing ? draft.startedAt : null)
   const rest = useRestTimer()
+  const layout = useWorkoutLayout()
   const [pickerOpen, setPickerOpen] = useState(false)
   // The card whose exercise is being swapped for another (the picker is open for it)
   const [replacing, setReplacing] = useState<{ idx: number; exercise: Exercise } | null>(null)
@@ -151,14 +153,25 @@ export default function ActiveWorkoutPage() {
               {editing ? 'Save' : 'Finish'}
             </Button>
           </div>
-          {!editing && <MusicControls />}
+          {!editing && layout.music === 'top' && <MusicControls />}
           {/* How far through the workout: sets ticked of all the sets in it */}
           <div className="h-0.5 bg-foreground/5" role="progressbar" aria-label="Sets done" aria-valuenow={doneSets} aria-valuemin={0} aria-valuemax={allSets.length}>
             <div className="h-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${allSets.length ? (doneSets / allSets.length) * 100 : 0}%` }} />
           </div>
+          {/* The rest timer at the top hangs under the header, over the cards, so nothing below it moves */}
+          {layout.rest === 'top' && (
+            <div className="pointer-events-none absolute inset-x-0 top-full px-3 pt-2">
+              <RestBanner edge="top" secondsLeft={rest.secondsLeft} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+            </div>
+          )}
         </div>
 
-        <div className="mx-auto flex max-w-md flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+8rem)] pt-4">
+        <div
+          className={cn(
+            'mx-auto flex max-w-md flex-col gap-3 px-4 pt-4',
+            !editing && layout.music === 'bottom' ? 'pb-[calc(env(safe-area-inset-bottom)+12rem)]' : 'pb-[calc(env(safe-area-inset-bottom)+8rem)]',
+          )}
+        >
           {draft.blocks.length === 0 && (
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-card px-6 py-12 text-center">
               <p className="font-semibold">Empty workout</p>
@@ -209,12 +222,13 @@ export default function ActiveWorkoutPage() {
           </Button>
         </div>
 
-        <RestBanner
-          secondsLeft={rest.secondsLeft}
-          totalSeconds={rest.totalSeconds}
-          onAdjust={rest.addSeconds}
-          onSkip={rest.stop}
-        />
+        {/* What floats at the bottom: the rest timer over the music bar, whichever of them is put there */}
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          {layout.rest === 'bottom' && (
+            <RestBanner edge="bottom" secondsLeft={rest.secondsLeft} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+          )}
+          {!editing && layout.music === 'bottom' && <MusicControls floating />}
+        </div>
 
         <ExercisePickerSheet open={pickerOpen} onOpenChange={setPickerOpen} onSelect={e => void handleAddExercise(e)} />
         <ExercisePickerSheet
