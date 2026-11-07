@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, Trophy } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
@@ -30,6 +31,8 @@ import { isAndroidApp } from '@/lib/native'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
 const APP_VERSION = '0.5.0'
+/** Taps on the version line that bring Backup out: it's the owner's, friends needn't see it (November 2026). */
+const BACKUP_TAPS = 7
 
 /**
  * App settings (the Settings tab). Who you are and your goals live on Profile. Every section is
@@ -44,6 +47,7 @@ export default function SettingsPage() {
   const [left, right] = navTabsFrom(settings)
   const shortcuts = appShortcutsFrom(settings)
   const music = musicApp(useMusicApp(s => s.id))
+  const [taps, setTaps] = useState(0)
 
   return (
     <div className="flex flex-col gap-3">
@@ -93,18 +97,24 @@ export default function SettingsPage() {
           <AppShortcutsCard />
         </SettingsSection>
       )}
-      <SettingsSection id="backup" title="Backup" summary="Export or import a copy" Icon={DatabaseBackup}>
-        <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
-          <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
-          <div className="flex gap-2">
-            <ExportButton />
-            <ImportButton />
+      {taps >= BACKUP_TAPS && (
+        <SettingsSection id="backup" title="Backup" summary="Export or import a copy" Icon={DatabaseBackup}>
+          <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
+            <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
+            <div className="flex gap-2">
+              <ExportButton />
+              <ImportButton />
+            </div>
           </div>
-        </div>
-      </SettingsSection>
-      <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        </SettingsSection>
+      )}
+      <button
+        type="button"
+        onClick={() => setTaps(n => n + 1)}
+        className="mx-auto mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground"
+      >
         <Logo size={16} /> Solo Leveling · v{APP_VERSION}
-      </p>
+      </button>
     </div>
   )
 }
