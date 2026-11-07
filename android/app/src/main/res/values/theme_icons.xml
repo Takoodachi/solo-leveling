@@ -19,4 +19,78 @@
     <color name="ic_launcher_bg_honey">#f9f6eb</color>
     <color name="ic_launcher_bg_cherry">#f9f2f1</color>
     <color name="ic_launcher_bg_paper">#f4f3f1</color>
+
+    <!-- The launch screen in each theme's colours: the icon's mark on the theme's background -->
+    <style name="SplashEmber" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_ember</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_ember</item>
+    </style>
+    <style name="SplashMonarch" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_monarch</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_monarch</item>
+    </style>
+    <style name="SplashAbyss" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_abyss</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_abyss</item>
+    </style>
+    <style name="SplashVerdant" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_verdant</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_verdant</item>
+    </style>
+    <style name="SplashBloodmoon" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_bloodmoon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_bloodmoon</item>
+    </style>
+    <style name="SplashGold" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_gold</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_gold</item>
+    </style>
+    <style name="SplashNeon" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_neon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_neon</item>
+    </style>
+    <style name="SplashGraphite" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_graphite</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_graphite</item>
+    </style>
+    <style name="SplashVolt" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_volt</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_volt</item>
+    </style>
+    <style name="SplashDaylight" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_daylight</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_daylight</item>
+    </style>
+    <style name="SplashGlacier" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_glacier</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_glacier</item>
+    </style>
+    <style name="SplashMatcha" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_matcha</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_matcha</item>
+    </style>
+    <style name="SplashSakura" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_sakura</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_sakura</item>
+    </style>
+    <style name="SplashIris" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_iris</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_iris</item>
+    </style>
+    <style name="SplashLagoon" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_lagoon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_lagoon</item>
+    </style>
+    <style name="SplashHoney" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_honey</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_honey</item>
+    </style>
+    <style name="SplashCherry" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_cherry</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_cherry</item>
+    </style>
+    <style name="SplashPaper" parent="AppTheme.NoActionBarLaunch">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_bg_paper</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg_paper</item>
+    </style>
 </resources>

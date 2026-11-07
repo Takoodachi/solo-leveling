@@ -73,6 +73,10 @@ class SoloPlugin : Plugin() {
         activity.onBackPressedDispatcher.addCallback(activity, back)
         // Some launchers have no shortcuts to set: nothing to do about that
         runCatching { Shortcuts.ensureDefaults(context) }
+        // The next launch's splash in the theme's colours, and this one's background until the page is drawn
+        runCatching { AppIcons.syncSplash(activity) }
+        val look = context.getSharedPreferences(LOOK, Context.MODE_PRIVATE)
+        if (look.contains(BACKGROUND)) paintBackground(look.getInt(BACKGROUND, 0))
         announceShortcut(activity.intent)
     }
 
@@ -206,11 +210,17 @@ class SoloPlugin : Plugin() {
         } catch (e: IllegalArgumentException) {
             return call.reject("Not a colour")
         }
+        // Kept for the next launch, which paints it before the page has loaded (load())
+        context.getSharedPreferences(LOOK, Context.MODE_PRIVATE).edit().putInt(BACKGROUND, color).apply()
         activity.runOnUiThread {
-            activity.window.decorView.setBackgroundColor(color)
-            bridge.webView.setBackgroundColor(color)
+            paintBackground(color)
             call.resolve()
         }
+    }
+
+    private fun paintBackground(color: Int) {
+        activity.window.decorView.setBackgroundColor(color)
+        bridge.webView.setBackgroundColor(color)
     }
 
     /**
@@ -261,6 +271,7 @@ class SoloPlugin : Plugin() {
         val name = call.getString("name")
         if (name.isNullOrEmpty() || !name.matches(Regex("Icon[A-Za-z]+"))) return call.reject("Unknown icon")
         AppIcons.request(context, name)
+        runCatching { AppIcons.syncSplash(activity) }
         call.resolve()
     }
 
@@ -348,6 +359,9 @@ class SoloPlugin : Plugin() {
 
     private companion object {
         val HEART_RATE = HealthPermission.getReadPermission(HeartRateRecord::class)
+        /** Where the theme's background is kept between launches (setBackground). */
+        const val LOOK = "look"
+        const val BACKGROUND = "background"
     }
 
     private fun resolveStatus(call: PluginCall) {

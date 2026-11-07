@@ -1,9 +1,12 @@
 package io.github.takoodachi.sololeveling
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 
 /**
  * The app's icon in the theme's colours (src/features/settings/appIcon.ts). Each theme has a
@@ -40,6 +43,20 @@ object AppIcons {
         }
         // Dynamic shortcuts belong to a launcher entry: put them on the new one
         runCatching { Shortcuts.republish(context) }
+    }
+
+    /**
+     * The launch screen in the theme of the icon that's on (or about to be): its mark on its
+     * background (styles in theme_icons.xml). Android 13+ keeps the choice for the next launches;
+     * before 13, and on the very first launch, the manifest's (the default theme's) shows.
+     */
+    @SuppressLint("DiscouragedApi")
+    fun syncSplash(activity: Activity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val alias = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(PENDING, null)
+            ?: current(activity)?.substringAfterLast('.') ?: return
+        val style = activity.resources.getIdentifier(alias.replaceFirst("Icon", "Splash"), "style", activity.packageName)
+        if (style != 0) activity.splashScreen.setSplashScreenTheme(style)
     }
 
     /** The launcher entry that's on now (its full class name), if any. */
