@@ -87,7 +87,7 @@ export default function FoodResults({ foods, meals, recent, onSelect, onQuickAdd
         )
       })}
       {foods.length > shown && (
-        <button type="button" onClick={() => setShown(n => n + PAGE * 2)} className="w-full rounded-xl py-3 text-sm font-semibold text-primary active:bg-accent">
+        <button type="button" onClick={() => setShown(n => n + PAGE * 2)} className="press-row w-full rounded-xl py-3 text-sm font-semibold text-primary">
           Show more ({foods.length - shown})
         </button>
       )}

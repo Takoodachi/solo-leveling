@@ -5,7 +5,7 @@ import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tool
 import { formatShortDate } from '@/lib/date'
 import { formatVolume } from '@/lib/workoutMath'
 import { useWeeklyVolume, useLiftedExercises, useOneRmHistory } from '../hooks/useTrainingAnalytics'
-import { tooltipStyle, axisTick, compactNumber, dayLabel } from '../chartStyles'
+import { tooltipStyle, axisTick, compactNumber, dayLabel, scrub, lineCursor, barCursor } from '../chartStyles'
 import ChartCard from './ChartCard'
 import LiftPicker from './LiftPicker'
 
@@ -32,7 +32,8 @@ export function WeeklyVolumeCard() {
                 <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={1} />
                 <YAxis tick={axisTick} axisLine={false} tickLine={false} width={44} tickFormatter={compactNumber} />
                 <Tooltip
-                  cursor={{ fill: 'hsl(var(--accent))' }}
+                  {...scrub}
+                  cursor={barCursor}
                   contentStyle={tooltipStyle}
                   labelFormatter={dayLabel}
                   formatter={(v, _k, item) => {
@@ -73,6 +74,8 @@ export function OneRmCard() {
                   <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                   <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
                   <Tooltip
+                    {...scrub}
+                    cursor={lineCursor}
                     contentStyle={tooltipStyle}
                     labelFormatter={dayLabel}
                     formatter={(v, _k, item) => {

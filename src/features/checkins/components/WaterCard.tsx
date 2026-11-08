@@ -44,7 +44,7 @@ export default function WaterCard({ date, today }: { date: string; today: string
           <p className="text-sm text-muted-foreground tabular-nums">{ml.toLocaleString()} / {goal.toLocaleString()} ml</p>
         </button>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-          <div ref={rise} className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
+          <div ref={rise} className="h-full rounded-full bg-sky-500 dark:bg-sky-400 transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
         </div>
       </div>
       <WaterSheet open={open} onOpenChange={setOpen} date={date} today={today} />

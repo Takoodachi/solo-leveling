@@ -37,7 +37,7 @@ export default function MealSection({ mealType, entries, date }: Props) {
     <div className="rounded-3xl bg-card">
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between px-5 py-4 rounded-3xl active:bg-accent/40 transition-colors"
+        className="press-row w-full flex items-center justify-between px-5 py-4 rounded-3xl"
         onClick={() => setOpen(o => !o)}
       >
         <div className="flex items-center gap-2">

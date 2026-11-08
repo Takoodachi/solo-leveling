@@ -366,6 +366,64 @@
   /* A progress ring's arc (ProgressRing; its length is measured as 1): moved, not redrawn, when
      the number changes. Filling it when the app is opened is hooks/useRise. */
   .ring-arc {
-    transition: stroke-dasharray 0.9s ease-out;
+    transition: stroke-dasharray 0.7s ease-out;
   }
+  /* What a press looks like (the consistency pass, November 2026), so everything tappable answers
+     the same way: a card or a tile settles in a little (every link or button that is a card gets it
+     without asking), and a row in a list lights up. Buttons have their own (ui/button), icon
+     buttons shrink a little more. */
+  .press, :is(a, button).bg-card {
+    transition-property: transform, color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .press:active, :is(a, button).bg-card:active {
+    transform: scale(0.98);
+  }
+  .press-row {
+    transition: background-color 150ms ease-out;
+  }
+  .press-row:active {
+    background-color: hsl(var(--accent) / 0.6);
+  }
+}
+
+/* The card that grows into its page (lib/morph.ts): its picture covers the box as it moves
+   instead of stretching, the old one fades quickly and the new one in; the rest crossfades. */
+::view-transition-group(morph) {
+  animation-duration: 0.36s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-old(morph),
+::view-transition-new(morph) {
+  height: 100%;
+  object-fit: cover;
+}
+::view-transition-old(morph) {
+  animation-duration: 0.18s;
+}
+::view-transition-new(morph) {
+  animation-duration: 0.3s;
+}
+/* Back: the card's picture would start out twice its size, so it comes in once the box has shrunk */
+:root[data-morph='back']::view-transition-old(morph) {
+  animation-duration: 0.3s;
+}
+:root[data-morph='back']::view-transition-new(morph) {
+  animation-delay: 0.14s;
+  animation-duration: 0.22s;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.26s;
+}
+
+/* A finger dragging sideways along a chart reads it (features/analytics/chartStyles.ts → scrub):
+   the page doesn't take that drag for itself, and up or down still scrolls. No text selection or
+   callout on a long press there either. Outside the layers: the class is Recharts', not ours. */
+.recharts-wrapper {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }

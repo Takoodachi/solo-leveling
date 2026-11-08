@@ -15,7 +15,7 @@ export default function ResumeBanner() {
   return (
     <Link
       to="/workouts/active"
-      className="bg-brand-gradient flex items-center gap-3 rounded-3xl p-4 text-primary-foreground shadow-lg shadow-primary/25 active:scale-[0.99]"
+      className="press bg-brand-gradient flex items-center gap-3 rounded-3xl p-4 text-primary-foreground shadow-lg shadow-primary/25"
     >
       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-foreground/20">
         <Play size={20} className="ml-0.5 fill-primary-foreground" />

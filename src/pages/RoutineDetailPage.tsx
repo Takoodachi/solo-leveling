@@ -62,7 +62,7 @@ export default function RoutineDetailPage() {
     <div className="min-h-dvh overflow-x-clip bg-background pl-safe pr-safe">
       <div className={cn('relative', enter)}>
         {/* Hero */}
-        <div className="relative h-72 pt-safe">
+        <div className="relative h-72 pt-safe" data-morph={`routine-hero:${routine.uuid}`}>
           <RoutineArt category={routine.category} fade="bottom" image={'image' in routine ? routine.image : undefined} />
           <div className="relative mx-auto flex max-w-md items-center justify-between px-2 pt-2 text-foreground" style={toneStyle(heroTone)}>
             <button
@@ -88,7 +88,8 @@ export default function RoutineDetailPage() {
           </div>
         </div>
 
-        <div className="relative -mt-16 rounded-t-[32px] bg-background">
+        {/* Its own layer in the card's morph (lib/morph.ts), so it stays over the growing picture as it does here */}
+        <div className="relative -mt-16 rounded-t-[32px] bg-background" style={{ viewTransitionName: 'morph-sheet' }}>
           <div className="mx-auto flex max-w-md flex-col gap-5 px-4 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-6">
             <div className="flex flex-col items-center gap-3 text-center">
               <Badge variant="tag" className="gap-1.5 bg-primary/90 text-primary-foreground"><cat.Icon size={13} />{cat.label}</Badge>

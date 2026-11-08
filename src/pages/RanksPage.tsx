@@ -52,8 +52,8 @@ export default function RanksPage() {
         back={isTab ? undefined : '/home'}
         title="Ranks"
         action={
-          <Link to="/leaderboard" className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent" aria-label="Leaderboard">
-            <Trophy size={20} />
+          <Link to="/leaderboard" className="flex h-11 items-center gap-2 rounded-2xl bg-card px-3.5 text-sm font-semibold">
+            <Trophy size={18} /> Leaderboard
           </Link>
         }
       />

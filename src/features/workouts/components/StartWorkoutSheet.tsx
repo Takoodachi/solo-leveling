@@ -26,7 +26,7 @@ export default function StartWorkoutSheet({ open, onOpenChange, routines, todayR
           <button
             type="button"
             onClick={() => { onOpenChange(false); startEmpty() }}
-            className="flex items-center gap-4 rounded-2xl bg-foreground px-4 py-3.5 text-left text-background active:scale-[0.99]"
+            className="press flex items-center gap-4 rounded-2xl bg-foreground px-4 py-3.5 text-left text-background"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-background/10"><Plus size={22} /></span>
             <span className="flex-1 font-semibold">Empty workout</span>
@@ -38,7 +38,7 @@ export default function StartWorkoutSheet({ open, onOpenChange, routines, todayR
                 key={r.uuid}
                 type="button"
                 onClick={() => { onOpenChange(false); void startFromRoutine(r) }}
-                className="flex items-center gap-4 rounded-2xl bg-secondary px-4 py-3.5 text-left hover:bg-accent active:scale-[0.99]"
+                className="press flex items-center gap-4 rounded-2xl bg-secondary px-4 py-3.5 text-left hover:bg-accent"
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary"><Icon size={20} /></span>
                 <span className="min-w-0 flex-1">

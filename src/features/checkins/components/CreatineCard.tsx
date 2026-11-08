@@ -27,7 +27,7 @@ export default function CreatineCard({ date, today }: { date: string; today: str
       onClick={() => void handleTap()}
       disabled={future}
       aria-pressed={done}
-      className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 text-left active:scale-[0.99] disabled:opacity-60"
+      className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 text-left disabled:opacity-60"
     >
       <span className="flex w-full items-start justify-between">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Pill size={20} /></span>

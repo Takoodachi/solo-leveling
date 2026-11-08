@@ -89,7 +89,7 @@ export default function ExercisePickerSheet({ open, onOpenChange, onSelect, titl
                   key={e.uuid}
                   type="button"
                   onClick={() => pick(e)}
-                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left hover:bg-secondary active:bg-secondary"
+                  className="press-row flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left hover:bg-secondary"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{e.name}</p>

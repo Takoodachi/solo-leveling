@@ -1,6 +1,7 @@
 import { Suspense, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useCameBack } from '@/hooks/useEnterAnimation'
+import { isMorphing } from '@/lib/morph'
 import { useNavTabs } from '@/hooks/useNavTabs'
 import { cn } from '@/lib/utils'
 import BottomNav from './BottomNav'
@@ -27,6 +28,9 @@ export default function AppShell() {
   // Back always comes in from the left, whichever tab it lands on
   const back = useCameBack()
   const dir = back ? -1 : nav.idx !== currentIdx ? (currentIdx >= nav.idx ? 1 : -1) : nav.dir
+  // A screen arriving by a morph (lib/morph.ts) doesn't slide in as well; decided per screen, when it arrives
+  const [morph, setMorph] = useState(() => ({ path: location.pathname, on: isMorphing() }))
+  if (morph.path !== location.pathname) setMorph({ path: location.pathname, on: isMorphing() })
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-page text-foreground">
@@ -37,7 +41,7 @@ export default function AppShell() {
       <Suspense fallback={null}>
         <main
           key={location.pathname}
-          className={cn('pt-safe pl-safe pr-safe duration-200 ease-out animate-in fade-in-0', dir > 0 ? 'slide-in-from-right-[24%]' : 'slide-in-from-left-[24%]')}
+          className={cn('pt-safe pl-safe pr-safe', !morph.on && ['duration-200 ease-out animate-in fade-in-0', dir > 0 ? 'slide-in-from-right-[24%]' : 'slide-in-from-left-[24%]'])}
         >
           {/* Bottom padding clears the nav bar (4rem) + home indicator. */}
           <div className="mx-auto w-full max-w-md px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">

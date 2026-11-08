@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { morphBack } from '@/lib/morph'
 import { leaveApp, onAndroidBack } from '@/lib/native'
 
 /** Screens on the bottom bar's level: Back from one goes Home, not back through every tab visited. */
@@ -52,6 +53,6 @@ export function useAndroidBack(): void {
     if (pathname === '/home') leaveApp()
     // `default` = the screen the app was opened on (a shortcut, a notification): nothing behind it
     else if (TOP_LEVEL.has(pathname) || key === 'default') navigate('/home', { replace: true })
-    else navigate(-1)
+    else if (!morphBack(key, () => navigate(-1))) navigate(-1)
   }), [navigate])
 }

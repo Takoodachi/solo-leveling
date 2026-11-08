@@ -110,7 +110,7 @@ export default function RankRing({ rank, children }: { rank: RankInfo; children:
           })}
         </g>
         {/* Where you are: the one bright point on the ring, drawn at its start and turned to its place */}
-        <g ref={riseTip} className="transition-transform duration-1000 ease-out" style={{ transform: `rotate(${reach}deg)`, transformOrigin: `${C}px ${C}px` }}>
+        <g ref={riseTip} className="transition-transform duration-700 ease-out" style={{ transform: `rotate(${reach}deg)`, transformOrigin: `${C}px ${C}px` }}>
           <circle cx={x} cy={y} r={11} fill="hsl(var(--background) / 0.55)" />
           <circle cx={x} cy={y} r={8} fill={tip} style={{ filter: `drop-shadow(0 0 7px ${tip})` }} />
         </g>

@@ -17,7 +17,7 @@ export default function AchievementTile({ achievement: a, progress, isGoal, onOp
     <button
       type="button"
       onClick={onOpen}
-      className={cn('relative flex min-w-0 flex-col items-center gap-1.5 rounded-3xl bg-card px-2 py-4 text-center active:scale-[0.98]', !a.unlocked && 'text-foreground/55')}
+      className={cn('relative flex min-w-0 flex-col items-center gap-1.5 rounded-3xl bg-card px-2 py-4 text-center', !a.unlocked && 'text-foreground/55')}
     >
       {isGoal && <Target size={14} className="absolute right-2.5 top-2.5 text-primary" aria-label="Goal" />}
       <span className={cn('text-3xl', !a.unlocked && 'opacity-45 grayscale')} aria-hidden="true">{a.icon}</span>

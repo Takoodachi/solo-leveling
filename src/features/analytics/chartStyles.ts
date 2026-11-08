@@ -11,6 +11,18 @@ export const tooltipStyle = {
 export const axisTick = { fontSize: 11, fill: 'hsl(var(--muted-foreground))' } as const
 
 /**
+ * Every chart's tooltip, so a finger can drag along a chart and read any day (November 2026, at
+ * the owner's request): it stays at the top of the chart, where the finger doesn't cover it,
+ * follows without sliding behind, and never takes the touch itself. The page lets a sideways drag
+ * through to the chart instead of scrolling (`.recharts-wrapper` in index.css).
+ */
+export const scrub = { position: { y: 0 }, isAnimationActive: false, wrapperStyle: { pointerEvents: 'none', zIndex: 10 } } as const
+
+/** The line down a line or area chart at the day being read (a bar chart lights up the bar's column instead). */
+export const lineCursor = { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '3 3' } as const
+export const barCursor = { fill: 'hsl(var(--accent))' } as const
+
+/**
  * A tooltip's heading for a chart over dates (`labelFormatter={dayLabel}`): the point's date
  * with its day of the week ("Monday, Oct 12"). The axis keeps the short "Oct 12"; the chart's
  * rows carry the day itself as `date` (YYYY-MM-DD).

@@ -75,6 +75,7 @@ export default function WorkoutsPage() {
             <RoutineCard
               key={t.uuid}
               to={`/workouts/routine/${t.uuid}`}
+              morph={t.uuid}
               name={t.name}
               category={t.category}
               level={t.level}
@@ -124,6 +125,7 @@ export default function WorkoutsPage() {
             <RoutineCard
               key={r.uuid}
               to={`/workouts/routine/${r.uuid}`}
+              morph={r.uuid}
               name={r.name}
               category={r.category}
               level={r.level}

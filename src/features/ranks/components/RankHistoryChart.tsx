@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { formatShortDate } from '@/lib/date'
 import ChartCard from '@/features/analytics/components/ChartCard'
-import { tooltipStyle, axisTick, dayLabel } from '@/features/analytics/chartStyles'
+import { tooltipStyle, axisTick, dayLabel, scrub, lineCursor } from '@/features/analytics/chartStyles'
 import { rankHistory } from '../computeRanks'
 import { MUSCLE_GROUPS, type MuscleGroup } from '../standards'
 import { TIERS, rankFor } from '../tiers'
@@ -68,6 +68,8 @@ export default function RankHistoryChart() {
                 tickFormatter={v => TIERS.find(t => t.min === v)?.name ?? String(v)}
               />
               <Tooltip
+                {...scrub}
+                cursor={lineCursor}
                 contentStyle={tooltipStyle}
                 labelFormatter={(l, p) => `Week ending ${dayLabel(l, p)}`}
                 formatter={v => {

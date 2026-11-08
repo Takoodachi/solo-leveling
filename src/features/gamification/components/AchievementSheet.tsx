@@ -38,7 +38,7 @@ export default function AchievementSheet({ open, achievement: a, value, isGoal, 
               <div className="flex flex-col gap-4 py-5">
                 <div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-                    <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${pct * 100}%` }} />
+                    <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
                   </div>
                   <p className="mt-1.5 text-center text-sm tabular-nums text-muted-foreground">{value === undefined ? ' ' : progressLabel(a, value)}</p>
                 </div>
