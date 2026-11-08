@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import AfterSlide from '@/components/AfterSlide'
 import { formatDayDate, formatShortDate } from '@/lib/date'
+import { scrub, barCursor } from '../chartStyles'
 import type { MacroDay } from '../hooks/useAnalyticsData'
 
 interface Props {
@@ -60,7 +61,7 @@ export default function MacroAdherenceChart({ data, targetKcal }: Props) {
               axisLine={false}
               width={36}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Tooltip {...scrub} content={<CustomTooltip />} cursor={barCursor} />
             {/* Same palette as the MacroBar rows on Home: protein = accent, carbs = sky, fat = amber */}
             <Bar dataKey="proteinKcal" stackId="kcal" fill="hsl(var(--primary))" />
             <Bar dataKey="carbsKcal"   stackId="kcal" fill="hsl(var(--carbs))" />

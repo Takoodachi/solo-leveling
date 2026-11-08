@@ -4,6 +4,7 @@ import RankBadge from '@/features/ranks/components/RankBadge'
 import { boardOf, profileLink, standings, type BoardKey } from '../boards'
 import type { LeaderboardEntry } from '../types'
 import Avatar from './Avatar'
+import { useMorphLink } from '@/hooks/useMorphLink'
 
 interface Props {
   entries: LeaderboardEntry[]
@@ -24,6 +25,8 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
   const rows = standings(entries, board, weekStart)
   const podium = rows.filter(r => r.score != null).slice(0, 3)
   const rest = rows.slice(podium.length)
+  const morphLink = useMorphLink()
+  const open = (e: LeaderboardEntry) => morphLink(profileLink(e), `profile-avatar:${e.userId}`)
 
   return (
     <div className="flex flex-col gap-3">
@@ -34,9 +37,9 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
             if (!r) return <div key={p.place} />
             const tier = board.tier?.(r.entry.snapshot)
             return (
-              <Link key={p.place} to={profileLink(r.entry)} className="flex min-w-0 flex-col items-center gap-1 text-center">
+              <Link key={p.place} to={profileLink(r.entry)} onClick={open(r.entry)} className="flex min-w-0 flex-col items-center gap-1 text-center">
                 <span className="relative">
-                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={p.avatar} />
+                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={p.avatar} morph={`board-avatar:${r.entry.userId}`} />
                   {tier && <RankBadge tier={tier} size={24} className="absolute -bottom-1 -right-2" />}
                 </span>
                 <span className="w-full truncate text-sm font-semibold">{r.entry.me ? 'You' : r.entry.name}</span>
@@ -61,11 +64,11 @@ export default function Standings({ entries, board: key, weekStart }: Props) {
             const tier = board.tier?.(r.entry.snapshot)
             return (
               <li key={r.entry.userId}>
-                <Link to={profileLink(r.entry)} className="flex items-center gap-3 py-3">
+                <Link to={profileLink(r.entry)} onClick={open(r.entry)} className="press-row -mx-2 flex items-center gap-3 rounded-2xl px-2 py-3">
                   <span className="w-5 shrink-0 text-center text-sm font-semibold text-muted-foreground tabular-nums">
                     {r.score != null ? podium.length + i + 1 : '–'}
                   </span>
-                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={36} />
+                  <Avatar name={r.entry.name} src={r.entry.snapshot.avatar} me={r.entry.me} size={36} morph={`board-avatar:${r.entry.userId}`} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{r.entry.me ? `${r.entry.name} (you)` : r.entry.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">{board.detail(r.entry.snapshot, weekStart)}</span>

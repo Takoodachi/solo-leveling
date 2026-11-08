@@ -30,7 +30,7 @@ export default function SettingsSection({ id, title, summary, Icon, children }: 
 
   return (
     <section id={id} className="rounded-3xl bg-card">
-      <button type="button" onClick={toggle} aria-expanded={open} aria-controls={`${id}-panel`} className="flex w-full items-center gap-3 p-4 text-left">
+      <button type="button" onClick={toggle} aria-expanded={open} aria-controls={`${id}-panel`} className="press-row flex w-full items-center gap-3 rounded-3xl p-4 text-left">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary"><Icon size={18} /></span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{title}</span>

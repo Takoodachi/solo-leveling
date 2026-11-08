@@ -3,7 +3,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import { formatShortDate } from '@/lib/date'
 import Segmented from '@/components/Segmented'
 import ChartCard from '@/features/analytics/components/ChartCard'
-import { tooltipStyle, axisTick, dayLabel } from '@/features/analytics/chartStyles'
+import { tooltipStyle, axisTick, dayLabel, scrub, lineCursor } from '@/features/analytics/chartStyles'
 import { TIERS, rankFor } from '@/features/ranks/tiers'
 import type { LeaderboardSnapshot } from '../types'
 
@@ -54,6 +54,8 @@ export default function CompareChart({ them, name, me }: Props) {
                   tickFormatter={v => TIERS.find(t => t.min === v)?.name ?? String(v)}
                 />
                 <Tooltip
+                  {...scrub}
+                  cursor={lineCursor}
                   contentStyle={tooltipStyle}
                   labelFormatter={(l, p) => `Week ending ${dayLabel(l, p)}`}
                   formatter={(v, key) => [`${rankFor(Number(v)).label} · ${v} pts`, key === 'you' ? 'You' : name]}

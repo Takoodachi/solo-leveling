@@ -18,7 +18,7 @@ export default function RoutineExerciseCard({ index, item, exercise, onOpen }: P
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left transition-colors active:bg-accent/60"
+      className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left"
     >
       <div className="min-w-0 flex-1">
         <span className="inline-block rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium">Exercise {index + 1}</span>

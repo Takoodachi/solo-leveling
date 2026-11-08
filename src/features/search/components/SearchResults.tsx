@@ -34,7 +34,7 @@ export default function SearchResults({ query, groups, onPick }: Props) {
                 key={`${g.key}-${item.id}`}
                 type="button"
                 onClick={() => onPick(item)}
-                className="flex items-center gap-3 border-b border-foreground/5 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-accent active:bg-accent"
+                className="press-row flex items-center gap-3 border-b border-foreground/5 px-4 py-3 text-left last:border-b-0 hover:bg-accent"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                   <item.Icon size={19} />

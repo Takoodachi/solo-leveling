@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns'
 import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip } from 'recharts'
-import { dayLabel, tooltipStyle } from '@/features/analytics/chartStyles'
+import { dayLabel, tooltipStyle, scrub, lineCursor } from '@/features/analytics/chartStyles'
 import type { DaySummary } from '../hooks/useWeekSummary'
 
 interface Props {
@@ -53,7 +53,8 @@ export default function WeeklyOverviewCard({ days, today }: Props) {
             <CartesianGrid vertical horizontal={false} stroke="hsl(var(--border))" strokeDasharray="3 5" />
             <XAxis dataKey="day" interval={0} padding={{ left: 12, right: 12 }} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={6} />
             <Tooltip
-              cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '3 3' }}
+              {...scrub}
+              cursor={lineCursor}
               contentStyle={tooltipStyle}
               labelFormatter={dayLabel}
               formatter={(_, key, item) => {

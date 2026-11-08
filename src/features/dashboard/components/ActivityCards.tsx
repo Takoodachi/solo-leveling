@@ -20,7 +20,7 @@ export function StepsCard({ date, steps, goal }: StepsProps) {
   const pct = goal > 0 ? steps / goal : 0
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 text-left active:scale-[0.99]">
+      <button type="button" onClick={() => setOpen(true)} className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 text-left">
         <div className="flex items-start justify-between">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Footprints size={20} /></span>
           <ProgressRing value={pct} size={64} stroke={4}>
@@ -55,7 +55,7 @@ export function CaloriesCard({ eaten, burned, target, macros, macroTargets }: Ca
     { key: 'F', v: macros.fat / (macroTargets.fat || 1), text: 'text-fat', fill: 'bg-fat' },
   ]
   return (
-    <Link to="/nutrition" className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 active:scale-[0.99]">
+    <Link to="/nutrition" className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4">
       <div className="flex items-start justify-between">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Flame size={20} /></span>
         <div className="flex h-14 items-end gap-1.5" aria-hidden="true">

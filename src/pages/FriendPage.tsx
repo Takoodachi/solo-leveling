@@ -55,7 +55,7 @@ export default function FriendPage() {
   return (
     <FullScreen className="flex flex-col gap-6">
       <PageHeader back="/leaderboard" eyebrow={self ? 'What friends see' : undefined} title={self ? 'Your profile' : entry.name}
-        action={<Avatar name={entry.name} src={s.avatar} me={self} size={44} />}
+        action={<Avatar name={entry.name} src={s.avatar} me={self} size={44} morph={`profile-avatar:${entry.userId}`} />}
       />
 
       <section

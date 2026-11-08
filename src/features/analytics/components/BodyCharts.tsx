@@ -7,7 +7,7 @@ import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 import { withTrend } from '@/lib/weightTrend'
 import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSettings'
 import { useStepsHistory } from '../hooks/useTrainingAnalytics'
-import { tooltipStyle, axisTick, compactNumber, dayLabel } from '../chartStyles'
+import { tooltipStyle, axisTick, compactNumber, dayLabel, scrub, lineCursor, barCursor } from '../chartStyles'
 import ChartCard from './ChartCard'
 
 export function WeightTrendCard() {
@@ -41,7 +41,7 @@ export function WeightTrendCard() {
                 </defs>
                 <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
-                <Tooltip contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+                <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
                 <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
                 <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
               </AreaChart>
@@ -71,7 +71,7 @@ export function StepsCard() {
             <BarChart data={data} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
               <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={3} />
               <YAxis tick={axisTick} axisLine={false} tickLine={false} width={40} tickFormatter={compactNumber} />
-              <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={v => [Number(v).toLocaleString(), 'Steps']} />
+              <Tooltip {...scrub} cursor={barCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={v => [Number(v).toLocaleString(), 'Steps']} />
               <Bar dataKey="steps" radius={[6, 6, 6, 6]} maxBarSize={16} fill="hsl(var(--primary))" />
             </BarChart>
           </ResponsiveContainer>

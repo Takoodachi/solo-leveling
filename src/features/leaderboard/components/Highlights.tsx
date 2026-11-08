@@ -50,7 +50,7 @@ export default function Highlights({ entries, canHighFive }: { entries: Leaderbo
         const given = !!fives?.some(f => f.from === userId && f.to === h.who.userId && f.key === h.key)
         return (
           <li key={`${h.who.userId}-${h.name}-${i}`} className="flex items-center gap-1">
-            <Link to={profileLink(h.who)} className="flex min-w-0 flex-1 items-center gap-3 py-3">
+            <Link to={profileLink(h.who)} className="press-row -ml-2 flex min-w-0 flex-1 items-center gap-3 rounded-2xl py-3 pl-2">
               <RankBadge tier={rank.tier.key} division={rank.division} size={34} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">

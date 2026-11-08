@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { CATEGORY_META, LEVEL_META } from '../categories'
 import RoutineArt from './RoutineArt'
 import { toneStyle, usePhotoTone } from '../photoTone'
+import { useMorphLink } from '@/hooks/useMorphLink'
 
 interface Props {
   to: string
@@ -18,20 +19,25 @@ interface Props {
   footer?: ReactNode
   /** The routine's own photo. */
   image?: string
+  /** The routine's id: the card then grows into the picture at the top of its page (lib/morph.ts). */
+  morph?: string
   className?: string
 }
 
-export default function RoutineCard({ to, name, category, level, minutes, footer, image, className }: Props) {
+export default function RoutineCard({ to, name, category, level, minutes, footer, image, morph, className }: Props) {
   const cat = CATEGORY_META[category]
   const lvl = LEVEL_META[level]
   // Text and fade in the colours that read over this photo, whatever the theme
   const tone = usePhotoTone(image, 'left')
+  const morphLink = useMorphLink()
   return (
     <Link
       to={to}
+      data-morph={morph ? `routine-card:${morph}` : undefined}
+      onClick={morph ? morphLink(to, `routine-hero:${morph}`) : undefined}
       style={toneStyle(tone)}
       className={cn(
-        'relative block min-h-[148px] overflow-hidden rounded-3xl bg-card p-5 text-foreground transition-transform active:scale-[0.99]',
+        'relative block min-h-[148px] overflow-hidden rounded-3xl bg-card p-5 text-foreground',
         className,
       )}
     >

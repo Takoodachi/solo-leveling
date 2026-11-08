@@ -50,7 +50,7 @@ export default function QuickAddSheet({ open, onOpenChange }: Props) {
                 key={label}
                 type="button"
                 onClick={() => { onOpenChange(false); run() }}
-                className="flex items-center gap-4 rounded-2xl bg-secondary px-4 py-3.5 text-left transition-colors hover:bg-accent active:scale-[0.99]"
+                className="press flex items-center gap-4 rounded-2xl bg-secondary px-4 py-3.5 text-left hover:bg-accent"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                   <Icon size={22} />
