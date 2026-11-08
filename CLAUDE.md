@@ -34,7 +34,7 @@ This file gives AI assistants the context needed to work productively on this pr
 - **Tests:** Vitest + fake-indexeddb (dev only; see *Build & Run*)
 - **Hosting:** Cloudflare Workers static assets (free), live at `https://solo-leveling.takoodachi.workers.dev`: `wrangler.jsonc` (SPA fallback via `not_found_handling`, **no `_redirects` file**, since Cloudflare rejects `/* /index.html 200`), `public/_headers`, `.nvmrc`. `netlify.toml` kept as a fallback One small Worker script (`worker/index.js`) answers `/api/*` only (`run_worker_first` in `wrangler.jsonc`): today that is the food search (see *Online food search*). Everything else is still served as static files without running any code.
 
-**Do not add** Redux, MobX, or styled-components. Supabase is the only backend/auth dependency, beside the site's own Worker endpoint (a fixed proxy to one public search, no data of ours). Don't add others, and flag any new backend need instead of bolting it on. Anything paid (e.g. the Anthropic-backed `parse-food` Edge Function) must stay behind a flag and off by default (`VITE_ENABLE_AI_FOOD`).
+**Do not add** Redux, MobX, or styled-components. Supabase is the only backend/auth dependency, beside the site's own Worker endpoint (a fixed proxy to one public search, no data of ours). Don't add others, and flag any new backend need instead of bolting it on. Anything paid must stay behind a flag and off by default. An AI meal estimate (the `parse-food` Edge Function, Claude behind it) was removed in November 2026: Claude API calls are billed separately from a Claude Pro plan, and the owner won't pay extra for it.
 
 ---
 
@@ -74,7 +74,7 @@ capacitor.config.ts # appId, the live URL the app loads (CAP_SERVER_URL override
 worker/index.js     # the Cloudflare Worker behind /api/* (plain JS, no build step of its own): GET /api/food-search
 supabase/
   migrations/       # SQL to run in the Supabase SQL editor (idempotent)
-  functions/        # parse-food (optional, paid; Deno), send-reminders (web push sender, free)
+  functions/        # send-reminders (web push sender, free; Deno)
 .github/workflows/  # supabase-keepalive.yml (stops free-tier pausing)
 ```
 

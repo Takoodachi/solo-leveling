@@ -1,8 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { subDays } from 'date-fns'
-import { Search, ScanLine, Sparkles, Loader2, Check, WifiOff, UtensilsCrossed } from 'lucide-react'
-import { toast } from 'sonner'
+import { Search, ScanLine, Loader2, Check, WifiOff, UtensilsCrossed } from 'lucide-react'
 import { db } from '@/db'
 import {
   Dialog,
@@ -12,12 +11,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 import Segmented from '@/components/Segmented'
 import { toDateStr } from '@/lib/date'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { useAuthStore } from '@/features/auth/authStore'
 import { useFoods, saveScannedFood, removeCustomFood, barcodeFoodId } from '../hooks/useFoods'
 import { useBarcodeLookup } from '../hooks/useBarcodeLookup'
 import { useOnlineFoodSearch, onlineKey, MIN_ONLINE_QUERY } from '../hooks/useOnlineFoodSearch'
@@ -25,7 +20,6 @@ import type { ReviewedFood, ScannedFood } from '../openFoodFacts'
 import { useOnline } from '@/hooks/useOnline'
 import ScannedFoodReview from './ScannedFoodReview'
 import CustomFoodForm from './CustomFoodForm'
-import AiFoodConfirm, { type AiParsedFood, type ConfirmedFood } from './AiFoodConfirm'
 import FoodResults, { type RecentUse } from './FoodResults'
 import OnlineFoodResults from './OnlineFoodResults'
 import CafeteriaMenu from './CafeteriaMenu'
@@ -55,7 +49,6 @@ const RECENT_WINDOW_DAYS = 14
 // A phone or tablet: no focus on the search by itself there, or the on-screen keyboard comes up on
 // opening and again after every food added (the list view remounts it), covering the recent foods
 const TOUCH = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
-const AI_FOOD_ENABLED = import.meta.env.VITE_ENABLE_AI_FOOD === 'true'
 
 function daysAgoIso(days: number): string {
   return toDateStr(subDays(new Date(), days))
@@ -77,21 +70,15 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
   const [showScanner, setShowScanner] = useState(false)
   // The school cafeteria's menu in place of the food list (Android app only)
   const [showCafe, setShowCafe] = useState(false)
-  const [aiText, setAiText] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiResult, setAiResult] = useState<AiParsedFood | null>(null)
   const [added, setAdded] = useState<Added[]>([])
   // The meal picked in the dialog: opened from +, the meal is only a guess from the time of day
   const [pickedMeal, setPickedMeal] = useState<MealType | null>(null)
   const into = pickedMeal ?? mealType
   const savedMeals = useSavedMeals()
-  const { foods, searchFoods, addFoodLog, addCustomFood, toggleFavorite } = useFoods()
+  const { foods, searchFoods, addFoodLog, toggleFavorite } = useFoods()
   const barcode = useBarcodeLookup()
   const onlineSearch = useOnlineFoodSearch()
   const online = useOnline()
-  const userId = useAuthStore(s => s.userId)
-  // AI meal estimates need a paid API key on the server — off unless explicitly enabled.
-  const aiAvailable = AI_FOOD_ENABLED && isSupabaseConfigured && !!userId
 
   // Map of foodUuid → most recent log (when, and how much) within the recent window.
   const recentMapRaw = useLiveQuery(async () => {
@@ -177,53 +164,11 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     setShowQuick(false)
     setShowScanner(false)
     setShowCafe(false)
-    setAiText('')
-    setAiLoading(false)
-    setAiResult(null)
     setAdded([])
     setPickedMeal(null)
     barcode.clear()
     onlineSearch.clear()
     onClose()
-  }
-
-  async function handleAiSubmit() {
-    const text = aiText.trim()
-    if (!text || aiLoading) return
-    setAiLoading(true)
-    try {
-      const { data, error } = await supabase.functions.invoke('parse-food', { body: { text } })
-      if (error) {
-        toast.error("Couldn't reach the AI service — try searching instead")
-        return
-      }
-      if (!data || data.ok !== true || !data.food) {
-        toast.error("Couldn't read the response — try rephrasing or use search")
-        return
-      }
-      setAiResult(data.food as AiParsedFood)
-    } catch {
-      toast.error("Couldn't reach the AI service — try searching instead")
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  async function handleAiConfirm(food: ConfirmedFood) {
-    // Persist as a reusable Food (one serving = the whole portion the user described).
-    const saved = await addCustomFood({
-      name: food.name,
-      kcalPerServing: food.kcal,
-      protein: food.protein,
-      carbs: food.carbs,
-      fat: food.fat,
-      servingSize: 1,
-      servingUnit: 'serving',
-      isFavorite: false,
-      notes: food.notes || undefined,
-    })
-    await addFoodLog({ date, foodId: saved.uuid, servings: 1, mealType: into })
-    handleClose()
   }
 
   function handleBarcodeResult(code: string) {
@@ -327,23 +272,6 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
     )
   }
 
-  if (aiResult) {
-    return (
-      <Dialog open={open} onOpenChange={open => !open && handleClose()}>
-        <DialogContent className="max-w-sm p-0 gap-0">
-          <DialogHeader className="p-4 pb-2">
-            <DialogTitle>Confirm & Log — {into}</DialogTitle>
-          </DialogHeader>
-          <AiFoodConfirm
-            parsed={aiResult}
-            onBack={() => setAiResult(null)}
-            onConfirm={handleAiConfirm}
-          />
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
   return (
     <Dialog open={open} onOpenChange={open => !open && handleClose()}>
       {/* A column where only the list gives way: with the keyboard up there's less room, and the
@@ -388,50 +316,6 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
           </div>
         ) : (
           <>
-            {aiAvailable && (
-              <div className="flex shrink-0 flex-col gap-2 px-4 pb-3">
-                <Label className="flex items-center gap-1.5 text-sm">
-                  <Sparkles size={14} className="text-primary" />
-                  Describe what you ate
-                </Label>
-                <textarea
-                  value={aiText}
-                  onChange={e => setAiText(e.target.value)}
-                  rows={3}
-                  maxLength={500}
-                  placeholder='e.g. "two slices of pepperoni pizza and a coke"'
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  disabled={aiLoading}
-                />
-                <Button
-                  type="button"
-                  onClick={handleAiSubmit}
-                  disabled={!aiText.trim() || aiLoading}
-                  className="w-full gap-2"
-                >
-                  {aiLoading ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Estimating…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} />
-                      Estimate with AI
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {aiAvailable && (
-              <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">or search the catalog</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-            )}
-
             <div className="flex shrink-0 gap-2 px-4 pb-2">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -440,7 +324,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   className="pl-9"
-                  autoFocus={!aiAvailable && !TOUCH}
+                  autoFocus={!TOUCH}
                 />
               </div>
               <Button
@@ -471,7 +355,7 @@ export default function AddFoodDialog({ open, onClose, date, mealType, initialQu
                 </Button>
               )}
             </div>
-            <div className={cn(aiAvailable ? 'h-[200px]' : 'h-[300px]', 'min-h-[7.5rem] overflow-y-auto overscroll-contain')}>
+            <div className="h-[300px] min-h-[7.5rem] overflow-y-auto overscroll-contain">
               {showCafe ? (
                 <CafeteriaMenu date={date} mealType={into} query={query} onPick={handleFoodSelect} />
               ) : (

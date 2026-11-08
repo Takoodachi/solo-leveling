@@ -1,7 +1,4 @@
 project_id = "solo-leveling"
 
-[functions.parse-food]
-verify_jwt = true
-
 [functions.send-reminders]
 verify_jwt = true
