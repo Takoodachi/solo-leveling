@@ -1,11 +1,12 @@
 import {
   Award, Bell, ClipboardList, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, Dumbbell, Eye,
   Footprints, GlassWater, Goal, History, House, LayoutGrid, Lightbulb, ListPlus, Medal, Music2, PanelBottom, Palette, PersonStanding,
-  Play, Radar, Ruler, Scale, Settings, Smartphone, Target, Timer, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
+  Play, Radar, Ruler, Scale, Settings, Smartphone, Target, Timer, ToggleRight, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
   type LucideIcon,
 } from 'lucide-react'
 import { ACHIEVEMENT_DEFS } from '@/features/gamification/achievements'
 import { THEMES } from '@/features/settings/themes'
+import { EXTRAS } from '@/features/settings/extras'
 import { isAndroidApp } from '@/lib/native'
 import type { Exercise } from '@/types'
 
@@ -26,9 +27,48 @@ export interface SearchItem {
   action?: SearchAction
   /** Show this exercise's info sheet. */
   exercise?: Exercise
+  /** A setting that's only there with an account on the leaderboard, or with sync set up. */
+  only?: 'signedIn' | 'account'
 }
 
 type Entry = Omit<SearchItem, 'group'>
+
+/**
+ * Every setting: the Settings page's sections and what's inside them, and the settings that live
+ * on Profile and the plan. Settings' own search looks through these alone (settingsSearch.ts), by
+ * name or by a description of the change, so their keywords carry the everyday words someone
+ * would use ("darker", "buzzing", "popup"); Home's search finds them among everything else.
+ */
+export const SETTING_ENTRIES: Entry[] = [
+  { id: 'account', title: 'Account & sync', subtitle: 'Settings', keywords: 'sign in sign out log in login logout email password cloud sync devices', Icon: Cloud, to: '/settings#account', only: 'account' },
+  { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings › Leaderboard', keywords: 'privacy private share sharing visible hide friends public', Icon: Eye, to: '/settings#sharing', only: 'signedIn' },
+  { id: 'share-routines', title: 'Show my routines', subtitle: 'Settings › Leaderboard', keywords: 'routines plan share friends copy privacy private visible', Icon: Eye, to: '/settings#sharing', only: 'signedIn' },
+  ...(isAndroidApp() ? [{ id: 'health-steps', title: 'Samsung Health steps', subtitle: 'Settings › Steps', keywords: 'steps health connect samsung watch sync background import walking heart rate', Icon: Footprints, to: '/settings#steps' }] : []),
+  { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert alarm remind nudge workout creatine food weigh weight water recap time', Icon: Bell, to: '/settings#reminders' },
+  { id: 'workout-tips', title: 'Tips during workouts', subtitle: 'Settings › Workouts', keywords: 'suggestions hints progression weight reps increase recommend advice', Icon: Lightbulb, to: '/settings#workouts' },
+  { id: 'music-app', title: 'Music app', subtitle: 'Settings › Workouts', keywords: 'music song songs playlist spotify youtube apple amazon soundcloud player skip pause', Icon: Music2, to: '/settings#workouts' },
+  { id: 'workout-screen', title: 'Workout screen layout', subtitle: 'Settings › Workouts', keywords: 'rest timer music controls position top bottom move place logger', Icon: Dumbbell, to: '/settings#workouts' },
+  { id: 'theme', title: 'Theme', subtitle: 'Settings › Theme', keywords: `dark light mode colour colours color colors palette appearance look accent bright night custom own ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
+  { id: 'card-style', title: 'Card style', subtitle: 'Settings › Theme', keywords: 'cards boxes glass outline glow raised aura solid border transparent look', Icon: Palette, to: '/settings#theme' },
+  { id: 'background-photo', title: 'Background photo', subtitle: 'Settings › Theme', keywords: 'wallpaper background picture image photo behind', Icon: Palette, to: '/settings#theme' },
+  { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs menu buttons', Icon: PanelBottom, to: '/settings#bottom-bar' },
+  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings › Home screen', keywords: 'widgets cards customize home order arrange daily quest steps calories water creatine macros streak', Icon: LayoutGrid, to: '/settings#home-screen' },
+  { id: 'home-search', title: 'Search bar on Home', subtitle: 'Settings › Home screen', keywords: 'search bar home find', Icon: LayoutGrid, to: '/settings#home-screen' },
+  ...EXTRAS.filter(x => x.only !== 'android' || isAndroidApp()).map((x): Entry => ({
+    id: `extra-${x.key}`, title: x.label, subtitle: 'Settings › Extras', keywords: `${x.keywords} ${x.description}`, Icon: ToggleRight,
+    to: `/settings#extras--${x.key}`, only: x.only === 'signedIn' ? 'signedIn' : undefined,
+  })),
+  { id: 'setup', title: 'Setup questions', subtitle: 'Settings', keywords: 'survey onboarding personalize personalise redo welcome start again questions plan targets track', Icon: ClipboardList, to: '/setup' },
+  ...(isAndroidApp() ? [{ id: 'app-icon', title: 'App icon shortcuts', subtitle: 'Settings › App icon', keywords: 'long press hold home screen launcher quick actions icon shortcut', Icon: Smartphone, to: '/settings#app-icon' }] : []),
+  { id: 'name-photo', title: 'Name and photo', subtitle: 'Profile', keywords: 'name photo picture avatar profile display', Icon: UserRound, to: '/profile' },
+  { id: 'body-goals', title: 'Body & goals', subtitle: 'Profile', keywords: 'height sex age activity goal bodyweight weight cut bulk maintain lose gain pace training since', Icon: Ruler, to: '/profile#body-goals' },
+  { id: 'targets', title: 'Daily targets', subtitle: 'Profile', keywords: 'calories calorie kcal protein carbs fat macros goal budget limit target food eat', Icon: Goal, to: '/profile#targets' },
+  { id: 'step-calories', title: 'Step calories', subtitle: 'Profile › Daily targets', keywords: 'steps walking burn burned calories subtract net', Icon: Goal, to: '/profile#targets' },
+  { id: 'training-carbs', title: 'More carbs on workout days', subtitle: 'Profile › Daily targets', keywords: 'carbs carbohydrates workout training days fat rest cycling', Icon: Goal, to: '/profile#targets' },
+  { id: 'plan', title: 'Weekly plan', subtitle: 'Workouts › Plan', keywords: 'schedule split days program routine', Icon: CalendarDays, to: '/workouts/plan#schedule' },
+  { id: 'frequency', title: 'Training frequency goal', subtitle: 'Workouts › Plan', keywords: 'workouts per week weekly goal times', Icon: Target, to: '/workouts/plan#frequency' },
+  { id: 'rest', title: 'Rest timer', subtitle: 'Workouts › Plan', keywords: 'rest seconds between sets timer length long short', Icon: Timer, to: '/workouts/plan#rest-timer' },
+]
 
 /** Screens and the sections inside them (#ids are anchors on those pages). */
 export const PAGE_ENTRIES: Entry[] = [
@@ -38,9 +78,6 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'recap-year', title: 'Yearly recap', subtitle: 'Your year in review', keywords: 'summary review report year annual wrapped share image', Icon: CalendarCheck, to: '/recap?period=year' },
   { id: 'workouts', title: 'Workouts', subtitle: 'Routines, templates and history', keywords: 'training gym lift routines templates', Icon: Dumbbell, to: '/workouts' },
   { id: 'history', title: 'Workout history', subtitle: 'Workouts', keywords: 'past sessions log', Icon: History, to: '/workouts/history' },
-  { id: 'plan', title: 'Weekly plan', subtitle: 'Workouts', keywords: 'schedule split days program', Icon: CalendarDays, to: '/workouts/plan#schedule' },
-  { id: 'frequency', title: 'Training frequency goal', subtitle: 'Workouts › Plan', keywords: 'workouts per week weekly goal', Icon: Target, to: '/workouts/plan#frequency' },
-  { id: 'rest', title: 'Rest timer', subtitle: 'Workouts › Plan', keywords: 'rest seconds between sets', Icon: Timer, to: '/workouts/plan#rest-timer' },
   { id: 'nutrition', title: 'Nutrition', subtitle: 'Food log, meals and calories', keywords: 'food eat diet meals calories kcal macros', Icon: UtensilsCrossed, to: '/nutrition' },
   { id: 'food-history', title: 'Food history', subtitle: 'Nutrition', keywords: 'past days meals ate eaten log calendar', Icon: History, to: '/nutrition/history' },
   { id: 'analytics', title: 'Analytics', subtitle: 'Charts and progress', keywords: 'stats graphs charts progress', Icon: ChartColumn, to: '/analytics' },
@@ -60,19 +97,8 @@ export const PAGE_ENTRIES: Entry[] = [
   { id: 'leaderboard', title: 'Leaderboard', subtitle: 'Friends, podium and crowns', keywords: 'friends compete ranking podium crowns highlights high five high-five', Icon: Trophy, to: '/leaderboard' },
   { id: 'profile', title: 'Profile', subtitle: 'Name, photo, level and XP', keywords: 'me avatar photo name level xp', Icon: UserRound, to: '/profile' },
   { id: 'achievements', title: 'Achievements', subtitle: 'Profile', keywords: `badges unlocked ${ACHIEVEMENT_DEFS.map(a => a.title).join(' ')}`, Icon: Award, to: '/profile#achievements' },
-  { id: 'body-goals', title: 'Body & goals', subtitle: 'Profile', keywords: 'height sex age activity goal bodyweight', Icon: Ruler, to: '/profile#body-goals' },
-  { id: 'targets', title: 'Daily targets', subtitle: 'Profile', keywords: 'calories kcal protein carbs fat macros step calories', Icon: Goal, to: '/profile#targets' },
   { id: 'settings', title: 'Settings', subtitle: 'Account, theme and more', keywords: 'preferences options', Icon: Settings, to: '/settings' },
-  { id: 'account', title: 'Account & sync', subtitle: 'Settings', keywords: 'sign in sign out log in login logout email password cloud sync', Icon: Cloud, to: '/settings#account' },
-  { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings', keywords: 'privacy share visible hide', Icon: Eye, to: '/settings#sharing' },
-  { id: 'theme', title: 'Theme', subtitle: 'Settings', keywords: `dark light mode colours colors palette appearance custom own card style glass outline glow raised aura ${THEMES.map(t => t.name).join(' ')}`, Icon: Palette, to: '/settings#theme' },
-  { id: 'music-app', title: 'Music app', subtitle: 'Settings', keywords: 'music song playlist spotify youtube apple player skip pause workout', Icon: Music2, to: '/settings#workouts' },
-  { id: 'workout-tips', title: 'Tips during workouts', subtitle: 'Settings', keywords: 'suggestions hints progression weight reps increase recommend off hide', Icon: Lightbulb, to: '/settings#workouts' },
-  ...(isAndroidApp() ? [{ id: 'app-icon', title: 'App icon shortcuts', subtitle: 'Settings', keywords: 'long press hold home screen launcher quick actions', Icon: Smartphone, to: '/settings#app-icon' }] : []),
-  { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert workout creatine food weigh water recap', Icon: Bell, to: '/settings#reminders' },
-  { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs', Icon: PanelBottom, to: '/settings#bottom-bar' },
-  { id: 'setup', title: 'Setup questions', subtitle: 'Settings', keywords: 'survey onboarding personalize personalise redo welcome start again questions plan targets track', Icon: ClipboardList, to: '/setup' },
-  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings', keywords: 'widgets cards customize home search bar hide show', Icon: LayoutGrid, to: '/settings#home-screen' },
+  ...SETTING_ENTRIES,
 ]
 
 /** Shown before typing: the main screens. */

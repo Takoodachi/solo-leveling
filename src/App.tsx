@@ -12,6 +12,7 @@ import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useHighFiveDigest } from '@/features/leaderboard/useHighFiveDigest'
 import { useWorkoutNotice } from '@/features/workouts/hooks/useWorkoutNotice'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
+import { useExtrasCache } from '@/features/settings/extras'
 import { useHealthStepsSync } from '@/features/health/useHealthStepsSync'
 import { useHashScroll } from '@/hooks/useHashScroll'
 import { useScrollMemory } from '@/hooks/useScrollMemory'
@@ -81,6 +82,7 @@ function AppRoutes() {
   useHighFiveDigest()
   useWorkoutNotice()
   useThemeSync()
+  useExtrasCache()
   useHashScroll()
   useVisibleViewport()
   const session = useAuthStore(s => s.session)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, Trophy } from 'lucide-react'
+import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, ToggleRight, Trophy } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Logo from '@/components/Logo'
 import { NAV_CHOICES, navTabsFrom } from '@/components/navTabs'
@@ -14,6 +14,9 @@ import { CARD_STYLES, cardStyleOf } from '@/features/settings/cardStyle'
 import NavBarCard from '@/features/settings/components/NavBarCard'
 import HomeLayoutCard from '@/features/settings/components/HomeLayoutCard'
 import WorkoutPrefsCard from '@/features/settings/components/WorkoutPrefsCard'
+import ExtrasCard from '@/features/settings/components/ExtrasCard'
+import SettingsSearch from '@/features/settings/components/SettingsSearch'
+import { extraOn, extrasHere } from '@/features/settings/extras'
 import { musicApp, useMusicApp } from '@/features/workouts/music'
 import AppShortcutsCard from '@/features/settings/components/AppShortcutsCard'
 import ExportButton from '@/features/settings/components/ExportButton'
@@ -48,73 +51,84 @@ export default function SettingsPage() {
   const shortcuts = appShortcutsFrom(settings)
   const music = musicApp(useMusicApp(s => s.id))
   const [taps, setTaps] = useState(0)
+  const [query, setQuery] = useState('')
+  const extrasOff = extrasHere(signedIn).filter(x => !extraOn(x.key, settings?.extras)).length
 
   return (
     <div className="flex flex-col gap-3">
       <PageHeader title="Settings" />
-      {isSupabaseConfigured && (
-        <SettingsSection id="account" title="Account & sync" summary={email ?? (signedIn ? 'Waiting for a connection' : 'Not signed in')} Icon={Cloud}>
-          <AccountCard />
-        </SettingsSection>
+      <SettingsSearch query={query} onQuery={setQuery} />
+      {/* While searching, the results stand in for the sections */}
+      {!query.trim() && (
+        <>
+          {isSupabaseConfigured && (
+            <SettingsSection id="account" title="Account & sync" summary={email ?? (signedIn ? 'Waiting for a connection' : 'Not signed in')} Icon={Cloud}>
+              <AccountCard />
+            </SettingsSection>
+          )}
+          {signedIn && (
+            <SettingsSection id="sharing" title="Leaderboard" summary={isSharing(settings) ? 'Sharing with friends' : 'Not sharing'} Icon={Trophy}>
+              <ShareCard />
+            </SettingsSection>
+          )}
+          {isAndroidApp() && (
+            <SettingsSection id="steps" title="Steps" summary="From Samsung Health" Icon={Footprints}>
+              <HealthStepsCard />
+            </SettingsSection>
+          )}
+          <SettingsSection id="reminders" title="Reminders" summary={remindersOn ? `${remindersOn} on` : 'None on'} Icon={Bell}>
+            <RemindersCard />
+          </SettingsSection>
+          <SettingsSection id="workouts" title="Workouts" summary={[settings?.workoutTips === false ? 'Tips off' : 'Tips on', music?.name].filter(Boolean).join(' · ')} Icon={Dumbbell}>
+            <WorkoutPrefsCard />
+          </SettingsSection>
+          <SettingsSection id="theme" title="Theme" summary={`${resolveTheme(settings?.theme, settings?.customTheme).name} · ${CARD_STYLES.find(s => s.id === cardStyleOf(settings?.cardStyle))?.name} cards`} Icon={Palette}>
+            <ThemePicker />
+            <CardStylePicker />
+            <WallpaperCard />
+          </SettingsSection>
+          <SettingsSection id="bottom-bar" title="Bottom bar" summary={`${NAV_CHOICES[left].label} · ${NAV_CHOICES[right].label}`} Icon={PanelBottom}>
+            <NavBarCard />
+          </SettingsSection>
+          <SettingsSection id="home-screen" title="Home screen" summary={`${homeWidgetsFrom(settings).length} of ${HOME_WIDGETS.length} cards shown`} Icon={LayoutGrid}>
+            <HomeLayoutCard />
+          </SettingsSection>
+          <SettingsSection id="extras" title="Extras" summary={extrasOff ? `${extrasOff} off` : 'All on'} Icon={ToggleRight}>
+            <ExtrasCard />
+          </SettingsSection>
+          <Link id="setup" to="/setup" className="flex items-center gap-3 rounded-3xl bg-card p-4 text-left">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary"><ClipboardList size={18} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">Setup questions</span>
+              <span className="block truncate text-xs text-muted-foreground">Answer them again to fit Home, targets and your plan</span>
+            </span>
+            <ChevronRight size={20} className="shrink-0 text-muted-foreground" />
+          </Link>
+          {isAndroidApp() && (
+            <SettingsSection id="app-icon" title="App icon" summary={shortcuts.map(id => APP_SHORTCUTS[id].label).join(' · ') || 'No shortcuts'} Icon={Smartphone}>
+              <AppShortcutsCard />
+            </SettingsSection>
+          )}
+          {taps >= BACKUP_TAPS && (
+            <SettingsSection id="backup" title="Backup" summary="Export or import a copy" Icon={DatabaseBackup}>
+              <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
+                <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
+                <div className="flex gap-2">
+                  <ExportButton />
+                  <ImportButton />
+                </div>
+              </div>
+            </SettingsSection>
+          )}
+          <button
+            type="button"
+            onClick={() => setTaps(n => n + 1)}
+            className="mx-auto mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground"
+          >
+            <Logo size={16} /> Solo Leveling · v{APP_VERSION}
+          </button>
+        </>
       )}
-      {signedIn && (
-        <SettingsSection id="sharing" title="Leaderboard" summary={isSharing(settings) ? 'Sharing with friends' : 'Not sharing'} Icon={Trophy}>
-          <ShareCard />
-        </SettingsSection>
-      )}
-      {isAndroidApp() && (
-        <SettingsSection id="steps" title="Steps" summary="From Samsung Health" Icon={Footprints}>
-          <HealthStepsCard />
-        </SettingsSection>
-      )}
-      <SettingsSection id="reminders" title="Reminders" summary={remindersOn ? `${remindersOn} on` : 'None on'} Icon={Bell}>
-        <RemindersCard />
-      </SettingsSection>
-      <SettingsSection id="workouts" title="Workouts" summary={[settings?.workoutTips === false ? 'Tips off' : 'Tips on', music?.name].filter(Boolean).join(' · ')} Icon={Dumbbell}>
-        <WorkoutPrefsCard />
-      </SettingsSection>
-      <SettingsSection id="theme" title="Theme" summary={`${resolveTheme(settings?.theme, settings?.customTheme).name} · ${CARD_STYLES.find(s => s.id === cardStyleOf(settings?.cardStyle))?.name} cards`} Icon={Palette}>
-        <ThemePicker />
-        <CardStylePicker />
-        <WallpaperCard />
-      </SettingsSection>
-      <SettingsSection id="bottom-bar" title="Bottom bar" summary={`${NAV_CHOICES[left].label} · ${NAV_CHOICES[right].label}`} Icon={PanelBottom}>
-        <NavBarCard />
-      </SettingsSection>
-      <SettingsSection id="home-screen" title="Home screen" summary={`${homeWidgetsFrom(settings).length} of ${HOME_WIDGETS.length} cards shown`} Icon={LayoutGrid}>
-        <HomeLayoutCard />
-      </SettingsSection>
-      <Link id="setup" to="/setup" className="flex items-center gap-3 rounded-3xl bg-card p-4 text-left">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary"><ClipboardList size={18} /></span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Setup questions</span>
-          <span className="block truncate text-xs text-muted-foreground">Answer them again to fit Home, targets and your plan</span>
-        </span>
-        <ChevronRight size={20} className="shrink-0 text-muted-foreground" />
-      </Link>
-      {isAndroidApp() && (
-        <SettingsSection id="app-icon" title="App icon" summary={shortcuts.map(id => APP_SHORTCUTS[id].label).join(' · ') || 'No shortcuts'} Icon={Smartphone}>
-          <AppShortcutsCard />
-        </SettingsSection>
-      )}
-      {taps >= BACKUP_TAPS && (
-        <SettingsSection id="backup" title="Backup" summary="Export or import a copy" Icon={DatabaseBackup}>
-          <div className="flex flex-col gap-3 rounded-3xl bg-card p-5">
-            <p className="text-sm text-muted-foreground">A JSON copy of your data, independent of cloud sync.</p>
-            <div className="flex gap-2">
-              <ExportButton />
-              <ImportButton />
-            </div>
-          </div>
-        </SettingsSection>
-      )}
-      <button
-        type="button"
-        onClick={() => setTaps(n => n + 1)}
-        className="mx-auto mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground"
-      >
-        <Logo size={16} /> Solo Leveling · v{APP_VERSION}
-      </button>
     </div>
   )
 }

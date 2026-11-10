@@ -126,6 +126,11 @@ export type VolumeMuscle =
   | 'lower-back' | 'traps' | 'lats'
 
 /** What the account remembers of the Android app's Samsung Health link (features/health/healthPrefs.ts). */
+/** Things the app does by itself that can each be switched off (features/settings/extras.ts). */
+export type ExtraKey = 'checkIn' | 'recapBanner' | 'caffeine' | 'highFives' | 'rankUps' | 'haptics' | 'workoutNotice'
+/** false = off; a key that isn't there is on. */
+export type Extras = Partial<Record<ExtraKey, boolean>>
+
 export interface HealthPrefs {
   background?: boolean // steps were kept syncing while the app is closed
 }
@@ -166,6 +171,7 @@ export interface Settings {
   cardStyle?: CardStyle // how cards are drawn (unset = solid; read it through `cardStyleOf`)
   achievementGoals?: string[] // achievement keys picked as goals (features/gamification/goals.ts)
   health?: HealthPrefs // the Android app's Samsung Health link, so a fresh install asks for background access again by itself
+  extras?: Extras // what the app does by itself, each switchable (Settings → Extras; unset = all on)
   updatedAt?: number
   syncPending?: boolean
 }

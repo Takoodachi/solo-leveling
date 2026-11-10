@@ -8,6 +8,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, ChevronRight } from 'lucide-react'
 import DatePicker from '@/components/DatePicker'
 import { useSettings } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useCheckinDays } from '@/features/checkins/useCheckins'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
@@ -91,8 +92,8 @@ export default function HomePage() {
           {tab === 'today' ? (
             <div key="today" className="flex animate-fade-in flex-col gap-5">
               <ResumeBanner />
-              <RecapBanner now={now} />
-              <WeeklyCheckInCard today={todayStr} />
+              {settings && extraOn('recapBanner', settings.extras) && <RecapBanner now={now} />}
+              {settings && extraOn('checkIn', settings.extras) && <WeeklyCheckInCard today={todayStr} />}
               <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>
                 <DatePicker
                   value={selected}
