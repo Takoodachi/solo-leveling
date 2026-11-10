@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import Collapse from '@/components/Collapse'
 
 interface Props {
-  /** The anchor search results link to (`/settings#theme`); arriving on it opens the section. */
+  /** The anchor search results link to (`/settings#theme`, or a row inside: `#extras--haptics`); arriving on it opens the section. */
   id: string
   title: string
   /** What's set right now, shown while it's closed ("Ember", "2 on"). */
@@ -20,7 +20,14 @@ const opened = new Set<string>()
 /** One row of the Settings page: tap it to show what's inside, tap again to put it away. */
 export default function SettingsSection({ id, title, summary, Icon, children }: Props) {
   const { hash } = useLocation()
-  const [open, setOpen] = useState(() => opened.has(id) || hash === `#${id}`)
+  const linked = (h: string) => h === `#${id}` || h.startsWith(`#${id}--`)
+  const [open, setOpen] = useState(() => opened.has(id) || linked(hash))
+  // A search on this page lands on it while it's on screen: open it then too
+  const [lastHash, setLastHash] = useState(hash)
+  if (hash !== lastHash) {
+    setLastHash(hash)
+    if (linked(hash)) setOpen(true)
+  }
 
   function toggle() {
     if (open) opened.delete(id)

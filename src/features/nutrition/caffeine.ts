@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { db } from '@/db'
 import { toDateStr } from '@/lib/date'
 import { useNow } from '@/hooks/useNow'
+import { useSettings } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
 
 /**
  * Caffeine in the built-in foods, mg per serving (one of the food's own servings: a 240 ml cup,
@@ -54,10 +56,12 @@ export function caffeineOf(logs: { foodId: string; servings: number }[]): number
  */
 export function useCaffeineWatch(ready: boolean): void {
   const day = toDateStr(useNow())
+  const { settings } = useSettings()
+  const on = !!settings && extraOn('caffeine', settings.extras)
   const mg = useLiveQuery(async () => (ready ? caffeineOf(await db.foodLog.where('date').equals(day).toArray()) : 0), [ready, day])
 
   useEffect(() => {
-    if (!mg || mg <= CAFFEINE_LIMIT_MG) return
+    if (!on || !mg || mg <= CAFFEINE_LIMIT_MG) return
     const key = `solo:caffeineWarned:${day}`
     try {
       if (localStorage.getItem(key)) return
@@ -69,5 +73,5 @@ export function useCaffeineWatch(ready: boolean): void {
       description: `About ${Math.round(mg / 10) * 10} mg so far, more than the ${CAFFEINE_LIMIT_MG} mg a day health agencies suggest for most adults.`,
       duration: 10_000,
     })
-  }, [mg, day])
+  }, [on, mg, day])
 }

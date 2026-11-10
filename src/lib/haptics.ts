@@ -1,11 +1,14 @@
 /**
  * Small "you can feel it" feedback. Android (browser and app) vibrates. iPhones have no
  * vibration API on the web; the one haptic Safari gives a page is the tick of a native switch
- * (iOS 18+), so `tap` toggles a hidden one. Elsewhere nothing happens.
+ * (iOS 18+), so `tap` toggles a hidden one. Elsewhere nothing happens, and nowhere when
+ * Vibration is switched off (Settings → Extras).
  */
+import { extraOn } from '@/features/settings/extras'
 
 /** Longer buzzes, e.g. the rest timer ending. Android only. */
 export function buzz(pattern: number | number[]): void {
+  if (!extraOn('haptics')) return
   try {
     navigator.vibrate?.(pattern)
   } catch {
@@ -28,6 +31,7 @@ function switchTick(): void {
 
 /** A light tick for something you just did (a set checked off). Call it from the tap itself. */
 export function tap(): void {
+  if (!extraOn('haptics')) return
   if (typeof navigator.vibrate === 'function') buzz(12)
   else switchTick()
 }

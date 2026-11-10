@@ -93,6 +93,10 @@
   * {
     @apply border-border;
   }
+  /* A link to #a-section (search results) lands below the compact title bar (PageHeader), not under it */
+  [id] {
+    scroll-margin-top: calc(env(safe-area-inset-top) + 3.5rem);
+  }
   html,
   body {
     @apply bg-background;
