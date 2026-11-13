@@ -89,6 +89,8 @@ export const MORE_EXERCISES: Exercise[] = [
   ex('ex-close-grip-push-up', 'Close-Grip Push-Up', 'Arms', 'bodyweight', 'reps', ['Triceps'], ['Chest', 'Anterior Deltoid'], 'Place your hands under your shoulders and keep your elbows brushing your ribs as you lower and press.'),
   ex('ex-machine-dip', 'Machine Dip', 'Arms', 'strength', 'kg', ['Triceps'], ['Chest'], 'Sit in the seated dip machine and grip the handles at your sides. Press down until your arms are straight, then let the handles rise to about 90° of elbow bend.'),
   ex('ex-wrist-roller', 'Wrist Roller', 'Arms', 'strength', 'kg', ['Forearms'], [], 'Hold a wrist roller at shoulder height with straight arms. Roll the weight up by twisting one hand after the other, then unroll it slowly.'),
+  ex('ex-cable-wrist-curl', 'Cable Wrist Curl', 'Arms', 'strength', 'kg', ['Forearms'], [], 'Attach a straight bar to a low pulley. Sit or kneel facing it with your forearms resting on your thighs or a bench, palms up. Let the bar roll down toward your fingers, then curl it up by flexing the wrists. Log the weight on the stack.'),
+  ex('ex-cable-reverse-wrist-curl', 'Cable Reverse Wrist Curl', 'Arms', 'strength', 'kg', ['Forearms'], [], 'Same as the cable wrist curl but with palms down: raise the bar by extending the wrists while the forearms stay still. It trains the forearm extensors.'),
   ex('ex-plate-pinch', 'Plate Pinch', 'Arms', 'bodyweight', 'min', ['Forearms'], [], 'Pinch two smooth plates together with your fingers and thumb and hold them at your side for time.'),
   ex('ex-dead-hang', 'Dead Hang', 'Arms', 'bodyweight', 'min', ['Forearms'], ['Lats'], 'Hang from a pull-up bar with a full grip and relaxed shoulders for as long as you can. It builds grip strength and decompresses the spine.'),
 
