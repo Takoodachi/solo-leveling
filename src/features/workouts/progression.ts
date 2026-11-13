@@ -17,18 +17,21 @@ import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
  *   default for the equipment. The same step is a far bigger share of a light lift (2 kg on an
  *   8 kg lateral raise is +25%, 2.5 kg on a 100 kg squat +2.5%), so the reps to reach before a
  *   jump are however many Epley says keep the heavier weight inside the range, at most five
- *   past the target.
+ *   past the target. The other way round, reps so far past the target that one step would still
+ *   leave them at or over it take more than one step: as many as keep the reps in the range, up
+ *   to 10% heavier (5% on single-joint lifts), the span ACSM gives.
  * - Bodyweight moves count bodyweight in the load; assisted ones progress by taking help off.
  * - An exercise logged in pounds is worked out in pounds, with the jumps a pound gym has (5 lb on
  *   a bar, 10 on a stack) and targets on the 2.5 lb grid. The hint's text and its fill are then in
  *   pounds too, like the fields they fill.
- * - Order: when more (or less) work for the same muscles came before it today than last time
- *   (fatigue.ts), last time's reps are moved by the estimate before anything is decided, so it
- *   holds the weight where it would have jumped, or jumps where it would have held, and says why.
- *   Less than half a rep either way changes nothing.
+ * - Order: when more (or fewer) sets came before it today than last time, for the same muscles
+ *   above all but for any muscle a little (fatigue.ts), last time's reps are moved by the estimate
+ *   before anything is decided, so it holds the weight where it would have jumped, or jumps where
+ *   it would have held, and says why. Less than half a rep either way changes nothing.
  *
- * Sources: ACSM's progression models (2–10% more load once the target reps are exceeded,
- * smaller jumps for small-muscle and single-joint lifts); Plotkin et al. 2022 (adding reps and
+ * Sources: ACSM's progression models (2009: "2–10% (lower percent for small muscle mass
+ * exercises, higher percent increase for large muscle mass exercises) increase in load" once the
+ * current one is done "for one to two repetitions over the desired number"); Plotkin et al. 2022 (adding reps and
  * adding load build muscle and strength about equally); detraining reviews (strength holds for
  * 3–4 weeks off, then falls roughly 5–15% over 4–8 weeks). The plateau reset (take 10% off
  * after three flat sessions) is coaching practice, not a trial result.
@@ -68,6 +71,8 @@ export interface ProgressInput {
 /** Same cap as the rank scoring: past this, Epley measures endurance. */
 const MAX_REPS = 20
 const EXTRA_REPS = 5
+/** The most a weight goes up at once when more than one step is due (ACSM: 2–10%). */
+const MAX_JUMP = 0.1
 const EASE_AFTER_DAYS = 28
 const LONG_BREAK_DAYS = 56
 const FLAT_SESSIONS = 3
@@ -131,9 +136,15 @@ function orderShift(reps: number[], order: OrderEffect | undefined): { expect: n
   const n = Math.round(Math.abs(shift))
   const count = `${n} rep${n === 1 ? '' : 's'}`
   const names = (xs: string[]) => xs.slice(0, 2).join(' and ')
+  const { before } = order
+  // Mostly the number of sets before it, whatever they worked: count them. Else name what tired its muscles.
   const note = shift < 0
-    ? ` After ${names(order.today)} today, expect about ${count} fewer than last time.`
-    : ` Fresher than last time${order.last.length ? ` (it came after ${names(order.last)} then)` : ''}, so expect about ${count} more.`
+    ? before
+      ? ` After ${before.today} earlier sets today (${before.last} last time), expect about ${count} fewer.`
+      : ` After ${names(order.today)} today, expect about ${count} fewer than last time.`
+    : before
+      ? ` Fresher than last time (${before.last} earlier sets then, ${before.today} today), so expect about ${count} more.`
+      : ` Fresher than last time${order.last.length ? ` (it came after ${names(order.last)} then)` : ''}, so expect about ${count} more.`
   return { expect: reps.map(r => r * order.ratio), note }
 }
 
@@ -214,7 +225,9 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const target = Math.max(1, Math.round(targetReps ?? defaultTarget(name, gear)))
   const low = Math.max(1, target - (target >= 15 ? 4 : target >= 11 ? 3 : 2))
   const most = Math.max(target, Math.min(MAX_REPS, target + EXTRA_REPS))
-  const after = (reps: number) => Math.round(repsAt(moved(top), reps, moved(next)))
+  /** Reps to expect at `weight` from `reps` done at the working weight. */
+  const repsWith = (weight: number, reps: number) => Math.round(repsAt(moved(top), reps, moved(weight)))
+  const after = (reps: number) => repsWith(next, reps)
   let need = target
   while (need < most && after(need) < low) need++
 
@@ -230,15 +243,21 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   }
 
   if (likely >= need) {
+    // So far past the target that one step leaves the reps at or over it: take another, while the
+    // reps stay in the range and the load within what ACSM allows at once
+    const limit = moved(top) * (SMALL.test(name) || SINGLE_JOINT.test(name) ? 1 + MAX_JUMP / 2 : 1 + MAX_JUMP)
+    let to = next
+    for (let w = loadable(to + step, top, lb); !assisted && repsWith(to, likely) >= target && repsWith(w, likely) >= low && moved(w) <= limit; w = loadable(w + step, top, lb)) to = w
     const big = after(likely) < low
     const at = `${kg(top)} ${u}${assisted ? ' of assistance' : ''}`
+    const got = to !== next
+      ? `Last time ${list(work)} at ${at}, well past ${target}, so it’s a bigger step than usual.`
+      : least >= need ? `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${at}.` : `Last time ${list(work)} at ${at}.`
     return {
       kind: 'weight',
-      title: !assisted ? `Go up to ${kg(next)} ${u}` : next > 0 ? `Take some help off: ${kg(next)} ${u}` : 'Try it without assistance',
-      why: `${least >= need ? `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${at}.` : `Last time ${list(work)} at ${at}.`}${note} ${
-        big ? 'It’s a big jump, so fewer reps at first is fine.' : `Aim for ${low}–${target} reps.`
-      }`,
-      fill: next > 0 ? { weight: next, from: top } : undefined,
+      title: !assisted ? `Go up to ${kg(to)} ${u}` : next > 0 ? `Take some help off: ${kg(next)} ${u}` : 'Try it without assistance',
+      why: `${got}${note} ${big ? 'It’s a big jump, so fewer reps at first is fine.' : `Aim for ${low}–${target} reps.`}`,
+      fill: to > 0 ? { weight: to, from: top } : undefined,
     }
   }
 
