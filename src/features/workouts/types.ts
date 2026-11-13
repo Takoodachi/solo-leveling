@@ -35,8 +35,12 @@ export type LiftTrend = {
   flat: number
 }
 
-/** Work done before an exercise in a workout on the muscles it uses, in sets, and the exercises it came from, most first (fatigue.ts). */
-export type Preload = { sets: number; after: string[] }
+/**
+ * What came before an exercise in a workout (fatigue.ts): the work on the muscles it uses, in sets,
+ * the exercises that came from, most first, and every set before it, whatever the muscle (unknown
+ * on a card made before that was kept).
+ */
+export type Preload = { sets: number; after: string[]; total?: number }
 
 export type BlockDraft = {
   exercise: Exercise

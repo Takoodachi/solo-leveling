@@ -14,6 +14,16 @@ describe('suggestProgress (double progression)', () => {
     expect(hint?.fill?.weight).toBe(62.5)
   })
 
+  it('takes a bigger step when one would still leave the reps over the target, up to 10%', () => {
+    const hint = suggestProgress({ exercise: bench, lastSets: sets(60, 12, 12, 12), trend: trend(), targetReps: 8 })
+    expect(hint?.fill?.weight).toBe(65) // 62.5 would still be about 10 reps; 67.5 is over 10% heavier
+    expect(hint?.title).toBe('Go up to 65 kg')
+    expect(hint?.why).toBe('Last time 12 · 12 · 12 at 60 kg, well past 8, so it’s a bigger step than usual. Aim for 6–8 reps.')
+    // A single-joint lift moves 5% at most, so one step
+    const pushdown = { uuid: 'ex-tricep-pushdown', name: 'Tricep Pushdown', type: 'strength' as const, defaultUnit: 'kg' as const }
+    expect(suggestProgress({ exercise: pushdown, lastSets: sets(50, 20, 20, 20), trend: trend(), targetReps: 12 })?.fill?.weight).toBe(52.5)
+  })
+
   it('adds reps at the same weight while the target isn’t reached', () => {
     expect(suggestProgress({ exercise: bench, lastSets: sets(60, 8, 7, 6), trend: trend(), targetReps: 8 })?.kind).toBe('reps')
   })

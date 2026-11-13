@@ -30,20 +30,39 @@ describe('what earlier exercises leave on this one', () => {
 
   it('adds up the sets, by exercise, leaving the exercise itself out', () => {
     expect(preload(shoulderPress, [{ exercise: chestPress, sets: 4 }, { exercise: squat, sets: 5 }, { exercise: shoulderPress, sets: 3 }]))
-      .toEqual({ sets: 2, after: ['Machine Chest Press'] })
+      .toEqual({ sets: 2, after: ['Machine Chest Press'], total: 9 })
   })
 
-  it('expects about 5% fewer reps per set, at most 25%', () => {
-    expect(repRatio(2, 0)).toBeCloseTo(0.9)
-    expect(repRatio(0, 2)).toBeCloseTo(1 / 0.9)
-    expect(repRatio(20, 0)).toBeCloseTo(0.75)
-    expect(repRatio(3, 3)).toBe(1)
+  it('expects about 5% fewer reps per set for the same muscles, at most 25%', () => {
+    expect(repRatio({ sets: 2 }, { sets: 0 })).toBeCloseTo(0.9)
+    expect(repRatio({ sets: 0 }, { sets: 2 })).toBeCloseTo(1 / 0.9)
+    expect(repRatio({ sets: 20 }, { sets: 0 })).toBeCloseTo(0.75)
+    expect(repRatio({ sets: 3 }, { sets: 3 })).toBe(1)
+  })
+
+  it('expects about 1% fewer per set for other muscles, at most 10%', () => {
+    const none = { sets: 0, total: 0 }
+    expect(repRatio({ sets: 0, total: 5 }, none)).toBeCloseTo(0.95)
+    expect(repRatio({ sets: 0, total: 30 }, none)).toBeCloseTo(0.9)
+    expect(repRatio({ sets: 2, total: 9 }, none)).toBeCloseTo(0.83) // 2 sets for its muscles, 7 for others
+    expect(repRatio({ sets: 20, total: 40 }, none)).toBeCloseTo(0.75)
   })
 
   it('weighs what was ticked today against last time, and knows nothing for an older card', () => {
     const blocks = [block(chestPress, 4), block(shoulderPress, 0, { lastPreload: { sets: 0, after: [] } })]
     expect(orderEffect(blocks, 1)).toEqual({ ratio: 0.9, today: ['Machine Chest Press'], last: [] })
     expect(orderEffect([block(chestPress, 4), block(shoulderPress, 0)], 1)).toBeUndefined()
+  })
+
+  it('counts every set before it, and says so when that count is what differs', () => {
+    const last = { sets: 2, after: ['Machine Chest Press'], total: 4 }
+    const effect = orderEffect([block(squat, 5), block(chestPress, 4), block(shoulderPress, 0, { lastPreload: last })], 2)
+    expect(effect?.ratio).toBeCloseTo(0.83 / 0.88) // the chest press as last time, five sets of squats more
+    expect(effect?.before).toEqual({ today: 9, last: 4 })
+    // The squats aren't counted on a card made before every set was
+    const older = orderEffect([block(squat, 5), block(chestPress, 4), block(shoulderPress, 0, { lastPreload: { sets: 2, after: [] } })], 2)
+    expect(older?.ratio).toBe(1)
+    expect(older?.before).toBeUndefined()
   })
 })
 
@@ -71,6 +90,18 @@ describe('tips that follow the order', () => {
     const plain = suggestProgress({ exercise: shoulderPress, lastSets: lastSets(8), trend, targetReps: 8 })
     expect(hint(8, 0.97, ['Machine Chest Press'])).toEqual(plain)
   })
+
+  it('counts the sets when it’s how many came before, not which', () => {
+    const after = (ratio: number, before: { today: number; last: number }) =>
+      suggestProgress({ exercise: shoulderPress, lastSets: lastSets(10), trend, targetReps: 12, order: { ratio, today: [], last: [], before } })
+    const later = after(0.93, { today: 12, last: 5 })
+    expect(later?.kind).toBe('hold')
+    expect(later?.fill?.reps).toEqual([10, 10, 10])
+    expect(later?.why).toContain('After 12 earlier sets today (5 last time), expect about 1 rep fewer.')
+    const sooner = after(1.08, { today: 0, last: 8 })
+    expect(sooner?.fill?.reps).toEqual([12, 12, 12])
+    expect(sooner?.why).toContain('Fresher than last time (8 earlier sets then, 0 today), so expect about 1 rep more.')
+  })
 })
 
 describe('what came before it last time', () => {
@@ -89,7 +120,7 @@ describe('what came before it last time', () => {
       ...sets('newer', chestPress.uuid, 1, 4),
       ...sets('newer', shoulderPress.uuid, 2, 3),
     ])
-    expect((await blockHistory(shoulderPress.uuid)).lastPreload).toEqual({ sets: 2, after: ['Machine Chest Press'] })
-    expect((await blockHistory(squat.uuid)).lastPreload).toEqual({ sets: 0, after: [] })
+    expect((await blockHistory(shoulderPress.uuid)).lastPreload).toEqual({ sets: 2, after: ['Machine Chest Press'], total: 9 })
+    expect((await blockHistory(squat.uuid)).lastPreload).toEqual({ sets: 0, after: [], total: 0 })
   })
 })
