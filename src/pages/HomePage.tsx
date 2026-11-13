@@ -11,6 +11,7 @@ import { useSettings } from '@/features/settings/hooks/useSettings'
 import { extraOn } from '@/features/settings/extras'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useCheckinDays } from '@/features/checkins/useCheckins'
+import { useCreatineLink } from '@/features/checkins/useCreatineLink'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
 import { netKcal, useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
@@ -44,6 +45,8 @@ export default function HomePage() {
   const [params, setParams] = useSearchParams()
   const logging = params.get('log')
   const doneLogging = (open: boolean) => { if (!open) setParams({}, { replace: true }) }
+  // …and ?log=creatine (a tap on its reminder in the Android app) ticks it
+  useCreatineLink(todayStr)
   // Any day can be on show (the calendar by the date) and the strip is that day's week; until
   // one is picked it follows the clock
   const selected = picked ?? todayStr

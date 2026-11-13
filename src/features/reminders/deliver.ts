@@ -1,7 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
 import { nativeNotifyState, replaceScheduled } from '@/lib/localNotifications'
-import type { PlannedReminder } from './reminders'
+import { creatineTickLink, type PlannedReminder } from './reminders'
 
 /**
  * Hands the reminder plan to whatever delivers it. In the Android app that's the phone's own
@@ -30,16 +30,20 @@ const fingerprint = (plan: PlannedReminder[]) => plan.map(p => `${p.key}@${p.at}
 /** Reminders whose notification can log the thing itself (a button that works with the app closed). */
 const isQuickLog = (p: PlannedReminder): p is PlannedReminder & { kind: QuickLogReminder['kind'] } => p.kind === 'creatine' || p.kind === 'water'
 
-const quickLogItem = (p: PlannedReminder & { kind: QuickLogReminder['kind'] }): QuickLogReminder => ({
-  id: idOf(p.key),
-  kind: p.kind,
-  date: p.key.slice(-10), // keys are kind-YYYY-MM-DD
-  at: p.at,
-  title: p.title,
-  body: p.body,
-  url: p.url,
-  action: p.kind === 'creatine' ? 'Tick it off' : 'Add a glass',
-})
+/** In the app a tap on the creatine reminder itself ticks it too, as it opens Home; a web push keeps the plain link. */
+function quickLogItem(p: PlannedReminder & { kind: QuickLogReminder['kind'] }): QuickLogReminder {
+  const date = p.key.slice(-10) // keys are kind-YYYY-MM-DD
+  return {
+    id: idOf(p.key),
+    kind: p.kind,
+    date,
+    at: p.at,
+    title: p.title,
+    body: p.body,
+    url: p.kind === 'creatine' ? creatineTickLink(date) : p.url,
+    action: p.kind === 'creatine' ? 'Tick it off' : 'Add a glass',
+  }
+}
 
 async function toPhone(plan: PlannedReminder[]): Promise<void> {
   if (!isAndroidApp()) return
