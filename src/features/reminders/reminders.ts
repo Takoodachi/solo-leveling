@@ -53,6 +53,13 @@ export interface ReminderFacts {
   skipped?: string[]
 }
 
+/**
+ * Home, ticking that day's creatine as it opens (useCreatineLink): what a tap on the creatine
+ * reminder opens in the Android app. A query and not a #hash, which the app drops from a
+ * notification's link.
+ */
+export const creatineTickLink = (day: string) => `/home?log=creatine&day=${day}`
+
 export interface PlannedReminder {
   /** `kind-YYYY-MM-DD`: one per reminder per day. */
   key: string
