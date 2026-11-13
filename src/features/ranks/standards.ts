@@ -90,6 +90,11 @@ const LEG_PRESS = load(['quads', 'glutes'], [109, 162, 230, 309, 395], [49, 87, 
 const HIP_THRUST = load(['glutes'], [56, 96, 149, 213, 285], [35, 63, 100, 147, 199])
 const LEG_EXT = load(['quads'], [48, 72, 103, 140, 180], [22, 38, 59, 86, 115])
 const PEC_DECK = load(['chest'], [42, 63, 89, 119, 152], [10, 18, 30, 44, 60]) // Strength Level "Machine Chest Fly"
+// Wrist curls on a cable's bar, both hands on it. Strength Level has no cable tables, so these are
+// its barbell ones (the same two-handed lift): a weight that ranks high on the dumbbell versions,
+// which count one bell, ranks a good deal lower here.
+const CABLE_WRIST_CURL = load(['forearms'], [7, 21, 44, 74, 110], [1, 8, 22, 43, 68])
+const CABLE_REVERSE_WRIST_CURL = load(['forearms'], [3, 16, 40, 74, 115], [1, 8, 21, 41, 66])
 const PULL_UP = reps(['lats'], 1, [-3, 6, 13, 21, 29], [-9, -3, 6, 13, 21])
 const DIP = reps(['triceps', 'chest'], 0.95, [4, 10, 20, 31, 42], [-4, 1, 9, 19, 30])
 const PUSH_UP = reps(['chest'], 0.65, [6, 20, 38, 60, 83], [-5, 7, 18, 31, 47])
@@ -156,6 +161,8 @@ const BASE: Record<string, Standard> = {
   'ex-diamond-push-up': reps(['triceps', 'chest'], 0.65, [3, 12, 25, 40, 55], [-3, 4, 12, 22, 34]),
   'ex-close-grip-push-up': reps(['triceps', 'chest'], 0.65, [4, 14, 28, 44, 60], [-2, 5, 14, 25, 38]),
   'ex-wrist-curl': WRIST_CURL,
+  'ex-cable-wrist-curl': CABLE_WRIST_CURL,
+  'ex-cable-reverse-wrist-curl': CABLE_REVERSE_WRIST_CURL,
   'ex-dead-hang': hold(['forearms'], [10, 30, 60, 90, 120], [8, 20, 45, 70, 100]),
   // Core
   'ex-cable-crunch': CABLE_CRUNCH,
