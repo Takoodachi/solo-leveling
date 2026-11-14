@@ -208,7 +208,7 @@ export default function ActiveWorkoutPage() {
                         sex={ranks?.status === 'ready' ? ranks.sex ?? undefined : undefined}
                       />
                     ) : (
-                      <ExerciseLogCard {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} />
+                      <ExerciseLogCard {...card} onSetDone={handleSetDone} liftRank={rankOf.get(block.exercise.uuid)} rankContext={rankContext} lifts={ranks?.lifts} />
                     )}
                   </div>
                 )

@@ -5,6 +5,7 @@ import type { Exercise, WeightUnit } from '@/types'
 import { applyFill, type HintFill } from './progression'
 import { type WorkoutDraft, type BlockDraft, type BlockHistory, type SetDraft, cardioSet, emptySet, numText, setHasValue } from './types'
 import { convertWeightText, weightText } from './units'
+import type { Effort } from './effort'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
 
@@ -33,6 +34,8 @@ interface WorkoutStore {
   toggleCollapsed: (blockIdx: number) => void
   /** Call after a tick: if that was the card's last set, it folds away a moment later. */
   foldWhenDone: (blockIdx: number) => void
+  /** How many reps the exercise's last set left (effort.ts); the same answer again takes it back. */
+  setEffort: (blockIdx: number, effort: Effort) => void
   /**
    * Another exercise in this one's place (the machine is taken). Sets already ticked stay logged
    * under the old exercise and the new one takes the rest; returns how to take it back.
@@ -76,7 +79,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload }],
+          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload, recovery: opts?.recovery }],
         },
       }
     }),
@@ -121,6 +124,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     // Not while correcting a past workout, where ticks are only being fixed
     if (!draft || draft.editing || !block?.sets.every(st => st.done)) return
     const id = block.exercise.uuid
+    // Its card is the one that asks how many reps were left
+    set({ draft: { ...draft, justDone: id } })
     setTimeout(() => set(s => {
       // Still the same card, and still done: nothing was unticked or moved meanwhile
       const now = s.draft?.blocks[blockIdx]
@@ -130,6 +135,9 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return { draft: { ...s.draft, blocks: s.draft.blocks.map((b, i) => (i === blockIdx ? { ...b, collapsed: true } : i === next ? { ...b, collapsed: false } : b)) } }
     }), FOLD_DELAY_MS)
   },
+
+  setEffort: (blockIdx, effort) =>
+    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, effort: b.effort === effort ? undefined : effort })) } : s)),
 
   replaceBlock: (blockIdx, block) => {
     const draft = get().draft

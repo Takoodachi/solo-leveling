@@ -19,6 +19,7 @@ import { playsIntro } from '@/features/ranks/useRankUpIntro'
 import { useWorkoutStore } from '../store'
 import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { weightKg, weightText } from '../units'
+import { effortRpe } from '../effort'
 import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
@@ -73,7 +74,7 @@ export function useActiveWorkout() {
     for (const [i, re] of routine.exercises.entries()) {
       const exercise = exercises[i]
       if (!exercise) continue
-      const { lastSets, trend, unit, lastPreload } = await blockHistory(exercise.uuid)
+      const { lastSets, trend, unit, lastPreload, recovery } = await blockHistory(exercise.uuid)
       const base = { exercise, lastSets, unit }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
@@ -86,6 +87,7 @@ export function useActiveWorkout() {
         trend,
         unit,
         lastPreload,
+        recovery,
         sets: cardio
           ? [prefillCardio(base, Math.max(1, re.sets) * re.reps)]
           : Array.from({ length: Math.max(1, re.sets) }, (_, j) => prefillSet(base, j, re.reps)),
@@ -119,23 +121,23 @@ export function useActiveWorkout() {
     const day = opts.date ?? today()
     const startedAt = day === today() ? draft.startedAt : parseISO(day).getTime() + (draft.startedAt - startOfDay(draft.startedAt).getTime())
     const cardioIds = new Set(draft.blocks.filter(b => setModeFor(b.exercise) === 'cardio').map(b => b.exercise.uuid))
-    const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) =>
-      block.sets
-        .filter(s => s.done)
-        .map((s, si) => ({
-          uuid: s.uuid,
-          workoutId: workoutUuid,
-          exerciseId: block.exercise.uuid,
-          setIndex: bi * 100 + si,
-          reps: num(s.reps),
-          weight: weightKg(s.weight, block.unit),
-          duration: num(s.duration),
-          distanceKm: num(s.distanceKm),
-          rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : undefined,
-          updatedAt: now,
-          syncPending: true,
-        })),
-    )
+    const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) => {
+      const done = block.sets.filter(s => s.done)
+      return done.map((s, si) => ({
+        uuid: s.uuid,
+        workoutId: workoutUuid,
+        exerciseId: block.exercise.uuid,
+        setIndex: bi * 100 + si,
+        reps: num(s.reps),
+        weight: weightKg(s.weight, block.unit),
+        duration: num(s.duration),
+        distanceKm: num(s.distanceKm),
+        // Cardio's effort; a lift's "reps left" goes on its last set (effort.ts)
+        rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,
+        updatedAt: now,
+        syncPending: true,
+      }))
+    })
 
     const latestWeight = await db.bodyMetrics.orderBy('date').last()
     const cardioSets = sets.filter(s => cardioIds.has(s.exerciseId))

@@ -1,5 +1,6 @@
 import type { Exercise, RoutineCategory, WeightUnit } from '@/types'
 import { intensityFromRpe, type Intensity } from '@/lib/cardio'
+import type { Effort } from './effort'
 
 /** One set row in the live logger. Inputs are strings while editing. */
 export type SetDraft = {
@@ -42,6 +43,9 @@ export type LiftTrend = {
  */
 export type Preload = { sets: number; after: string[]; total?: number }
 
+/** Work on an exercise's muscles in the two days before a workout, in sets, and the workouts it came from, most first (fatigue.ts). */
+export type Recent = { sets: number; after: string[] }
+
 export type BlockDraft = {
   exercise: Exercise
   restSec: number
@@ -52,6 +56,10 @@ export type BlockDraft = {
   trend?: LiftTrend
   /** What came before this exercise in the last workout that had it, so the tips can weigh today's order against it. */
   lastPreload?: Preload
+  /** How rested its muscles are: the work they got in the two days before today, and before the last workout that had it. */
+  recovery?: { today: Recent; last: Recent }
+  /** How many reps were left after its last set today (effort.ts): asked once it's done, saved on that set. */
+  effort?: Effort
   /** The unit this exercise is logged in (unset = kg), from its saved choice. See units.ts. */
   unit?: WeightUnit
   /** Folded away in the logger: only its header shows. */
@@ -59,7 +67,7 @@ export type BlockDraft = {
 }
 
 /** What a new logger card takes from history (blockHistory). */
-export type BlockHistory = Pick<BlockDraft, 'lastSets' | 'trend' | 'unit' | 'lastPreload'>
+export type BlockHistory = Pick<BlockDraft, 'lastSets' | 'trend' | 'unit' | 'lastPreload' | 'recovery'>
 
 /** A saved workout being edited in the logger (instead of a live session). */
 export type EditingInfo = {
@@ -79,6 +87,8 @@ export type WorkoutDraft = {
   notes: string
   blocks: BlockDraft[]
   editing?: EditingInfo
+  /** The exercise whose last set was ticked most recently: its card asks how many reps were left. */
+  justDone?: string
 }
 
 export function emptySet(prefill?: Partial<SetDraft>): SetDraft {

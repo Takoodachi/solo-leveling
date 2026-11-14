@@ -9,10 +9,13 @@ import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockCard, { type BlockCardProps } from './BlockCard'
 import ProgressHint from './ProgressHint'
+import EffortRow from './EffortRow'
 import PlatesButton from './PlatesButton'
 import UnitToggle from './UnitToggle'
 import { applyFill, isBarbell, suggestProgress } from '../progression'
 import { orderEffect } from '../fatigue'
+import { suggestStart, type RankedLift } from '../startWeight'
+import { EFFORTS } from '../effort'
 import { lastSetsIn, setsInKg } from '../units'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
 import { useHoldToMove } from '../hooks/useHoldToMove'
@@ -28,11 +31,13 @@ interface Props extends BlockCardProps {
   /** Best rank so far on this lift (from history), if it's a ranked lift. */
   liftRank?: RankInfo
   rankContext: RankContext | null
+  /** Every ranked lift of the lifter's: a lift never logged takes its first weight from them (startWeight.ts). */
+  lifts?: RankedLift[]
 }
 
-export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...card }: Props) {
+export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lifts, ...card }: Props) {
   const { block, blockIdx } = card
-  const { addSet, removeSet, restoreSet, moveSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, draft } = useWorkoutStore()
+  const { addSet, removeSet, restoreSet, moveSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, setEffort, draft } = useWorkoutStore()
   // Hold a set (anywhere but its fields and its tick) to carry it to another place in the exercise
   const { attach, handle, style, from } = useHoldToMove((from, to) => moveSet(blockIdx, from, to))
   const { settings } = useSettings()
@@ -44,7 +49,15 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
   const lastSets = lastSetsIn(block.lastSets, block.unit)
   const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done), liftRank, rankContext) : liftRank
   // No "what to try today" while correcting a workout that's already happened, or with tips switched off
-  const hint = draft?.editing || settings?.workoutTips === false ? null : suggestProgress({ ...block, bodyKg: rankContext?.bodyKg, order: draft ? orderEffect(draft.blocks, blockIdx) : undefined })
+  const tips = !draft?.editing && settings?.workoutTips !== false
+  const hint = !tips
+    ? null
+    : (suggestProgress({ ...block, bodyKg: rankContext?.bodyKg, order: draft ? orderEffect(draft.blocks, blockIdx) : undefined })
+      // Never logged: a first weight from the lifter's related lifts, until the first set is in
+      ?? (!block.lastSets?.length && rankContext && lifts && done === 0 ? suggestStart({ ...block, ...rankContext, lifts }) : null))
+  // Its last set was the latest ticked: ask how many reps that left (not while correcting a past workout)
+  const asksEffort = !draft?.editing && draft?.justDone === block.exercise.uuid && mode === 'load' && done === block.sets.length
+  const effortTag = EFFORTS.find(e => e.value === block.effort)?.tag
   const fill = hint?.fill
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
   // The plate calculator starts from the next set's weight
@@ -99,10 +112,12 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, ...c
   return (
     <BlockCard
       {...card}
+      footer={asksEffort ? <EffortRow value={block.effort} onPick={effort => setEffort(blockIdx, effort)} /> : undefined}
       subtitle={
         <>
           {done === block.sets.length && <Check size={12} strokeWidth={3.5} className="text-primary" aria-label="All sets done" />}
           {done}/{block.sets.length} sets · rest {block.restSec}s
+          {effortTag && !asksEffort && <> · {effortTag}</>}
           {rank && (
             <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
               <RankBadge tier={rank.tier.key} size={18} /> {rank.label}

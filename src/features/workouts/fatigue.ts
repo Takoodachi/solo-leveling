@@ -1,6 +1,6 @@
 import type { Exercise } from '@/types'
 import { sharesOf } from './musclesWorked'
-import type { BlockDraft, Preload } from './types'
+import type { BlockDraft, Preload, Recent } from './types'
 
 /**
  * What came before an exercise in a workout, and what that does to its reps (the tips,
@@ -19,12 +19,20 @@ import type { BlockDraft, Preload } from './types'
  *   power, a moderate loss for endurance). A squat done after 21 sets for the whole body lost 2.6
  *   of its 8 reps (Spreuwenberg et al. 2006).
  * In all at most 25%.
+ *
+ * The days before count too: muscles worked in the last two days aren't back to full yet. Sets
+ * taken to failure hold a lift back for 24 to 48 hours (Morán-Navarro et al. 2017), and it takes
+ * about 48 hours to perform as before (Goulart et al. 2021). So the work its muscles got in the
+ * two days before today is weighed against the same before last time: about 1% of the reps per
+ * set from the last day, half that from the day before, at most 15%.
  */
 
 const LOST_PER_SET = 0.05
 const LOST_PER_OTHER_SET = 0.01
 const MAX_LOST_OTHER = 0.1
 const MAX_LOST = 0.25
+const LOST_PER_RECENT_SET = 0.01
+const MAX_LOST_RECENT = 0.15
 /** As on the muscles-worked map: a cardio entry weighs like a set per ten minutes, within reason. */
 const CARDIO_MINUTES_PER_SET = 10
 const CARDIO_MAX_SETS = 6
@@ -38,6 +46,8 @@ export interface OrderEffect {
   last: string[]
   /** Sets before it today and last time, whatever the muscle: given when that count, not the muscles' work, is what moves the reps most. */
   before?: { today: number; last: number }
+  /** The workouts that worked its muscles in the two days before, today and last time: given when how rested they are is what moves the reps most. */
+  rested?: { today: string[]; last: string[] }
 }
 
 type Load = Pick<Preload, 'sets' | 'total'>
@@ -83,22 +93,40 @@ export function repRatio(today: Load, last: Load): number {
   return kept(today) / kept(last)
 }
 
+/** The share of the reps lost to work the same muscles got in the two days before. */
+const toTheDaysBefore = (r: Recent) => Math.min(MAX_LOST_RECENT, r.sets * LOST_PER_RECENT_SET)
+
+/** Last time's reps × this = what the muscles' rest since their last work is likely to allow. */
+export function restedRatio(today: Recent, last: Recent): number {
+  return (1 - toTheDaysBefore(today)) / (1 - toTheDaysBefore(last))
+}
+
+const NOTHING: Preload = { sets: 0, after: [] }
+const NO_WORK: Recent = { sets: 0, after: [] }
+
 /**
  * For the exercise at `idx`: what's been done before it today (every set ticked in another
- * exercise so far, whatever its place) against what came before it last time. Unknown for a card
- * made before last time's order was kept (an older draft): then nothing is adjusted.
+ * exercise so far, whatever its place) and in the two days before, against the same last time.
+ * Unknown for a card made before either was kept (an older draft): then nothing is adjusted.
  */
 export function orderEffect(blocks: BlockDraft[], idx: number): OrderEffect | undefined {
   const block = blocks[idx]
-  const last = block?.lastPreload
-  if (!block || !last) return undefined
-  const all = preload(block.exercise, blocks.flatMap((b, i) => {
-    const done = i === idx ? [] : b.sets.filter(s => s.done)
-    return done.length ? [{ exercise: b.exercise, sets: workDone(b.exercise, done.map(s => Number(s.duration) || 0)) }] : []
-  }))
+  if (!block || (!block.lastPreload && !block.recovery)) return undefined
+  const last = block.lastPreload ?? NOTHING
+  const all = block.lastPreload
+    ? preload(block.exercise, blocks.flatMap((b, i) => {
+        const done = i === idx ? [] : b.sets.filter(s => s.done)
+        return done.length ? [{ exercise: b.exercise, sets: workDone(b.exercise, done.map(s => Number(s.duration) || 0)) }] : []
+      }))
+    : NOTHING
   // A card from before every set was counted: only the muscles' work can be compared
   const today: Preload = last.total == null ? { sets: all.sets, after: all.after } : all
-  const effect: OrderEffect = { ratio: repRatio(today, last), today: today.after, last: last.after }
-  const byCount = Math.abs(toTheRest(today) - toTheRest(last)) > Math.abs(toMuscles(today) - toMuscles(last))
-  return byCount ? { ...effect, before: { today: Math.round(today.total ?? 0), last: Math.round(last.total ?? 0) } } : effect
+  const days = block.recovery ?? { today: NO_WORK, last: NO_WORK }
+  const effect: OrderEffect = { ratio: repRatio(today, last) * restedRatio(days.today, days.last), today: today.after, last: last.after }
+  // The tip says what moved the reps most: the same muscles' work today, how much came before in all, or the days before
+  const byMuscles = Math.abs(toMuscles(today) - toMuscles(last))
+  const byCount = Math.abs(toTheRest(today) - toTheRest(last))
+  const byDays = Math.abs(toTheDaysBefore(days.today) - toTheDaysBefore(days.last))
+  if (byDays > byMuscles && byDays > byCount) return { ...effect, rested: { today: days.today.after, last: days.last.after } }
+  return byCount > byMuscles ? { ...effect, before: { today: Math.round(today.total ?? 0), last: Math.round(last.total ?? 0) } } : effect
 }

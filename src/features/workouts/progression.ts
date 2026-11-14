@@ -3,6 +3,7 @@ import { standardFor } from '@/features/ranks/standards'
 import { resolveBodyKg, setModeFor } from '@/lib/workoutMath'
 import type { LastSet, LiftTrend, PastSession, SetDraft } from './types'
 import type { OrderEffect } from './fatigue'
+import { effortFromRpe, type Effort } from './effort'
 import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
 
 /**
@@ -27,7 +28,17 @@ import { fromKg, isLb, lastSetsIn, stepFromKg } from './units'
  * - Order: when more (or fewer) sets came before it today than last time, for the same muscles
  *   above all but for any muscle a little (fatigue.ts), last time's reps are moved by the estimate
  *   before anything is decided, so it holds the weight where it would have jumped, or jumps where
- *   it would have held, and says why. Less than half a rep either way changes nothing.
+ *   it would have held, and says why. Less than half a rep either way changes nothing. How rested
+ *   its muscles are counts the same way (the work they got in the two days before, fatigue.ts).
+ * - Effort: the last set's "reps left" from last time (effort.ts). Three or more left counts as two
+ *   more reps on every set, so it jumps sooner or aims higher (people guess about one rep too few:
+ *   Halperin et al. 2022); nothing left while still under the range means the weight is too heavy,
+ *   and it steps down at once instead of waiting for the plateau rule.
+ * - Today's sets: once a set ticked today comes in short of its aim, the aims for the rest come
+ *   down by the same share (what autoregulated training does: Zhang et al. 2021).
+ * - Rest: reps that fell off steeply from set to set on a short rest timer get a line about
+ *   resting longer (ACSM 2009: at least 2–3 min for the big lifts, 1–2 for the others).
+ * - Nothing logged yet: a first weight from the lifter's related lifts (startWeight.ts).
  *
  * Sources: ACSM's progression models (2009: "2–10% (lower percent for small muscle mass
  * exercises, higher percent increase for large muscle mass exercises) increase in load" once the
@@ -47,8 +58,8 @@ export interface HintFill {
 }
 
 export interface ProgressHint {
-  /** `hold`: today's order means matching last time (or less) is the aim. */
-  kind: 'weight' | 'reps' | 'hold' | 'ease' | 'reset'
+  /** `hold`: today's order means matching last time (or less) is the aim. `start`: nothing logged yet (startWeight.ts). */
+  kind: 'weight' | 'reps' | 'hold' | 'ease' | 'reset' | 'start'
   title: string
   why: string
   /** What "Use" writes into the sets not done yet. */
@@ -66,6 +77,10 @@ export interface ProgressInput {
   unit?: WeightUnit
   /** What came before it today against last time (fatigue.ts `orderEffect`). */
   order?: OrderEffect
+  /** The block's own sets today, in its unit: the ones ticked so far re-aim the rest. */
+  sets?: Pick<SetDraft, 'weight' | 'reps' | 'done'>[]
+  /** What the block's rest timer is set to, in seconds. */
+  restSec?: number
 }
 
 /** Same cap as the rank scoring: past this, Epley measures endurance. */
@@ -73,6 +88,8 @@ const MAX_REPS = 20
 const EXTRA_REPS = 5
 /** The most a weight goes up at once when more than one step is due (ACSM: 2–10%). */
 const MAX_JUMP = 0.1
+/** Reps counted on top of last time's when its last set left three or more. */
+const EASY_REPS = 2
 const EASE_AFTER_DAYS = 28
 const LONG_BREAK_DAYS = 56
 const FLAT_SESSIONS = 3
@@ -115,6 +132,10 @@ function defaultTarget(name: string, gear: Gear): number {
   return gear === 'barbell' ? 8 : 10
 }
 
+/** By its name: the usual smallest jump for an exercise at a weight, and its usual rep target (startWeight.ts). */
+export const stepFor = (name: string, weight: number, lb: boolean) => defaultStep(gearOf(name.toLowerCase()), name.toLowerCase(), weight, lb)
+export const targetFor = (name: string) => defaultTarget(name.toLowerCase(), gearOf(name.toLowerCase()))
+
 const round = (n: number) => Math.round(n * 100) / 100
 const kg = (n: number) => String(round(n))
 /** Pound targets land on what can be loaded: the 2.5 lb grid, unless that would lose the jump. */
@@ -136,16 +157,56 @@ function orderShift(reps: number[], order: OrderEffect | undefined): { expect: n
   const n = Math.round(Math.abs(shift))
   const count = `${n} rep${n === 1 ? '' : 's'}`
   const names = (xs: string[]) => xs.slice(0, 2).join(' and ')
-  const { before } = order
-  // Mostly the number of sets before it, whatever they worked: count them. Else name what tired its muscles.
+  const { before, rested } = order
+  // Mostly how rested its muscles are: name the workouts of the days before. Mostly the number of
+  // sets before it, whatever they worked: count them. Else name what tired its muscles today.
   const note = shift < 0
-    ? before
-      ? ` After ${before.today} earlier sets today (${before.last} last time), expect about ${count} fewer.`
-      : ` After ${names(order.today)} today, expect about ${count} fewer than last time.`
-    : before
-      ? ` Fresher than last time (${before.last} earlier sets then, ${before.today} today), so expect about ${count} more.`
-      : ` Fresher than last time${order.last.length ? ` (it came after ${names(order.last)} then)` : ''}, so expect about ${count} more.`
+    ? rested
+      ? ` After ${names(rested.today)} in the last two days, expect about ${count} fewer than last time.`
+      : before
+        ? ` After ${before.today} earlier sets today (${before.last} last time), expect about ${count} fewer.`
+        : ` After ${names(order.today)} today, expect about ${count} fewer than last time.`
+    : rested
+      ? ` More rested than last time${rested.last.length ? ` (it came within two days of ${names(rested.last)} then)` : ''}, so expect about ${count} more.`
+      : before
+        ? ` Fresher than last time (${before.last} earlier sets then, ${before.today} today), so expect about ${count} more.`
+        : ` Fresher than last time${order.last.length ? ` (it came after ${names(order.last)} then)` : ''}, so expect about ${count} more.`
   return { expect: reps.map(r => r * order.ratio), note }
+}
+
+/**
+ * Last time's reps as today should allow them: moved by the order, and counted for more where the
+ * last set left three or more in the tank. `left` goes after last time's numbers wherever they're named.
+ */
+function expected(reps: number[], order: OrderEffect | undefined, effort: Effort | undefined): { expect: number[]; note: string; left: string } {
+  const { expect, note } = orderShift(reps, order)
+  if (effort !== 'easy') return { expect, note, left: '' }
+  return { expect: expect.map(r => r + EASY_REPS), note, left: ' with 3+ reps left' }
+}
+
+/**
+ * The aims for the sets still to do, once the ones ticked today (at `weight`, when there is one)
+ * came in short of theirs: brought down by the same share, since today's sets say more about
+ * today than last time's did. Null when nothing is ticked, nothing is left to do, or it's less
+ * than a rep short in all.
+ */
+function reAim(goals: number[], today: ProgressInput['sets'], weight?: number): { goals: number[]; rest: number[]; note: string } | null {
+  if (!today?.some(s => !s.done)) return null
+  const aim = (i: number) => goals[Math.min(i, goals.length - 1)]
+  const done = today.flatMap((s, i) => (s.done && Number(s.reps) > 0 && (weight == null || Number(s.weight) === weight) ? [{ i, reps: Number(s.reps) }] : []))
+  const got = sum(done.map(d => d.reps))
+  const aimed = sum(done.map(d => aim(d.i)))
+  if (done.length === 0 || aimed - got < 1) return null
+  const next = today.map((s, i) => (s.done ? aim(i) : Math.max(1, Math.round((aim(i) * got) / aimed))))
+  const which = done.length === 1 ? `set ${done[0].i + 1} came in` : `${done.length} sets came in`
+  return { goals: next, rest: next.filter((_, i) => !today[i].done), note: `${which} ${aimed - got} under` }
+}
+
+/** A short rest costs the later sets their reps: said when they fell off steeply on a rest timer under what ACSM gives. */
+function restNote(work: number[], restSec: number | undefined, compound: boolean): string {
+  const lost = work[0] - work[work.length - 1]
+  if (!restSec || restSec >= (compound ? 120 : 60) || lost < 3 || lost < work[0] * 0.3) return ''
+  return ` Your reps fell off from set to set: ${compound ? '2–3' : '1–2'} min of rest instead of ${restSec} s would keep more of them.`
 }
 
 /** Reps to aim for: one more where the expected reps are short of `need`. */
@@ -184,7 +245,7 @@ export function trendOf(sessions: PastSession[], now: number): LiftTrend | undef
   }
 }
 
-export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit, order }: ProgressInput): ProgressHint | null {
+export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit, order, sets: today, restSec }: ProgressInput): ProgressHint | null {
   if (setModeFor(exercise) !== 'load') return null
   // From here on every weight is in the unit the exercise is logged in
   const lb = isLb(unit)
@@ -196,9 +257,13 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const std = standardFor(exercise.uuid)
   const assisted = (std?.kind === 'reps' && !!std.assisted) || name.includes('assisted')
   const gapDays = trend?.gapDays ?? 0
+  // How many reps the last set left, when that was said
+  const effort = effortFromRpe(sets[sets.length - 1].rpe)
+  const compound = !SMALL.test(name) && !SINGLE_JOINT.test(name)
   const weights = sets.flatMap(s => ((s.weight ?? 0) > 0 ? [s.weight ?? 0] : []))
   if (weights.length === 0) {
-    return bodyweightHint(sets.map(s => s.reps ?? 0), targetReps ?? (HARD_BODYWEIGHT.test(name) ? 12 : MAX_REPS), gapDays, assisted, order)
+    const reps = sets.map(s => s.reps ?? 0)
+    return bodyweightHint({ reps, target: targetReps ?? (HARD_BODYWEIGHT.test(name) ? 12 : MAX_REPS), gapDays, assisted, order, effort, today, rest: restNote(reps, restSec, compound) })
   }
 
   // The working weight: the heaviest of the session (with assistance, the least help)
@@ -207,8 +272,8 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const straight = sets.every(s => s.weight === top)
   const least = Math.min(...work)
   const every = work.length > 1 ? ' on every set' : ''
-  // What today's place in the workout should allow at that weight
-  const { expect, note } = orderShift(work, order)
+  // What today's place in the workout, and how last time felt, should allow at that weight
+  const { expect, note, left } = expected(work, order, effort)
   const likely = Math.min(...expect)
 
   // Bodyweight moves lift part of the body too, so a small plate is a small jump
@@ -251,13 +316,29 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
     const big = after(likely) < low
     const at = `${kg(top)} ${u}${assisted ? ' of assistance' : ''}`
     const got = to !== next
-      ? `Last time ${list(work)} at ${at}, well past ${target}, so it’s a bigger step than usual.`
-      : least >= need ? `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${at}.` : `Last time ${list(work)} at ${at}.`
+      ? `Last time ${list(work)} at ${at}${left}, well past ${target}, so it’s a bigger step than usual.`
+      : least >= need ? `You got ${need}${work.some(r => r > need) ? '+' : ''} reps${every} at ${at}${left}.` : `Last time ${list(work)} at ${at}${left}.`
     return {
       kind: 'weight',
       title: !assisted ? `Go up to ${kg(to)} ${u}` : next > 0 ? `Take some help off: ${kg(next)} ${u}` : 'Try it without assistance',
       why: `${got}${note} ${big ? 'It’s a big jump, so fewer reps at first is fine.' : `Aim for ${low}–${target} reps.`}`,
       fill: to > 0 ? { weight: to, from: top } : undefined,
+    }
+  }
+
+  // Nothing left and still under the range: the weight is too heavy for now, and a step down
+  // beats grinding at it until the plateau rule notices
+  const best = Math.max(...work)
+  if (effort === 'hard' && !assisted && best < low) {
+    let down = loadable(top - step, top, lb)
+    while (down - step > 0 && repsWith(down, best) < low) down = loadable(down - step, top, lb)
+    if (down > 0) {
+      return {
+        kind: 'reset',
+        title: `Drop to ${kg(down)} ${u}`,
+        why: `Last time ${list(work)} at ${kg(top)} ${u} took all you had and is under ${low}–${target} reps. A weight you can take through that range builds more.`,
+        fill: { weight: down, from: top },
+      }
     }
   }
 
@@ -272,8 +353,11 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   }
 
   const goals = goalsFrom(expect, need)
-  // After more related work than last time the aim can be last time's reps, or fewer: no "add reps" then
-  const adding = goals.some((g, i) => g > work[i])
+  // Sets ticked today that came in short of their aim bring the aims for the rest down with them
+  const plan = straight ? reAim(goals, today, top) : null
+  const aims = plan?.goals ?? goals
+  // After more related work than last time, or a short set today, the aim can be last time's reps or fewer: no "add reps" then
+  const adding = aims.some((g, i) => !(plan && today?.[i]?.done) && g > work[Math.min(i, work.length - 1)])
   const then = !assisted ? `go up to ${kg(next)} ${u}` : next > 0 ? `drop to ${kg(next)} ${u} of assistance` : 'try it without assistance'
   // Past the usual target: say why, or the number reads like a mistake
   const heavier = Math.round((moved(next) / moved(top) - 1) * 100)
@@ -285,16 +369,28 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   return {
     kind: adding ? 'reps' : 'hold',
     title: `${assisted ? 'Same assistance' : `Stay at ${kg(top)} ${u}`}${adding ? ', add reps' : ''}`,
-    why: `Aim for ${list(goals)} (last time ${list(work)}).${note} ${when}`,
-    fill: straight ? { weight: top, from: top, reps: goals } : undefined,
+    why: `${plan ? `Aim for ${list(plan.rest)} on the rest: ${plan.note}.` : `Aim for ${list(goals)} (last time ${list(work)}${left}).${note}`} ${when}${restNote(work, restSec, compound)}`,
+    fill: straight ? { weight: top, from: top, reps: aims } : undefined,
   }
 }
 
+interface BodyweightInput {
+  reps: number[]
+  target: number
+  gapDays: number
+  assisted: boolean
+  order?: OrderEffect
+  effort?: Effort
+  today?: ProgressInput['sets']
+  /** The line about resting longer, when it applies (restNote). */
+  rest: string
+}
+
 /** Reps-only sets: add a rep until every set reaches the target, then make the move harder. */
-function bodyweightHint(reps: number[], targetReps: number, gapDays: number, assisted: boolean, order?: OrderEffect): ProgressHint {
+function bodyweightHint({ reps, target: targetReps, gapDays, assisted, order, effort, today, rest }: BodyweightInput): ProgressHint {
   const target = Math.max(1, Math.round(targetReps))
   const every = reps.length > 1 ? ' on every set' : ''
-  const { expect, note } = orderShift(reps, order)
+  const { expect, note, left } = expected(reps, order, effort)
   const harder = assisted ? 'use less assistance' : 'add a little weight or try a harder variation'
   if (gapDays >= EASE_AFTER_DAYS) {
     return {
@@ -308,16 +404,18 @@ function bodyweightHint(reps: number[], targetReps: number, gapDays: number, ass
     return {
       kind: 'weight',
       title: assisted ? 'Use less assistance' : 'Time to make it harder',
-      why: `${Math.min(...reps) >= target ? `You got ${target}${reps.some(r => r > target) ? '+' : ''} reps${every}.` : `Last time ${list(reps)}.`}${note} Next, ${harder}.`,
+      why: `${Math.min(...reps) >= target ? `You got ${target}${reps.some(r => r > target) ? '+' : ''} reps${every}${left}.` : `Last time ${list(reps)}${left}.`}${note} Next, ${harder}.`,
     }
   }
   const goals = goalsFrom(expect, target)
-  const adding = goals.some((g, i) => g > reps[i])
+  const plan = reAim(goals, today)
+  const aims = plan?.goals ?? goals
+  const adding = aims.some((g, i) => !(plan && today?.[i]?.done) && g > reps[Math.min(i, reps.length - 1)])
   return {
     kind: adding ? 'reps' : 'hold',
-    title: adding ? 'Add a rep' : 'Match last time',
-    why: `Aim for ${list(goals)} (last time ${list(reps)}).${note} At ${target}${every}, ${harder}.`,
-    fill: { reps: goals },
+    title: adding ? 'Add a rep' : plan ? 'Match today’s pace' : 'Match last time',
+    why: `${plan ? `Aim for ${list(plan.rest)} on the rest: ${plan.note}.` : `Aim for ${list(goals)} (last time ${list(reps)}${left}).${note}`} At ${target}${every}, ${harder}.${rest}`,
+    fill: { reps: aims },
   }
 }
 
