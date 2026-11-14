@@ -43,7 +43,8 @@ import java.time.Instant
  * - Android's Back (the edge swipe or the button) goes to the site as a `back` event;
  * - the app's own background follows the site's theme ([setBackground]);
  * - the workout in progress shows as a notification ([WorkoutNotice]), and its heart rate is
- *   read from Health Connect afterwards ([heartRate]).
+ *   read from Health Connect afterwards ([heartRate]);
+ * - the home-screen widgets are drawn from what the site sends ([Widgets]).
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
@@ -338,6 +339,18 @@ class SoloPlugin : Plugin() {
             } catch (e: Exception) {
                 call.reject(e.message ?: "Couldn't read heart rate")
             }
+        }
+    }
+
+    /** Today's numbers and the theme's colours for the home-screen widgets (src/features/widgets/sendWidgets.ts). */
+    @PluginMethod
+    fun setWidgets(call: PluginCall) {
+        val data = call.getString("data") ?: return call.reject("No data")
+        try {
+            Widgets.save(context, data, call.getString("emblem"))
+            call.resolve()
+        } catch (e: Exception) {
+            call.reject(e.message ?: "Couldn't update the widgets")
         }
     }
 

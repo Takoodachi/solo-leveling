@@ -40,6 +40,12 @@ class StepsSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
 
     private suspend fun sync(): String {
         val days = StepsSync.readDays(applicationContext) ?: return "Stopped: background step access isn’t allowed in Health Connect"
+        // Today's on the widgets straight away, whatever the site makes of it
+        runCatching {
+            val all = org.json.JSONArray(days)
+            val today = all.optJSONObject(all.length() - 1)
+            if (today != null) Widgets.raiseSteps(applicationContext, today.getString("date"), today.getLong("steps"))
+        }
         val url = CapConfig.loadDefault(applicationContext).serverUrl ?: return "Stopped: the app has no site to load"
         return withTimeoutOrNull(PAGE_TIMEOUT_MS) { saveThroughSite(url, days) } ?: "Stopped: the app didn’t answer in time"
     }

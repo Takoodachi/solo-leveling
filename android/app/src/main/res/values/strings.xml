@@ -6,4 +6,13 @@
     <string name="custom_url_scheme">io.github.takoodachi.sololeveling</string>
     <!-- Opened by Health Connect's "privacy policy" link (capacitor-health's PermissionsRationaleActivity) -->
     <string name="privacy_policy_url">https://solo-leveling.takoodachi.workers.dev/health-privacy.html</string>
+    <!-- Home-screen widgets (Widgets.kt): the picker shows these -->
+    <string name="widget_today">Today</string>
+    <string name="widget_today_description">Calories, protein, steps, water and creatine for today</string>
+    <string name="widget_quick">Quick log</string>
+    <string name="widget_quick_description">Start a workout, log food or water, tick creatine</string>
+    <string name="widget_workout">Today\'s workout</string>
+    <string name="widget_workout_description">The routine planned for today, one tap to start</string>
+    <string name="widget_rank">Strength rank</string>
+    <string name="widget_rank_description">Your overall rank and the way to the next one</string>
 </resources>

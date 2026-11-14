@@ -44,6 +44,10 @@ class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val result = answer?.let { runCatching { JSONObject(it) }.getOrNull() }
         if (result != null) {
             QuickLog.finished(applicationContext, id, result.optBoolean("ok"), result.optString("title"), result.optString("detail"))
+            // The widgets show it at once (water: the day's new total)
+            if (result.optBoolean("ok")) {
+                runCatching { Widgets.quickLogged(applicationContext, inputData.getString(KEY_KIND) ?: "", inputData.getString(KEY_DATE) ?: "", result.optInt("total", -1).takeIf { it >= 0 }) }
+            }
         } else {
             QuickLog.finished(applicationContext, id, false, "Couldn’t log it", "The app didn’t answer. Open it to log it.")
         }
