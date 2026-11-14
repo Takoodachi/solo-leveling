@@ -1,5 +1,6 @@
 import type { Table } from 'dexie'
 import { db } from '@/db'
+import { writesTo } from '@/db/read'
 import { forgetCatalog } from '@/db/seed'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { useSyncStatus } from './syncStatus'
@@ -203,10 +204,14 @@ class SyncService {
   private userId: string | null = null
   private running: Promise<void> | null = null
   private again = false
+  // What `writesTo` said of each table when it last had nothing left to push. Unchanged, it
+  // still has nothing, and isn't read: looking through every table on every sync took seconds.
+  private clean = new Map<string, number>()
 
   /** Called by the auth layer when the signed-in user changes. */
   setUser(userId: string | null): void {
     this.userId = userId
+    this.clean.clear()
   }
 
   /** Fire-and-forget sync for the current user (no-op when signed out / offline). */
@@ -230,9 +235,13 @@ class SyncService {
       status.set({ state: 'syncing' })
       try {
         let errors: string[] = []
+        let pulled: string[] | undefined // the pull's errors, once it has run
         do {
           this.again = false
-          errors = await this.runOnce(userId)
+          // One pull per run: a write that landed meanwhile only needs pushing
+          const run = await this.runOnce(userId, !pulled)
+          pulled ??= run.pull
+          errors = [...run.push, ...pulled]
         } while (this.again && this.userId === userId)
         if (errors.length > 0) {
           console.error('[sync] finished with errors:', errors)
@@ -254,7 +263,7 @@ class SyncService {
   async pendingCount(): Promise<number> {
     let n = await db.pendingDeletes.count()
     for (const spec of COLLECTIONS) {
-      n += await spec.table().filter(r => !!r.syncPending).count()
+      n += (await spec.table().toArray()).filter(r => !!r.syncPending).length
     }
     for (const spec of SINGLETONS) {
       if ((await spec.table().get(1))?.syncPending) n += 1
@@ -262,40 +271,45 @@ class SyncService {
     return n
   }
 
-  private async runOnce(userId: string): Promise<string[]> {
-    const errors: string[] = []
+  private async runOnce(userId: string, pull: boolean): Promise<{ push: string[]; pull: string[] }> {
+    const errors = { push: [] as string[], pull: [] as string[] }
     // Once the server is unreachable, skip the remaining tables instead of waiting
     // for each request to time out; the next trigger (reconnect, foreground, a write) retries.
     let unreachable = false
-    const guard = async (label: string, fn: () => Promise<void>) => {
+    const guard = async (phase: 'push' | 'pull', what: string, fn: () => Promise<void>) => {
       if (unreachable) return
       try {
         await fn()
       } catch (err) {
         const msg = err instanceof Error ? err.message : typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : String(err)
-        errors.push(`${label}: ${msg}`)
+        errors[phase].push(`${phase} ${what}: ${msg}`)
         if (NETWORK_ERROR.test(msg)) unreachable = true
       }
     }
 
-    // Push
-    for (const spec of COLLECTIONS) await guard(`push ${spec.remote}`, () => this.pushCollection(spec, userId))
-    for (const spec of SINGLETONS) await guard(`push ${spec.remote}`, () => this.pushSingleton(spec, userId))
-    await guard('push deletions', () => this.pushDeletions(userId))
+    for (const spec of COLLECTIONS) await guard('push', spec.remote, () => this.pushCollection(spec, userId))
+    for (const spec of SINGLETONS) await guard('push', spec.remote, () => this.pushSingleton(spec, userId))
+    await guard('push', 'deletions', () => this.pushDeletions(userId))
 
-    // Pull (skip if the user signed out meanwhile)
-    if (this.userId !== userId) return errors
-    for (const spec of COLLECTIONS) await guard(`pull ${spec.remote}`, () => this.pullCollection(spec, userId))
-    for (const spec of SINGLETONS) await guard(`pull ${spec.remote}`, () => this.pullSingleton(spec, userId))
+    // Pull (skip if the user signed out meanwhile). Every table at once: one after another was
+    // seventeen round trips, each waiting for the last, on a connection that carries them together.
+    if (pull && this.userId === userId) {
+      await Promise.all([
+        ...COLLECTIONS.map(spec => guard('pull', spec.remote, () => this.pullCollection(spec, userId))),
+        ...SINGLETONS.map(spec => guard('pull', spec.remote, () => this.pullSingleton(spec, userId))),
+      ])
+    }
     return errors
   }
 
   private async pushCollection(spec: CollectionSpec, userId: string): Promise<void> {
     const table = spec.table()
-    const pending = await table
+    const seen = writesTo(table)
+    if (this.clean.get(spec.remote) === seen) return
+    // The whole table in one request, then picked through: walking it a row at a time (`filter`) took seven times as long
+    const pending = (await table.toArray())
       .filter(r => !!r.syncPending && (spec.shouldPush?.(r as SyncRow & Record<string, unknown>) ?? true))
-      .toArray()
-    if (pending.length === 0) return
+    let cleared = 0 // commits of our own below
 
     const send = async (part: SyncRow[]): Promise<Error | null> => {
       // deleted: false, because a row here is alive: one deleted and then written again under the
@@ -308,7 +322,10 @@ class SyncService {
       await db.transaction('rw', table, async () => {
         const current = await table.bulkGet(part.map(r => r.uuid))
         const done = current.filter((c, i): c is SyncRow => !!c && c.syncPending === true && c.updatedAt === part[i].updatedAt)
-        if (done.length > 0) await table.bulkPut(done.map(c => ({ ...c, syncPending: false })))
+        if (done.length > 0) {
+          await table.bulkPut(done.map(c => ({ ...c, syncPending: false })))
+          cleared += 1
+        }
       })
       return null
     }
@@ -316,6 +333,8 @@ class SyncService {
       const error = await sendEachOnRefusal(part, send)
       if (error) throw error
     }
+    // Nothing left to push, unless something else wrote to the table meanwhile: then the next sync looks again
+    if (writesTo(table) === seen + cleared) this.clean.set(spec.remote, seen + cleared)
   }
 
   private async pushSingleton(spec: SingletonSpec, userId: string): Promise<void> {

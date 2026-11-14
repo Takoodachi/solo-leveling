@@ -1,16 +1,17 @@
 import { endOfWeek, subWeeks } from 'date-fns'
 import { db } from '@/db'
+import { allSets, cached, exercisesById, workoutsById } from '@/db/read'
 import type { BodyMetric, Workout } from '@/types'
 import { XP } from '@/lib/xp'
 import { toDateStr } from '@/lib/date'
 import { formatClock } from '@/lib/cardio'
 import { rankFor, type RankInfo } from './tiers'
 import {
-  MUSCLE_GROUPS, RANKED_EXERCISE_IDS, REGION_LABEL, groupOfRegion, groupOfStandard, standardFor,
+  MUSCLE_GROUPS, REGION_LABEL, groupOfRegion, groupOfStandard, standardFor,
   type MuscleGroup, type MuscleRegion, type Sex,
 } from './standards'
 import { bodyweightLookup, performanceFor, rateSet, thresholdsFor } from './scoring'
-import { LEG_CREDIT, RUN_EXERCISE_IDS, equivalent5k, isRunExercise, rateRun, type RunRank } from './running'
+import { LEG_CREDIT, equivalent5k, isRunExercise, rateRun, type RunRank } from './running'
 
 export interface LiftRank {
   exerciseId: string
@@ -86,17 +87,21 @@ interface RankInputs {
 
 type Loaded = { status: 'ready'; inputs: RankInputs } | { status: 'needs-sex' | 'needs-weight'; sex: Sex | null; bodyKg: number | null }
 
-/** Rate every ranked set once, at the lifter's bodyweight on the day of that set. */
-async function loadInputs(): Promise<Loaded> {
+/**
+ * Rate every ranked set once, at the lifter's bodyweight on the day of that set. Kept until
+ * something it reads is written (db/read.ts): Home, the leaderboard snapshot, the achievements
+ * and the widgets all ask for it, most often with nothing changed since the last time.
+ */
+const loadInputs = cached([db.settings, db.bodyMetrics, db.workoutSets, db.workouts, db.exercises], async (): Promise<Loaded> => {
   const [settings, weights] = await Promise.all([db.settings.get(1), db.bodyMetrics.toArray()])
   const sex = settings?.sex ?? null
   const latest = weights.reduce<BodyMetric | undefined>((a, b) => (!a || b.date > a.date ? b : a), undefined)
   if (!sex) return { status: 'needs-sex', sex, bodyKg: latest?.weightKg ?? null }
   if (!latest) return { status: 'needs-weight', sex, bodyKg: null }
 
-  const sets = await db.workoutSets.where('exerciseId').anyOf([...RANKED_EXERCISE_IDS, ...RUN_EXERCISE_IDS]).toArray()
-  const workouts = await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))])
-  const workoutOf = new Map(workouts.flatMap(w => (w ? [[w.uuid, w] as const] : [])))
+  // Every set, and the ones without a standard skipped below: asking the index for the ranked
+  // exercises (`anyOf`) walked them a row at a time, seven times slower
+  const [sets, workoutOf, exerciseOf] = await Promise.all([allSets(), workoutsById(), exercisesById()])
   const bodyOn = bodyweightLookup(weights)
 
   const rated: RatedSet[] = []
@@ -113,10 +118,12 @@ async function loadInputs(): Promise<Loaded> {
     const rating = rateSet(std, s, sex, bodyOn(workout.date) ?? latest.weightKg)
     if (rating > 0) rated.push({ exerciseId: s.exerciseId, workout, rating, weight: s.weight, reps: s.reps, duration: s.duration })
   }
-  const exercises = await db.exercises.bulkGet([...new Set(rated.map(r => r.exerciseId))])
-  const names = new Map(exercises.flatMap(e => (e ? [[e.uuid, e.name] as const] : [])))
+  const names = new Map([...new Set(rated.map(r => r.exerciseId))].flatMap(id => {
+    const exercise = exerciseOf.get(id)
+    return exercise ? [[id, exercise.name] as const] : []
+  }))
   return { status: 'ready', inputs: { sex, bodyKg: latest.weightKg, rated, runs, names } }
-}
+})
 
 /** Name shown as a leg muscle's top "lift" when running ranks it. */
 export const RUNNING_SOURCE = 'Running'

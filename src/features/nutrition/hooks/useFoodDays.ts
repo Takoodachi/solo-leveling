@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { foodsById } from '@/db/read'
 
 /** A day with food logged, and what it added up to. */
 export interface FoodDay {
@@ -13,8 +14,7 @@ export interface FoodDay {
 export function useFoodDays(month: string): FoodDay[] | undefined {
   return useLiveQuery(async () => {
     const logs = await db.foodLog.where('date').startsWith(month).sortBy('updatedAt')
-    const foods = await db.foods.bulkGet([...new Set(logs.map(l => l.foodId))])
-    const foodOf = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
+    const foodOf = await foodsById()
 
     const days = new Map<string, FoodDay>()
     for (const log of logs) {

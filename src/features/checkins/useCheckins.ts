@@ -33,7 +33,7 @@ export async function tickCheckin(key: CheckinKey, date: string): Promise<boolea
 export function useCheckinDays(key: CheckinKey, dates: string[]): Set<string> {
   const [first, last] = [dates[0], dates[dates.length - 1]]
   const rows = useLiveQuery(
-    () => db.checkins.where('date').between(first, last, true, true).filter(c => c.key === key && c.done).toArray(),
+    async () => (await db.checkins.where('date').between(first, last, true, true).toArray()).filter(c => c.key === key && c.done),
     [key, first, last],
   )
   return new Set(rows?.map(r => r.date))

@@ -54,12 +54,12 @@ export async function planCommitment(today: string): Promise<WeeklyCheckIn['work
   const [routines, workouts, skips] = await Promise.all([
     db.routines.toArray(),
     db.workouts.where('date').between(first, last, true, true).toArray(),
-    db.checkins.where('date').between(first, last, true, true).filter(c => c.key === 'skip' && c.done).toArray(),
+    db.checkins.where('date').between(first, last, true, true).toArray(),
   ])
   const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
   if (weekdays.size === 0) return null
   const trained = new Set(workouts.map(w => w.date))
-  const skipped = new Set(skips.map(s => s.date))
+  const skipped = new Set(skips.filter(c => c.key === 'skip' && c.done).map(s => s.date))
   let planned = 0
   let done = 0
   for (let back = 1; back <= COMMITMENT_DAYS; back++) {

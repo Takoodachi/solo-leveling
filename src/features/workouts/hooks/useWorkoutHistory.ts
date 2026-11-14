@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { exercisesById, setsOfWorkouts, workoutsById } from '@/db/read'
 import type { Exercise, Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } from '@/types'
 import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { deleteSynced } from '@/lib/sync'
@@ -26,10 +27,8 @@ export function useWorkoutList(limit = 1000, date?: string): WorkoutSummary[] | 
       : await db.workouts.orderBy('createdAt').reverse().limit(limit).toArray()
     if (workouts.length === 0) return []
 
-    const sets = await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray()
-    const exercises = await db.exercises.bulkGet([...new Set(sets.map(s => s.exerciseId))])
-    const nameOf = new Map(exercises.flatMap(e => (e ? [[e.uuid, e.name]] : [])))
-    const cardioIds = new Set(exercises.flatMap(e => (e?.type === 'cardio' ? [e.uuid] : [])))
+    const [sets, exerciseOf] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById()])
+    const isCardio = (id: string) => exerciseOf.get(id)?.type === 'cardio'
 
     const byWorkout = new Map<string, typeof sets>()
     for (const s of sets) byWorkout.set(s.workoutId, [...(byWorkout.get(s.workoutId) ?? []), s])
@@ -38,11 +37,11 @@ export function useWorkoutList(limit = 1000, date?: string): WorkoutSummary[] | 
       const ws = (byWorkout.get(w.uuid) ?? []).sort((a, b) => a.setIndex - b.setIndex)
       const names: string[] = []
       for (const s of ws) {
-        const n = nameOf.get(s.exerciseId)
+        const n = exerciseOf.get(s.exerciseId)?.name
         if (n && !names.includes(n)) names.push(n)
       }
-      const liftSets = ws.filter(s => !cardioIds.has(s.exerciseId))
-      const distanceKm = ws.reduce((sum, s) => sum + (cardioIds.has(s.exerciseId) ? (s.distanceKm ?? 0) : 0), 0)
+      const liftSets = ws.filter(s => !isCardio(s.exerciseId))
+      const distanceKm = ws.reduce((sum, s) => sum + (isCardio(s.exerciseId) ? (s.distanceKm ?? 0) : 0), 0)
       return { ...w, setCount: ws.length, liftSetCount: liftSets.length, distanceKm, exerciseNames: names, volume: totalVolume(liftSets) }
     })
   }, [limit, date])
@@ -71,16 +70,23 @@ export async function deleteWorkout(uuid: string): Promise<void> {
   await deleteSynced(db.workouts, 'workouts', [uuid])
 }
 
+/** The workouts these sets were logged in (a new list, in no order). */
+async function workoutsOf(sets: WorkoutSet[]): Promise<Workout[]> {
+  const workoutOf = await workoutsById()
+  return [...new Set(sets.map(s => s.workoutId))].flatMap(id => workoutOf.get(id) ?? [])
+}
+
 /** Earlier workouts that included this exercise, newest first, with its sets in order. */
-export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinity, limit = 8): Promise<PastSession[]> {
+export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinity, limit = 8): Promise<(PastSession & { workoutId: string })[]> {
   const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
   if (sets.length === 0) return []
-  const workouts = (await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))]))
-    .filter((w): w is Workout => !!w && w.createdAt < beforeCreatedAt)
+  const workouts = (await workoutsOf(sets))
+    .filter(w => w.createdAt < beforeCreatedAt)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, limit)
   return workouts.map(w => ({
     at: w.createdAt,
+    workoutId: w.uuid,
     sets: sets
       .filter(s => s.workoutId === w.uuid)
       .sort((a, b) => a.setIndex - b.setIndex)
@@ -97,10 +103,9 @@ const DAY_MS = 86_400_000
 
 /** Sets' worth of work per exercise in some logged sets (a cardio entry by its minutes). */
 async function workByExercise(sets: WorkoutSet[]): Promise<{ exercise: Exercise; sets: number }[]> {
-  const ids = [...new Set(sets.map(s => s.exerciseId))]
-  const exercises = await db.exercises.bulkGet(ids)
-  return ids.flatMap((id, i) => {
-    const ex = exercises[i]
+  const exerciseOf = await exercisesById()
+  return [...new Set(sets.map(s => s.exerciseId))].flatMap(id => {
+    const ex = exerciseOf.get(id)
     return ex ? [{ exercise: ex, sets: workDone(ex, sets.filter(s => s.exerciseId === id).map(s => s.duration ?? 0)) }] : []
   })
 }
@@ -123,31 +128,31 @@ async function recentWork(exercise: Exercise, before: number, skip?: string): Pr
 }
 
 /**
- * What the last workout that had this exercise says about today's (fatigue.ts): what came before
- * it in that workout, and how rested its muscles were, beside how rested they are now.
+ * What the last workout that had this exercise (`last`) says about today's (fatigue.ts): what came
+ * before it in that workout, and how rested its muscles were, beside how rested they are now.
  */
-async function lastTime(exerciseId: string): Promise<Pick<BlockHistory, 'lastPreload' | 'recovery'>> {
-  const exercise = await db.exercises.get(exerciseId)
-  const mine = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-  if (!exercise || mine.length === 0) return {}
-  const last = (await db.workouts.bulkGet([...new Set(mine.map(s => s.workoutId))]))
-    .filter((w): w is Workout => !!w)
-    .sort((a, b) => b.createdAt - a.createdAt)[0]
+async function lastTime(exerciseId: string, last: { at: number; workoutId: string } | undefined): Promise<Pick<BlockHistory, 'lastPreload' | 'recovery'>> {
   if (!last) return {}
-  const all = await db.workoutSets.where('workoutId').equals(last.uuid).toArray()
+  const exercise = (await exercisesById()).get(exerciseId)
+  if (!exercise) return {}
+  const all = await db.workoutSets.where('workoutId').equals(last.workoutId).toArray()
   // Sets are saved as block × 100 + position, so the block number is the order
   const blockOf = (s: WorkoutSet) => Math.floor(s.setIndex / 100)
   const at = Math.min(...all.filter(s => s.exerciseId === exerciseId).map(blockOf))
-  return {
-    lastPreload: preload(exercise, await workByExercise(all.filter(s => blockOf(s) < at))),
-    recovery: { today: await recentWork(exercise, Date.now()), last: await recentWork(exercise, last.createdAt, last.uuid) },
-  }
+  const [lastPreload, today, before] = await Promise.all([
+    workByExercise(all.filter(s => blockOf(s) < at)).then(work => preload(exercise, work)),
+    recentWork(exercise, Date.now()),
+    recentWork(exercise, last.at, last.workoutId),
+  ])
+  return { lastPreload, recovery: { today, last: before } }
 }
 
 /** What a new logger block needs from history: the "Previous" column, the progression facts, the unit it's logged in and what came before it last time. */
 export async function blockHistory(exerciseId: string): Promise<BlockHistory> {
   const past = await pastSessions(exerciseId)
-  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId), ...(await lastTime(exerciseId)) }
+  // The last workout that had it is the first of those: found once, not looked up again
+  const [unit, last] = await Promise.all([exerciseUnit(exerciseId), lastTime(exerciseId, past[0])])
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit, ...last }
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'
@@ -182,14 +187,14 @@ const maxOf = (xs: number[]) => Math.max(0, ...xs)
  */
 export async function findNewBests(workout: WorkoutWithSets): Promise<NewBest[]> {
   const bests: NewBest[] = []
+  const workoutOf = await workoutsById()
   for (const exerciseId of new Set(workout.sets.map(s => s.exerciseId))) {
     const sets = workout.sets.filter(s => s.exerciseId === exerciseId)
     const history = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-    const earlierIds = new Set(
-      (await db.workouts.bulkGet([...new Set(history.map(h => h.workoutId))]))
-        .flatMap(w => (w && w.uuid !== workout.uuid && w.createdAt < workout.createdAt ? [w.uuid] : [])),
-    )
-    const earlier = history.filter(h => earlierIds.has(h.workoutId))
+    const earlier = history.filter(h => {
+      const w = workoutOf.get(h.workoutId)
+      return !!w && w.uuid !== workout.uuid && w.createdAt < workout.createdAt
+    })
     const exerciseName = sets[0].exercise.name
     const add = (kind: BestKind, current: number, previous: number, step: number) => {
       if (previous > 0 && current > previous) bests.push({ exerciseId, exerciseName, kind, value: round(current, step), previous: round(previous, step) })

@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { format, parseISO } from 'date-fns'
 import { Dumbbell, History, ListChecks, UserRound, UtensilsCrossed } from 'lucide-react'
 import { db } from '@/db'
+import { allSets } from '@/db/read'
 import { ROUTINE_TEMPLATES } from '@/data/routineTemplates'
 import { matchScore } from '@/lib/search'
 import { useWorkoutStore } from '@/features/workouts/store'
@@ -34,14 +35,18 @@ const MIN_CHARS_LONG_LISTS = 2
 function useSearchData(enabled: boolean) {
   return useLiveQuery(async () => {
     if (!enabled) return null
-    const [routines, exercises, foods, workouts, liftedSets] = await Promise.all([
+    const [routines, exercises, foods, workouts, liftedSets] = await Promise.all([ // whole tables, then picked through: a filter in the query reads a row at a time
       db.routines.toArray(),
       db.exercises.toArray(),
-      db.foods.filter(f => !isQuickAdd(f) && !f.removed).toArray(),
+      db.foods.toArray(),
       db.workouts.orderBy('createdAt').reverse().limit(300).toArray(),
-      db.workoutSets.filter(s => !!s.weight && !!s.reps).toArray(),
+      allSets(),
     ])
-    return { routines, exercises, foods, workouts, lifted: new Set(liftedSets.map(s => s.exerciseId)) }
+    return {
+      routines, exercises, workouts,
+      foods: foods.filter(f => !isQuickAdd(f) && !f.removed),
+      lifted: new Set(liftedSets.filter(s => s.weight && s.reps).map(s => s.exerciseId)),
+    }
   }, [enabled])
 }
 

@@ -1,4 +1,6 @@
 import { db } from '@/db'
+import { writesTo } from '@/db/read'
+import { today } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import type { Settings } from '@/types'
 import { buildMySnapshot } from './snapshot'
@@ -35,28 +37,40 @@ export function showsRoutines(settings: Settings | undefined): boolean {
 
 const publishedKey = (userId: string) => `solo:leaderboard:${userId}`
 
+// What the row is built from. Nothing written to these since the last look (on the same day:
+// its week and streak are as of today) means the same row, so it isn't built again. A sync
+// follows every log and every return to the app, and most change none of this.
+const SOURCES = [db.settings, db.userStats, db.workouts, db.workoutSets, db.bodyMetrics, db.exercises, db.routines]
+let looked = ''
+
 /**
  * Publish this account's row. Skipped when nothing changed since the last publish.
  * With sharing off, the row becomes invisible and its snapshot is emptied.
  */
 export async function publishLeaderboard(userId: string, email: string | undefined): Promise<void> {
+  const state = [userId, email, today(), ...SOURCES.map(writesTo)].join()
+  if (state === looked) return
   const settings = await db.settings.get(1)
   const visible = isSharing(settings)
   const snapshot = visible ? await buildMySnapshot() : {}
   const row: Row = { user_id: userId, displayName: leaderboardName(settings, email), visible, snapshot, updatedAt: new Date().toISOString() }
   const signature = JSON.stringify([row.displayName, visible, snapshot])
+  let unchanged = false
   try {
-    if (localStorage.getItem(publishedKey(userId)) === signature) return
+    unchanged = localStorage.getItem(publishedKey(userId)) === signature
   } catch {
     // storage unavailable: publish anyway
   }
-  const { error } = await table().upsert(row, { onConflict: 'user_id' })
-  if (error) throw new Error(error.message)
-  try {
-    localStorage.setItem(publishedKey(userId), signature)
-  } catch {
-    // next publish just repeats it
+  if (!unchanged) {
+    const { error } = await table().upsert(row, { onConflict: 'user_id' })
+    if (error) throw new Error(error.message)
+    try {
+      localStorage.setItem(publishedKey(userId), signature)
+    } catch {
+      // next publish just repeats it
+    }
   }
+  looked = state // from before the row was built: a write during it means building again
 }
 
 /** Everyone who shares, including this account's last published row. */

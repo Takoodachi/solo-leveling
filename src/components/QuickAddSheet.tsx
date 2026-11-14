@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Dumbbell, Utensils, Scale, Footprints, GlassWater, ChevronRight, type LucideIcon } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import LogStepsSheet from '@/features/dashboard/components/LogStepsSheet'
 import WaterSheet from '@/features/checkins/components/WaterSheet'
 import { useNow } from '@/hooks/useNow'
 import { toDateStr } from '@/lib/date'
-import { db } from '@/db'
 import { useWorkoutStore } from '@/features/workouts/store'
 
 interface Props {
@@ -20,7 +18,7 @@ export default function QuickAddSheet({ open, onOpenChange }: Props) {
   const [stepsOpen, setStepsOpen] = useState(false)
   const [waterOpen, setWaterOpen] = useState(false)
   const todayStr = toDateStr(useNow())
-  const hasDraft = useLiveQuery(async () => !!(await db.workoutDrafts.get(1)), [])
+  const hasDraft = useWorkoutStore(s => !!s.draft)
   const editing = useWorkoutStore(s => !!s.draft?.editing)
 
   const actions: { label: string; hint: string; Icon: LucideIcon; run: () => void }[] = [
