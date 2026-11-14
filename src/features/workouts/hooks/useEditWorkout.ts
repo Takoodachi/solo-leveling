@@ -13,6 +13,7 @@ import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
 import { emptySet, parsePositive, type BlockDraft, numText } from '../types'
 import { weightKg, weightText } from '../units'
+import { effortFromRpe, effortRpe } from '../effort'
 import { exerciseUnit } from './useExerciseNote'
 import { getWorkoutWithSets, lastSessionSets } from './useWorkoutHistory'
 import type { FinishOptions } from './useActiveWorkout'
@@ -62,6 +63,7 @@ export function useEditWorkout() {
         restSec: cardio ? 0 : DEFAULT_REST_SECONDS,
         lastSets: await lastSessionSets(exercise.uuid, workout.createdAt),
         unit,
+        effort: cardio ? undefined : effortFromRpe(sets[sets.length - 1]?.rpe),
         sets: sets.map(s => emptySet({
           uuid: s.uuid,
           weight: weightText(s.weight, unit),
@@ -109,8 +111,8 @@ export function useEditWorkout() {
     const now = Date.now()
     const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) => {
       const cardio = setModeFor(block.exercise) === 'cardio'
-      return block.sets
-        .filter(s => s.done)
+      const done = block.sets.filter(s => s.done)
+      return done
         .map((s, si) => ({
           uuid: s.uuid,
           workoutId,
@@ -120,7 +122,7 @@ export function useEditWorkout() {
           weight: weightKg(s.weight, block.unit),
           duration: parsePositive(s.duration),
           distanceKm: parsePositive(s.distanceKm),
-          rpe: cardio ? rpeFor(s.intensity ?? 'moderate') : undefined,
+          rpe: cardio ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,
           updatedAt: now,
           syncPending: true,
         }))

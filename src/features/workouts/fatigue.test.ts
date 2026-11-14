@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { resetDb } from '@/test/db'
 import { blockHistory } from './hooks/useWorkoutHistory'
 import type { Exercise } from '@/types'
-import { orderEffect, overlap, preload, repRatio } from './fatigue'
+import { orderEffect, overlap, preload, repRatio, restedRatio } from './fatigue'
 import { suggestProgress } from './progression'
 import type { BlockDraft, SetDraft } from './types'
 
@@ -54,6 +54,17 @@ describe('what earlier exercises leave on this one', () => {
     expect(orderEffect([block(chestPress, 4), block(shoulderPress, 0)], 1)).toBeUndefined()
   })
 
+  it('expects about 1% fewer reps per set its muscles got in the last two days, at most 15%', () => {
+    expect(restedRatio({ sets: 8, after: [] }, { sets: 0, after: [] })).toBeCloseTo(0.92)
+    expect(restedRatio({ sets: 30, after: [] }, { sets: 0, after: [] })).toBeCloseTo(0.85)
+    expect(restedRatio({ sets: 0, after: [] }, { sets: 5, after: [] })).toBeCloseTo(1 / 0.95)
+    // Says so when that's what moved the reps most
+    const recovery = { today: { sets: 8, after: ['Pull'] }, last: { sets: 0, after: [] } }
+    const effect = orderEffect([block(shoulderPress, 0, { lastPreload: { sets: 0, after: [], total: 0 }, recovery })], 0)
+    expect(effect?.ratio).toBeCloseTo(0.92)
+    expect(effect?.rested).toEqual({ today: ['Pull'], last: [] })
+  })
+
   it('counts every set before it, and says so when that count is what differs', () => {
     const last = { sets: 2, after: ['Machine Chest Press'], total: 4 }
     const effect = orderEffect([block(squat, 5), block(chestPress, 4), block(shoulderPress, 0, { lastPreload: last })], 2)
@@ -91,6 +102,11 @@ describe('tips that follow the order', () => {
     expect(hint(8, 0.97, ['Machine Chest Press'])).toEqual(plain)
   })
 
+  it('names the workouts of the days before when that’s what costs the reps', () => {
+    const tip = suggestProgress({ exercise: shoulderPress, lastSets: lastSets(10), trend, targetReps: 12, order: { ratio: 0.9, today: [], last: [], rested: { today: ['Pull'], last: [] } } })
+    expect(tip?.why).toContain('After Pull in the last two days, expect about 1 rep fewer than last time.')
+  })
+
   it('counts the sets when it’s how many came before, not which', () => {
     const after = (ratio: number, before: { today: number; last: number }) =>
       suggestProgress({ exercise: shoulderPress, lastSets: lastSets(10), trend, targetReps: 12, order: { ratio, today: [], last: [], before } })
@@ -122,5 +138,7 @@ describe('what came before it last time', () => {
     ])
     expect((await blockHistory(shoulderPress.uuid)).lastPreload).toEqual({ sets: 2, after: ['Machine Chest Press'], total: 9 })
     expect((await blockHistory(squat.uuid)).lastPreload).toEqual({ sets: 0, after: [], total: 0 })
+    // Both workouts were within the day: 3 + 3 shoulder press sets, and half of the 4 chest press sets
+    expect((await blockHistory(shoulderPress.uuid)).recovery).toEqual({ today: { sets: 8, after: ['Push'] }, last: { sets: 3, after: ['Push'] } })
   })
 })

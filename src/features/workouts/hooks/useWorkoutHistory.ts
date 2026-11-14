@@ -1,12 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
-import type { Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } from '@/types'
+import type { Exercise, Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } from '@/types'
 import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { deleteSynced } from '@/lib/sync'
 import { est1RM, totalVolume } from '@/lib/workoutMath'
 import { trendOf } from '../progression'
-import type { BlockHistory, LastSet, PastSession, Preload } from '../types'
-import { preload, workDone } from '../fatigue'
+import type { BlockHistory, LastSet, PastSession, Recent } from '../types'
+import { overlap, preload, workDone } from '../fatigue'
 import { exerciseUnit } from './useExerciseNote'
 
 export interface WorkoutSummary extends Workout {
@@ -93,32 +93,61 @@ export async function lastSessionSets(exerciseId: string, beforeCreatedAt = Infi
   return (await pastSessions(exerciseId, beforeCreatedAt, 1))[0]?.sets
 }
 
-/** What came before this exercise in the last workout that had it, on the muscles it uses (fatigue.ts). */
-async function lastPreload(exerciseId: string): Promise<Preload | undefined> {
+const DAY_MS = 86_400_000
+
+/** Sets' worth of work per exercise in some logged sets (a cardio entry by its minutes). */
+async function workByExercise(sets: WorkoutSet[]): Promise<{ exercise: Exercise; sets: number }[]> {
+  const ids = [...new Set(sets.map(s => s.exerciseId))]
+  const exercises = await db.exercises.bulkGet(ids)
+  return ids.flatMap((id, i) => {
+    const ex = exercises[i]
+    return ex ? [{ exercise: ex, sets: workDone(ex, sets.filter(s => s.exerciseId === id).map(s => s.duration ?? 0)) }] : []
+  })
+}
+
+/**
+ * The work this exercise's muscles got in the two days before `before`, in other workouts than
+ * `skip`: a set from the last day counts whole, one from the day before it half (fatigue.ts).
+ */
+async function recentWork(exercise: Exercise, before: number, skip?: string): Promise<Recent> {
+  const workouts = (await db.workouts.where('createdAt').between(before - 2 * DAY_MS, before, true, false).toArray()).filter(w => w.uuid !== skip)
+  const by = new Map<string, number>()
+  for (const w of workouts) {
+    const work = await workByExercise(await db.workoutSets.where('workoutId').equals(w.uuid).toArray())
+    // The exercise itself counts here, and whole: done the day before, it's what tires its muscles most
+    const load = work.reduce((sum, e) => sum + e.sets * (e.exercise.uuid === exercise.uuid ? 1 : overlap(exercise, e.exercise)), 0)
+    const name = w.name ?? 'a workout'
+    if (load > 0) by.set(name, (by.get(name) ?? 0) + load * (before - w.createdAt <= DAY_MS ? 1 : 0.5))
+  }
+  return { sets: [...by.values()].reduce((a, b) => a + b, 0), after: [...by].sort((a, b) => b[1] - a[1]).map(([name]) => name) }
+}
+
+/**
+ * What the last workout that had this exercise says about today's (fatigue.ts): what came before
+ * it in that workout, and how rested its muscles were, beside how rested they are now.
+ */
+async function lastTime(exerciseId: string): Promise<Pick<BlockHistory, 'lastPreload' | 'recovery'>> {
   const exercise = await db.exercises.get(exerciseId)
   const mine = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-  if (!exercise || mine.length === 0) return undefined
+  if (!exercise || mine.length === 0) return {}
   const last = (await db.workouts.bulkGet([...new Set(mine.map(s => s.workoutId))]))
     .filter((w): w is Workout => !!w)
     .sort((a, b) => b.createdAt - a.createdAt)[0]
-  if (!last) return undefined
+  if (!last) return {}
   const all = await db.workoutSets.where('workoutId').equals(last.uuid).toArray()
   // Sets are saved as block × 100 + position, so the block number is the order
   const blockOf = (s: WorkoutSet) => Math.floor(s.setIndex / 100)
   const at = Math.min(...all.filter(s => s.exerciseId === exerciseId).map(blockOf))
-  const earlier = all.filter(s => blockOf(s) < at)
-  const ids = [...new Set(earlier.map(s => s.exerciseId))]
-  const exercises = await db.exercises.bulkGet(ids)
-  return preload(exercise, ids.flatMap((id, i) => {
-    const ex = exercises[i]
-    return ex ? [{ exercise: ex, sets: workDone(ex, earlier.filter(s => s.exerciseId === id).map(s => s.duration ?? 0)) }] : []
-  }))
+  return {
+    lastPreload: preload(exercise, await workByExercise(all.filter(s => blockOf(s) < at))),
+    recovery: { today: await recentWork(exercise, Date.now()), last: await recentWork(exercise, last.createdAt, last.uuid) },
+  }
 }
 
 /** What a new logger block needs from history: the "Previous" column, the progression facts, the unit it's logged in and what came before it last time. */
 export async function blockHistory(exerciseId: string): Promise<BlockHistory> {
   const past = await pastSessions(exerciseId)
-  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId), lastPreload: await lastPreload(exerciseId) }
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit: await exerciseUnit(exerciseId), ...(await lastTime(exerciseId)) }
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'

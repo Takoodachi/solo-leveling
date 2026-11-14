@@ -24,6 +24,37 @@ describe('suggestProgress (double progression)', () => {
     expect(suggestProgress({ exercise: pushdown, lastSets: sets(50, 20, 20, 20), trend: trend(), targetReps: 12 })?.fill?.weight).toBe(52.5)
   })
 
+  it('counts a last set with 3+ reps left for more, so it jumps sooner', () => {
+    const easy = [{ weight: 60, reps: 9 }, { weight: 60, reps: 9 }, { weight: 60, reps: 9, rpe: 7 }]
+    expect(suggestProgress({ exercise: bench, lastSets: easy.map(({ weight, reps }) => ({ weight, reps })), trend: trend(), targetReps: 10 })?.kind).toBe('reps')
+    const hint = suggestProgress({ exercise: bench, lastSets: easy, trend: trend(), targetReps: 10 })
+    expect(hint?.kind).toBe('weight')
+    expect(hint?.fill?.weight).toBe(62.5)
+    expect(hint?.why).toBe('Last time 9 · 9 · 9 at 60 kg with 3+ reps left. Aim for 8–10 reps.')
+  })
+
+  it('steps down when the last set took everything and is still under the range', () => {
+    const hard = [{ weight: 60, reps: 5 }, { weight: 60, reps: 4 }, { weight: 60, reps: 4, rpe: 10 }]
+    const hint = suggestProgress({ exercise: bench, lastSets: hard, trend: trend(), targetReps: 8 })
+    expect(hint?.title).toBe('Drop to 57.5 kg')
+    expect(hint?.fill).toEqual({ weight: 57.5, from: 60 })
+  })
+
+  it('brings the rest of today’s aims down when a set comes in short', () => {
+    const today = [{ weight: '60', reps: '6', done: true }, { weight: '60', reps: '9', done: false }, { weight: '60', reps: '9', done: false }]
+    const hint = suggestProgress({ exercise: bench, lastSets: sets(60, 8, 8, 7), trend: trend(), targetReps: 10, sets: today })
+    expect(hint?.kind).toBe('hold')
+    // Aims were 9 · 9 · 8 (a rep past last time's 8 · 8 · 7); set 1 got 6 of its 9, so the rest keep two thirds of theirs
+    expect(hint?.why).toMatch(/^Aim for 6 · 5 on the rest: set 1 came in 3 under\./)
+    expect(hint?.fill?.reps).toEqual([9, 6, 5])
+  })
+
+  it('says to rest longer when the reps fell off steeply on a short rest', () => {
+    const steep = (restSec: number) => suggestProgress({ exercise: bench, lastSets: sets(60, 10, 8, 6), trend: trend(), targetReps: 10, restSec })?.why
+    expect(steep(60)).toContain('2–3 min of rest instead of 60 s')
+    expect(steep(180)).not.toContain('min of rest')
+  })
+
   it('adds reps at the same weight while the target isn’t reached', () => {
     expect(suggestProgress({ exercise: bench, lastSets: sets(60, 8, 7, 6), trend: trend(), targetReps: 8 })?.kind).toBe('reps')
   })

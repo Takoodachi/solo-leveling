@@ -1,7 +1,7 @@
-import { Equal, Plus, RotateCcw, TrendingUp, type LucideIcon } from 'lucide-react'
+import { Equal, Flag, Plus, RotateCcw, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { ProgressHint as Hint } from '../progression'
 
-const ICON: Record<Hint['kind'], LucideIcon> = { weight: TrendingUp, reps: Plus, hold: Equal, ease: RotateCcw, reset: RotateCcw }
+const ICON: Record<Hint['kind'], LucideIcon> = { weight: TrendingUp, reps: Plus, hold: Equal, ease: RotateCcw, reset: RotateCcw, start: Flag }
 
 interface Props {
   hint: Hint

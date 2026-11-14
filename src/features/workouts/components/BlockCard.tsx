@@ -25,10 +25,12 @@ interface Props extends BlockCardProps {
   subtitle: ReactNode
   /** What the exercise is logged with (set rows, or the cardio entry); hidden while the card is folded away. */
   children: ReactNode
+  /** Under it all, and still there when the card has folded itself away (the question after the last set). */
+  footer?: ReactNode
 }
 
 /** A logger card: the header (fold, move, remove), your note with the way to swap the exercise out, then its fields. */
-export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, hold, folded, subtitle, children }: Props) {
+export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo, onReplace, hold, folded, subtitle, children, footer }: Props) {
   return (
     <section className="rounded-3xl bg-card p-4">
       <BlockHeader
@@ -59,6 +61,7 @@ export default function BlockCard({ block, blockIdx, isFirst, isLast, onShowInfo
           {children}
         </Collapse>
       )}
+      {!folded && footer}
     </section>
   )
 }
