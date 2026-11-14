@@ -1,5 +1,6 @@
 // Draws the Android app's long-press shortcut icons (res/drawable/ic_shortcut_<id>.xml): the
 // accent disc with a white Lucide glyph, the same glyph the app shows for that shortcut.
+// Also draws the widgets' plain glyphs (ic_widget_<id>.xml, below).
 // Run: node scripts/generate-shortcut-icons.mjs   (then rebuild the app: npm run android)
 //
 // workout, food and weight are drawn by hand and aren't touched. To add a shortcut, add it to
@@ -57,4 +58,33 @@ ${glyph}
 `
   writeFileSync(join(out, `ic_shortcut_${id}.xml`), xml)
   console.log(`ic_shortcut_${id}.xml  (${name}, ${nodes.length} paths)`)
+}
+
+// The home-screen widgets' glyphs (android/…/Widgets.kt): the same Lucide icons on their own,
+// white, so a widget can tint them to the theme (ImageView's colour filter).
+const WIDGET_ICONS = {
+  workout: 'dumbbell',
+  food: 'utensils',
+  water: 'glass-water',
+  creatine: 'pill',
+}
+
+for (const [id, name] of Object.entries(WIDGET_ICONS)) {
+  const source = readFileSync(join(lucide, `${name}.mjs`), 'utf8')
+  const nodes = new Function(`return ${/const __iconNode = (\[[\s\S]*?\n\]);/.exec(source)[1]}`)()
+  const glyph = nodes
+    .map(node => `    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="${toPath(node)}" />`)
+    .join('\n')
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget glyph: Lucide "${name}", white so the widget tints it (scripts/generate-shortcut-icons.mjs) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+${glyph}
+</vector>
+`
+  writeFileSync(join(out, `ic_widget_${id}.xml`), xml)
+  console.log(`ic_widget_${id}.xml  (${name}, ${nodes.length} paths)`)
 }

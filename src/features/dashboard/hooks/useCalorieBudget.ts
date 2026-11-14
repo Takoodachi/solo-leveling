@@ -14,18 +14,21 @@ export interface CalorieBudget {
 /** The day's targets plus its step calories. Use this everywhere a target is shown. */
 export function useCalorieBudget(date?: string): CalorieBudget {
   const day = date ?? today()
-  const data = useLiveQuery(async () => {
-    const [baseline, burns, settings, routines, skip] = await Promise.all([
-      db.targets.get(1), loadStepBurns([day]), db.settings.get(1), db.routines.toArray(), db.checkins.get(`skip-${day}`),
-    ])
-    const burn = burns.get(day) ?? null
-    const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
-    const plan: DayPlan | undefined = settings?.trainingDayCarbs !== false && weekdays.size > 0
-      ? { training: weekdays.has(parseISO(day).getDay()) && !skip?.done, perWeek: weekdays.size }
-      : undefined
-    return { targets: targetsForDay(baseline, burn?.kcal ?? 0, plan), burn }
-  }, [day])
+  const data = useLiveQuery(() => calorieBudget(day), [day])
   return data ?? { targets: targetsForDay(undefined, 0), burn: null }
+}
+
+/** The same budget outside React (the Android widgets, features/widgets). */
+export async function calorieBudget(day: string): Promise<CalorieBudget> {
+  const [baseline, burns, settings, routines, skip] = await Promise.all([
+    db.targets.get(1), loadStepBurns([day]), db.settings.get(1), db.routines.toArray(), db.checkins.get(`skip-${day}`),
+  ])
+  const burn = burns.get(day) ?? null
+  const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
+  const plan: DayPlan | undefined = settings?.trainingDayCarbs !== false && weekdays.size > 0
+    ? { training: weekdays.has(parseISO(day).getDay()) && !skip?.done, perWeek: weekdays.size }
+    : undefined
+  return { targets: targetsForDay(baseline, burn?.kcal ?? 0, plan), burn }
 }
 
 /** Calories eaten minus what steps burned. */

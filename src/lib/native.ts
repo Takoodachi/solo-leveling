@@ -120,6 +120,8 @@ interface SoloPlugin {
   /** Shows or updates the workout-in-progress notification. Since the workout notification. */
   workoutNotice(options: WorkoutNoticeState): Promise<void>
   clearWorkoutNotice(): Promise<void>
+  /** What the home-screen widgets show: `data` is sendWidgets.ts's JSON, `emblem` the rank's PNG (base64) when it changed. Since the widgets. */
+  setWidgets(options: { data: string; emblem?: string }): Promise<void>
   /** Heart rate between two times (ms). Since heart rate from the watch. */
   heartRate(options: { start: number; end: number }): Promise<HeartRateReading>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
@@ -157,6 +159,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     workoutNotice: options => native.workoutNotice(options),
     clearWorkoutNotice: () => native.clearWorkoutNotice(),
     heartRate: options => native.heartRate(options),
+    setWidgets: options => native.setWidgets(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }

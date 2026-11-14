@@ -14,7 +14,7 @@ import { DEFAULT_WATER_GLASS_ML, DEFAULT_WATER_GOAL_ML } from '@/features/settin
 export interface QuickLogBridge {
   /** JSON: { kind: 'creatine' | 'water', date: 'YYYY-MM-DD' }. */
   task(): string
-  /** JSON: { ok, title, detail }. */
+  /** JSON: { ok, title, detail, total? } (total = water's new day total, for the widgets). */
   done(result: string): void
 }
 
@@ -23,23 +23,24 @@ export function quickLogBridge(): QuickLogBridge | undefined {
   return bridge && typeof bridge.task === 'function' && typeof bridge.done === 'function' ? (bridge as QuickLogBridge) : undefined
 }
 
-async function log(kind: unknown, date: string): Promise<string> {
-  if (kind === 'creatine') return (await tickCheckin('creatine', date)) ? 'Creatine ticked off' : 'Creatine was already ticked off'
+/** What was logged, as the notification says it; water also hands back the day's new total (for the widgets). */
+async function log(kind: unknown, date: string): Promise<{ title: string; total?: number }> {
+  if (kind === 'creatine') return { title: (await tickCheckin('creatine', date)) ? 'Creatine ticked off' : 'Creatine was already ticked off' }
   if (kind !== 'water') throw new Error('Unknown reminder')
   const settings = await db.settings.get(1)
   const glass = settings?.waterGlassMl ?? DEFAULT_WATER_GLASS_ML
   const goal = settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
   const total = await setWater(date, ml => ml + glass)
-  return `+${glass} ml water · ${total.toLocaleString()} / ${goal.toLocaleString()} ml`
+  return { title: `+${glass} ml water · ${total.toLocaleString()} / ${goal.toLocaleString()} ml`, total }
 }
 
 export async function runQuickLog(bridge: QuickLogBridge): Promise<void> {
-  let result: { ok: boolean; title: string; detail: string }
+  let result: { ok: boolean; title: string; detail: string; total?: number }
   try {
     const task = JSON.parse(bridge.task()) as { kind?: unknown; date?: unknown }
     if (typeof task.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) throw new Error('No day to log to')
-    const title = await log(task.kind, task.date)
-    result = { ok: true, title, detail: `Saved${await syncInBackground()}` }
+    const { title, total } = await log(task.kind, task.date)
+    result = { ok: true, title, total, detail: `Saved${await syncInBackground()}` }
   } catch (err) {
     result = { ok: false, title: 'Couldn’t log it', detail: `${err instanceof Error ? err.message : String(err)}. Open the app to log it.` }
   }
