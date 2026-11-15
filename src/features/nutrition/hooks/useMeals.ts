@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { differenceInCalendarDays, format, parseISO, subDays } from 'date-fns'
 import { toDateStr } from '@/lib/date'
 import { db } from '@/db'
+import { foodsById } from '@/db/read'
 import { requestSync, deleteSynced } from '@/lib/sync'
 import type { Food, FoodLogWithFood, MealType, SavedMeal } from '@/types'
 import type { MealItem } from '../logFoods'
@@ -29,9 +30,12 @@ function summarize(items: MealItem[], foods: Map<string, Food>): MealSummary {
 }
 
 async function foodMap(ids: string[]): Promise<Map<string, Food>> {
-  const foods = await db.foods.bulkGet([...new Set(ids)])
+  const foodOf = await foodsById()
   // A removed food is left out of a meal, like one that no longer exists
-  return new Map(foods.flatMap(f => (f && !f.removed ? [[f.uuid, f]] : [])))
+  return new Map([...new Set(ids)].flatMap(id => {
+    const food = foodOf.get(id)
+    return food && !food.removed ? [[id, food] as const] : []
+  }))
 }
 
 /**
@@ -41,7 +45,7 @@ async function foodMap(ids: string[]): Promise<Map<string, Food>> {
 export function useRecentMeals(mealType: MealType, date: string): PastMeal[] | undefined {
   return useLiveQuery(async () => {
     const since = toDateStr(subDays(parseISO(date), RECENT_DAYS))
-    const logs = await db.foodLog.where('date').between(since, date, true, false).filter(l => l.mealType === mealType).toArray()
+    const logs = (await db.foodLog.where('date').between(since, date, true, false).toArray()).filter(l => l.mealType === mealType)
     const foods = await foodMap(logs.map(l => l.foodId))
 
     const byDate = new Map<string, MealItem[]>()

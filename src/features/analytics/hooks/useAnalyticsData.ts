@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { foodsById } from '@/db/read'
 import { today } from '@/lib/date'
 import {
   macroAdherenceByDate, lastNDates,
@@ -24,13 +25,11 @@ export function useMacroAdherence(rangeDays: number): MacroResult {
     const dates = lastNDates(rangeDays, today())
     const earliest = dates[0]
     const logs = await db.foodLog.where('date').aboveOrEqual(earliest).toArray()
-    const foodIds = [...new Set(logs.map(l => l.foodId))]
-    const [foods, baseline, burns] = await Promise.all([
-      db.foods.bulkGet(foodIds),
+    const [foodMap, baseline, burns] = await Promise.all([
+      foodsById(),
       db.targets.get(1),
       loadStepBurns(dates),
     ])
-    const foodMap = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
 
     const rows = macroAdherenceByDate(logs, foodMap, dates).map(p => {
       const stepKcal = burns.get(p.date)?.kcal ?? 0

@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO, startOfWeek } from 'date-fns'
 import { db } from '@/db'
+import { allSets, cached, exercisesById, foodsById, workoutsById } from '@/db/read'
 import { setVolume } from '@/lib/workoutMath'
 import { computeRanks } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
@@ -10,8 +11,74 @@ import type { AchievementMetric } from './achievements'
 
 export type StatReader = (metric: AchievementMetric) => Promise<number>
 
+// Each source is kept until one of its tables is written (db/read.ts): the achievements are
+// checked after every log, and a food logged doesn't change what the sets add up to.
+const trainingStats = cached([db.workoutSets, db.exercises], async () => {
+  const [sets, exerciseOf] = await Promise.all([allSets(), exercisesById()])
+  const ids = new Set(sets.map(s => s.exerciseId))
+  let volumeKg = 0
+  let cardioKm = 0
+  let longestRunKm = 0
+  let cardioSessions = 0
+  for (const s of sets) {
+    if (exerciseOf.get(s.exerciseId)?.type !== 'cardio') volumeKg += setVolume(s)
+    else {
+      cardioSessions += 1 // a cardio entry is one set
+      cardioKm += s.distanceKm ?? 0
+      if (isRunExercise(s.exerciseId)) longestRunKm = Math.max(longestRunKm, s.distanceKm ?? 0)
+    }
+  }
+  return { sets: sets.length, volumeT: volumeKg / 1000, exercises: ids.size, cardioKm, longestRunKm, cardioSessions }
+})
+
+const foodStats = cached([db.foodLog, db.foods, db.targets], async () => {
+  const [logs, targets, foodOf] = await Promise.all([db.foodLog.toArray(), db.targets.get(1), foodsById()])
+  const byDay = new Map<string, number>()
+  for (const l of logs) byDay.set(l.date, (byDay.get(l.date) ?? 0) + (foodOf.get(l.foodId)?.protein ?? 0) * l.servings)
+  const target = targets?.dailyProtein ?? 0
+  const hit = target > 0 ? [...byDay].filter(([, protein]) => protein >= target).map(([date]) => date).sort() : []
+  // The longest run of days in a row at the target
+  let proteinRun = 0
+  let run = 0
+  hit.forEach((date, i) => {
+    run = i > 0 && differenceInCalendarDays(parseISO(date), parseISO(hit[i - 1])) === 1 ? run + 1 : 1
+    proteinRun = Math.max(proteinRun, run)
+  })
+  const distinct = new Set(logs.map(l => l.foodId))
+  distinct.delete(QUICK_ADD_FOOD.uuid) // calories with no food behind them
+  return { foodDays: byDay.size, proteinDays: hit.length, proteinRun, foods: distinct.size }
+})
+
+const stepGoalDays = cached([db.dailyActivity, db.settings], async () => {
+  const goal = (await db.settings.get(1))?.dailyStepGoal ?? DEFAULT_STEP_GOAL
+  const byDay = new Map<string, number>()
+  for (const a of await db.dailyActivity.toArray()) byDay.set(a.date, Math.max(byDay.get(a.date) ?? 0, a.steps))
+  return [...byDay.values()].filter(n => n >= goal).length
+})
+
+const checkinStats = cached([db.checkins, db.settings], async () => {
+  const goal = (await db.settings.get(1))?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
+  const rows = await db.checkins.toArray()
+  return {
+    waterDays: rows.filter(c => c.key === 'water' && (c.amount ?? 0) >= goal).length,
+    creatineDays: rows.filter(c => c.key === 'creatine' && c.done).length,
+    quests: rows.filter(c => c.key === 'quest' && c.done).length,
+  }
+})
+
+/** Mon–Sun weeks with at least the weekly workout goal's workouts in them. */
+const goalWeeks = cached([db.workouts, db.settings], async () => {
+  const goal = (await db.settings.get(1))?.weeklyWorkoutGoal ?? 3
+  const perWeek = new Map<string, number>()
+  for (const w of (await workoutsById()).values()) {
+    const week = toDateStr(startOfWeek(parseISO(w.date), { weekStartsOn: 1 }))
+    perWeek.set(week, (perWeek.get(week) ?? 0) + 1)
+  }
+  return [...perWeek.values()].filter(n => n >= goal).length
+})
+
 /**
- * The numbers achievements count, read from what's logged. One reader loads each source at most
+ * The numbers achievements count, read from what's logged. One reader asks each source at most
  * once, and only when a metric from it is asked for: checking a few locked achievements after a
  * food log doesn't walk every set, and the ranks are only worked out for a rank achievement.
  */
@@ -22,83 +89,19 @@ export function achievementStats(): StatReader {
   }
 
   const stats = once(() => db.userStats.get(1))
-  const settings = once(() => db.settings.get(1))
-
-  const training = once(async () => {
-    const sets = await db.workoutSets.toArray()
-    const ids = [...new Set(sets.map(s => s.exerciseId))]
-    const cardio = new Set((await db.exercises.bulkGet(ids)).flatMap(e => (e?.type === 'cardio' ? [e.uuid] : [])))
-    let volumeKg = 0
-    let cardioKm = 0
-    let longestRunKm = 0
-    let cardioSessions = 0
-    for (const s of sets) {
-      if (!cardio.has(s.exerciseId)) volumeKg += setVolume(s)
-      else {
-        cardioSessions += 1 // a cardio entry is one set
-        cardioKm += s.distanceKm ?? 0
-        if (isRunExercise(s.exerciseId)) longestRunKm = Math.max(longestRunKm, s.distanceKm ?? 0)
-      }
-    }
-    return { sets: sets.length, volumeT: volumeKg / 1000, exercises: ids.length, cardioKm, longestRunKm, cardioSessions }
-  })
-
-  const food = once(async () => {
-    const [logs, targets] = await Promise.all([db.foodLog.toArray(), db.targets.get(1)])
-    const foods = await db.foods.bulkGet([...new Set(logs.map(l => l.foodId))])
-    const proteinOf = new Map(foods.flatMap(f => (f ? [[f.uuid, f.protein] as const] : [])))
-    const byDay = new Map<string, number>()
-    for (const l of logs) byDay.set(l.date, (byDay.get(l.date) ?? 0) + (proteinOf.get(l.foodId) ?? 0) * l.servings)
-    const target = targets?.dailyProtein ?? 0
-    const hit = target > 0 ? [...byDay].filter(([, protein]) => protein >= target).map(([date]) => date).sort() : []
-    // The longest run of days in a row at the target
-    let proteinRun = 0
-    let run = 0
-    hit.forEach((date, i) => {
-      run = i > 0 && differenceInCalendarDays(parseISO(date), parseISO(hit[i - 1])) === 1 ? run + 1 : 1
-      proteinRun = Math.max(proteinRun, run)
-    })
-    const distinct = new Set(logs.map(l => l.foodId))
-    distinct.delete(QUICK_ADD_FOOD.uuid) // calories with no food behind them
-    return { foodDays: byDay.size, proteinDays: hit.length, proteinRun, foods: distinct.size }
-  })
-
-  const steps = once(async () => {
-    const goal = (await settings())?.dailyStepGoal ?? DEFAULT_STEP_GOAL
-    const byDay = new Map<string, number>()
-    for (const a of await db.dailyActivity.toArray()) byDay.set(a.date, Math.max(byDay.get(a.date) ?? 0, a.steps))
-    return [...byDay.values()].filter(n => n >= goal).length
-  })
-
-  const checkins = once(async () => {
-    const goal = (await settings())?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
-    const rows = await db.checkins.toArray()
-    return {
-      waterDays: rows.filter(c => c.key === 'water' && (c.amount ?? 0) >= goal).length,
-      creatineDays: rows.filter(c => c.key === 'creatine' && c.done).length,
-      quests: rows.filter(c => c.key === 'quest' && c.done).length,
-    }
-  })
-
-  /** Mon–Sun weeks with at least the weekly workout goal's workouts in them. */
-  const goalWeeks = once(async () => {
-    const goal = (await settings())?.weeklyWorkoutGoal ?? 3
-    const perWeek = new Map<string, number>()
-    for (const w of await db.workouts.toArray()) {
-      const week = toDateStr(startOfWeek(parseISO(w.date), { weekStartsOn: 1 }))
-      perWeek.set(week, (perWeek.get(week) ?? 0) + 1)
-    }
-    return [...perWeek.values()].filter(n => n >= goal).length
-  })
-
   const ranks = once(() => computeRanks())
+  const training = once(trainingStats)
+  const food = once(foodStats)
+  const checkins = once(checkinStats)
+  const steps = once(stepGoalDays)
+  const weeks = once(goalWeeks)
 
   const read: Record<AchievementMetric, () => Promise<number>> = {
-    workouts: () => db.workouts.count(),
+    workouts: once(() => db.workouts.count()),
     sets: async () => (await training()).sets,
     volumeT: async () => (await training()).volumeT,
     exercises: async () => (await training()).exercises,
-    routines: () => db.routines.count(),
+    routines: once(() => db.routines.count()),
     rankedLifts: async () => (await ranks()).lifts.length,
     liftRating: async () => (await ranks()).lifts[0]?.rank.rating ?? 0,
     overallRating: async () => (await ranks()).overall?.rating ?? 0,
@@ -111,14 +114,14 @@ export function achievementStats(): StatReader {
     foodDays: async () => (await food()).foodDays,
     proteinRun: async () => (await food()).proteinRun,
     proteinDays: async () => (await food()).proteinDays,
-    weighIns: () => db.bodyMetrics.count(),
-    stepGoalDays: () => steps(),
+    weighIns: once(() => db.bodyMetrics.count()),
+    stepGoalDays: steps,
     waterDays: async () => (await checkins()).waterDays,
     creatineDays: async () => (await checkins()).creatineDays,
     cardioSessions: async () => (await training()).cardioSessions,
-    goalWeeks: () => goalWeeks(),
+    goalWeeks: weeks,
     foods: async () => (await food()).foods,
-    savedMeals: () => db.savedMeals.count(),
+    savedMeals: once(() => db.savedMeals.count()),
     quests: async () => (await checkins()).quests,
   }
   return metric => read[metric]()

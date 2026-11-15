@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns'
 import { db } from '@/db'
-import type { Exercise, WeightUnit, Workout, WorkoutSet } from '@/types'
+import { workoutsById } from '@/db/read'
+import type { Exercise, WeightUnit, WorkoutSet } from '@/types'
 import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { est1RM } from '@/lib/workoutMath'
 import { describeSet } from './describeSet'
@@ -78,9 +79,8 @@ function bestsOf(sets: DatedSet[], exercise: Exercise, unit: WeightUnit, day: (d
 export async function exerciseHistory(exercise: Exercise): Promise<ExerciseHistory> {
   const unit = await exerciseUnit(exercise.uuid)
   const sets = await db.workoutSets.where('exerciseId').equals(exercise.uuid).toArray()
-  const workouts = (await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))]))
-    .filter((w): w is Workout => !!w)
-    .sort((a, b) => b.createdAt - a.createdAt)
+  const workoutOf = await workoutsById()
+  const workouts = [...new Set(sets.map(s => s.workoutId))].flatMap(id => workoutOf.get(id) ?? []).sort((a, b) => b.createdAt - a.createdAt)
   const dateOf = new Map(workouts.map(w => [w.uuid, w.date]))
   const thisYear = format(new Date(), 'yyyy')
   const day = (date: string) => format(parseISO(date), date.startsWith(thisYear) ? 'EEE d MMM' : 'd MMM yyyy')

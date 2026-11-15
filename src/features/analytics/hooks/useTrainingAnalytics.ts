@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, startOfWeek, subWeeks, parseISO } from 'date-fns'
 import { db } from '@/db'
+import { allSets, exercisesById, setsOfWorkouts, workoutsById } from '@/db/read'
 import type { Exercise } from '@/types'
 import { est1RM, setVolume } from '@/lib/workoutMath'
 import { lastNDays, toDateStr } from '@/lib/date'
@@ -20,7 +21,7 @@ export function useWeeklyVolume(weeks: number): WeekVolume[] | undefined {
     const starts = Array.from({ length: weeks }, (_, i) => subWeeks(thisWeek, weeks - 1 - i))
     const from = toDateStr(starts[0])
     const workouts = await db.workouts.where('date').aboveOrEqual(from).toArray()
-    const sets = workouts.length ? await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray() : []
+    const sets = await setsOfWorkouts(workouts.map(w => w.uuid))
     const weekOf = (date: string) => toDateStr(startOfWeek(parseISO(date), { weekStartsOn: 1 }))
     const workoutWeek = new Map(workouts.map(w => [w.uuid, weekOf(w.date)]))
 
@@ -40,12 +41,14 @@ export function useWeeklyVolume(weeks: number): WeekVolume[] | undefined {
 /** Exercises that have weighted sets logged, most-trained first. */
 export function useLiftedExercises(): { exercise: Exercise; sessions: number }[] | undefined {
   return useLiveQuery(async () => {
-    const sets = await db.workoutSets.filter(s => !!s.weight && !!s.reps).toArray()
+    const [sets, exerciseOf] = await Promise.all([allSets(), exercisesById()])
     const sessions = new Map<string, Set<string>>()
-    for (const s of sets) sessions.set(s.exerciseId, (sessions.get(s.exerciseId) ?? new Set()).add(s.workoutId))
-    const exercises = await db.exercises.bulkGet([...sessions.keys()])
-    return exercises
-      .flatMap(e => (e ? [{ exercise: e, sessions: sessions.get(e.uuid)!.size }] : []))
+    for (const s of sets) if (s.weight && s.reps) sessions.set(s.exerciseId, (sessions.get(s.exerciseId) ?? new Set()).add(s.workoutId))
+    return [...sessions]
+      .flatMap(([id, workouts]) => {
+        const exercise = exerciseOf.get(id)
+        return exercise ? [{ exercise, sessions: workouts.size }] : []
+      })
       .sort((a, b) => b.sessions - a.sessions)
   }, [])
 }
@@ -62,11 +65,10 @@ export function useOneRmHistory(exerciseId: string | undefined): OneRmPoint[] | 
   return useLiveQuery(async () => {
     if (!exerciseId) return []
     const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-    const workouts = await db.workouts.bulkGet([...new Set(sets.map(s => s.workoutId))])
-    const dateOf = new Map(workouts.flatMap(w => (w ? [[w.uuid, w.date]] : [])))
+    const workoutOf = await workoutsById()
     const best = new Map<string, OneRmPoint>()
     for (const s of sets) {
-      const date = dateOf.get(s.workoutId)
+      const date = workoutOf.get(s.workoutId)?.date
       if (!date || !s.weight || !s.reps) continue
       const e = est1RM(s.weight, s.reps)
       const cur = best.get(date)

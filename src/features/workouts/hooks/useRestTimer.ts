@@ -65,21 +65,13 @@ export function requestNotificationPermission(): void {
   void Notification.requestPermission()
 }
 
+/**
+ * The rest timer: when it ends, and how to start, stop and stretch it. It doesn't count down
+ * itself: that is RestBanner's, so the four ticks a second draw the banner again and not the
+ * whole workout screen that holds this.
+ */
 export function useRestTimer() {
   const [timer, setTimer] = useState<Persisted | null>(readPersisted)
-  const [now, setNow] = useState(() => Date.now())
-
-  // Tick while running. Derived from endAt so throttled/background tabs catch up instantly.
-  useEffect(() => {
-    if (!timer) return
-    const id = setInterval(() => setNow(Date.now()), 250)
-    const onVisible = () => setNow(Date.now())
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [timer])
 
   // Fire once at the end.
   useEffect(() => {
@@ -106,7 +98,6 @@ export function useRestTimer() {
     persist(next)
     scheduleInServiceWorker(next.endAt)
     scheduleOnPhone(next.endAt)
-    setNow(Date.now())
     setTimer(next)
   }, [])
 
@@ -117,23 +108,20 @@ export function useRestTimer() {
     setTimer(null)
   }, [])
 
+  // Not inside a state update function: that runs while the screen is being drawn, and telling
+  // the rest of the app (the workout notification follows the timer) from there was too early
   const addSeconds = useCallback((delta: number) => {
-    setTimer(prev => {
-      if (!prev) return prev
-      const next = { endAt: prev.endAt + delta * 1000, total: prev.total + delta }
-      persist(next)
-      scheduleInServiceWorker(next.endAt)
-      scheduleOnPhone(next.endAt)
-      return next
-    })
-  }, [])
-
-  const secondsLeft = timer ? Math.max(0, Math.ceil((timer.endAt - now) / 1000)) : null
+    if (!timer) return
+    const next = { endAt: timer.endAt + delta * 1000, total: timer.total + delta }
+    persist(next)
+    scheduleInServiceWorker(next.endAt)
+    scheduleOnPhone(next.endAt)
+    setTimer(next)
+  }, [timer])
 
   return {
-    secondsLeft,
+    endAt: timer?.endAt ?? null,
     totalSeconds: timer?.total ?? 0,
-    isRunning: secondsLeft != null && secondsLeft > 0,
     start,
     stop,
     addSeconds,

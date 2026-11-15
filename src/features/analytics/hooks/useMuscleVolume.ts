@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { addDays, parseISO } from 'date-fns'
 import { db } from '@/db'
+import { exercisesById, setsOfWorkouts } from '@/db/read'
 import { toDateStr } from '@/lib/date'
 import { muscleShares, setCredit, type VolumeMuscle } from '../volume'
 
@@ -17,9 +18,11 @@ export function useMuscleVolume(weekStart: string): MuscleVolume | undefined {
   return useLiveQuery(async () => {
     const weekEnd = toDateStr(addDays(parseISO(weekStart), 6))
     const workouts = await db.workouts.where('date').between(weekStart, weekEnd, true, true).toArray()
-    const logged = workouts.length ? await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray() : []
-    const exercises = await db.exercises.bulkGet([...new Set(logged.map(s => s.exerciseId))])
-    const shares = new Map(exercises.flatMap(e => (e ? [[e.uuid, muscleShares(e)] as const] : [])))
+    const [logged, exerciseOf] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById()])
+    const shares = new Map([...new Set(logged.map(s => s.exerciseId))].flatMap(id => {
+      const exercise = exerciseOf.get(id)
+      return exercise ? [[id, muscleShares(exercise)] as const] : []
+    }))
 
     const sets = new Map<VolumeMuscle, number>()
     let totalSets = 0

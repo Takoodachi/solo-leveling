@@ -1,6 +1,7 @@
 import { startOfWeek, subDays } from 'date-fns'
 import { streakAlive } from '@/lib/streak'
 import { db } from '@/db'
+import { exercisesById, setsOfWorkouts } from '@/db/read'
 import type { UserStats } from '@/types'
 import { toDateStr } from '@/lib/date'
 import { formatClock, formatKm } from '@/lib/cardio'
@@ -20,14 +21,12 @@ function liveStreak(stats: UserStats | undefined, now: Date): number {
 
 async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week']> {
   const workouts = await db.workouts.where('date').aboveOrEqual(weekStart).toArray()
-  const sets = workouts.length ? await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray() : []
-  const exercises = await db.exercises.bulkGet([...new Set(sets.map(s => s.exerciseId))])
-  const cardio = new Set(exercises.flatMap(e => (e?.type === 'cardio' ? [e.uuid] : [])))
+  const [sets, exerciseOf] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById()])
   const runKm = sets.reduce((km, s) => km + (isRunExercise(s.exerciseId) ? s.distanceKm ?? 0 : 0), 0)
   return {
     start: weekStart,
     workouts: workouts.length,
-    sets: sets.filter(s => !cardio.has(s.exerciseId)).length,
+    sets: sets.filter(s => exerciseOf.get(s.exerciseId)?.type !== 'cardio').length,
     minutes: Math.round(workouts.reduce((m, w) => m + (w.durationMin || 0), 0)),
     runKm: Math.round(runKm * 10) / 10,
   }
@@ -35,8 +34,7 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
 
 /** Your routines as friends see them, their custom exercises described (a friend's device doesn't have them) and their notes left out. */
 async function myRoutines(): Promise<SharedRoutine[]> {
-  const [routines, custom] = await Promise.all([db.routines.orderBy('name').toArray(), db.exercises.filter(e => e.isCustom).toArray()])
-  const customById = new Map(custom.map(e => [e.uuid, e]))
+  const [routines, exerciseOf] = await Promise.all([db.routines.orderBy('name').toArray(), exercisesById()])
   return routines.map(r => ({
     id: r.uuid,
     name: r.name,
@@ -45,8 +43,8 @@ async function myRoutines(): Promise<SharedRoutine[]> {
     ...(r.estDurationMin ? { mins: r.estDurationMin } : {}),
     days: r.scheduleDays,
     items: r.exercises.map(x => {
-      const c = customById.get(x.exerciseId)
-      return { id: x.exerciseId, sets: x.sets, reps: x.reps, rest: x.restSec, ...(c ? { ex: { name: c.name, category: c.category, type: c.type, unit: c.defaultUnit } } : {}) }
+      const c = exerciseOf.get(x.exerciseId)
+      return { id: x.exerciseId, sets: x.sets, reps: x.reps, rest: x.restSec, ...(c?.isCustom ? { ex: { name: c.name, category: c.category, type: c.type, unit: c.defaultUnit } } : {}) }
     }),
   }))
 }
@@ -55,8 +53,10 @@ async function myRoutines(): Promise<SharedRoutine[]> {
 export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnapshot> {
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const since = toDateStr(subDays(now, HIGHLIGHT_DAYS))
-  const [ranks, history, stats, week, settings, routines] = await Promise.all([
-    computeRanks(), rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1), myRoutines(),
+  // The ranks first: the history is worked out from the same rated sets, which are kept once read
+  const ranks = await computeRanks()
+  const [history, stats, week, settings, routines] = await Promise.all([
+    rankHistory(HISTORY_WEEKS), db.userStats.get(1), weekTotals(weekStart), db.settings.get(1), myRoutines(),
   ])
 
   const run = ranks.running

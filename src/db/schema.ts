@@ -28,7 +28,12 @@ export class SoloLevelingDB extends Dexie {
   wallpapers!:     Table<WallpaperRow,    string>
 
   constructor() {
-    super('SoloLevelingDB')
+    // Dexie's own cache of live-query results is off. It runs a live query again before a write
+    // has committed (showing the write early), which is before db/read.ts can know of it: a live
+    // query reading through `cached` would be handed the result from before the write and never
+    // asked again. Off, everything hears of a write at one moment, its commit. It also kept a
+    // second copy of every result (photos included) and went through each one on every write.
+    super('SoloLevelingDB', { cache: 'disabled' })
     this.version(1).stores({
       exercises:    'uuid, name, category, type, isCustom, syncPending',
       workouts:     'uuid, date, createdAt, syncPending',

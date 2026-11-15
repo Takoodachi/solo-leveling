@@ -1,4 +1,4 @@
-import { useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGoBack } from '@/hooks/useGoBack'
@@ -12,25 +12,26 @@ interface Props {
   className?: string
 }
 
-function subscribe(onChange: () => void): () => void {
-  window.addEventListener('scroll', onChange, { passive: true })
-  window.addEventListener('resize', onChange)
-  return () => {
-    window.removeEventListener('scroll', onChange)
-    window.removeEventListener('resize', onChange)
-  }
-}
-
-/** Whether the big title has scrolled up past the top of the screen (under the status bar). */
+/**
+ * Whether the big title has scrolled up past the top of the screen (under the status bar). An
+ * observer, not a measurement on every scroll event and render: measuring made the browser lay
+ * the page out again each time.
+ */
 function useTucked(title: RefObject<HTMLElement | null>, bar: RefObject<HTMLElement | null>): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      if (!title.current || !bar.current) return false
-      return title.current.getBoundingClientRect().bottom <= bar.current.getBoundingClientRect().top + 8
-    },
-    () => false,
-  )
+  const [tucked, setTucked] = useState(false)
+  useEffect(() => {
+    const el = title.current
+    if (!el) return
+    // The line the title goes under: just below the bar's top, read once (the bar is fixed there)
+    const line = Math.round((bar.current?.getBoundingClientRect().top ?? 0) + 8)
+    const observer = new IntersectionObserver(
+      ([entry]) => setTucked(!entry.isIntersecting && entry.boundingClientRect.bottom <= line),
+      { rootMargin: `${-line}px 0px 0px 0px` },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [title, bar])
+  return tucked
 }
 
 /**

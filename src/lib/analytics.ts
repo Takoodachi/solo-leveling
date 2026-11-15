@@ -15,7 +15,7 @@ export interface MacroPoint {
 
 export function macroAdherenceByDate(
   logs: FoodLog[],
-  foods: Map<string, Food>,
+  foods: ReadonlyMap<string, Food>,
   dates: string[], // ordered date strings to include (zero-fills missing days)
 ): MacroPoint[] {
   const byDate = new Map<string, MacroPoint>()

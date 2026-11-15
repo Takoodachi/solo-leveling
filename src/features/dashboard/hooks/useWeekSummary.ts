@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { foodsById, setsOfWorkouts } from '@/db/read'
 import { setVolume } from '@/lib/workoutMath'
 
 export interface DaySummary {
@@ -31,11 +32,7 @@ export async function daySummaries(dates: string[]): Promise<DaySummary[]> {
     db.foodLog.where('date').between(first, last, true, true).toArray(),
     db.dailyActivity.where('date').between(first, last, true, true).toArray(),
   ])
-  const sets = workouts.length
-    ? await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray()
-    : []
-  const foods = await db.foods.bulkGet([...new Set(logs.map(l => l.foodId))])
-  const foodMap = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
+  const [sets, foodMap] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), foodsById()])
   const workoutDate = new Map(workouts.map(w => [w.uuid, w.date]))
 
   const byDate = new Map<string, DaySummary>(dates.map(d => [d, {

@@ -1,4 +1,5 @@
 import { db } from '@/db'
+import { exercisesById } from '@/db/read'
 import { today } from '@/lib/date'
 import { soloPlugin } from '@/lib/native'
 import { routineMinutes } from '@/lib/workoutMath'
@@ -59,7 +60,7 @@ function inked(color: string, text: string): string {
   return mixHex(color, text, Number.isFinite(keep) ? keep / 100 : 1)
 }
 
-function routineInfo(r: Routine | undefined, exercises: Map<string, Exercise>): RoutineInfo | null {
+function routineInfo(r: Routine | undefined, exercises: ReadonlyMap<string, Exercise>): RoutineInfo | null {
   if (!r) return null
   return { name: r.name, exercises: r.exercises.length, minutes: r.estDurationMin || routineMinutes(r.exercises, id => exercises.get(id)) }
 }
@@ -74,12 +75,11 @@ async function build(): Promise<{ data: WidgetData; overall: RankInfo | null }> 
     db.checkins.get(`creatine-${day}`),
     db.checkins.get(`skip-${day}`),
     db.routines.toArray(),
-    db.exercises.toArray(),
+    exercisesById(),
     db.workouts.where('date').equals(day).count(),
     computeRanks(),
   ])
-  const byId = new Map(exercises.map(e => [e.uuid, e]))
-  const week = Array.from({ length: 7 }, (_, d) => routineInfo(routines.find(r => r.scheduleDays.includes(d)), byId))
+  const week = Array.from({ length: 7 }, (_, d) => routineInfo(routines.find(r => r.scheduleDays.includes(d)), exercises))
   const draft = useWorkoutStore.getState().draft
   const colors = themeColors()
   const overall = ranks.overall

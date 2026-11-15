@@ -54,6 +54,9 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Letters the app never shows aren't taken on install (75 KB); a name written in them
+        // still gets its font when online, and the system's own offline
+        globIgnores: ['**/*cyrillic*.woff2', '**/*greek*.woff2'],
       },
       devOptions: {
         enabled: false,

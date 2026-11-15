@@ -113,7 +113,7 @@ export function useAuthInit(): void {
     })
 
     const resync = () => syncService.request()
-    const onVisible = () => { if (document.visibilityState === 'visible') resync() }
+    const onVisible = () => { if (document.visibilityState === 'visible') syncService.requestAll() }
     window.addEventListener('online', resync)
     document.addEventListener('visibilitychange', onVisible)
 

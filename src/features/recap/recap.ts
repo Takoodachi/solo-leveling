@@ -1,5 +1,6 @@
 import { addDays } from 'date-fns'
 import { db } from '@/db'
+import { exercisesById, foodsById, setsOfWorkouts, workoutsById } from '@/db/read'
 import type { Workout, WorkoutSet } from '@/types'
 import { est1RM, setVolume } from '@/lib/workoutMath'
 import { loadStepBurns } from '@/lib/stepCalories'
@@ -75,16 +76,17 @@ const longest = (sets: WorkoutSet[]) => Math.max(0, ...sets.map(s => s.distanceK
 /** Lifts and runs whose best in the period beat everything logged before it. */
 async function bestsOf(periodSets: WorkoutSet[], first: string, last: string, cardio: Set<string>): Promise<RecapBest[]> {
   const bests: RecapBest[] = []
+  const [workoutOf, exerciseOf] = await Promise.all([workoutsById(), exercisesById()])
   for (const exerciseId of new Set(periodSets.map(s => s.exerciseId))) {
     const all = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-    const dates = new Map((await db.workouts.bulkGet([...new Set(all.map(s => s.workoutId))])).flatMap(w => (w ? [[w.uuid, w.date]] : [])))
-    const before = all.filter(s => (dates.get(s.workoutId) ?? last) < first)
-    const during = all.filter(s => { const d = dates.get(s.workoutId); return !!d && d >= first && d <= last })
+    const dateOf = (s: WorkoutSet) => workoutOf.get(s.workoutId)?.date
+    const before = all.filter(s => (dateOf(s) ?? last) < first)
+    const during = all.filter(s => { const d = dateOf(s); return !!d && d >= first && d <= last })
     const isCardio = cardio.has(exerciseId)
     const [from, to] = isCardio ? [longest(before), longest(during)] : [best1RM(before), best1RM(during)]
     // A first-ever session has nothing to beat
     if (from <= 0 || to <= from) continue
-    const name = (await db.exercises.get(exerciseId))?.name ?? 'Exercise'
+    const name = exerciseOf.get(exerciseId)?.name ?? 'Exercise'
     bests.push({ exerciseId, name, from: Math.round(from * 10) / 10, to: Math.round(to * 10) / 10, kind: isCardio ? 'distance' : '1rm' })
   }
   return bests.sort((a, b) => b.to / b.from - a.to / a.from)
@@ -105,9 +107,8 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
     db.targets.get(1),
     db.routines.toArray(),
   ])
-  const sets = workouts.length ? await db.workoutSets.where('workoutId').anyOf(workouts.map(w => w.uuid)).toArray() : []
-  const exercises = await db.exercises.bulkGet([...new Set(sets.map(s => s.exerciseId))])
-  const cardio = new Set(exercises.flatMap(e => (e?.type === 'cardio' ? [e.uuid] : [])))
+  const [sets, exerciseOf, foodById] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById(), foodsById()])
+  const cardio = new Set([...new Set(sets.map(s => s.exerciseId))].filter(id => exerciseOf.get(id)?.type === 'cardio'))
 
   const inPeriod = (w: Workout) => w.date >= first
   const current = workouts.filter(inPeriod)
@@ -122,8 +123,6 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
   const bestDay = periodSteps.reduce((a, d) => (d.steps > a.steps ? d : a), periodSteps[0])
   const previousSteps = [...stepsByDay].reduce((n, [date, steps]) => n + (date < first ? steps : 0), 0)
 
-  const foods = await db.foods.bulkGet([...new Set(logs.map(l => l.foodId))])
-  const foodById = new Map(foods.flatMap(f => (f ? [[f.uuid, f]] : [])))
   const eaten = new Map<string, { kcal: number; protein: number }>()
   for (const l of logs) {
     const f = foodById.get(l.foodId)
@@ -138,7 +137,9 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
   const during = weighIns.filter(m => m.date >= first && m.date <= last)
   const before = weighIns.filter(m => m.date < first).at(-1)
 
-  const [rankBefore, rankAfter] = await Promise.all([computeRanks(w => w.date < first), computeRanks(w => w.date <= last)])
+  // One after the other: the second is worked out from the sets the first has read
+  const rankBefore = await computeRanks(w => w.date < first)
+  const rankAfter = await computeRanks(w => w.date <= last)
   const waterGoal = settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const training = trainingOf(current, periodSets, cardio)

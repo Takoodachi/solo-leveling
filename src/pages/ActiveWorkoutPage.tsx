@@ -31,6 +31,11 @@ import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/use
 import { useRanks } from '@/features/ranks/useRanks'
 import type { Exercise } from '@/types'
 
+/** The session clock, on its own: its tick every second draws this again and not the whole workout. */
+function SessionClock({ startedAt }: { startedAt: number }) {
+  return <span className="tabular-nums">{useElapsed(startedAt).label}</span>
+}
+
 export default function ActiveWorkoutPage() {
   const enter = useEnterAnimation()
   const navigate = useNavigate()
@@ -41,14 +46,14 @@ export default function ActiveWorkoutPage() {
   const { saveEdits, cancelEditing } = useEditWorkout()
   const { settings } = useSettings()
   const editing = draft?.editing
-  // Editing a saved workout: no session clock, rest timer or wake lock.
-  const elapsed = useElapsed(draft && !editing ? draft.startedAt : null)
   const rest = useRestTimer()
   const layout = useWorkoutLayout()
   const [pickerOpen, setPickerOpen] = useState(false)
   // The card whose exercise is being swapped for another (the picker is open for it)
   const [replacing, setReplacing] = useState<{ idx: number; exercise: Exercise } | null>(null)
   const [finishOpen, setFinishOpen] = useState(false)
+  // When Finish was last pressed: the session's length is read then, not kept ticking up here
+  const [finishAt, setFinishAt] = useState(0)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [info, setInfo] = useState<Exercise | null>(null)
   // Set before saving/cancelling an edit, which navigates on its own: the store
@@ -65,7 +70,7 @@ export default function ActiveWorkoutPage() {
   const defaultRest = settings?.defaultRestSeconds ?? DEFAULT_REST_SECONDS
   const allSets = draft.blocks.flatMap(b => b.sets)
   const doneSets = allSets.filter(s => s.done).length
-  const elapsedMin = Math.round(elapsed.seconds / 60)
+  const elapsedMin = Math.max(0, Math.round((finishAt - draft.startedAt) / 60_000))
   // A run logged after the fact can be longer than the session timer: default the duration to at least that.
   const cardioMin = Math.round(draft.blocks
     .filter(b => setModeFor(b.exercise) === 'cardio')
@@ -142,14 +147,14 @@ export default function ActiveWorkoutPage() {
                 ) : (
                   <>
                     <Timer size={12} className="text-primary" />
-                    <span className="tabular-nums">{elapsed.label}</span>
+                    <SessionClock startedAt={draft.startedAt} />
                   </>
                 )}
                 <span>· {doneSets}/{allSets.length} sets</span>
               </p>
             </div>
             {!editing && <MusicButton />}
-            <Button size="sm" onClick={() => setFinishOpen(true)} disabled={draft.blocks.length === 0}>
+            <Button size="sm" onClick={() => { setFinishAt(Date.now()); setFinishOpen(true) }} disabled={draft.blocks.length === 0}>
               {editing ? 'Save' : 'Finish'}
             </Button>
           </div>
@@ -161,7 +166,7 @@ export default function ActiveWorkoutPage() {
           {/* The rest timer at the top hangs under the header, over the cards, so nothing below it moves */}
           {layout.rest === 'top' && (
             <div className="pointer-events-none absolute inset-x-0 top-full px-3 pt-2">
-              <RestBanner edge="top" secondsLeft={rest.secondsLeft} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+              <RestBanner edge="top" endAt={rest.endAt} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
             </div>
           )}
         </div>
@@ -225,7 +230,7 @@ export default function ActiveWorkoutPage() {
         {/* What floats at the bottom: the rest timer over the music bar, whichever of them is put there */}
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           {layout.rest === 'bottom' && (
-            <RestBanner edge="bottom" secondsLeft={rest.secondsLeft} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+            <RestBanner edge="bottom" endAt={rest.endAt} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
           )}
           {!editing && layout.music === 'bottom' && <MusicControls floating />}
         </div>

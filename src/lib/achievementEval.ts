@@ -9,12 +9,22 @@ import { afterStage } from '@/features/gamification/celebration'
 
 const levelUp = (r: GrantXpResult | null) => r?.leveledUp && afterStage(() => toast.success(`Level up! You're now level ${r.newLevel}`, { icon: '⭐' }))
 
+let checking: Promise<unknown> = Promise.resolve()
+
 /**
  * Scan all achievement definitions, unlock any newly-passing ones, pay their XP, and return
- * the newly-unlocked definitions so the caller can announce them. A pass at a time: the XP can
- * lift the level, and the level achievements unlocked by that are caught by the next pass.
+ * the newly-unlocked definitions so the caller can announce them. One check at a time: two at
+ * once (two foods logged in quick succession) would each find the same achievement still locked
+ * and pay it twice.
  */
-export async function evaluateAchievements(): Promise<AchievementDef[]> {
+export function evaluateAchievements(): Promise<AchievementDef[]> {
+  const check = checking.then(evaluate)
+  checking = check.catch(() => {})
+  return check
+}
+
+/** A pass at a time: the XP can lift the level, and the level achievements unlocked by that are caught by the next pass. */
+async function evaluate(): Promise<AchievementDef[]> {
   const all: AchievementDef[] = []
   for (let pass = 0; pass < 3; pass++) {
     const unlocked = new Set((await db.achievements.toArray()).map(r => r.key))

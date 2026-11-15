@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, parseISO, subDays } from 'date-fns'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { foodsById } from '@/db/read'
 import { useNow } from '@/hooks/useNow'
 import { toDateStr } from '@/lib/date'
 import { loadStepBurns } from '@/lib/stepCalories'
@@ -113,10 +114,9 @@ export async function loadExpenditure(today: string): Promise<Expenditure> {
     db.foodLog.where('date').between(start, end, true, true).toArray(),
     db.bodyMetrics.where('date').between(start, today, true, true).toArray(),
   ])
-  const foods = await db.foods.bulkGet([...new Set(logs.map(l => l.foodId))])
-  const kcalOf = new Map(foods.flatMap(f => (f ? [[f.uuid, f.kcalPerServing] as const] : [])))
+  const foodOf = await foodsById()
   const eaten = new Map<string, number>()
-  for (const l of logs) eaten.set(l.date, (eaten.get(l.date) ?? 0) + (kcalOf.get(l.foodId) ?? 0) * l.servings)
+  for (const l of logs) eaten.set(l.date, (eaten.get(l.date) ?? 0) + (foodOf.get(l.foodId)?.kcalPerServing ?? 0) * l.servings)
 
   const burns = await loadStepBurns([...eaten.keys()])
   const walked = new Map([...burns].map(([date, burn]) => [date, burn.kcal]))

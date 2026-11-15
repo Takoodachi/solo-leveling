@@ -70,11 +70,14 @@ export function useActiveWorkout() {
   async function startFromRoutine(routine: Routine | RoutineTemplate, isTemplate = false): Promise<void> {
     if (guardExistingDraft()) return
     const exercises = await db.exercises.bulkGet(routine.exercises.map(e => e.exerciseId))
+    // All of them at once: one after the other, a seven-exercise routine waited seven times to open
+    const histories = await Promise.all(exercises.map(e => (e ? blockHistory(e.uuid) : undefined)))
     const blocks: BlockDraft[] = []
     for (const [i, re] of routine.exercises.entries()) {
       const exercise = exercises[i]
-      if (!exercise) continue
-      const { lastSets, trend, unit, lastPreload, recovery } = await blockHistory(exercise.uuid)
+      const history = histories[i]
+      if (!exercise || !history) continue
+      const { lastSets, trend, unit, lastPreload, recovery } = history
       const base = { exercise, lastSets, unit }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
