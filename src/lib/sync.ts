@@ -240,8 +240,8 @@ class SyncService {
           this.again = false
           // One pull per run: a write that landed meanwhile only needs pushing
           const run = await this.runOnce(userId, !pulled)
-          pulled ??= run.pull
-          errors = [...run.push, ...pulled]
+          if (run.pulled) pulled = run.pull
+          errors = [...run.push, ...(pulled ?? [])]
         } while (this.again && this.userId === userId)
         if (errors.length > 0) {
           console.error('[sync] finished with errors:', errors)
@@ -271,8 +271,8 @@ class SyncService {
     return n
   }
 
-  private async runOnce(userId: string, pull: boolean): Promise<{ push: string[]; pull: string[] }> {
-    const errors = { push: [] as string[], pull: [] as string[] }
+  private async runOnce(userId: string, pull: boolean): Promise<{ push: string[]; pull: string[]; pulled: boolean }> {
+    const errors = { push: [] as string[], pull: [] as string[], pulled: false }
     // Once the server is unreachable, skip the remaining tables instead of waiting
     // for each request to time out; the next trigger (reconnect, foreground, a write) retries.
     let unreachable = false
@@ -293,7 +293,8 @@ class SyncService {
 
     // Pull (skip if the user signed out meanwhile). Every table at once: one after another was
     // seventeen round trips, each waiting for the last, on a connection that carries them together.
-    if (pull && this.userId === userId) {
+    if (pull && this.userId === userId && !unreachable) {
+      errors.pulled = true
       await Promise.all([
         ...COLLECTIONS.map(spec => guard('pull', spec.remote, () => this.pullCollection(spec, userId))),
         ...SINGLETONS.map(spec => guard('pull', spec.remote, () => this.pullSingleton(spec, userId))),
