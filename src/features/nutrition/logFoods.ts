@@ -12,9 +12,14 @@ import { isQuickAdd, metricLabel, metricOf, ozLabel, ozOf, unitFor, usesGrams } 
 export type NewFoodLog = Pick<FoodLog, 'date' | 'foodId' | 'servings' | 'mealType'>
 export interface MealItem { foodId: string; servings: number }
 
+// What follows from the logs so far: each log's is worked out after the one before it
+let behind: Promise<unknown> = Promise.resolve()
+
 /**
- * Log one or more foods, then update the streak, target XP and achievements once.
- * Returns the new log ids (for undo).
+ * Log one or more foods; the streak, target XP and achievements follow once per batch.
+ * Returns the new log ids (for undo) as soon as the foods and the streak are saved: the XP and
+ * the achievements are worked out behind that (the first log of a visit waited a second or
+ * more for them, with a year of logs to read), then everything is synced.
  */
 export async function logFoods(entries: NewFoodLog[]): Promise<string[]> {
   if (entries.length === 0) return []
@@ -24,14 +29,19 @@ export async function logFoods(entries: NewFoodLog[]): Promise<string[]> {
 
   // Streak only updates when the user actually logged for today.
   const day = today()
-  if (entries.some(e => e.date === day)) {
-    await updateStreak()
-    for (const label of await checkDailyTargetsAndGrant(day)) {
-      toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
-    }
-  }
-  await announceAchievements(await evaluateAchievements())
-  requestSync()
+  const forToday = entries.some(e => e.date === day)
+  if (forToday) await updateStreak()
+  behind = behind
+    .then(async () => {
+      if (forToday) {
+        for (const label of await checkDailyTargetsAndGrant(day)) {
+          toast.success(`Hit your daily ${label} — +XP`, { icon: '🎯' })
+        }
+      }
+      await announceAchievements(await evaluateAchievements())
+    })
+    .catch((err: unknown) => console.error('[food] after logging:', err))
+    .finally(requestSync)
   return rows.map(r => r.uuid)
 }
 
