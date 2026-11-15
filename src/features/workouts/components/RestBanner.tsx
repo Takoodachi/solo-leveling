@@ -49,7 +49,8 @@ export default function RestBanner({ endAt, totalSeconds, onAdjust, onSkip, edge
           aria-live="polite"
         >
           <div className="h-1 bg-secondary">
-            <div className="h-full bg-primary transition-[width] duration-300 ease-linear" style={{ width: `${pct * 100}%` }} />
+            {/* Scaled, not resized: it moves the whole rest long, and a width would have the page laid out and painted again on every frame of it */}
+            <div className="h-full origin-left bg-primary transition-transform duration-300 ease-linear" style={{ transform: `scaleX(${pct})` }} />
           </div>
           <div className="flex items-center gap-3 p-3">
             <Timer size={20} className="ml-1 text-primary" />
