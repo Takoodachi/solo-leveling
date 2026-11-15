@@ -40,6 +40,22 @@ vi.stubGlobal('localStorage', {
 
 const { syncService } = await import('./sync')
 
+/** A row written past Dexie, as another page of the app would: this page never hears of it. */
+const writtenElsewhere = (store: string, row: unknown) => new Promise<void>((resolve, reject) => {
+  const open = indexedDB.open('SoloLevelingDB')
+  open.onerror = () => reject(open.error)
+  open.onsuccess = () => {
+    const idb = open.result
+    const tx = idb.transaction(store, 'readwrite')
+    tx.objectStore(store).put(row)
+    tx.onerror = () => reject(tx.error)
+    tx.oncomplete = () => {
+      idb.close()
+      resolve()
+    }
+  }
+})
+
 const log = (uuid: string) => ({ uuid, date: '2026-11-01', foodId: 'food-apple', servings: 1, mealType: 'snack' as const, updatedAt: 1, syncPending: true })
 const pushes = () => requests.filter(r => r.startsWith('push'))
 const pulls = () => requests.filter(r => r.startsWith('pull'))
@@ -72,6 +88,17 @@ describe('a sync run', () => {
     expect(read).toHaveBeenCalledTimes(1)
     expect(pushes()).toEqual(['push food_log 1'])
     read.mockRestore()
+  })
+
+  it('looks through every table again when the app comes back', async () => {
+    await syncService.sync('user-1')
+    await writtenElsewhere('foodLog', log('elsewhere')) // a reminder's log button, pressed with the app away
+    requests.length = 0
+    await syncService.sync('user-1')
+    expect(pushes()).toEqual([]) // nothing here wrote to the table, so it isn't looked through
+    syncService.requestAll()
+    await syncService.whenIdle()
+    expect(pushes()).toEqual(['push food_log 1'])
   })
 
   it('pushes a write that lands mid-run without pulling a second time', async () => {

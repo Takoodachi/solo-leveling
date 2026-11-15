@@ -219,6 +219,16 @@ class SyncService {
     if (this.userId) void this.sync(this.userId)
   }
 
+  /**
+   * The same, looking through every table again. For coming back to the app: while it was away,
+   * something else may have written here (a reminder's log button and the background step sync
+   * run in a page of their own), and this doesn't count on hearing of that.
+   */
+  requestAll(): void {
+    this.clean.clear()
+    this.request()
+  }
+
   /** Resolves once any in-flight sync has finished. */
   async whenIdle(): Promise<void> {
     while (this.running) await this.running
