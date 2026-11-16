@@ -286,6 +286,9 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const step = own > 0 && own <= usual * 2 ? own : usual
   const stepsFor = (share: number) => Math.max(1, Math.round((moved(top) * share) / step)) * step
   const next = assisted ? Math.max(0, loadable(top - step, top, lb)) : loadable(top + step, top, lb)
+  // What the walks below move by. In pounds never less than the 2.5 lb grid: rounding to it put a
+  // smaller step back where it was, the walk never ended, and the workout screen froze on Start
+  const walk = lb ? Math.max(step, 2.5) : step
 
   const target = Math.max(1, Math.round(targetReps ?? defaultTarget(name, gear)))
   const low = Math.max(1, target - (target >= 15 ? 4 : target >= 11 ? 3 : 2))
@@ -312,7 +315,7 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
     // reps stay in the range and the load within what ACSM allows at once
     const limit = moved(top) * (SMALL.test(name) || SINGLE_JOINT.test(name) ? 1 + MAX_JUMP / 2 : 1 + MAX_JUMP)
     let to = next
-    for (let w = loadable(to + step, top, lb); !assisted && repsWith(to, likely) >= target && repsWith(w, likely) >= low && moved(w) <= limit; w = loadable(w + step, top, lb)) to = w
+    for (let w = loadable(to + walk, top, lb); w > to && !assisted && repsWith(to, likely) >= target && repsWith(w, likely) >= low && moved(w) <= limit; w = loadable(w + walk, top, lb)) to = w
     const big = after(likely) < low
     const at = `${kg(top)} ${u}${assisted ? ' of assistance' : ''}`
     const got = to !== next
@@ -331,7 +334,11 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
   const best = Math.max(...work)
   if (effort === 'hard' && !assisted && best < low) {
     let down = loadable(top - step, top, lb)
-    while (down - step > 0 && repsWith(down, best) < low) down = loadable(down - step, top, lb)
+    while (down - walk > 0 && repsWith(down, best) < low) {
+      const lower = loadable(down - walk, top, lb)
+      if (lower >= down) break // whatever the rounding does, never the same weight twice
+      down = lower
+    }
     if (down > 0) {
       return {
         kind: 'reset',
