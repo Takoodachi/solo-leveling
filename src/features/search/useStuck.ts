@@ -15,8 +15,10 @@ export function useStuck(ref: RefObject<HTMLElement | null>): boolean {
     // Where it holds: its own `top`, read once
     const top = Math.round(parseFloat(getComputedStyle(el).top) || 0)
     // The line it holds at is the top of what's watched, which reaches past the screen on the
-    // other sides: so only holding at that line cuts into it
-    const observer = new IntersectionObserver(([entry]) => setStuck(entry.intersectionRatio < 1), {
+    // other sides: so only holding at that line cuts into it, and the observer says when that
+    // changes. Whether it holds is then where its top is: going by how much of it is inside, a
+    // screen sliding in from the side (a tab) counted as holding, and the fill came on and faded away
+    const observer = new IntersectionObserver(([entry]) => setStuck(entry.boundingClientRect.top <= top + 0.5), {
       threshold: 1,
       rootMargin: `${-(top + 1)}px 100px 100% 100px`,
     })

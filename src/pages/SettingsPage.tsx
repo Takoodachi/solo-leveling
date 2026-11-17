@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings" bar={false} />
       <SettingsSearch query={query} onQuery={setQuery} />
       {/* While searching, the results stand in for the sections */}
       {!query.trim() && (

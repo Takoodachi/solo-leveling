@@ -1,5 +1,8 @@
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Search, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useStuck } from '@/features/search/useStuck'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import { SETTING_ENTRIES } from '@/features/search/searchIndex'
@@ -18,6 +21,8 @@ interface Props {
  */
 export default function SettingsSearch({ query, onQuery }: Props) {
   const navigate = useNavigate()
+  const strip = useRef<HTMLDivElement>(null)
+  const stuck = useStuck(strip)
   const signedIn = useAuthStore(s => !!s.userId)
   const searching = query.trim().length > 0
   const entries = SETTING_ENTRIES.filter(e => (e.only !== 'signedIn' || signedIn) && (e.only !== 'account' || isSupabaseConfigured))
@@ -31,30 +36,33 @@ export default function SettingsSearch({ query, onQuery }: Props) {
 
   return (
     <>
-      <div className="relative">
-        <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={query}
-          onChange={e => onQuery(e.target.value)}
-          placeholder="Search, or say what to change"
-          aria-label="Search settings, or say what you'd like to change"
-          enterKeyHint="search"
-          className="bg-card px-11 [&::-webkit-search-cancel-button]:hidden"
-          onKeyDown={e => {
-            if (e.key === 'Enter' && results[0]?.to) open(results[0].to)
-          }}
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => onQuery('')}
-            className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground"
-            aria-label="Clear search"
-          >
-            <X size={18} />
-          </button>
-        )}
+      {/* Holds the top as the page scrolls, and only then is a bar: Home's search does the same (HomeSearch) */}
+      <div ref={strip} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -my-2 bg-background/90 px-4 py-2 backdrop-blur-xl transition-colors duration-300 ease-out', !stuck && 'wallpaper-clear')}>
+        <div className="relative">
+          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={query}
+            onChange={e => onQuery(e.target.value)}
+            placeholder="Search, or say what to change"
+            aria-label="Search settings, or say what you'd like to change"
+            enterKeyHint="search"
+            className="bg-card px-11 [&::-webkit-search-cancel-button]:hidden"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && results[0]?.to) open(results[0].to)
+            }}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => onQuery('')}
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground"
+              aria-label="Clear search"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
       {searching && (results.length > 0 ? (
         <ul className="overflow-hidden rounded-3xl bg-card" aria-label="Settings found">

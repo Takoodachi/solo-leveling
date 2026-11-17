@@ -93,9 +93,10 @@
   * {
     @apply border-border;
   }
-  /* A link to #a-section (search results) lands below the compact title bar (PageHeader), not under it */
+  /* A link to #a-section (search results, reminders) lands below what holds the top of the screen:
+     the compact title bar (PageHeader, 44 px) or a sticky search strip (Home, Settings: 64 px) */
   [id] {
-    scroll-margin-top: calc(env(safe-area-inset-top) + 3.5rem);
+    scroll-margin-top: calc(env(safe-area-inset-top) + 4.5rem);
   }
   html,
   body {
@@ -111,10 +112,6 @@
   }
   *::-webkit-scrollbar {
     display: none;
-  }
-  /* Search links land on #sections: keep them clear of the status bar. */
-  [id] {
-    scroll-margin-top: calc(env(safe-area-inset-top) + 1rem);
   }
   body {
     @apply text-foreground;
