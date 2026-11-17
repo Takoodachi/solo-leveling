@@ -4,7 +4,8 @@ import { useCloseOnBack } from '@/hooks/useAndroidBack'
 import { buzz } from '@/lib/haptics'
 import { Burst, Glow, Rays, RisingChevrons } from '@/features/ranks/components/RankUpEffects'
 import { centered, type SceneTiming } from '@/features/ranks/rankUpCeremony'
-import { ACHIEVEMENT_CATEGORIES, achievementDef, achievementXp } from '../achievements'
+import { useUnits } from '@/features/settings/units'
+import { ACHIEVEMENT_CATEGORIES, achievementDef, achievementXp, describeAchievement } from '../achievements'
 import { endCelebration, useCelebration } from '../celebration'
 
 // The theme's accent carries the light show; the stage is always dark, like the rank-up sequence's
@@ -20,6 +21,7 @@ export default function AchievementCelebration() {
   const { key, goal } = useCelebration()
   const def = key ? achievementDef(key) : undefined
   const still = useReducedMotion()
+  const unit = useUnits(s => s.weight)
   useCloseOnBack(!!def, endCelebration)
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function AchievementCelebration() {
         {def.title}
       </motion.h2>
       <motion.p id="achievement-about" className="relative mt-2 max-w-xs text-balance text-base text-zinc-300" {...rise(0.6)}>
-        {def.description}
+        {describeAchievement(def, unit)}
       </motion.p>
       {category && (
         <motion.p className="relative mt-3 text-xs font-semibold uppercase tracking-widest text-zinc-500" {...rise(0.7)}>

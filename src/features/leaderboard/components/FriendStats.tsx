@@ -3,9 +3,12 @@ import RankBadge from '@/features/ranks/components/RankBadge'
 import { rankFor } from '@/features/ranks/tiers'
 import type { LeaderboardSnapshot } from '../types'
 import { ink } from '@/lib/colors'
+import { useUnits } from '@/features/settings/units'
+import { sharedSetText } from '../boards'
 
 /** Their strongest ranked lifts. */
 export function TopLifts({ s }: { s: LeaderboardSnapshot }) {
+  const unit = useUnits(state => state.weight)
   if (!s.lifts?.length) return <p className="rounded-3xl bg-card p-5 text-sm text-muted-foreground">No ranked lifts yet.</p>
   return (
     <ul className="flex flex-col divide-y divide-foreground/5 rounded-3xl bg-card px-4">
@@ -16,7 +19,7 @@ export function TopLifts({ s }: { s: LeaderboardSnapshot }) {
             <RankBadge tier={rank.tier.key} division={rank.division} size={36} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium">{l.name}</span>
-              <span className="block text-xs text-muted-foreground">{l.best} · {formatShortDate(l.date)}</span>
+              <span className="block text-xs text-muted-foreground">{sharedSetText(l.set, l.best, unit)} · {formatShortDate(l.date)}</span>
             </span>
             <span className="shrink-0 text-sm font-semibold" style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
           </li>

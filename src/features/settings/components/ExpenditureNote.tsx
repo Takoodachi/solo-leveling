@@ -1,4 +1,6 @@
 import { EXPENDITURE_NEEDS, type Expenditure } from '@/features/nutrition/expenditure'
+import type { WeightUnit } from '@/types'
+import { useUnits, weeklyChange } from '../units'
 
 interface Props {
   /** What the logs say is burned; undefined while it loads. */
@@ -8,10 +10,11 @@ interface Props {
 }
 
 const kcal = (n: number) => `${n.toLocaleString()} kcal`
-const weekly = (kg: number) => (Math.abs(kg) < 0.05 ? 'held steady' : `moved ${kg > 0 ? '+' : '−'}${Math.abs(kg).toFixed(1)} kg a week`)
+const weekly = (kg: number, unit: WeightUnit) => (Math.abs(kg) < 0.05 ? 'held steady' : `moved ${weeklyChange(kg, unit)}`)
 
 /** Under the goal: where the suggested targets come from, the logs or the formula, in plain numbers. */
 export default function ExpenditureNote({ measured, believable }: Props) {
+  const unit = useUnits(s => s.weight)
   if (!measured) return null
   const box = 'rounded-2xl bg-secondary px-4 py-3 text-xs leading-relaxed text-muted-foreground'
 
@@ -38,7 +41,7 @@ export default function ExpenditureNote({ measured, believable }: Props) {
   return (
     <p className={box}>
       <span className="font-semibold text-foreground">From your logs: about {kcal(measured.kcal)} a day.</span>{' '}
-      Over the last {EXPENDITURE_NEEDS.windowDays} days you ate about {kcal(measured.eaten)} a day and your weight {weekly(measured.kgPerWeek)}
+      Over the last {EXPENDITURE_NEEDS.windowDays} days you ate about {kcal(measured.eaten)} a day and your weight {weekly(measured.kgPerWeek, unit)}
       {measured.walked > 0 && <>; {kcal(measured.walked)} of it is walking, which is counted day by day</>}.
     </p>
   )

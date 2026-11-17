@@ -1,9 +1,10 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { REGION_LABEL, groupOfRegion, type MuscleGroup, type MuscleRegion } from '@/features/ranks/standards'
-import { RUNNING_SOURCE, describeRun, type RegionRank } from '@/features/ranks/computeRanks'
+import { RUNNING_SOURCE, describeBest, describeRun, type RegionRank } from '@/features/ranks/computeRanks'
 import { rankFor, type TierKey } from '@/features/ranks/tiers'
 import { totalXp } from '@/lib/xp'
-import type { LeaderboardEntry, LeaderboardSnapshot } from './types'
+import type { WeightUnit } from '@/types'
+import type { LeaderboardEntry, LeaderboardSnapshot, SharedSet } from './types'
 
 export type BoardKey = 'strength' | 'running' | 'week' | 'level'
 
@@ -88,10 +89,19 @@ export function regionsOf(s: LeaderboardSnapshot): RegionRank[] {
 }
 
 /** The set behind a friend's muscle rank, when their snapshot has it: it carries their top lifts and best run only. */
-export function sharedBest(s: LeaderboardSnapshot, region: RegionRank): { set: string; date: string } | null {
+export function sharedBest(s: LeaderboardSnapshot, region: RegionRank, unit: WeightUnit): { set: string; date: string } | null {
   if (region.topLift === RUNNING_SOURCE) return s.running ? { set: describeRun(s.running), date: s.running.date } : null
   const lift = s.lifts?.find(l => l.name === region.topLift)
-  return lift ? { set: lift.best, date: lift.date } : null
+  return lift ? { set: sharedSetText(lift.set, lift.best, unit), date: lift.date } : null
+}
+
+/** A number from a friend's snapshot, if it's one a set could have (it's their data, not ours). */
+const plausible = (n: unknown, most: number) => (typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= most ? n : undefined)
+
+/** A friend's best set in your unit, from its numbers; as their app wrote it (in kg) when it sent none. */
+export function sharedSetText(set: SharedSet | undefined, written: string, unit: WeightUnit): string {
+  const best = { weight: plausible(set?.w, 2000), reps: plausible(set?.r, 1000), duration: plausible(set?.d, 600) }
+  return best.reps || best.duration ? describeBest(best, unit) : written
 }
 
 // The owner's call: a back extension or a hip thrust alone shouldn't take the back or the legs on the leaderboard

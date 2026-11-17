@@ -15,18 +15,21 @@ import { today, formatShortDate, toDateStr } from '@/lib/date'
 import { weightSlope, withTrend } from '@/lib/weightTrend'
 import { showKeyboard } from '@/lib/native'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import type { WeightUnit } from '@/types'
+import { bodyKg, bodyText, bodyWeight, inUnit, useUnits, weeklyChange } from '@/features/settings/units'
 
 /** The pace is read over this many days up to the latest weigh-in. */
 const PACE_DAYS = 28
 
-/** "+0.4 kg a week", or that it's steady: stated the same way up or down. */
-function pace(kgPerWeek: number): string {
+/** "+0.4 kg a week" (in the unit shown), or that it's steady: stated the same way up or down. */
+function pace(kgPerWeek: number, unit: WeightUnit): string {
   if (Math.abs(kgPerWeek) < 0.05) return 'Steady'
-  return `${kgPerWeek > 0 ? '+' : '−'}${Math.abs(kgPerWeek).toFixed(1)} kg a week`
+  return weeklyChange(kgPerWeek, unit)
 }
 
 export default function WeightLogPage() {
   const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
+  const unit = useUnits(s => s.weight)
   const [weight, setWeight] = useState('')
   // The weigh-in reminder opens /analytics/weight?log=1: straight into the field, keyboard up
   const [params] = useSearchParams()
@@ -42,7 +45,7 @@ export default function WeightLogPage() {
   useUnsavedChanges('weigh-in', weight.trim() !== '', 'this weigh-in')
 
   async function handleSave() {
-    const kg = Number(weight)
+    const kg = bodyKg(Number(weight.replace(',', '.')), unit)
     if (!kg || kg <= 0 || kg > 500) return
     setSaving(true)
     await logWeight(date, kg)
@@ -52,7 +55,7 @@ export default function WeightLogPage() {
 
   // Oldest first, each weigh-in with the trend at that point
   const points = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date)))
-  const chartData = points.map(m => ({ date: m.date, label: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
+  const chartData = points.map(m => ({ date: m.date, label: formatShortDate(m.date), weight: bodyWeight(m.weightKg, unit), trend: bodyWeight(m.trend, unit) }))
   const latest = metrics[0]
   const trendNow = points.at(-1)?.trend
   const since = latest ? toDateStr(subDays(parseISO(latest.date), PACE_DAYS)) : ''
@@ -66,14 +69,14 @@ export default function WeightLogPage() {
         <div className="grid grid-cols-2 gap-3 rounded-3xl bg-card p-4">
           <div>
             <p className="text-xs text-muted-foreground">Latest</p>
-            <p className="text-3xl font-bold">{latest.weightKg} <span className="text-lg font-normal text-muted-foreground">kg</span></p>
+            <p className="text-3xl font-bold">{bodyWeight(latest.weightKg, unit)} <span className="text-lg font-normal text-muted-foreground">{unit}</span></p>
             <p className="text-xs text-muted-foreground mt-0.5">{formatShortDate(latest.date)}</p>
           </div>
           {trendNow != null && points.length > 1 && (
             <div>
               <p className="text-xs text-muted-foreground">Trend</p>
-              <p className="text-3xl font-bold">{trendNow.toFixed(1)} <span className="text-lg font-normal text-muted-foreground">kg</span></p>
-              <p className="text-xs text-muted-foreground mt-0.5">{slope != null ? pace(slope * 7) : 'Pace after a week of weigh-ins'}</p>
+              <p className="text-3xl font-bold">{inUnit(trendNow, unit).toFixed(1)} <span className="text-lg font-normal text-muted-foreground">{unit}</span></p>
+              <p className="text-xs text-muted-foreground mt-0.5">{slope != null ? pace(slope * 7, unit) : 'Pace after a week of weigh-ins'}</p>
             </div>
           )}
         </div>
@@ -88,13 +91,13 @@ export default function WeightLogPage() {
             <DatePicker id="weight-date" value={date} onChange={setDate} max={today()} />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="weight-kg">Weight (kg)</Label>
+            <Label htmlFor="weight-kg">Weight ({unit})</Label>
             <Input
               id="weight-kg"
               ref={field}
               type="number"
               inputMode="decimal"
-              placeholder="70.5"
+              placeholder={unit === 'lb' ? '155.5' : '70.5'}
               value={weight}
               onChange={e => setWeight(e.target.value)}
             />
@@ -120,7 +123,7 @@ export default function WeightLogPage() {
             <LineChart data={chartData} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} domain={['auto', 'auto']} width={36} />
-              <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+              <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} ${unit}`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
               <Line type="monotone" dataKey="weight" stroke="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
               <Line type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
             </LineChart>
@@ -143,7 +146,7 @@ export default function WeightLogPage() {
               <div key={m.uuid} className="flex items-center justify-between border-b border-border last:border-0">
                 <span className="text-sm">{formatShortDate(m.date)}</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium">{m.weightKg} kg</span>
+                  <span className="text-sm font-medium">{bodyText(m.weightKg, unit)}</span>
                   <button
                     type="button"
                     onClick={() => void deleteMetric(m)}

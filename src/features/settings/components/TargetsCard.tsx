@@ -4,9 +4,11 @@ import NumberStepper from '@/components/NumberStepper'
 import { AVERAGE_BODY_KG, countsSteps } from '@/lib/stepCalories'
 import { useSettings, DEFAULT_STEP_GOAL } from '../hooks/useSettings'
 import TargetForm from './TargetForm'
+import { bodyText, useUnits } from '../units'
 
 export default function TargetsCard() {
   const { settings, updateSettings } = useSettings()
+  const unit = useUnits(s => s.weight)
 
   return (
     <div className="flex flex-col gap-4">
@@ -19,7 +21,7 @@ export default function TargetsCard() {
           <div>
             <Label className="text-sm">Subtract step calories</Label>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              What your steps burn comes off the calories you ate, worked out from your weight and height ({AVERAGE_BODY_KG} kg until you log a weight).
+              What your steps burn comes off the calories you ate, worked out from your weight and height ({bodyText(AVERAGE_BODY_KG, unit)} until you log a weight).
               Carbs and fat targets grow to match; protein stays. Workouts aren’t counted.
             </p>
           </div>

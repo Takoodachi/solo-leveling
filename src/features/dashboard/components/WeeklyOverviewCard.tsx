@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip } from 'recharts'
 import { dayLabel, tooltipStyle, scrub, lineCursor } from '@/features/analytics/chartStyles'
 import type { DaySummary } from '../hooks/useWeekSummary'
+import { inUnit, useUnits } from '@/features/settings/units'
 
 interface Props {
   days: DaySummary[]
@@ -15,6 +16,7 @@ interface Props {
  */
 export default function WeeklyOverviewCard({ days, today }: Props) {
   const maxVol = Math.max(1, ...days.map(d => d.volume))
+  const unit = useUnits(s => s.weight)
   const maxKcal = Math.max(1, ...days.map(d => d.kcal))
   const data = days.map(d => ({
     date: d.date,
@@ -60,7 +62,7 @@ export default function WeeklyOverviewCard({ days, today }: Props) {
               formatter={(_, key, item) => {
                 const raw = (item.payload as { raw: DaySummary }).raw
                 return key === 'volume'
-                  ? [`${Math.round(raw.volume).toLocaleString()} kg`, 'Volume']
+                  ? [`${Math.round(inUnit(raw.volume, unit)).toLocaleString()} ${unit}`, 'Volume']
                   : [`${Math.round(raw.kcal).toLocaleString()} kcal`, 'Calories']
               }}
             />

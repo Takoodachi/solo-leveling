@@ -1,4 +1,4 @@
-import type { Exercise, RoutineCategory, RoutineExercise, WorkoutSet } from '@/types'
+import type { Exercise, RoutineCategory, RoutineExercise, WeightUnit, WorkoutSet } from '@/types'
 import { cardioKcal, cardioMet, type CardioEntry } from './cardio'
 
 export const DEFAULT_BODY_KG = 70
@@ -136,7 +136,12 @@ export function estimateWorkoutKcal(opts: {
   return Math.round(cardio + opts.liftMet * kg * (rest / 60))
 }
 
-export function formatVolume(kg: number): string {
+/** A total lifted, in the unit shown (Settings → Units): "12,345 kg" or "12.3t", "27,216 lb" or "27.2k lb". */
+export function formatVolume(kg: number, unit: WeightUnit): string {
+  if (unit === 'lb') {
+    const lb = kg / 0.45359237
+    return lb >= 10000 ? `${(lb / 1000).toFixed(1)}k lb` : `${Math.round(lb).toLocaleString()} lb`
+  }
   if (kg >= 10000) return `${(kg / 1000).toFixed(1)}t`
   return `${Math.round(kg).toLocaleString()} kg`
 }

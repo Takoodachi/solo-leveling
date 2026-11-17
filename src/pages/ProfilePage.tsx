@@ -12,6 +12,7 @@ import SettingsSection from '@/features/settings/components/SettingsSection'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 import { useTargets } from '@/features/nutrition/hooks/useTargets'
+import { bodyText, heightText, useUnits } from '@/features/settings/units'
 
 const GOAL = { cut: 'Cut', maintain: 'Maintain', bulk: 'Bulk' }
 
@@ -21,7 +22,8 @@ export default function ProfilePage() {
   const { settings } = useSettings()
   const weight = useBodyMetrics(1).metrics?.[0]?.weightKg
   const { targets } = useTargets()
-  const body = [settings?.goalType && GOAL[settings.goalType], settings?.heightCm && `${settings.heightCm} cm`, weight && `${weight} kg`].filter(Boolean).join(' · ')
+  const units = useUnits()
+  const body = [settings?.goalType && GOAL[settings.goalType], settings?.heightCm && heightText(settings.heightCm, units.height), weight && bodyText(weight, units.weight)].filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-6">

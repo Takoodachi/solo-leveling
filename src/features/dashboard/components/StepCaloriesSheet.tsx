@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { formatKcal } from '@/lib/format'
 import { AVERAGE_BODY_KG, NET_KCAL_PER_KG_KM, type StepBurn } from '@/lib/stepCalories'
+import { bodyText, heightText, useUnits } from '@/features/settings/units'
 
 interface Props {
   open: boolean
@@ -13,6 +14,7 @@ interface Props {
 
 /** How the day's step calories were worked out, and what they come off. */
 export default function StepCaloriesSheet({ open, onClose, eaten, burn, target }: Props) {
+  const units = useUnits()
   const rows = [
     { label: 'Eaten', value: `${formatKcal(eaten)} kcal` },
     { label: `${burn.steps.toLocaleString()} steps · ${burn.km.toFixed(1)} km`, value: `−${formatKcal(burn.kcal)} kcal` },
@@ -40,16 +42,16 @@ export default function StepCaloriesSheet({ open, onClose, eaten, burn, target }
 
         <div className="mt-4 flex flex-col gap-2 text-xs leading-relaxed text-muted-foreground">
           <p>
-            Walking burns about {NET_KCAL_PER_KG_KM} kcal per kg of body weight per km on top of what you burn at rest,
+            Walking burns about {units.weight === 'lb' ? (NET_KCAL_PER_KG_KM * 0.45359237).toFixed(2) : NET_KCAL_PER_KG_KM} kcal per {units.weight} of body weight per km on top of what you burn at rest,
             which your target already covers.
           </p>
           <p>
             {burn.weightDate
-              ? `Body weight: ${burn.weightKg} kg (weigh-in ${format(parseISO(burn.weightDate), 'd MMM')}).`
-              : `Body weight: ${AVERAGE_BODY_KG} kg, an average adult. Log your weight for your own number.`}{' '}
+              ? `Body weight: ${bodyText(burn.weightKg, units.weight)} (weigh-in ${format(parseISO(burn.weightDate), 'd MMM')}).`
+              : `Body weight: ${bodyText(AVERAGE_BODY_KG, units.weight)}, an average adult. Log your weight for your own number.`}{' '}
             {burn.averageHeight
               ? `Step length ${(burn.km * 1000 / burn.steps).toFixed(2)} m from an average height; set yours in Profile.`
-              : `Step length ${(burn.km * 1000 / burn.steps).toFixed(2)} m from your height (${burn.heightCm} cm).`}
+              : `Step length ${(burn.km * 1000 / burn.steps).toFixed(2)} m from your height (${heightText(burn.heightCm, units.height)}).`}
           </p>
           <p>Carbs and fat targets grow by the same amount; protein stays. Workouts aren’t subtracted, since there’s no reliable way to measure them.</p>
         </div>

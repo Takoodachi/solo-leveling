@@ -1,6 +1,8 @@
 import { format } from 'date-fns'
 import { Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useUnits } from '@/features/settings/units'
+import { describeAchievement } from '../achievements'
 import type { AchievementView } from '../store'
 
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
 
 /** One achievement in a grid: its icon and name, the date it was earned or how far along it is. */
 export default function AchievementTile({ achievement: a, progress, isGoal, onOpen }: Props) {
+  const unit = useUnits(s => s.weight)
   return (
     <button
       type="button"
@@ -26,7 +29,7 @@ export default function AchievementTile({ achievement: a, progress, isGoal, onOp
         <span className="text-[10px] leading-tight text-muted-foreground">{a.unlockedAt ? format(new Date(a.unlockedAt), 'MMM d, yyyy') : 'Unlocked'}</span>
       ) : (
         <>
-          <span className="text-[10px] leading-tight text-muted-foreground">{a.description}</span>
+          <span className="text-[10px] leading-tight text-muted-foreground">{describeAchievement(a, unit)}</span>
           {progress !== undefined && (
             <span className="mt-auto block h-1 w-4/5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
               <span className="block h-full rounded-full bg-primary" style={{ width: `${progress * 100}%` }} />

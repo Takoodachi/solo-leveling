@@ -55,11 +55,19 @@ export interface SharedRoutineItem {
   ex?: { name: string; category: string; type: ExerciseType; unit: Exercise['defaultUnit'] }
 }
 
+/** A best set as numbers (kg, reps, minutes), so whoever reads it sees it in their own units. */
+export interface SharedSet {
+  w?: number
+  r?: number
+  d?: number
+}
+
 export interface SharedLift {
   name: string
   rating: number
-  /** "100 kg × 5", "15 reps", "1:30 hold". */
+  /** "100 kg × 5", "15 reps", "1:30 hold": in kg, for apps from before `set`. */
   best: string
+  set?: SharedSet
   date: string
 }
 
@@ -67,7 +75,9 @@ export interface Highlight {
   kind: 'lift' | 'run'
   name: string
   rating: number
+  /** A lift's in kg, as `best` above; a run's distance and time. */
   detail: string
+  set?: SharedSet
   date: string
 }
 

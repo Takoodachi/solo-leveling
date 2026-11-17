@@ -9,20 +9,22 @@ import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 import { today } from '@/lib/date'
 import type { RanksSnapshot } from '../computeRanks'
 import type { Sex } from '../standards'
+import { bodyKg, useUnits } from '@/features/settings/units'
 
 /** Ranks are scored against lifters of your sex and bodyweight, so ask for both once. */
 export default function RankSetupCard({ ranks }: { ranks: RanksSnapshot }) {
   const { updateSettings } = useSettings()
   const { logWeight } = useBodyMetrics(1)
   const [sex, setSex] = useState<Sex | ''>(ranks.sex ?? '')
-  const [weight, setWeight] = useState(ranks.bodyKg != null ? String(ranks.bodyKg) : '')
-  const kg = Number(weight.replace(',', '.'))
+  const unit = useUnits(s => s.weight)
+  const [weight, setWeight] = useState('')
+  const kg = bodyKg(Number(weight.replace(',', '.')), unit)
   const valid = sex !== '' && kg >= 30 && kg <= 300
 
   async function save() {
     if (!valid) return
     if (sex !== ranks.sex) await updateSettings({ sex })
-    if (ranks.bodyKg == null) await logWeight(today(), Math.round(kg * 10) / 10)
+    if (ranks.bodyKg == null) await logWeight(today(), kg)
     toast.success('Ranks unlocked')
   }
 
@@ -40,8 +42,8 @@ export default function RankSetupCard({ ranks }: { ranks: RanksSnapshot }) {
       </div>
       {ranks.bodyKg == null && (
         <div className="flex flex-col gap-1.5">
-          <Label>Body weight today (kg)</Label>
-          <NumberStepper value={weight} onChange={setWeight} step={0.5} min={30} max={300} inputMode="decimal" placeholder="75" />
+          <Label>Body weight today ({unit})</Label>
+          <NumberStepper value={weight} onChange={setWeight} step={unit === 'lb' ? 1 : 0.5} min={unit === 'lb' ? 66 : 30} max={unit === 'lb' ? 660 : 300} inputMode="decimal" placeholder={unit === 'lb' ? '165' : '75'} />
         </div>
       )}
       <Button disabled={!valid} onClick={() => void save()}>Show my ranks</Button>

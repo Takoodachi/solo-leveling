@@ -12,7 +12,8 @@ import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCar
 import ShareWorkoutDialog from '@/features/workouts/components/ShareWorkoutDialog'
 import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
 import { canEditWorkout, EDIT_WINDOW_DAYS, useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
-import { useLbExercises } from '@/features/workouts/hooks/useExerciseNote'
+import { useExerciseUnits } from '@/features/workouts/hooks/useExerciseNote'
+import { useUnits } from '@/features/settings/units'
 import { describeSet } from '@/features/workouts/describeSet'
 import { useNow } from '@/hooks/useNow'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
@@ -58,7 +59,8 @@ function WorkoutSummary() {
   const [computed, setComputed] = useState<{ bests: NewBest[]; rankUps: RankUp[] } | null>(null)
   const [replay, setReplay] = useState<RankUp | null>(null)
   const [sharing, setSharing] = useState(false)
-  const lbExercises = useLbExercises()
+  const unitOf = useExerciseUnits()
+  const unit = useUnits(s => s.weight)
   const stillness = useReducedMotion()
   const celebrate = state?.celebrate === true
 
@@ -126,7 +128,7 @@ function WorkoutSummary() {
           <h2 className="mb-3 flex items-center gap-2 font-semibold"><Trophy size={18} className="text-primary" /> New bests</h2>
           <ul className="flex flex-col gap-2 text-sm">
             {bests.map(b => {
-              const d = describeBest(b)
+              const d = describeBest(b, unit)
               return (
                 <li key={`${b.exerciseId}-${b.kind ?? '1rm'}`} className="flex justify-between gap-3">
                   <span className="truncate">{b.exerciseName}</span>
@@ -144,7 +146,7 @@ function WorkoutSummary() {
           {groupByExercise(workout.sets).map(g => (
             <li key={g.name} className="py-3 first:pt-0 last:pb-0">
               <p className="font-medium">{g.name}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(s => describeSet(s, s.exercise, lbExercises.has(s.exerciseId) ? 'lb' : 'kg', true)).join('  ·  ')}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(s => describeSet(s, s.exercise, unitOf(s.exerciseId), true)).join('  ·  ')}</p>
             </li>
           ))}
         </ul>
@@ -170,7 +172,7 @@ function WorkoutSummary() {
           </>
         )}
       </div>
-      <ShareWorkoutDialog open={sharing} onOpenChange={setSharing} workout={workout} bests={bests} rankUps={rankUps} lb={lbExercises} />
+      <ShareWorkoutDialog open={sharing} onOpenChange={setSharing} workout={workout} bests={bests} rankUps={rankUps} unitOf={unitOf} />
     </FullScreen>
   )
 }

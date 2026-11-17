@@ -1,5 +1,7 @@
 import { formatDurationMin } from '@/lib/format'
 import { formatVolume } from '@/lib/workoutMath'
+import { fromKg } from '@/features/workouts/units'
+import { useUnits } from '@/features/settings/units'
 import { drawHeader, drawHeading, drawRankRow, drawTiles, finishCard, fit, font, FG, FOOTER_Y, PAD, CARD_W, startCard, type CardOwner, type Tile } from '@/features/share/card'
 import { headline } from './headline'
 import { periodLabel } from './period'
@@ -15,7 +17,7 @@ function stats(recap: Recap): Tile[] {
   const out: Tile[] = []
   if (training.workouts > 0) out.push({ value: String(training.workouts), label: training.workouts === 1 ? 'Workout' : 'Workouts' })
   if (training.activeMin > 0) out.push({ value: formatDurationMin(Math.round(training.activeMin)), label: 'Training time' })
-  if (training.volume > 0) out.push({ value: formatVolume(training.volume), label: `Lifted in ${training.sets} sets` })
+  if (training.volume > 0) out.push({ value: formatVolume(training.volume, useUnits.getState().weight), label: `Lifted in ${training.sets} sets` })
   if (steps.total > 0) out.push({ value: steps.total.toLocaleString(), label: 'Steps' })
   if (training.cardioKm > 0) out.push({ value: `${training.cardioKm.toFixed(1)} km`, label: 'Cardio' })
   return out.slice(0, 4)
@@ -45,7 +47,8 @@ export async function renderRecapCard(recap: Recap, owner: CardOwner, current: b
     y += 60
     for (const b of recap.bests) {
       if (y + 56 > FOOTER_Y - 40) break
-      const value = `${b.from} → ${b.to} ${b.kind === '1rm' ? 'kg' : 'km'}`
+      const unit = useUnits.getState().weight
+      const value = b.kind === '1rm' ? `${fromKg(b.from, unit)} → ${fromKg(b.to, unit)} ${unit}` : `${b.from} → ${b.to} km`
       font(ctx, 600, 30)
       const vw = ctx.measureText(value).width
       ctx.fillStyle = FG

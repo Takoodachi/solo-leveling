@@ -2,13 +2,13 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import type { HomeWidgetId, Settings, Targets } from '@/types'
 import { today } from '@/lib/date'
-import { round1 } from '@/lib/format'
 import { useSyncStatus } from '@/lib/syncStatus'
 import { useAuthStore } from '@/features/auth/authStore'
 import { logWeight } from '@/features/bodyMetrics/useBodyMetrics'
 import { DEFAULT_HOME_WIDGETS, homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
 import { updateSettings } from '@/features/settings/hooks/useSettings'
 import { formulaMaintenance, goalPace, suggestedTargets, type GoalType, type Sex } from '@/features/settings/targetSuggestion'
+import { bodyKg, bodyWeight, cmFrom, feetInches, unitsOf, type Units } from '@/features/settings/units'
 import { spreadDays, startPlan, type StarterPlanId } from './plans'
 
 export type TrackChoice = 'food' | 'steps' | 'water' | 'creatine'
@@ -39,10 +39,16 @@ export interface SetupForm {
   /** Profile photo, as the small data URL the profile keeps. */
   avatar?: string
   sex?: Sex
+  /** What height and weight are typed in; saved as the account's units. */
+  units: Units
+  /** Height as typed: in cm, or in feet and inches. */
   heightCm: string
-  weightKg: string
-  /** A redo: the weight already on record, so an unchanged one isn't logged again. */
-  weightBefore?: string
+  heightFt: string
+  heightIn: string
+  /** Weight as typed, in `units.weight`. */
+  weight: string
+  /** A redo: the weight already on record (kg), so an unchanged one isn't logged again. */
+  weightBefore?: number
   /** YYYY-MM-DD, or empty. */
   trainingSince: string
   goal: GoalType
@@ -60,7 +66,7 @@ export interface SetupForm {
 
 // Food, steps and water start chosen: a new user has a working Home without deciding anything
 export const EMPTY_SETUP: SetupForm = {
-  name: '', heightCm: '', weightKg: '', trainingSince: '', goal: 'maintain', workoutsPerWeek: 3,
+  name: '', units: unitsOf(undefined), heightCm: '', heightFt: '', heightIn: '', weight: '', trainingSince: '', goal: 'maintain', workoutsPerWeek: 3,
   plan: 'own', starter: 'full-body', days: spreadDays(3), track: ['food', 'steps', 'water'], targets: null,
 }
 
@@ -69,8 +75,32 @@ const within = (text: string, low: number, high: number): number | undefined => 
   const n = Number(text.replace(',', '.'))
   return text.trim() !== '' && Number.isFinite(n) && n >= low && n <= high ? n : undefined
 }
-export const heightOf = (form: SetupForm) => within(form.heightCm, 100, 250)
-export const weightOf = (form: SetupForm) => within(form.weightKg, 30, 300)
+/** The height typed, in cm. */
+export function heightOf(form: SetupForm): number | undefined {
+  if (form.units.height === 'cm') return within(form.heightCm, 100, 250)
+  const ft = within(form.heightFt, 3, 8)
+  const inches = form.heightIn.trim() ? within(form.heightIn, 0, 11.99) : 0
+  return ft != null && inches != null ? cmFrom(ft, inches) : undefined
+}
+/** The weight typed, in its own unit. */
+const typedWeight = (form: SetupForm) => (form.units.weight === 'lb' ? within(form.weight, 66, 660) : within(form.weight, 30, 300))
+/** The weight typed, in kg. */
+export function weightOf(form: SetupForm): number | undefined {
+  const typed = typedWeight(form)
+  return typed == null ? undefined : bodyKg(typed, form.units.weight)
+}
+
+/** The form with its body typed in other units: what's there is converted, not reread. */
+export function withUnits(form: SetupForm, units: Units): Partial<SetupForm> {
+  const height = heightOf(form)
+  const weight = weightOf(form)
+  const ftIn = height ? feetInches(height) : undefined
+  return {
+    units,
+    ...(height && ftIn ? { heightCm: String(height), heightFt: String(ftIn.ft), heightIn: String(ftIn.in) } : {}),
+    ...(weight ? { weight: String(bodyWeight(weight, units.weight)) } : {}),
+  }
+}
 
 /** The daily targets the form's numbers come to, once sex, height and weight are all there. */
 export function setupTargets(form: SetupForm) {
@@ -110,16 +140,20 @@ export function useNeedsSetup(ready: boolean): boolean {
 export async function savedSetup(): Promise<SetupForm> {
   const [settings, targets, weighIn] = await Promise.all([db.settings.get(1), db.targets.get(1), db.bodyMetrics.orderBy('date').last()])
   const cards = homeWidgetsFrom(settings)
-  const weight = weighIn ? String(weighIn.weightKg) : ''
+  const units = unitsOf(settings)
+  const ftIn = settings?.heightCm ? feetInches(settings.heightCm) : undefined
   const perWeek = settings?.weeklyWorkoutGoal ?? 3
   return {
     ...EMPTY_SETUP,
     name: settings?.displayName ?? '',
     avatar: settings?.avatar,
     sex: settings?.sex,
+    units,
     heightCm: settings?.heightCm ? String(settings.heightCm) : '',
-    weightKg: weight,
-    weightBefore: weight,
+    heightFt: ftIn ? String(ftIn.ft) : '',
+    heightIn: ftIn ? String(ftIn.in) : '',
+    weight: weighIn ? String(bodyWeight(weighIn.weightKg, units.weight)) : '',
+    weightBefore: weighIn?.weightKg,
     trainingSince: settings?.trainingSince ?? '',
     goal: settings?.goalType ?? 'maintain',
     workoutsPerWeek: perWeek,
@@ -160,11 +194,15 @@ export async function finishSetup(form: SetupForm | null, redo = false): Promise
       ? withTrackers(homeWidgetsFrom(await db.settings.get(1)), chosen)
       : DEFAULT_HOME_WIDGETS.filter(id => !TRACKABLE.includes(id) || chosen.includes(id))
     if (form.sex) settings.sex = form.sex
+    settings.weightUnit = form.units.weight
+    settings.heightUnit = form.units.height
     if (height) settings.heightCm = Math.round(height)
     if (form.trainingSince) settings.trainingSince = form.trainingSince
     settings.goalType = form.goal
     settings.weeklyWorkoutGoal = form.workoutsPerWeek
-    if (weight && form.weightKg !== form.weightBefore) await logWeight(today(), round1(weight))
+    // Unchanged = the number shown for the weight on record, in whichever unit it's shown in now
+    const unchanged = form.weightBefore != null && typedWeight(form) === bodyWeight(form.weightBefore, form.units.weight)
+    if (weight && !unchanged) await logWeight(today(), Math.round(weight * 100) / 100)
     const targets = typedTargets(form) ?? (redo ? null : setupTargets(form))
     if (targets) await db.targets.put({ id: 1, ...targets, updatedAt: Date.now(), syncPending: true })
     if (form.plan === 'starter') await startPlan(form.starter, form.days)

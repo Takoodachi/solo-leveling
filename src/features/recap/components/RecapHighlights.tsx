@@ -3,10 +3,13 @@ import { TrendingUp } from 'lucide-react'
 import { ink } from '@/lib/colors'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import type { Recap } from '../recap'
+import { shownWeight } from '@/features/workouts/units'
+import { useUnits } from '@/features/settings/units'
 
 /** The period's wins: overall rank and anything that beat every earlier session. */
 export default function RecapHighlights({ recap }: { recap: Recap }) {
   const { rank, bests } = recap
+  const unit = useUnits(s => s.weight)
   const rankedUp = !!rank && (!rank.from || rank.to.step > rank.from.step)
   const gained = rank?.from ? rank.to.rating - rank.from.rating : 0
   if (!rank && bests.length === 0) return null
@@ -38,7 +41,7 @@ export default function RecapHighlights({ recap }: { recap: Recap }) {
                 <span className="min-w-0 truncate font-medium">{b.name}</span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
                   {b.kind === '1rm' ? 'est. 1RM ' : 'longest '}
-                  {b.from} → <span className="font-semibold text-foreground">{b.to} {b.kind === '1rm' ? 'kg' : 'km'}</span>
+                  {b.kind === '1rm' ? shownWeight(b.from, unit) : b.from} → <span className="font-semibold text-foreground">{b.kind === '1rm' ? `${shownWeight(b.to, unit)} ${unit}` : `${b.to} km`}</span>
                 </span>
               </li>
             ))}

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Smartphone, ToggleRight, Trophy } from 'lucide-react'
+import { Bell, ChevronRight, ClipboardList, Cloud, DatabaseBackup, Dumbbell, Footprints, LayoutGrid, Palette, PanelBottom, Scale, Smartphone, ToggleRight, Trophy } from 'lucide-react'
+import UnitsCard from '@/features/settings/components/UnitsCard'
+import { unitsOf } from '@/features/settings/units'
 import PageHeader from '@/components/PageHeader'
 import Logo from '@/components/Logo'
 import { NAV_CHOICES, navTabsFrom } from '@/components/navTabs'
@@ -78,6 +80,9 @@ export default function SettingsPage() {
           )}
           <SettingsSection id="reminders" title="Reminders" summary={remindersOn ? `${remindersOn} on` : 'None on'} Icon={Bell}>
             <RemindersCard />
+          </SettingsSection>
+          <SettingsSection id="units" title="Units" summary={`${unitsOf(settings).weight} · ${unitsOf(settings).height === 'cm' ? 'cm' : 'ft, in'}`} Icon={Scale}>
+            <UnitsCard />
           </SettingsSection>
           <SettingsSection id="workouts" title="Workouts" summary={[settings?.workoutTips === false ? 'Tips off' : 'Tips on', music?.name].filter(Boolean).join(' · ')} Icon={Dumbbell}>
             <WorkoutPrefsCard />
