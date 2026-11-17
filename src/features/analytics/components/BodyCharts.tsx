@@ -9,19 +9,22 @@ import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSet
 import { useStepsHistory } from '../hooks/useTrainingAnalytics'
 import { tooltipStyle, axisTick, compactNumber, dayLabel, scrub, lineCursor, barCursor } from '../chartStyles'
 import ChartCard from './ChartCard'
+import { bodyText, bodyWeight, inUnit, useUnits } from '@/features/settings/units'
 
 export function WeightTrendCard() {
   const { metrics } = useBodyMetrics(30)
+  const unit = useUnits(s => s.weight)
   // The weigh-ins as dots; the line is the trend, with the day-to-day swings smoothed out
-  const data = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date))).map(m => ({ date: m.date, label: formatShortDate(m.date), weight: m.weightKg, trend: m.trend }))
+  const points = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date)))
+  const data = points.map(m => ({ date: m.date, label: formatShortDate(m.date), weight: bodyWeight(m.weightKg, unit), trend: bodyWeight(m.trend, unit) }))
   const latest = metrics[0]
-  const trend = data.at(-1)?.trend
+  const trend = points.at(-1)?.trend
 
   return (
     <ChartCard
       id="body-weight"
       title="Body weight"
-      subtitle={latest ? `${latest.weightKg} kg · ${formatShortDate(latest.date)}${trend != null && data.length > 1 ? ` · trend ${trend.toFixed(1)} kg` : ''}` : 'Not logged yet'}
+      subtitle={latest ? `${bodyText(latest.weightKg, unit)} · ${formatShortDate(latest.date)}${trend != null && data.length > 1 ? ` · trend ${inUnit(trend, unit).toFixed(1)} ${unit}` : ''}` : 'Not logged yet'}
       action={
         <Link to="/analytics/weight" className="-mr-2 flex items-center gap-0.5 rounded-full px-2 py-1 text-sm font-semibold text-primary">
           Log <ChevronRight size={16} />
@@ -41,7 +44,7 @@ export function WeightTrendCard() {
                 </defs>
                 <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis domain={['auto', 'auto']} tick={axisTick} axisLine={false} tickLine={false} width={40} />
-                <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} kg`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
+                <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} ${unit}`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
                 <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
                 <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
               </AreaChart>

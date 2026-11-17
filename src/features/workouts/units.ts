@@ -32,6 +32,9 @@ export function fromKg(kg: number, unit: WeightUnit | null | undefined): number 
   return tidy(kg / KG_PER_LB, 2)
 }
 
+/** A stored weight to read, not to edit: pounds to a tenth, since a weight typed in kg rarely makes a round pound (52.5 kg reads 115.7 lb). */
+export const shownWeight = (kg: number, unit: WeightUnit | null | undefined) => (isLb(unit) ? tidy(fromKg(kg, unit), 1) : kg)
+
 /** A gap between two weights (a plate jump) in the card's unit. */
 export const stepFromKg = (kg: number, unit: WeightUnit | null | undefined) => (isLb(unit) ? tidy(kg / KG_PER_LB, 1) : kg)
 

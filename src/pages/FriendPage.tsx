@@ -14,6 +14,7 @@ import Bodygraph from '@/features/ranks/components/Bodygraph'
 import RegionDetail from '@/features/ranks/components/RegionDetail'
 import { useLeaderboard } from '@/features/leaderboard/useLeaderboard'
 import { ago, regionsOf, sharedBest } from '@/features/leaderboard/boards'
+import { useUnits } from '@/features/settings/units'
 import HeadToHead from '@/features/leaderboard/components/HeadToHead'
 import Avatar from '@/features/leaderboard/components/Avatar'
 import CompareChart from '@/features/leaderboard/components/CompareChart'
@@ -34,6 +35,7 @@ export default function FriendPage() {
   const [showRoutines, setShowRoutines] = useState(() => linked != null || params.has('plan'))
   const self = id === 'me' || id === lb.userId
   const entry = self ? lb.me : (lb.rows ?? []).find(e => e.userId === id)
+  const unit = useUnits(u => u.weight)
 
   if (!entry) {
     return (
@@ -88,7 +90,7 @@ export default function FriendPage() {
           )}
         </div>
         <Bodygraph regions={regions} selected={selected} onSelect={setSelected} />
-        <RegionDetail region={region} best={region && sharedBest(s, region)} suggest={false} />
+        <RegionDetail region={region} best={region && sharedBest(s, region, unit)} suggest={false} />
       </section>
 
       {!self && lb.me && (

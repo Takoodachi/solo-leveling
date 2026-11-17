@@ -1,5 +1,6 @@
 import type { WorkoutWithSets } from '@/types'
 import { summaryStats } from '../summaryStats'
+import { useUnits } from '@/features/settings/units'
 import MusclesWorked from './MusclesWorked'
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -13,7 +14,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 /** The summary's figures (summaryStats.ts) and the muscles the workout worked. */
 export default function WorkoutSummaryCard({ workout }: { workout: WorkoutWithSets }) {
-  const stats = summaryStats(workout)
+  const stats = summaryStats(workout, useUnits(s => s.weight))
 
   return (
     <section className="rounded-3xl bg-card p-5 ring-1 ring-foreground/5 dark:bg-black/60">

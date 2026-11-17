@@ -1,3 +1,4 @@
+import type { WeightUnit } from '@/types'
 import { TIERS, type TierKey } from '@/features/ranks/tiers'
 
 /**
@@ -181,9 +182,17 @@ for (const metric of new Set(ACHIEVEMENT_DEFS.map(d => d.metric))) {
 }
 export const achievementXp = (def: AchievementDef) => xpByKey.get(def.key) ?? XP_STEPS[0]
 
+const LB_PER_TONNE = 1000 / 0.45359237
+const inPounds = (def: AchievementDef, unit: WeightUnit) => def.metric === 'volumeT' && unit === 'lb'
+
+/** What an achievement asks for, the tonnes ones in pounds on an lb account. */
+export const describeAchievement = (def: AchievementDef, unit: WeightUnit) =>
+  inPounds(def, unit) ? `Lift ${Math.round(def.target * LB_PER_TONNE).toLocaleString()} lb in total` : def.description
+
 /** "12 / 50 workouts": how far a count is towards an achievement, never shown past its target. */
-export function progressLabel(def: AchievementDef, value: number): string {
+export function progressLabel(def: AchievementDef, value: number, unit: WeightUnit): string {
   const shown = Math.min(value, def.target)
+  if (inPounds(def, unit)) return `${Math.floor(shown * LB_PER_TONNE).toLocaleString()} / ${Math.round(def.target * LB_PER_TONNE).toLocaleString()} lb`
   const tidy = (n: number) => (Number.isInteger(n) ? n : Math.floor(n * 10) / 10).toLocaleString()
   return `${tidy(shown)} / ${tidy(def.target)} ${METRIC_UNIT[def.metric]}`.trim()
 }

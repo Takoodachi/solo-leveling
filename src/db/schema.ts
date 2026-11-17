@@ -99,5 +99,16 @@ export class SoloLevelingDB extends Dexie {
       await tx.table('wallpapers').bulkPut(rows.map(({ key, ...row }) => ({ ...row, uuid: `${key}-${kind}`, syncPending: true })))
     })
     this.version(20).stores({ wallpaper: null })
+    this.version(21).stores({}).upgrade(async tx => {
+      // A lift's own unit used to be kg or lb, kg being everyone's. Now the account has a unit
+      // (Settings → Units) and a lift keeps one only to differ from it, so an old "kg" (a lift
+      // switched to lb and back) goes, and that lift follows the account. Sent up as cleared.
+      await tx.table('exerciseNotes').toCollection().modify((note: { unit?: string; updatedAt: number; syncPending?: boolean }) => {
+        if (note.unit !== 'kg') return
+        delete note.unit
+        note.updatedAt = Date.now()
+        note.syncPending = true
+      })
+    })
   }
 }

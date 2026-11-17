@@ -5,7 +5,8 @@ import { useNow } from '@/hooks/useNow'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { rankFor } from '@/features/ranks/tiers'
 import { useAuthStore } from '@/features/auth/authStore'
-import { ago, profileLink } from '../boards'
+import { ago, profileLink, sharedSetText } from '../boards'
+import { useUnits } from '@/features/settings/units'
 import { highlightKey, joinNames, markHighFivesSeen, useHighFiveStore } from '../highFives'
 import type { LeaderboardEntry } from '../types'
 import { ink } from '@/lib/colors'
@@ -20,6 +21,7 @@ const MAX = 8
  */
 export default function Highlights({ entries, canHighFive }: { entries: LeaderboardEntry[]; canHighFive: boolean }) {
   const now = useNow()
+  const unit = useUnits(s => s.weight)
   const userId = useAuthStore(s => s.userId)
   const online = useAuthStore(s => !!s.session)
   const { rows: fives, load, toggle } = useHighFiveStore()
@@ -57,7 +59,7 @@ export default function Highlights({ entries, canHighFive }: { entries: Leaderbo
                   <b>{h.who.me ? 'You' : h.who.name}</b> · {h.name}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {h.detail} · <span style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
+                  {h.kind === 'lift' ? sharedSetText(h.set, h.detail, unit) : h.detail} · <span style={{ color: ink(rank.tier.color) }}>{rank.label}</span>
                 </span>
                 {senders.length > 0 && (
                   <span className="mt-0.5 flex items-center gap-1 text-xs text-primary">

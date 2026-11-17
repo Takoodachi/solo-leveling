@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import type { WorkoutSetWithExercise, WorkoutWithSets } from '@/types'
+import type { WeightUnit, WorkoutSetWithExercise, WorkoutWithSets } from '@/types'
 import { formatDurationMin } from '@/lib/format'
 import { formatKm } from '@/lib/cardio'
 import { REGION_LABEL, type MuscleRegion } from '@/features/ranks/standards'
@@ -26,8 +26,10 @@ export interface WorkoutShare {
   workout: WorkoutWithSets
   bests: NewBest[]
   rankUps: RankUp[]
-  /** Exercises logged in pounds: their sets read in lb, as in the app. */
-  lb: ReadonlySet<string>
+  /** The unit each exercise's sets read in, as in the app (its own, else the account's). */
+  unitOf: (exerciseId: string) => WeightUnit
+  /** The unit everything else is shown in (Settings → Units). */
+  unit: WeightUnit
 }
 
 const plural = (n: number, word: string) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`
@@ -344,11 +346,11 @@ function musclesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], c: Colors): Bloc
 }
 
 /** The "Workout Summary" card: its figures two to a row, then the body map. */
-function summaryBlock(ctx: Ctx, workout: WorkoutWithSets, c: Colors): Block {
+function summaryBlock(ctx: Ctx, workout: WorkoutWithSets, unit: WeightUnit, c: Colors): Block {
   const col = (INNER - 24) / 2
   const VALUE: Type = { size: 18, line: 28, weight: 500 }
   setType(ctx, SM)
-  const cells = summaryStats(workout, { shared: true }).map(([label, value]) => ({ label: wrap(ctx, label, col, 3), value }))
+  const cells = summaryStats(workout, unit, { shared: true }).map(([label, value]) => ({ label: wrap(ctx, label, col, 3), value }))
   const cellH = (cell: (typeof cells)[number]) => cell.label.length * SM.line + 4 + VALUE.line
   const rows: { cells: typeof cells; height: number }[] = []
   for (let i = 0; i < cells.length; i += 2) {
@@ -432,7 +434,7 @@ function rankUpsBlock(ups: RankUp[], badges: (HTMLImageElement | null)[], c: Col
 }
 
 /** "New bests": the exercise, then "est. 1RM 63.1 → 68.9 kg". */
-function bestsBlock(bests: NewBest[], c: Colors): Block | null {
+function bestsBlock(bests: NewBest[], unit: WeightUnit, c: Colors): Block | null {
   if (bests.length === 0) return null
   return cardBlock({
     height: HEADING_H + bests.length * SM.line + 8 * (bests.length - 1),
@@ -440,7 +442,7 @@ function bestsBlock(bests: NewBest[], c: Colors): Block | null {
       heading(ctx, 'New bests', top, c, ICONS.trophy)
       bests.forEach((b, i) => {
         const y = top + HEADING_H + i * (SM.line + 8)
-        const d = describeBest(b)
+        const d = describeBest(b, unit)
         const lead = `${d.label} ${d.from} → `
         const toW = measure(ctx, d.to, SM, 600)
         const leadW = measure(ctx, lead, SM)
@@ -454,14 +456,14 @@ function bestsBlock(bests: NewBest[], c: Colors): Block | null {
 }
 
 /** "Exercises": each one's name over its sets, wrapped between sets rather than inside one. */
-function exercisesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], lb: ReadonlySet<string>, c: Colors): Block | null {
+function exercisesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], unitOf: WorkoutShare['unitOf'], c: Colors): Block | null {
   const groups = new Map<string, WorkoutSetWithExercise[]>()
   for (const s of sets) groups.set(s.exerciseId, [...(groups.get(s.exerciseId) ?? []), s])
   if (groups.size === 0) return null
   setType(ctx, SM)
   const sep = ' · '
   const items = [...groups.values()].map(group => {
-    const parts = group.map(s => describeSet(s, s.exercise, lb.has(s.exerciseId) ? 'lb' : 'kg', true))
+    const parts = group.map(s => describeSet(s, s.exercise, unitOf(s.exerciseId), true))
     const lines: string[] = []
     for (const part of parts) {
       const last = lines[lines.length - 1]
@@ -492,7 +494,7 @@ function exercisesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], lb: ReadonlySe
 }
 
 export async function renderWorkoutCard(share: WorkoutShare, owner: CardOwner): Promise<Blob> {
-  const { workout, bests, rankUps, lb } = share
+  const { workout, bests, rankUps, unitOf, unit } = share
   await Promise.all([
     document.fonts.load(`700 24px ${HEADING}`),
     document.fonts.load(`500 16px ${BODY}`),
@@ -510,10 +512,10 @@ export async function renderWorkoutCard(share: WorkoutShare, owner: CardOwner): 
   const blocks = [
     ownerBlock(ctx, owner, photo, c),
     titleBlock(ctx, workout, c),
-    summaryBlock(ctx, workout, c),
+    summaryBlock(ctx, workout, unit, c),
     rankUpsBlock(rankUps, badges, c),
-    bestsBlock(bests, c),
-    exercisesBlock(ctx, workout.sets, lb, c),
+    bestsBlock(bests, unit, c),
+    exercisesBlock(ctx, workout.sets, unitOf, c),
   ].filter((b): b is Block => b !== null)
   const height = TOP + blocks.reduce((h, b) => h + b.height, 0) + GAP * (blocks.length - 1) + 28
 

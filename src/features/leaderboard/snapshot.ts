@@ -7,11 +7,16 @@ import { toDateStr } from '@/lib/date'
 import { computeRanks, describeBest, describeRun, rankHistory } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
 import { showsRoutines } from './api'
-import type { Highlight, LeaderboardSnapshot, SharedRoutine } from './types'
+import type { Highlight, LeaderboardSnapshot, SharedRoutine, SharedSet } from './types'
 
 const HISTORY_WEEKS = 12
 const HIGHLIGHT_DAYS = 14
 const TOP_LIFTS = 5
+
+/** A best set as numbers, for friends to read in their own units. */
+function sharedSet(b: { weight?: number; reps?: number; duration?: number }): SharedSet {
+  return { ...(b.weight ? { w: b.weight } : {}), ...(b.reps ? { r: b.reps } : {}), ...(b.duration ? { d: b.duration } : {}) }
+}
 
 /** The streak as it stands today: one last logged more than three missed days ago has lapsed. */
 function liveStreak(stats: UserStats | undefined, now: Date): number {
@@ -61,7 +66,7 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
   const run = ranks.running
   const highlights: Highlight[] = ranks.lifts
     .filter(l => l.best.date >= since)
-    .map(l => ({ kind: 'lift' as const, name: l.name, rating: l.rank.rating, detail: describeBest(l.best), date: l.best.date }))
+    .map(l => ({ kind: 'lift' as const, name: l.name, rating: l.rank.rating, detail: describeBest(l.best, 'kg'), set: sharedSet(l.best), date: l.best.date }))
   if (run && run.best.date >= since) {
     highlights.push({
       kind: 'run', name: 'Running', rating: run.rank.rating,
@@ -84,7 +89,7 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
       duration: run.best.duration,
       date: run.best.date,
     },
-    lifts: ranks.lifts.slice(0, TOP_LIFTS).map(l => ({ name: l.name, rating: l.rank.rating, best: describeBest(l.best), date: l.best.date })),
+    lifts: ranks.lifts.slice(0, TOP_LIFTS).map(l => ({ name: l.name, rating: l.rank.rating, best: describeBest(l.best, 'kg'), set: sharedSet(l.best), date: l.best.date })),
     history: history.map(p => ({ d: p.date, o: p.overall, r: p.running })),
     week,
     highlights: highlights.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),

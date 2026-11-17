@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import type { WorkoutWithSets } from '@/types'
+import type { WeightUnit, WorkoutWithSets } from '@/types'
+import { useUnits } from '@/features/settings/units'
 import type { RankUp } from '@/features/ranks/computeRanks'
 import ShareImageDialog from '@/features/share/ShareImageDialog'
 import { useCardOwner } from '@/features/share/useCardOwner'
@@ -12,17 +13,15 @@ interface Props {
   workout: WorkoutWithSets
   bests: NewBest[]
   rankUps: RankUp[]
-  /** Exercises logged in pounds. */
-  lb: ReadonlySet<string>
+  /** The unit each exercise's sets read in (useExerciseUnits). */
+  unitOf: (exerciseId: string) => WeightUnit
 }
 
 /** A workout's summary as a picture to send (any workout: just finished, or from history). */
-export default function ShareWorkoutDialog({ open, onOpenChange, workout, bests, rankUps, lb }: Props) {
+export default function ShareWorkoutDialog({ open, onOpenChange, workout, bests, rankUps, unitOf }: Props) {
   const { name, avatar } = useCardOwner()
-  // The pound set is a new object every render: key it, or the card would be drawn again each time
-  const lbKey = [...lb].sort().join(',')
-  const lbIds = useMemo(() => new Set(lbKey ? lbKey.split(',') : []), [lbKey])
-  const share = useMemo(() => ({ workout, bests, rankUps, lb: lbIds }), [workout, bests, rankUps, lbIds])
+  const unit = useUnits(s => s.weight)
+  const share = useMemo(() => ({ workout, bests, rankUps, unitOf, unit }), [workout, bests, rankUps, unitOf, unit])
   const make = useCallback(() => renderWorkoutCard(share, { name, avatar }), [share, name, avatar])
   const title = workout.name?.trim() || 'Workout'
   const line = workoutHeadline(share)

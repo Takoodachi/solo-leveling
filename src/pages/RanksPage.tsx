@@ -12,6 +12,7 @@ import RankSetupCard from '@/features/ranks/components/RankSetupCard'
 import Bodygraph from '@/features/ranks/components/Bodygraph'
 import RegionDetail from '@/features/ranks/components/RegionDetail'
 import { bestBehind } from '@/features/ranks/computeRanks'
+import { useUnits } from '@/features/settings/units'
 import MuscleRankings from '@/features/ranks/components/MuscleRankings'
 import RankHistoryChart from '@/features/ranks/components/RankHistoryChart'
 import RunningRankCard from '@/features/ranks/components/RunningRankCard'
@@ -39,6 +40,7 @@ export default function RanksPage() {
   const ranks = useRanks()
   const [selected, setSelected] = useState<MuscleRegion | null>(null)
   const region = ranks?.regions.find(r => r.key === selected) ?? null
+  const unit = useUnits(s => s.weight)
   const isTab = useIsNavTab('/ranks')
   const [tab, setTab] = usePageTab('ranks', TABS.map(t => t.value), SECTION_TAB)
   const ladder = (
@@ -69,7 +71,7 @@ export default function RanksPage() {
               <section id="bodygraph" className="flex flex-col gap-3">
                 <h2 className="text-lg font-semibold">Ranked bodygraph</h2>
                 <Bodygraph regions={ranks.regions} selected={selected} onSelect={setSelected} />
-                <RegionDetail region={region} best={region && bestBehind(region, ranks)} />
+                <RegionDetail region={region} best={region && bestBehind(region, ranks, unit)} />
               </section>
               <section id="muscle-rankings" className="flex flex-col gap-3">
                 <h2 className="text-lg font-semibold">Muscle rankings</h2>

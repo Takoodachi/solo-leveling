@@ -6,7 +6,7 @@ import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { est1RM } from '@/lib/workoutMath'
 import { describeSet } from './describeSet'
 import { exerciseUnit } from './hooks/useExerciseNote'
-import { fromKg } from './units'
+import { shownWeight } from './units'
 
 /** How many past sessions the info sheet lists. */
 const SESSIONS_SHOWN = 5
@@ -63,7 +63,7 @@ function bestsOf(sets: DatedSet[], exercise: Exercise, unit: WeightUnit, day: (d
 
   const loaded = sets.filter(s => s.weight && s.reps)
   if (loaded.length > 0) {
-    const w = (kg: number) => `${fromKg(kg, unit)} ${unit}`
+    const w = (kg: number) => `${shownWeight(kg, unit)} ${unit}`
     add('Best set', top(loaded, s => est1RM(s.weight!, s.reps!)), s => `${w(s.weight!)} × ${s.reps} · est. 1RM ${w(Math.round(est1RM(s.weight!, s.reps!) * 10) / 10)}`)
     add('Heaviest', top(loaded, s => s.weight! * 1000 + s.reps!), s => `${w(s.weight!)} × ${s.reps}`) // more reps wins a tie
     // The same set twice says nothing new

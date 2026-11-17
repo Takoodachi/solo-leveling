@@ -14,6 +14,7 @@ import { toDateStr } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { countsSteps } from '@/lib/stepCalories'
 import { useSettings } from '../hooks/useSettings'
+import { cmFrom, feetInches, useUnits } from '../units'
 import { CUT_PACES, LOWEST_BELIEVABLE, formulaMaintenance, goalPace, restingKcal, suggestedTargets, type GoalType, type Sex } from '../targetSuggestion'
 import ExpenditureNote from './ExpenditureNote'
 
@@ -28,6 +29,29 @@ function bmiCategory(bmi: number) {
   if (bmi < 25) return { label: 'Normal', color: 'text-emerald-600 dark:text-emerald-400' }
   if (bmi < 30) return { label: 'Overweight', color: 'text-amber-600 dark:text-amber-300' }
   return { label: 'Obese', color: 'text-red-600 dark:text-red-400' }
+}
+
+/** Height, kept in cm and typed in the account's unit: cm, or feet and inches. */
+function HeightField({ cm, onChange }: { cm?: number; onChange: (cm: number | undefined) => void }) {
+  const unit = useUnits(s => s.height)
+  if (unit === 'cm') {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Label>Height (cm)</Label>
+        <NumberStepper value={String(cm ?? '')} onChange={v => onChange(Number(v) || undefined)} min={100} max={250} inputMode="numeric" placeholder="175" />
+      </div>
+    )
+  }
+  const now = cm ? feetInches(cm) : undefined
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>Height (feet and inches)</Label>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberStepper value={now ? String(now.ft) : ''} onChange={v => onChange(Number(v) > 0 ? cmFrom(Number(v), now?.in ?? 0) : undefined)} min={3} max={8} inputMode="numeric" placeholder="5 ft" />
+        <NumberStepper value={now ? String(now.in) : ''} onChange={v => now && onChange(cmFrom(now.ft, Number(v) || 0))} min={0} max={11} inputMode="numeric" placeholder="9 in" />
+      </div>
+    </div>
+  )
 }
 
 export default function BodyGoalsCard() {
@@ -57,10 +81,7 @@ export default function BodyGoalsCard() {
 
   return (
     <div className="flex flex-col gap-5 rounded-3xl bg-card p-5">
-      <div className="flex flex-col gap-1.5">
-        <Label>Height (cm)</Label>
-        <NumberStepper value={String(heightCm ?? '')} onChange={v => void updateSettings({ heightCm: Number(v) || undefined })} min={100} max={250} inputMode="numeric" placeholder="175" />
-      </div>
+      <HeightField cm={heightCm} onChange={cm => void updateSettings({ heightCm: cm })} />
       <div className="flex flex-col gap-1.5">
         <Label>Biological sex</Label>
         <Segmented size="sm" value={sex ?? ('' as Sex)} options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]} onChange={v => void updateSettings({ sex: v })} className="bg-secondary" />

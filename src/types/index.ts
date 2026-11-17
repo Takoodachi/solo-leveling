@@ -139,6 +139,8 @@ export interface Settings {
   id: 1
   displayName?: string
   heightCm?: number
+  weightUnit?: WeightUnit // every weight shown and typed in it, the body's and what's lifted (unset = kg; features/settings/units.ts)
+  heightUnit?: HeightUnit // cm, or feet and inches (unset = cm)
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
   goalPace?: number // a cut's pace, % of body weight a week (0.25 | 0.5 | 0.75; unset = 0.5; targetSuggestion.ts)
@@ -204,6 +206,7 @@ export interface Exercise {
 
 /** The unit an exercise is logged in. Stored weights are always kg. */
 export type WeightUnit = 'kg' | 'lb'
+export type HeightUnit = 'cm' | 'ftin'
 
 /**
  * What the user has set up for an exercise: their note (machine settings, grip, cues)

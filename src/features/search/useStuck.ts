@@ -18,12 +18,21 @@ export function useStuck(ref: RefObject<HTMLElement | null>): boolean {
     // other sides: so only holding at that line cuts into it, and the observer says when that
     // changes. Whether it holds is then where its top is: going by how much of it is inside, a
     // screen sliding in from the side (a tab) counted as holding, and the fill came on and faded away
-    const observer = new IntersectionObserver(([entry]) => setStuck(entry.boundingClientRect.top <= top + 0.5), {
+    const holds = (rectTop: number) => setStuck(rectTop <= top + 0.5)
+    const observer = new IntersectionObserver(([entry]) => holds(entry.boundingClientRect.top), {
       threshold: 1,
       rootMargin: `${-(top + 1)}px 100px 100% 100px`,
     })
     observer.observe(el)
-    return () => observer.disconnect()
+    // The observer only speaks when the strip goes from whole to cut or back. While its screen
+    // slides in, the slide cuts its side, so a jump to a #section or a restored scroll landing
+    // mid-slide went unreported and the strip stayed clear at the top: read it again once the slide ends
+    const settled = (e: AnimationEvent) => { if (e.target instanceof Node && e.target.contains(el)) holds(el.getBoundingClientRect().top) }
+    document.addEventListener('animationend', settled)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('animationend', settled)
+    }
   }, [ref])
   return stuck
 }

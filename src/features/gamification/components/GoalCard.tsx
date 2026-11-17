@@ -1,5 +1,6 @@
 import { Target } from 'lucide-react'
-import { progressLabel } from '../achievements'
+import { useUnits } from '@/features/settings/units'
+import { describeAchievement, progressLabel } from '../achievements'
 import type { AchievementView } from '../store'
 import { useRise } from '@/hooks/useRise'
 
@@ -14,6 +15,7 @@ interface Props {
 export default function GoalCard({ achievement: a, value, onOpen }: Props) {
   const pct = value === undefined ? 0 : Math.min(1, value / a.target)
   const rise = useRise(`goal:${a.key}`)
+  const unit = useUnits(s => s.weight)
   return (
     <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left">
       <span className="text-3xl" aria-hidden="true">{a.icon}</span>
@@ -22,11 +24,11 @@ export default function GoalCard({ achievement: a, value, onOpen }: Props) {
           <Target size={14} className="shrink-0 text-primary" aria-hidden="true" />
           <span className="truncate font-semibold">{a.title}</span>
         </span>
-        <span className="block truncate text-xs text-muted-foreground">{a.description}</span>
+        <span className="block truncate text-xs text-muted-foreground">{describeAchievement(a, unit)}</span>
         <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
           <span ref={rise} className="block h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${pct * 100}%` }} />
         </span>
-        <span className="mt-1 block text-xs tabular-nums text-muted-foreground">{value === undefined ? ' ' : progressLabel(a, value)}</span>
+        <span className="mt-1 block text-xs tabular-nums text-muted-foreground">{value === undefined ? ' ' : progressLabel(a, value, unit)}</span>
       </span>
     </button>
   )

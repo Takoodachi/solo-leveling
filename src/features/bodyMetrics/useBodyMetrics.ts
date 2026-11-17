@@ -4,6 +4,7 @@ import { db } from '@/db'
 import type { BodyMetric } from '@/types'
 import { requestSync, deleteSynced } from '@/lib/sync'
 import { formatShortDate } from '@/lib/date'
+import { bodyText, useUnits } from '@/features/settings/units'
 import { evaluateAchievements } from '@/lib/achievementEval'
 import { announceAchievements } from '@/features/gamification/announce'
 
@@ -44,7 +45,7 @@ export function useBodyMetrics(limit = 90) {
   /** Delete a weigh-in, with an Undo: one tap on a bin shouldn't be final. */
   async function deleteMetric(m: BodyMetric): Promise<void> {
     await deleteSynced(db.bodyMetrics, 'body_metrics', [m.uuid])
-    toast(`Removed ${m.weightKg} kg on ${formatShortDate(m.date)}`, {
+    toast(`Removed ${bodyText(m.weightKg, useUnits.getState().weight)} on ${formatShortDate(m.date)}`, {
       action: { label: 'Undo', onClick: () => void logWeight(m.date, m.weightKg, m.notes) },
     })
   }

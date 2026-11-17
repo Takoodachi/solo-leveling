@@ -1,7 +1,8 @@
 import { endOfWeek, subWeeks } from 'date-fns'
 import { db } from '@/db'
 import { allSets, cached, exercisesById, workoutsById } from '@/db/read'
-import type { BodyMetric, Workout } from '@/types'
+import type { BodyMetric, WeightUnit, Workout } from '@/types'
+import { fromKg, shownWeight } from '@/features/workouts/units'
 import { XP } from '@/lib/xp'
 import { toDateStr } from '@/lib/date'
 import { formatClock, formatKm } from '@/lib/cardio'
@@ -265,9 +266,9 @@ export function rankUpXp(ups: RankUp[]): number {
   }, 0)
 }
 
-/** A lift's best set: "100 kg × 5", "12 reps" or "1:30 hold". */
-export function describeBest(b: { weight?: number; reps?: number; duration?: number }): string {
-  if (b.weight && b.reps) return `${b.weight} kg × ${b.reps}`
+/** A lift's best set in the unit given: "100 kg × 5", "225 lb × 5", "12 reps" or "1:30 hold". */
+export function describeBest(b: { weight?: number; reps?: number; duration?: number }, unit: WeightUnit): string {
+  if (b.weight && b.reps) return `${shownWeight(b.weight, unit)} ${unit} × ${b.reps}`
   if (b.duration && !b.reps) {
     const sec = Math.round(b.duration * 60)
     return sec < 60 ? `${sec} s hold` : `${clock(sec)} hold`
@@ -279,10 +280,10 @@ export function describeBest(b: { weight?: number; reps?: number; duration?: num
 export const describeRun = (run: { distanceKm: number; duration: number }) => `${formatKm(run.distanceKm)} in ${formatClock(run.duration)}`
 
 /** The set behind a muscle's rank, and its day: its top lift's best ("100 kg × 5"), or the best run when running ranks it. */
-export function bestBehind(region: RegionRank, ranks: Pick<RanksSnapshot, 'lifts' | 'running'>): { set: string; date: string } | null {
+export function bestBehind(region: RegionRank, ranks: Pick<RanksSnapshot, 'lifts' | 'running'>, unit: WeightUnit): { set: string; date: string } | null {
   if (region.topLift === RUNNING_SOURCE) return ranks.running && { set: describeRun(ranks.running.best), date: ranks.running.best.date }
   const lift = ranks.lifts.find(l => l.name === region.topLift)
-  return lift ? { set: describeBest(lift.best), date: lift.best.date } : null
+  return lift ? { set: describeBest(lift.best, unit), date: lift.best.date } : null
 }
 
 function clock(seconds: number): string {
@@ -290,13 +291,16 @@ function clock(seconds: number): string {
   return s < 60 ? `${s} s` : formatClock(s / 60)
 }
 
-/** What it takes to reach the next division, e.g. "62.5 kg × 5", "9 reps" or "1:30 hold". */
-export function nextRankTarget(exerciseId: string, rank: RankInfo, sex: Sex, bodyKg: number): string | null {
+/** What it takes to reach the next division, e.g. "62.5 kg × 5" (or 140 lb, on the 2.5 lb grid), "9 reps" or "1:30 hold". */
+export function nextRankTarget(exerciseId: string, rank: RankInfo, sex: Sex, bodyKg: number, unit: WeightUnit): string | null {
   const std = standardFor(exerciseId)
   if (!std || rank.nextAt == null) return null
   const perf = performanceFor(std, rank.nextAt, thresholdsFor(std, sex, bodyKg))
   switch (std.kind) {
-    case 'load': return `${Math.ceil((perf / (1 + 5 / 30)) * 2) / 2} kg × 5`
+    case 'load': {
+      const kg = perf / (1 + 5 / 30)
+      return unit === 'lb' ? `${Math.ceil(fromKg(kg, 'lb') / 2.5) * 2.5} lb × 5` : `${Math.ceil(kg * 2) / 2} kg × 5`
+    }
     case 'hold': return `${clock(perf)} hold`
     case 'reps':
       if (perf <= 0) return std.assisted ? 'less assistance' : 'your first full rep'

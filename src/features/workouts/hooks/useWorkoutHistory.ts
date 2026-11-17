@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
 import { exercisesById, setsOfWorkouts, workoutsById } from '@/db/read'
-import type { Exercise, Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } from '@/types'
+import type { Exercise, WeightUnit, Workout, WorkoutSet, WorkoutWithSets, WorkoutSetWithExercise } from '@/types'
 import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { deleteSynced } from '@/lib/sync'
 import { est1RM, totalVolume } from '@/lib/workoutMath'
@@ -9,6 +9,7 @@ import { trendOf } from '../progression'
 import type { BlockHistory, LastSet, PastSession, Recent } from '../types'
 import { overlap, preload, workDone } from '../fatigue'
 import { exerciseUnit } from './useExerciseNote'
+import { shownWeight } from '../units'
 
 export interface WorkoutSummary extends Workout {
   setCount: number
@@ -166,13 +167,13 @@ export interface NewBest {
   previous: number
 }
 
-/** "est. 1RM 87.5 → 92 kg", "Longest 4.8 → 5.2 km", "Fastest 5:50 → 5:30 /km". */
-export function describeBest(b: NewBest & { est1RM?: number }): { label: string; from: string; to: string } {
+/** "est. 1RM 87.5 → 92 kg" (in the unit shown), "Longest 4.8 → 5.2 km", "Fastest 5:50 → 5:30 /km". */
+export function describeBest(b: NewBest & { est1RM?: number }, unit: WeightUnit): { label: string; from: string; to: string } {
   const value = b.value ?? b.est1RM ?? 0
   switch (b.kind ?? '1rm') {
     case 'distance': return { label: 'Longest', from: formatKm(b.previous), to: formatKm(value) }
     case 'speed': return { label: 'Fastest', from: formatSpeed(b.exerciseId, b.previous), to: formatSpeed(b.exerciseId, value) }
-    case '1rm': return { label: 'est. 1RM', from: String(b.previous), to: `${value} kg` }
+    case '1rm': return { label: 'est. 1RM', from: String(shownWeight(b.previous, unit)), to: `${shownWeight(value, unit)} ${unit}` }
   }
 }
 

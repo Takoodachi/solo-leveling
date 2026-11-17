@@ -3,6 +3,7 @@ import { Beef, Dumbbell, Flame, Footprints, GlassWater, Pill, Route, Scale, Time
 import IconTile from '@/components/IconTile'
 import { formatDurationMin } from '@/lib/format'
 import { formatVolume } from '@/lib/workoutMath'
+import { bodyText, inUnit, useUnits } from '@/features/settings/units'
 import type { Recap } from '../recap'
 
 /** "12% more than the week before", stated the same way up or down (no red for a quieter week). */
@@ -25,6 +26,7 @@ interface Props {
 
 export default function RecapStats({ recap, elapsedDays, finished }: Props) {
   const { training, previous, steps, food, weight, period } = recap
+  const unit = useUnits(s => s.weight)
   const more = training.workouts - previous.workouts
   const than = (now: number, before: number) => (finished ? versus(now, before, period) : null)
   // A month or year only partly logged (or still going) gets its share of the goal
@@ -39,7 +41,7 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
       />
       <IconTile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={than(training.activeMin, previous.activeMin)} />
       {training.sets > 0 && (
-        <IconTile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume)} note={than(training.volume, previous.volume)} />
+        <IconTile Icon={Weight} label={`Lifted in ${training.sets} sets`} value={formatVolume(training.volume, unit)} note={than(training.volume, previous.volume)} />
       )}
       {training.cardioKm > 0 && (
         <IconTile Icon={Route} label="Cardio distance" value={`${training.cardioKm.toFixed(1)} km`} note={than(training.cardioKm, previous.cardioKm)} />
@@ -66,7 +68,7 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
           <IconTile Icon={Beef} label="Protein a day" value={`${food.avgProtein} g`} note={`Target reached on ${food.proteinDays} of ${food.days}`} />
         </>
       )}
-      {weight && <IconTile Icon={Scale} label="Body weight" value={`${weight.to.toFixed(1)} kg`} note={weight.to === weight.from ? null : `${signed(weight.to - weight.from, 'kg')} over the ${period}`} />}
+      {weight && <IconTile Icon={Scale} label="Body weight" value={bodyText(weight.to, unit)} note={weight.to === weight.from ? null : `${signed(inUnit(weight.to - weight.from, unit), unit)} over the ${period}`} />}
       {recap.creatineDays > 0 && <IconTile Icon={Pill} label="Creatine" value={`${recap.creatineDays} / ${elapsedDays} days`} />}
       {recap.waterGoalDays > 0 && <IconTile Icon={GlassWater} label="Water goal" value={`${recap.waterGoalDays} / ${elapsedDays} days`} />}
     </div>

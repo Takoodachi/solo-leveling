@@ -12,7 +12,7 @@ import { Swatch } from '@/features/settings/components/ThemePicker'
 import { THEMES } from '@/features/settings/themes'
 import { paintTheme, useActiveTheme } from '@/features/settings/hooks/useTheme'
 import { homeWidgetDef } from '@/features/dashboard/homeWidgets'
-import { TRACK_CHOICES, setupTargets, type SetupForm, type TrackChoice } from '../setup'
+import { TRACK_CHOICES, setupTargets, withUnits, type SetupForm, type TrackChoice } from '../setup'
 import { spreadDays } from '../plans'
 
 export interface StepProps {
@@ -59,12 +59,21 @@ export function BodyStep({ form, onChange }: StepProps) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="setup-height">Height (cm)</Label>
-            <Input id="setup-height" inputMode="decimal" value={form.heightCm} onChange={e => onChange({ heightCm: e.target.value })} placeholder="175" enterKeyHint="next" />
+            <Label htmlFor="setup-height">Height ({form.units.height === 'cm' ? 'cm' : 'ft, in'})</Label>
+            {form.units.height === 'cm' ? (
+              <Input id="setup-height" inputMode="decimal" value={form.heightCm} onChange={e => onChange({ heightCm: e.target.value })} placeholder="175" enterKeyHint="next" />
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Input id="setup-height" aria-label="Feet" inputMode="numeric" value={form.heightFt} onChange={e => onChange({ heightFt: e.target.value })} placeholder="5" enterKeyHint="next" />
+                <Input aria-label="Inches" inputMode="numeric" value={form.heightIn} onChange={e => onChange({ heightIn: e.target.value })} placeholder="9" enterKeyHint="next" />
+              </div>
+            )}
+            <Segmented size="sm" value={form.units.height} options={[{ value: 'cm', label: 'cm' }, { value: 'ftin', label: 'ft, in' }]} onChange={height => onChange(withUnits(form, { ...form.units, height }))} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="setup-weight">Weight (kg)</Label>
-            <Input id="setup-weight" inputMode="decimal" value={form.weightKg} onChange={e => onChange({ weightKg: e.target.value })} placeholder="70" enterKeyHint="done" />
+            <Label htmlFor="setup-weight">Weight ({form.units.weight})</Label>
+            <Input id="setup-weight" inputMode="decimal" value={form.weight} onChange={e => onChange({ weight: e.target.value })} placeholder={form.units.weight === 'lb' ? '155' : '70'} enterKeyHint="done" />
+            <Segmented size="sm" value={form.units.weight} options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} onChange={weight => onChange(withUnits(form, { ...form.units, weight }))} />
           </div>
         </div>
         <div className="flex flex-col gap-2">
