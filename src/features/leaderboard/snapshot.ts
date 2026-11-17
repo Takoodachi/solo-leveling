@@ -4,8 +4,7 @@ import { db } from '@/db'
 import { exercisesById, setsOfWorkouts } from '@/db/read'
 import type { UserStats } from '@/types'
 import { toDateStr } from '@/lib/date'
-import { formatClock, formatKm } from '@/lib/cardio'
-import { computeRanks, describeBest, rankHistory } from '@/features/ranks/computeRanks'
+import { computeRanks, describeBest, describeRun, rankHistory } from '@/features/ranks/computeRanks'
 import { isRunExercise } from '@/features/ranks/running'
 import { showsRoutines } from './api'
 import type { Highlight, LeaderboardSnapshot, SharedRoutine } from './types'
@@ -66,7 +65,7 @@ export async function buildMySnapshot(now = new Date()): Promise<LeaderboardSnap
   if (run && run.best.date >= since) {
     highlights.push({
       kind: 'run', name: 'Running', rating: run.rank.rating,
-      detail: `${formatKm(run.best.distanceKm)} in ${formatClock(run.best.duration)}`, date: run.best.date,
+      detail: describeRun(run.best), date: run.best.date,
     })
   }
 

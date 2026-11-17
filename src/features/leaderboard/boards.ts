@@ -1,7 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { REGION_LABEL, groupOfRegion, type MuscleGroup, type MuscleRegion } from '@/features/ranks/standards'
-import type { RegionRank } from '@/features/ranks/computeRanks'
-import { formatClock, formatKm } from '@/lib/cardio'
+import { RUNNING_SOURCE, describeRun, type RegionRank } from '@/features/ranks/computeRanks'
 import { rankFor, type TierKey } from '@/features/ranks/tiers'
 import { totalXp } from '@/lib/xp'
 import type { LeaderboardEntry, LeaderboardSnapshot } from './types'
@@ -36,7 +35,7 @@ export const BOARDS: Board[] = [
     key: 'running', label: 'Running',
     score: s => s.running?.rating ?? null,
     value: s => (s.running ? rankFor(s.running.rating).label : 'No run yet'),
-    detail: s => (s.running ? `Best ${formatKm(s.running.distanceKm)} in ${formatClock(s.running.duration)}` : 'Run 5 km+ to rank'),
+    detail: s => (s.running ? `Best ${describeRun(s.running)}` : 'Run 5 km+ to rank'),
     tier: s => (s.running ? rankFor(s.running.rating).tier.key : null),
     empty: 'Log a run of 5 km or more to join this board.',
   },
@@ -86,6 +85,13 @@ export function regionsOf(s: LeaderboardSnapshot): RegionRank[] {
     const r = s.regions?.[key]
     return { key, label: REGION_LABEL[key], group: groupOfRegion(key), rank: r ? rankFor(r.r) : null, topLift: r?.by || null }
   })
+}
+
+/** The set behind a friend's muscle rank, when their snapshot has it: it carries their top lifts and best run only. */
+export function sharedBest(s: LeaderboardSnapshot, region: RegionRank): { set: string; date: string } | null {
+  if (region.topLift === RUNNING_SOURCE) return s.running ? { set: describeRun(s.running), date: s.running.date } : null
+  const lift = s.lifts?.find(l => l.name === region.topLift)
+  return lift ? { set: lift.best, date: lift.date } : null
 }
 
 // The owner's call: a back extension or a hip thrust alone shouldn't take the back or the legs on the leaderboard

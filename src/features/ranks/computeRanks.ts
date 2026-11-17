@@ -4,7 +4,7 @@ import { allSets, cached, exercisesById, workoutsById } from '@/db/read'
 import type { BodyMetric, Workout } from '@/types'
 import { XP } from '@/lib/xp'
 import { toDateStr } from '@/lib/date'
-import { formatClock } from '@/lib/cardio'
+import { formatClock, formatKm } from '@/lib/cardio'
 import { rankFor, type RankInfo } from './tiers'
 import {
   MUSCLE_GROUPS, REGION_LABEL, groupOfRegion, groupOfStandard, standardFor,
@@ -273,6 +273,16 @@ export function describeBest(b: { weight?: number; reps?: number; duration?: num
     return sec < 60 ? `${sec} s hold` : `${clock(sec)} hold`
   }
   return `${b.reps ?? 0} reps`
+}
+
+/** A run as "21.1 km in 1:58:00". */
+export const describeRun = (run: { distanceKm: number; duration: number }) => `${formatKm(run.distanceKm)} in ${formatClock(run.duration)}`
+
+/** The set behind a muscle's rank, and its day: its top lift's best ("100 kg × 5"), or the best run when running ranks it. */
+export function bestBehind(region: RegionRank, ranks: Pick<RanksSnapshot, 'lifts' | 'running'>): { set: string; date: string } | null {
+  if (region.topLift === RUNNING_SOURCE) return ranks.running && { set: describeRun(ranks.running.best), date: ranks.running.best.date }
+  const lift = ranks.lifts.find(l => l.name === region.topLift)
+  return lift ? { set: describeBest(lift.best), date: lift.best.date } : null
 }
 
 function clock(seconds: number): string {

@@ -13,7 +13,7 @@ import RankBadge from '@/features/ranks/components/RankBadge'
 import Bodygraph from '@/features/ranks/components/Bodygraph'
 import RegionDetail from '@/features/ranks/components/RegionDetail'
 import { useLeaderboard } from '@/features/leaderboard/useLeaderboard'
-import { ago, regionsOf } from '@/features/leaderboard/boards'
+import { ago, regionsOf, sharedBest } from '@/features/leaderboard/boards'
 import HeadToHead from '@/features/leaderboard/components/HeadToHead'
 import Avatar from '@/features/leaderboard/components/Avatar'
 import CompareChart from '@/features/leaderboard/components/CompareChart'
@@ -49,6 +49,7 @@ export default function FriendPage() {
   const s = entry.snapshot
   const overall = s.overall != null ? rankFor(s.overall) : null
   const regions = regionsOf(s)
+  const region = regions.find(r => r.key === selected) ?? null
   const weekStart = toDateStr(startOfWeek(now, { weekStartsOn: 1 }))
   const routines = cleanSharedRoutines(s.routines)
 
@@ -87,7 +88,7 @@ export default function FriendPage() {
           )}
         </div>
         <Bodygraph regions={regions} selected={selected} onSelect={setSelected} />
-        <RegionDetail region={regions.find(r => r.key === selected) ?? null} suggest={false} />
+        <RegionDetail region={region} best={region && sharedBest(s, region)} suggest={false} />
       </section>
 
       {!self && lb.me && (
