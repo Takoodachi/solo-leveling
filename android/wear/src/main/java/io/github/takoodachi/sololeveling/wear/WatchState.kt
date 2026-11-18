@@ -16,6 +16,8 @@ data class WatchState(
     val startedAt: Long,
     val restEndsAt: Long?,
     val restStartedAt: Long?,
+    /** There's a set to tick (Done); false from a phone app that predates the buttons. */
+    val canTick: Boolean = false,
 ) {
     fun resting(now: Long) = restEndsAt != null && restEndsAt > now
 
@@ -27,6 +29,9 @@ data class WatchState(
     }
 }
 
+/** The buttons under it: Done between rests, Skip and +15 s during one. */
+enum class Buttons { NONE, DONE, REST }
+
 /** What the screen shows at a moment, and in how many ms that changes (null: it doesn't by itself). */
 data class Screen(
     val label: String,
@@ -37,6 +42,7 @@ data class Screen(
     val ring: Float?,
     val resting: Boolean,
     val nextChangeMs: Long?,
+    val buttons: Buttons = Buttons.NONE,
 )
 
 fun screenFor(s: WatchState?, now: Long): Screen {
@@ -46,10 +52,10 @@ fun screenFor(s: WatchState?, now: Long): Screen {
         val left = restEnd - now
         val total = s.restStartedAt?.let { restEnd - it }?.takeIf { it > 0 }
         // The clock shows whole seconds rounded up, so a rest of 90 s reads 1:30 until it's 89 s
-        return Screen("Rest", clock((left + 999) / 1000), s.title, s.text, total?.let { (left.toFloat() / it).coerceIn(0f, 1f) }, true, (left - 1) % 1000 + 1)
+        return Screen("Rest", clock((left + 999) / 1000), s.title, s.text, total?.let { (left.toFloat() / it).coerceIn(0f, 1f) }, true, (left - 1) % 1000 + 1, Buttons.REST)
     }
     val elapsed = (now - s.startedAt).coerceAtLeast(0)
-    return Screen(s.name.ifBlank { "Workout" }, clock(elapsed / 1000), s.title, s.text, null, false, 1000 - elapsed % 1000)
+    return Screen(s.name.ifBlank { "Workout" }, clock(elapsed / 1000), s.title, s.text, null, false, 1000 - elapsed % 1000, if (s.canTick) Buttons.DONE else Buttons.NONE)
 }
 
 /** 5:07, or 1:02:10 past an hour. */

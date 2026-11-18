@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One screen, for a round watch: the ring around the edge while resting, and in the middle what
-     the time is (the rest counting down, or the workout's time), then the exercise and the set -->
+<!-- One screen, for a round watch: the ring around the edge while resting; in the middle the heart
+     rate, what the time is (the rest counting down, or the workout's time), the exercise and the
+     set; under them Done between rests, Skip and +15 s during one -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -18,6 +19,16 @@
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:paddingHorizontal="30dp">
+
+        <TextView
+            android:id="@+id/heart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFeatureSettings="tnum"
+            android:textColor="@color/heart"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/label"
@@ -38,30 +49,61 @@
             android:includeFontPadding="false"
             android:maxLines="1"
             android:textColor="@color/text"
-            android:textSize="52sp"
+            android:textSize="48sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="2"
             android:textColor="@color/text"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="2"
             android:textColor="@color/muted"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/done"
+                style="@style/Pill"
+                android:background="@drawable/pill_accent"
+                android:paddingHorizontal="22dp"
+                android:text="Done"
+                android:textColor="@color/on_accent" />
+
+            <Button
+                android:id="@+id/skip"
+                style="@style/Pill"
+                android:background="@drawable/pill_dark"
+                android:text="Skip"
+                android:textColor="@color/text" />
+
+            <Button
+                android:id="@+id/more"
+                style="@style/Pill"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/pill_dark"
+                android:text="+15 s"
+                android:textColor="@color/text" />
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>

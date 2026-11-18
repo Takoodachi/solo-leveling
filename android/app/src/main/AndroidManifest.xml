@@ -335,6 +335,16 @@
             </intent-filter>
         </receiver>
 
+        <!-- The watch app's buttons (tick the next set, skip the rest, +15 s), handed to the site (WatchActions.kt) -->
+        <service
+            android:name=".WatchActions"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:path="/action" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

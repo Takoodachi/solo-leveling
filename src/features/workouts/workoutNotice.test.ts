@@ -13,7 +13,7 @@ const now = 50_000
 describe('noticeFor', () => {
   it('shows the first set still to do, and the rest while it runs', () => {
     const d = draft([block(ex('Bench Press'), [set('60', '8', true), set('60', '8'), set('60', '8')]), block(ex('Dip'), [set('', '10')])])
-    expect(noticeFor(d, now + 60_000, now)).toEqual({ name: 'Push Day', title: 'Bench Press', text: 'Set 2 of 3 · 60 kg × 8', startedAt: 1_000, restEndsAt: now + 60_000 })
+    expect(noticeFor(d, now + 60_000, now)).toEqual({ name: 'Push Day', title: 'Bench Press', text: 'Set 2 of 3 · 60 kg × 8', startedAt: 1_000, restEndsAt: now + 60_000, canTick: true })
     expect(noticeFor(d, now - 1, now).restEndsAt).toBeNull()
   })
 
@@ -26,7 +26,7 @@ describe('noticeFor', () => {
 
   it('says so when every set is done, without a rest', () => {
     const d = draft([block(ex('Bench Press'), [set('60', '8', true)])])
-    expect(noticeFor(d, now + 60_000, now)).toMatchObject({ title: 'All sets done', restEndsAt: null })
+    expect(noticeFor(d, now + 60_000, now)).toMatchObject({ title: 'All sets done', restEndsAt: null, canTick: false })
     expect(noticeFor(draft([]), null, now).title).toBe('Add an exercise')
   })
 })

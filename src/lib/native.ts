@@ -70,6 +70,8 @@ export interface WorkoutNoticeState {
   startedAt: number
   /** While resting, the clock counts down to here instead. */
   restEndsAt: number | null
+  /** There's a set to tick (the watch shows its Done button). Since the watch's buttons. */
+  canTick: boolean
 }
 
 /** Heart rate over a stretch of time, from Health Connect (the watch's readings). */
@@ -87,6 +89,8 @@ interface SoloEvents {
   shortcut: { path: string }
   /** Android's Back, once `handleBack` has claimed it. */
   back: Record<string, never>
+  /** A button on the watch app: "tick" the next set, "skip" the rest, "add15" seconds to it. Since the watch's buttons. */
+  watchAction: { action: string }
 }
 
 /** The app's own native plugin (android/…/SoloPlugin.kt): app shortcuts, step sync while closed, sharing, quick-log reminders, Back. */

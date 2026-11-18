@@ -33,6 +33,7 @@ object WatchLink {
             putLong("startedAt", s.startedAt)
             putLong("restEndsAt", s.restEndsAt ?: 0L)
             putLong("restStartedAt", restStart ?: 0L)
+            putBoolean("canTick", s.canTick)
         }
     }
 

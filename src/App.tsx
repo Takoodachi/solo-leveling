@@ -11,6 +11,7 @@ import { useAuthStore } from '@/features/auth/authStore'
 import { useLeaderboardPublisher } from '@/features/leaderboard/usePublisher'
 import { useHighFiveDigest } from '@/features/leaderboard/useHighFiveDigest'
 import { useWorkoutNotice } from '@/features/workouts/hooks/useWorkoutNotice'
+import { useWatchActions } from '@/features/workouts/hooks/useWatchActions'
 import { useThemeSync } from '@/features/settings/hooks/useTheme'
 import { useExtrasCache } from '@/features/settings/extras'
 import { useUnitsSync } from '@/features/settings/units'
@@ -83,6 +84,7 @@ function AppRoutes() {
   useLeaderboardPublisher()
   useHighFiveDigest()
   useWorkoutNotice()
+  useWatchActions()
   useThemeSync()
   useExtrasCache()
   useUnitsSync()

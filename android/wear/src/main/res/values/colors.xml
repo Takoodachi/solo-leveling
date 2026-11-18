@@ -5,4 +5,7 @@
     <color name="launcher_bg">#FF0A0A0B</color>
     <color name="text">#FFFAFAFA</color>
     <color name="muted">#B3FAFAFA</color>
+    <!-- Text on the accent: the dark that reads on it -->
+    <color name="on_accent">#FF0A0A0B</color>
+    <color name="heart">#FFFF5A5F</color>
 </resources>
