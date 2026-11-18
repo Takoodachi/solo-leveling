@@ -20,7 +20,7 @@ import androidx.core.app.NotificationManagerCompat
  * counting up (its name under it). The site keeps it current (src/features/workouts/
  * workoutNotice.ts → [SoloPlugin.workoutNotice]). The clock runs by itself, and when a rest runs
  * out with the app in the background (its timers frozen there) the switch back to the workout's
- * time is made here.
+ * time is made here. The same state goes to the watch app ([WatchLink]).
  *
  * It's a layout of its own (res/layout/notification_workout.xml) because the standard one put
  * the clock wherever the phone liked: Samsung's lock screen glued it to the end of the title
@@ -40,6 +40,7 @@ object WorkoutNotice {
     fun show(context: Context, state: State) {
         val app = context.applicationContext
         handler.post {
+            WatchLink.show(app, state)
             restOver?.let(handler::removeCallbacks)
             restOver = null
             val left = (state.restEndsAt ?: 0L) - System.currentTimeMillis()
@@ -51,6 +52,7 @@ object WorkoutNotice {
     fun clear(context: Context) {
         val app = context.applicationContext
         handler.post {
+            WatchLink.clear(app)
             restOver?.let(handler::removeCallbacks)
             restOver = null
             NotificationManagerCompat.from(app).cancel(ID)

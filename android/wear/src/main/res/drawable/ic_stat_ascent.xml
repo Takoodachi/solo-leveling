@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon for notifications: the app mark as a silhouette (same geometry as Logo.tsx) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <group android:translateX="-14" android:translateY="-12">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M50,12 L80,42 L67,42 L50,25 L33,42 L20,42 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M50,33 L80,63 L67,63 L50,46 L33,63 L20,63 Z M50,54 L80,84 L67,84 L50,67 L33,84 L20,84 Z" />
+    </group>
+</vector>

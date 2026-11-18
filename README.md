@@ -100,6 +100,33 @@ dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulat
 - **Long-press shortcuts** on the app icon: Start workout, Log food and Log weight to begin with; Settings → App icon swaps them (up to four).
 - The **rest timer** rings as a notification when the phone is locked or the app is behind another.
 
+## Watch app (Galaxy Watch, Wear OS)
+
+A small companion for a Wear OS watch (the owner's Galaxy Watch Ultra; a Galaxy Fit3 can't run
+apps). While a workout is open in the Android app, the watch shows it: when it starts, a card and an
+icon on the watch face (one buzz); tap either for the screen with the rest counting down (a ring
+around the edge, two firm buzzes when it's over) or the workout's time, and the next exercise and set.
+
+It's built with the phone app: `npm run android` writes `solo-leveling-watch.apk` beside
+`solo-leveling.apk`. The two only talk to each other when they come from the **same build machine**
+(same app id and debug signing key), so install both from the same `npm run android`.
+
+**Install on the watch** (once; an update is the same last step):
+
+1. On the watch: Settings → About watch → Software information → tap *Software version* 5 times,
+   then Settings → Developer options → turn on *ADB debugging* and *Wireless debugging* (watch and
+   laptop on the same Wi-Fi).
+2. In Wireless debugging, tap *Pair new device*. On the laptop, with the address and code it shows:
+   `"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" pair <address>` and type the code.
+3. Wireless debugging also shows the watch's own address (IP:port, not the pairing one). Run
+   `npm run android -- --watch=<ip:port>`: it builds both apps and installs the watch one
+   (`adb install -g`, which also allows its notifications).
+4. Install the phone APK from that same build on the phone, and turn Wireless debugging off again.
+
+It follows Settings → Extras → *Workout notification*: switched off, nothing reaches the watch.
+With the phone locked, the phone's own rest alert can reach the watch too (a second buzz); Galaxy
+Wearable → Watch settings → Notifications can leave Solo Leveling out for this watch.
+
 ## Reminder notifications
 
 Settings → Reminders picks what to be reminded of (workout, creatine, food, weigh-in, water, weekly

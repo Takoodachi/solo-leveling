@@ -1,4 +1,6 @@
 include ':app'
+// The watch app (Wear OS), built beside the phone app with the same id: see wear/build.gradle
+include ':wear'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
