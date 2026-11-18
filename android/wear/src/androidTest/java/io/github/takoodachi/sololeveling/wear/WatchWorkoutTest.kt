@@ -59,20 +59,40 @@ class WatchWorkoutTest {
         val over = waitFor("the Rest over card", 10_000) { shown(2) }
         assertEquals("Rest over", over.notification.extras.getString(Notification.EXTRA_TITLE))
         assertEquals("Barbell Back Squat · Set 3 of 4 · 100 kg × 8", over.notification.extras.getString(Notification.EXTRA_TEXT))
+        // Left up as it would be: on a watch the card alerts (buzzes) a moment after it's posted
+        Thread.sleep(4_000)
         WatchWorkout.apply(context, null)
         waitFor("both taken down") { if (shown(1) == null && shown(2) == null) true else null }
     }
 
     @Test
-    fun aNewStateWithoutARestCancelsTheRestsAlarm() {
+    fun aRestCalledOffWellBeforeItsEndLosesItsAlarm() {
         val now = System.currentTimeMillis()
-        val squat = WatchState("Leg Day", "Barbell Back Squat", "Set 3 of 4 · 100 kg × 8", now - 60_000, now + 2_000, now - 1_000)
+        val squat = WatchState("Leg Day", "Barbell Back Squat", "Set 3 of 4 · 100 kg × 8", now - 60_000, now + 8_000, now - 1_000)
         WatchWorkout.apply(context, squat)
         // The next set started before the rest ran out
         WatchWorkout.apply(context, squat.copy(text = "Set 4 of 4 · 100 kg × 8", restEndsAt = null, restStartedAt = null))
-        Thread.sleep(4_000)
+        Thread.sleep(10_000)
         assertEquals(null, shown(2))
         assertEquals("Set 4 of 4 · 100 kg × 8", shown(1)?.notification?.extras?.getString(Notification.EXTRA_TEXT))
+    }
+
+    // What happened on the owner's watch: the same rest sent again shortly before its end set the
+    // alarm again (pushed 5 s out), and the phone's "no rest" right at the end then called it off
+    @Test
+    fun theRestStillRingsOnTimeWhenThePhoneSaysItsGoneAtItsEnd() {
+        val start = System.currentTimeMillis()
+        val end = start + 7_000
+        val squat = WatchState("Leg Day", "Barbell Back Squat", "Set 3 of 4 · 100 kg × 8", start - 60_000, end, start - 1_000)
+        WatchWorkout.apply(context, squat)
+        Thread.sleep(4_000)
+        WatchWorkout.apply(context, squat.copy(text = "Set 3 of 4 · 105 kg × 8")) // the weight changed mid-rest
+        Thread.sleep(end - 500 - System.currentTimeMillis())
+        WatchWorkout.apply(context, squat.copy(restEndsAt = null, restStartedAt = null)) // the phone's "rest over", a little early
+        val over = waitFor("the Rest over card", 6_000) { shown(2) }
+        val late = System.currentTimeMillis() - end
+        assertTrue("rang $late ms after the rest's end", late < 2_000)
+        assertEquals("Barbell Back Squat · Set 3 of 4 · 105 kg × 8", over.notification.extras.getString(Notification.EXTRA_TEXT))
     }
 
     @Test
