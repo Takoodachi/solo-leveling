@@ -65,6 +65,25 @@ export function requestNotificationPermission(): void {
   void Notification.requestPermission()
 }
 
+function save(next: Persisted | null): void {
+  persist(next)
+  scheduleInServiceWorker(next?.endAt ?? null)
+  scheduleOnPhone(next?.endAt ?? null)
+}
+
+/** Starts a rest of `seconds` from now, from anywhere: the workout screen, or a button on the watch. */
+export function startRest(seconds: number): void {
+  if (seconds > 0) save({ endAt: Date.now() + seconds * 1000, total: seconds })
+}
+
+export const stopRest = (): void => save(null)
+
+/** Stretches (or shortens) the running rest; nothing without one. */
+export function addRestSeconds(delta: number): void {
+  const timer = readPersisted()
+  if (timer) save({ endAt: timer.endAt + delta * 1000, total: timer.total + delta })
+}
+
 /**
  * The rest timer: when it ends, and how to start, stop and stretch it. It doesn't count down
  * itself: that is RestBanner's, so the four ticks a second draw the banner again and not the
@@ -72,6 +91,13 @@ export function requestNotificationPermission(): void {
  */
 export function useRestTimer() {
   const [timer, setTimer] = useState<Persisted | null>(readPersisted)
+
+  // Whatever started, changed or stopped it (here, or a button on the watch), this follows
+  useEffect(() => {
+    const follow = () => setTimer(readPersisted())
+    window.addEventListener(REST_EVENT, follow)
+    return () => window.removeEventListener(REST_EVENT, follow)
+  }, [])
 
   // Fire once at the end.
   useEffect(() => {
@@ -92,32 +118,11 @@ export function useRestTimer() {
     }
   }, [timer])
 
-  const start = useCallback((seconds: number) => {
-    if (seconds <= 0) return
-    const next = { endAt: Date.now() + seconds * 1000, total: seconds }
-    persist(next)
-    scheduleInServiceWorker(next.endAt)
-    scheduleOnPhone(next.endAt)
-    setTimer(next)
-  }, [])
-
-  const stop = useCallback(() => {
-    persist(null)
-    scheduleInServiceWorker(null)
-    scheduleOnPhone(null)
-    setTimer(null)
-  }, [])
-
-  // Not inside a state update function: that runs while the screen is being drawn, and telling
-  // the rest of the app (the workout notification follows the timer) from there was too early
-  const addSeconds = useCallback((delta: number) => {
-    if (!timer) return
-    const next = { endAt: timer.endAt + delta * 1000, total: timer.total + delta }
-    persist(next)
-    scheduleInServiceWorker(next.endAt)
-    scheduleOnPhone(next.endAt)
-    setTimer(next)
-  }, [timer])
+  // The state follows through REST_EVENT. Not inside a state update function: that runs while the
+  // screen is being drawn, and telling the rest of the app (the workout notification) was too early
+  const start = useCallback((seconds: number) => startRest(seconds), [])
+  const stop = useCallback(() => stopRest(), [])
+  const addSeconds = useCallback((delta: number) => addRestSeconds(delta), [])
 
   return {
     endAt: timer?.endAt ?? null,

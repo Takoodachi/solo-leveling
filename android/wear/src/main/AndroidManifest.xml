@@ -8,6 +8,9 @@
     <!-- The buzz at the end of a rest, on time with the screen off -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- The heart rate on the screen, from the watch's own sensor while the app is up (Android 16 gave it a permission of its own) -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" android:maxSdkVersion="35" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
     <application
         android:allowBackup="false"
@@ -40,5 +43,18 @@
         </service>
 
         <receiver android:name=".RestOverReceiver" android:exported="false" />
+
+        <!-- The tile: the workout a swipe away from the watch face -->
+        <service
+            android:name=".WorkoutTile"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_ascent"
+            android:label="@string/tile_label"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+            <meta-data android:name="androidx.wear.tiles.PREVIEW" android:resource="@drawable/ic_launcher_foreground" />
+        </service>
     </application>
 </manifest>

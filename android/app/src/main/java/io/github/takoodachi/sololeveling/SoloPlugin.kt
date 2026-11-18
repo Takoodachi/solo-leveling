@@ -79,7 +79,11 @@ class SoloPlugin : Plugin() {
         val look = context.getSharedPreferences(LOOK, Context.MODE_PRIVATE)
         if (look.contains(BACKGROUND)) paintBackground(look.getInt(BACKGROUND, 0))
         announceShortcut(activity.intent)
+        WatchActions.plugin = java.lang.ref.WeakReference(this)
     }
+
+    /** A button pressed on the watch app ([WatchActions]), for the site to act on. */
+    fun fromWatch(action: String) = notifyListeners("watchAction", JSObject().put("action", action))
 
     override fun handleOnStop() {
         runCatching { AppIcons.applyPending(context) }
@@ -295,6 +299,7 @@ class SoloPlugin : Plugin() {
                 text = call.getString("text") ?: "",
                 startedAt = call.time("startedAt") ?: System.currentTimeMillis(),
                 restEndsAt = call.time("restEndsAt"),
+                canTick = call.getBoolean("canTick") ?: false,
             ),
         )
         call.resolve()

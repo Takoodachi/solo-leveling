@@ -29,6 +29,11 @@ dependencies {
     implementation "androidx.core:core-ktx:$androidxCoreVersion"
     // The workout's icon on the watch face while it runs
     implementation 'androidx.wear:wear-ongoing:1.0.0'
+    // The tile (WorkoutTile): its layout, and the clock it counts by itself
+    implementation 'androidx.wear.tiles:tiles:1.4.1'
+    implementation 'androidx.wear.protolayout:protolayout:1.2.1'
+    implementation 'androidx.wear.protolayout:protolayout-expression:1.2.1'
+    implementation 'androidx.concurrent:concurrent-futures:1.2.0'
     implementation 'com.google.android.gms:play-services-wearable:19.0.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

@@ -105,7 +105,11 @@ dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulat
 A small companion for a Wear OS watch (the owner's Galaxy Watch Ultra; a Galaxy Fit3 can't run
 apps). While a workout is open in the Android app, the watch shows it: when it starts, a card and an
 icon on the watch face (one buzz); tap either for the screen with the rest counting down (a ring
-around the edge, two firm buzzes when it's over) or the workout's time, and the next exercise and set.
+around the edge, two firm buzzes when it's over) or the workout's time, the next exercise and set,
+and your heart rate from the watch's sensor. Its buttons act on the phone's workout: **Done** ticks
+the set it shows (filled from last time if it's empty) and starts the rest, **Skip** and **+15 s**
+change the rest. A **tile** shows the same a swipe from the watch face: swipe left to the end of
+your tiles, tap **+**, and pick Solo Leveling's *Workout*. A watch doesn't buzz while it's off the wrist.
 
 It's built with the phone app: `npm run android` writes `solo-leveling-watch.apk` beside
 `solo-leveling.apk`. The two only talk to each other when they come from the **same build machine**

@@ -35,7 +35,8 @@ object WorkoutNotice {
     private val handler = Handler(Looper.getMainLooper())
     private var restOver: Runnable? = null
 
-    data class State(val name: String, val title: String, val text: String, val startedAt: Long, val restEndsAt: Long?)
+    /** [canTick]: there's a set to tick, so the watch shows its Done button. */
+    data class State(val name: String, val title: String, val text: String, val startedAt: Long, val restEndsAt: Long?, val canTick: Boolean = false)
 
     fun show(context: Context, state: State) {
         val app = context.applicationContext

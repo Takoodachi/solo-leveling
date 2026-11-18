@@ -55,6 +55,15 @@ class WatchStateTest {
     }
 
     @Test
+    fun theButtonsAreDoneBetweenRestsAndSkipOrMoreDuringOne() {
+        assertEquals(Buttons.DONE, screenFor(squat.copy(canTick = true), start + 1_000).buttons)
+        // Every set done ("All sets done"), or a phone app from before the buttons
+        assertEquals(Buttons.NONE, screenFor(squat, start + 1_000).buttons)
+        assertEquals(Buttons.REST, screenFor(squat.copy(canTick = true, restEndsAt = start + 60_000), start + 1_000).buttons)
+        assertEquals(Buttons.NONE, screenFor(null, start).buttons)
+    }
+
+    @Test
     fun aRestWithoutItsStartHasNoRing() {
         assertNull(screenFor(squat.copy(restEndsAt = start + 60_000), start).ring)
     }

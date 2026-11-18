@@ -17,7 +17,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
+import androidx.wear.tiles.TileService
 import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.Wearable
 
 /**
  * What the watch does with the phone's workout: while one runs, a card with what's next and the
@@ -28,6 +30,8 @@ import com.google.android.gms.wearable.DataMap
 object WatchWorkout {
     /** Where the phone keeps the workout (WatchLink.kt in the phone app). */
     const val PATH = "/workout"
+    /** Where the buttons' presses go (WatchActions.kt in the phone app). */
+    private const val ACTION_PATH = "/action"
     private const val CARD_ID = 1
     private const val REST_ID = 2
     /** New ids for both: a channel's buzz can't be changed once made, and the first ones never buzzed. */
@@ -52,6 +56,7 @@ object WatchWorkout {
             startedAt = map.getLong("startedAt"),
             restEndsAt = map.getLong("restEndsAt").takeIf { it > 0 },
             restStartedAt = map.getLong("restStartedAt").takeIf { it > 0 },
+            canTick = map.getBoolean("canTick"),
         )
     }
 
@@ -61,6 +66,7 @@ object WatchWorkout {
         val now = System.currentTimeMillis()
         val live = state?.takeUnless { it.stale(now) }
         restAlarm(context, live?.takeIf { it.resting(now) })
+        TileService.getUpdater(context).requestUpdate(WorkoutTile::class.java)
         val manager = NotificationManagerCompat.from(context)
         if (live == null) {
             manager.cancel(CARD_ID)
@@ -119,6 +125,16 @@ object WatchWorkout {
                 .setContentIntent(openApp(context))
                 .build(),
         )
+    }
+
+    /** A button pressed here, for the phone app to act on; `sent` says whether a phone was reached. */
+    fun tellPhone(context: Context, action: String, sent: (Boolean) -> Unit) {
+        Wearable.getNodeClient(context).connectedNodes
+            .addOnSuccessListener { nodes ->
+                nodes.forEach { Wearable.getMessageClient(context).sendMessage(it.id, ACTION_PATH, action.toByteArray()) }
+                sent(nodes.isNotEmpty())
+            }
+            .addOnFailureListener { sent(false) }
     }
 
     /**
