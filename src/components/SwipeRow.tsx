@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type PointerEvent, type ReactNode, type Ref } from 'react'
 import { clamp } from '@/lib/utils'
 
 /** How far it stays open on its button, and the share of the row past which letting go deletes at once. */
@@ -17,10 +17,16 @@ function place(front: HTMLElement | null, back: HTMLElement | null, x: number, a
   if (back) Object.assign(back.style, { transition: ease && `width ${ease}`, width: `${-x}px` })
 }
 
+/** What the row's own button can do: `reveal` opens it on Delete, as a swipe does. */
+export interface SwipeRowHandle {
+  reveal: () => void
+}
+
 interface Props {
   children: ReactNode
   onDelete: () => void
   label?: string
+  ref?: Ref<SwipeRowHandle>
 }
 
 /**
@@ -28,22 +34,29 @@ interface Props {
  * go past half the row and it goes at once (the caller offers Undo), past half the button and it
  * stays open on it; a tap while it's open closes it, and so does a tap anywhere else. The red area
  * is exactly the room the row has left, so nothing shows behind a see-through card. Only a
- * sideways drag is taken; up and down still scroll. The row keeps its own ways to do the same
- * (a bin button), since a swipe is easy to miss.
+ * sideways drag is taken; up and down still scroll. Since a swipe is easy to miss, the row's own
+ * bin button opens it the same way (`reveal`, through the ref), and focus goes to Delete.
  */
-export default function SwipeRow({ children, onDelete, label = 'Delete' }: Props) {
+export default function SwipeRow({ children, onDelete, label = 'Delete', ref }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const front = useRef<HTMLDivElement>(null)
   const back = useRef<HTMLButtonElement>(null)
   const drag = useRef<{ x: number; y: number; from: number; at: number; side: boolean } | null>(null)
   const dragged = useRef(false)
+  const revealed = useRef(false)
   const [open, setOpen] = useState(false)
 
   const close = () => { place(front.current, back.current, 0, true); setOpen(false) }
+  useImperativeHandle(ref, () => ({
+    reveal: () => { place(front.current, back.current, -OPEN, true); revealed.current = true; setOpen(true) },
+  }))
 
   // Open: another row opening, or a tap outside this one, closes it
   useEffect(() => {
     if (!open) return
+    // Opened by its button: Delete is next, from a keyboard or a screen reader too
+    if (revealed.current) back.current?.focus()
+    revealed.current = false
     const shut = () => { place(front.current, back.current, 0, true); setOpen(false) }
     closeOpen?.()
     closeOpen = shut

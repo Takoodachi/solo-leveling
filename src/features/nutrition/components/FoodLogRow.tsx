@@ -1,6 +1,7 @@
+import { useRef } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import SwipeRow from '@/components/SwipeRow'
+import SwipeRow, { type SwipeRowHandle } from '@/components/SwipeRow'
 import { formatKcal } from '@/lib/format'
 import type { FoodLogWithFood } from '@/types'
 import { amountLabel } from '../logFoods'
@@ -15,9 +16,10 @@ interface Props {
 export default function FoodLogRow({ entry, onEdit, onDelete }: Props) {
   const kcal = Math.round(entry.food.kcalPerServing * entry.servings)
   const servingLabel = amountLabel(entry.food, entry.servings)
+  const row = useRef<SwipeRowHandle>(null)
 
   return (
-    <SwipeRow onDelete={onDelete}>
+    <SwipeRow ref={row} onDelete={onDelete}>
       <div className="flex items-center gap-2">
         {/* The row and the bin are sibling buttons (a button can't contain a button) */}
         <button
@@ -32,11 +34,12 @@ export default function FoodLogRow({ entry, onEdit, onDelete }: Props) {
           </span>
           <span className="shrink-0 text-sm font-medium">{formatKcal(kcal)} cal</span>
         </button>
+        {/* Slides the row open on its red Delete, as a swipe does; Delete is what removes it */}
         <Button
           variant="ghost"
           size="icon"
           className="-mr-2 h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive"
-          onClick={onDelete}
+          onClick={() => row.current?.reveal()}
           aria-label="Remove food"
         >
           <Trash2 size={16} />
