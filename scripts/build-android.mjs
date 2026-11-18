@@ -1,5 +1,6 @@
 // Builds the Android app (the owner's phone): a debug APK, installed by hand.
-// Run: npm run android            (add -- --install to put it on a USB-connected phone)
+// Run: npm run android            (add -- --install to put it on a USB-connected phone,
+//                                   -- --watch=<ip:port> to put the watch app on a paired watch)
 //
 // The app loads the live site (capacitor.config.ts), so web changes reach it on deploy and
 // this only needs re-running after native changes: plugins, permissions, icons, capacitor.config.
@@ -42,7 +43,17 @@ const apk = join(root, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'ap
 const out = join(root, 'solo-leveling.apk')
 copyFileSync(apk, out)
 console.log(`\nBuilt ${out}${env.CAP_SERVER_URL ? ` (loads ${env.CAP_SERVER_URL})` : ''}`)
+// The watch app (android/wear), from the same build: it only talks to a phone app signed like it
+const watchOut = join(root, 'solo-leveling-watch.apk')
+copyFileSync(join(root, 'android', 'wear', 'build', 'outputs', 'apk', 'debug', 'wear-debug.apk'), watchOut)
+console.log(`Built ${watchOut} (the Galaxy Watch app: README → Watch app)`)
 
-if (process.argv.includes('--install')) {
-  run(join(env.ANDROID_HOME, 'platform-tools', win ? 'adb.exe' : 'adb'), ['install', '-r', out])
+const adb = join(env.ANDROID_HOME, 'platform-tools', win ? 'adb.exe' : 'adb')
+if (process.argv.includes('--install')) run(adb, ['install', '-r', out])
+// --watch=<ip:port>: the watch's Wireless debugging address, once it's paired with this computer
+const watch = process.argv.find(a => a.startsWith('--watch='))?.slice('--watch='.length)
+if (watch) {
+  run(adb, ['connect', watch])
+  // -g grants its notifications at install, so a workout shows up without opening the app first
+  run(adb, ['-s', watch, 'install', '-r', '-g', watchOut])
 }

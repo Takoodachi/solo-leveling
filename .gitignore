@@ -11,6 +11,7 @@ node_modules
 dist
 # Android app build output (npm run android)
 solo-leveling.apk
+solo-leveling-watch.apk
 .wrangler
 dist-ssr
 *.local

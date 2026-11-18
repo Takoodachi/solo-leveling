@@ -49,6 +49,8 @@ dependencies {
     implementation 'androidx.health.connect:connect-client:1.2.0-alpha01'
     implementation 'androidx.work:work-runtime-ktx:2.10.5'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+    // The workout in progress, sent to the watch app (android/wear) through Google's Data Layer
+    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
 }
 
 apply from: 'capacitor.build.gradle'
