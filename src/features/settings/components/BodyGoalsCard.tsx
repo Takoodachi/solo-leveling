@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import DatePicker from '@/components/DatePicker'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import NumberStepper from '@/components/NumberStepper'
@@ -14,7 +16,7 @@ import { toDateStr } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { countsSteps } from '@/lib/stepCalories'
 import { useSettings } from '../hooks/useSettings'
-import { cmFrom, feetInches, useUnits } from '../units'
+import { bodyKg, bodyWeight, cmFrom, feetInches, useUnits } from '../units'
 import { CUT_PACES, LOWEST_BELIEVABLE, formulaMaintenance, goalPace, restingKcal, suggestedTargets, type GoalType, type Sex } from '../targetSuggestion'
 import ExpenditureNote from './ExpenditureNote'
 
@@ -50,6 +52,25 @@ function HeightField({ cm, onChange }: { cm?: number; onChange: (cm: number | un
         <NumberStepper value={now ? String(now.ft) : ''} onChange={v => onChange(Number(v) > 0 ? cmFrom(Number(v), now?.in ?? 0) : undefined)} min={3} max={8} inputMode="numeric" placeholder="5 ft" />
         <NumberStepper value={now ? String(now.in) : ''} onChange={v => now && onChange(cmFrom(now.ft, Number(v) || 0))} min={0} max={11} inputMode="numeric" placeholder="9 in" />
       </div>
+    </div>
+  )
+}
+
+/** The weight aimed for, kept in kg and typed in the account's unit; emptying the field clears it. */
+function GoalWeightField({ kg, onChange }: { kg?: number; onChange: (kg: number | undefined) => void }) {
+  const unit = useUnits(s => s.weight)
+  const [text, setText] = useState(kg ? String(bodyWeight(kg, unit)) : '')
+  function change(v: string) {
+    setText(v)
+    const goal = bodyKg(Number(v.replace(',', '.')), unit)
+    if (!v.trim()) onChange(undefined)
+    else if (goal >= 30 && goal <= 500) onChange(goal) // a number half typed (the 7 of 75) isn't saved
+  }
+  return (
+    <div id="body-goals--goal-weight" className="flex flex-col gap-1.5">
+      <Label htmlFor="goal-weight">Goal weight ({unit})</Label>
+      <Input id="goal-weight" type="number" inputMode="decimal" placeholder={unit === 'lb' ? '165' : '75'} value={text} onChange={e => change(e.target.value)} />
+      <p className="text-xs text-muted-foreground">Optional. The body weight page shows how far your trend is from it, and roughly when it gets there at your recent pace.</p>
     </div>
   )
 }
@@ -121,6 +142,8 @@ export default function BodyGoalsCard() {
       {goalType === 'bulk' && (
         <p className="-mt-3 text-xs text-muted-foreground">Gaining 0.25% of your weight a week, or 0.5% in your first year of lifting, when it builds the most muscle.</p>
       )}
+      {/* Mounted once settings are read, so the field starts from the saved goal */}
+      {settings && <GoalWeightField kg={settings.goalWeightKg} onChange={kg => void updateSettings({ goalWeightKg: kg })} />}
       {known && goalType ? (
         <div className="flex flex-col gap-2">
           <ExpenditureNote measured={measured} believable={believable} />

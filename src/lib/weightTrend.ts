@@ -53,3 +53,23 @@ export function weightSlope(points: readonly Weighed[]): number | null {
   })
   return bottom > 0 ? top / bottom : null
 }
+
+/** Within this of the goal, the trend is there: it still wobbles by a few tenths. */
+const AT_GOAL_KG = 0.3
+/** Slower than this (kg a week) the weight is holding steady, as the weight page says: no date to give. */
+const STEADY_KG_A_WEEK = 0.05
+
+export interface GoalProjection {
+  /** The goal minus the trend, kg: above zero when the goal is above it. */
+  gapKg: number
+  /** Days until the trend reaches the goal at the recent pace: 0 = there already, null = it isn't heading there (or has no pace yet). */
+  days: number | null
+}
+
+/** How far the trend is from a goal weight, gaining or losing alike, and when the recent pace (`weightSlope`, kg a day) gets it there. */
+export function goalProjection(trendKg: number, goalKg: number, slope: number | null): GoalProjection {
+  const gapKg = goalKg - trendKg
+  if (Math.abs(gapKg) < AT_GOAL_KG) return { gapKg, days: 0 }
+  const heading = slope != null && Math.abs(slope * 7) >= STEADY_KG_A_WEEK && Math.sign(slope) === Math.sign(gapKg)
+  return { gapKg, days: heading ? Math.max(1, Math.round(gapKg / slope)) : null }
+}

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import AfterSlide from '@/components/AfterSlide'
 import { ChevronRight } from 'lucide-react'
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts'
 import { formatShortDate } from '@/lib/date'
 import { useBodyMetrics } from '@/features/bodyMetrics/useBodyMetrics'
 import { withTrend } from '@/lib/weightTrend'
@@ -14,6 +14,7 @@ import { bodyText, bodyWeight, inUnit, useUnits } from '@/features/settings/unit
 export function WeightTrendCard() {
   const { metrics } = useBodyMetrics(30)
   const unit = useUnits(s => s.weight)
+  const goal = useSettings().settings?.goalWeightKg
   // The weigh-ins as dots; the line is the trend, with the day-to-day swings smoothed out
   const points = withTrend([...metrics].sort((a, b) => a.date.localeCompare(b.date)))
   const data = points.map(m => ({ date: m.date, label: formatShortDate(m.date), weight: bodyWeight(m.weightKg, unit), trend: bodyWeight(m.trend, unit) }))
@@ -47,6 +48,8 @@ export function WeightTrendCard() {
                 <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} ${unit}`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
                 <Area type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#wFill)" />
                 <Area type="monotone" dataKey="weight" stroke="none" fill="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
+                {/* The goal, dashed; its label on the side facing the weigh-ins, clear of the dates and the top edge */}
+                {goal != null && <ReferenceLine y={bodyWeight(goal, unit)} ifOverflow="extendDomain" stroke="hsl(var(--foreground))" strokeDasharray="4 4" label={{ value: `Goal ${bodyText(goal, unit)}`, position: goal < (trend ?? goal) ? 'insideBottomRight' : 'insideTopRight', fontSize: 10, fill: 'hsl(var(--foreground))' }} />}
               </AreaChart>
             </ResponsiveContainer>
           </AfterSlide>

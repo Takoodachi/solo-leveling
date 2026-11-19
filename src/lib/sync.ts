@@ -140,7 +140,7 @@ const SINGLETONS: SingletonSpec[] = [
       'id', 'displayName', 'heightCm', 'sex', 'goalType', 'dynamicTargetsEnabled', 'activityWindowDays',
       'dailyStepGoal', 'weeklyWorkoutGoal', 'defaultRestSeconds', 'reminderEnabled', 'reminderTime', 'reminderDays', 'reminders',
       'creatineEnabled', 'homeWidgets', 'waterGoalMl', 'waterGlassMl', 'trainingLevel', 'radarMuscles', 'shareOnLeaderboard', 'shareRoutines', 'theme', 'navTabs', 'avatar', 'showSearch',
-      'workoutTips', 'appShortcuts', 'customTheme', 'achievementGoals', 'trainingSince', 'cardStyle', 'health', 'goalPace', 'trainingDayCarbs', 'extras', 'weightUnit', 'heightUnit', 'updatedAt',
+      'workoutTips', 'appShortcuts', 'customTheme', 'achievementGoals', 'trainingSince', 'cardStyle', 'health', 'goalPace', 'goalWeightKg', 'trainingDayCarbs', 'extras', 'weightUnit', 'heightUnit', 'updatedAt',
     ],
   },
 ]
