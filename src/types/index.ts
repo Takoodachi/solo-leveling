@@ -144,6 +144,7 @@ export interface Settings {
   sex?: 'male' | 'female'
   goalType?: 'cut' | 'maintain' | 'bulk'
   goalPace?: number // a cut's pace, % of body weight a week (0.25 | 0.5 | 0.75; unset = 0.5; targetSuggestion.ts)
+  goalWeightKg?: number // the weight aimed for, kg (shown in the account's unit); the weight page projects when the trend gets there
   trainingDayCarbs?: boolean // carbs for fat on planned workout days, back on rest days (unset = on; lib/macroTargets.ts)
   dynamicTargetsEnabled?: boolean // subtract step calories from what was eaten (unset = on; `countsSteps`)
   activityWindowDays?: number // legacy (rolling-average activity targets), unused

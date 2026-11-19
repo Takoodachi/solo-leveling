@@ -64,6 +64,7 @@ export const SETTING_ENTRIES: Entry[] = [
   ...(isAndroidApp() ? [{ id: 'app-icon', title: 'App icon shortcuts', subtitle: 'Settings › App icon', keywords: 'long press hold home screen launcher quick actions icon shortcut', Icon: Smartphone, to: '/settings#app-icon' }] : []),
   { id: 'name-photo', title: 'Name and photo', subtitle: 'Profile', keywords: 'name photo picture avatar profile display', Icon: UserRound, to: '/profile' },
   { id: 'body-goals', title: 'Body & goals', subtitle: 'Profile', keywords: 'height sex age activity goal bodyweight weight cut bulk maintain lose gain pace training since', Icon: Ruler, to: '/profile#body-goals' },
+  { id: 'goal-weight', title: 'Goal weight', subtitle: 'Profile › Body & goals', keywords: 'goal target aim weight bodyweight scale reach lose gain when date projection how long trend', Icon: Scale, to: '/profile#body-goals--goal-weight' },
   { id: 'targets', title: 'Daily targets', subtitle: 'Profile', keywords: 'calories calorie kcal protein carbs fat macros goal budget limit target food eat', Icon: Goal, to: '/profile#targets' },
   { id: 'step-calories', title: 'Step calories', subtitle: 'Profile › Daily targets', keywords: 'steps walking burn burned calories subtract net', Icon: Goal, to: '/profile#targets' },
   { id: 'training-carbs', title: 'More carbs on workout days', subtitle: 'Profile › Daily targets', keywords: 'carbs carbohydrates workout training days fat rest cycling', Icon: Goal, to: '/profile#targets' },

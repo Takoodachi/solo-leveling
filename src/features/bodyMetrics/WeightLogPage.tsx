@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { parseISO, subDays } from 'date-fns'
+import { addDays, format, parseISO, subDays } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import FullScreen from '@/components/FullScreen'
 import PageHeader from '@/components/PageHeader'
@@ -8,13 +8,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import DatePicker from '@/components/DatePicker'
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts'
 import { axisTick, tooltipStyle, dayLabel, scrub, lineCursor } from '@/features/analytics/chartStyles'
 import { useBodyMetrics } from './useBodyMetrics'
 import { today, formatShortDate, toDateStr } from '@/lib/date'
-import { weightSlope, withTrend } from '@/lib/weightTrend'
+import { goalProjection, weightSlope, withTrend, type GoalProjection } from '@/lib/weightTrend'
 import { showKeyboard } from '@/lib/native'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import { useNow } from '@/hooks/useNow'
+import { useSettings } from '@/features/settings/hooks/useSettings'
 import type { WeightUnit } from '@/types'
 import { bodyKg, bodyText, bodyWeight, inUnit, useUnits, weeklyChange } from '@/features/settings/units'
 
@@ -27,9 +29,22 @@ function pace(kgPerWeek: number, unit: WeightUnit): string {
   return weeklyChange(kgPerWeek, unit)
 }
 
+/** Where the trend stands against the goal, said the same way gaining or losing, and when the recent pace gets it there. */
+function goalLine({ gapKg, days }: GoalProjection, paced: boolean, unit: WeightUnit, now: Date): string {
+  if (days === 0) return 'The trend is right at it.'
+  const where = `The trend is ${bodyText(Math.abs(gapKg), unit)} ${gapKg > 0 ? 'below' : 'above'} it`
+  if (days == null) return paced ? `${where} and hasn’t been heading toward it lately.` : `${where}.`
+  const when = addDays(now, days)
+  const weeks = Math.max(1, Math.round(days / 7))
+  const eta = weeks <= 16 ? `${weeks} week${weeks > 1 ? 's' : ''}, around ${format(when, 'MMM d')}` : `${Math.round(days / 30.4)} months, around ${format(when, 'MMM yyyy')}`
+  return `${where}: at the last 4 weeks’ pace, about ${eta}.`
+}
+
 export default function WeightLogPage() {
   const { metrics, logWeight, deleteMetric } = useBodyMetrics(90)
   const unit = useUnits(s => s.weight)
+  const goal = useSettings().settings?.goalWeightKg
+  const now = useNow()
   const [weight, setWeight] = useState('')
   // The weigh-in reminder opens /analytics/weight?log=1: straight into the field, keyboard up
   const [params] = useSearchParams()
@@ -60,6 +75,7 @@ export default function WeightLogPage() {
   const trendNow = points.at(-1)?.trend
   const since = latest ? toDateStr(subDays(parseISO(latest.date), PACE_DAYS)) : ''
   const slope = weightSlope(points.filter(p => p.date >= since))
+  const toGoal = goal != null && trendNow != null ? goalProjection(trendNow, goal, slope) : null
 
   return (
     <FullScreen className="flex flex-col gap-4">
@@ -78,6 +94,11 @@ export default function WeightLogPage() {
               <p className="text-3xl font-bold">{inUnit(trendNow, unit).toFixed(1)} <span className="text-lg font-normal text-muted-foreground">{unit}</span></p>
               <p className="text-xs text-muted-foreground mt-0.5">{slope != null ? pace(slope * 7, unit) : 'Pace after a week of weigh-ins'}</p>
             </div>
+          )}
+          {toGoal && goal != null && (
+            <p className="col-span-2 border-t border-border pt-3 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Goal {bodyText(goal, unit)}.</span> {goalLine(toGoal, slope != null, unit, now)}
+            </p>
           )}
         </div>
       )}
@@ -126,6 +147,8 @@ export default function WeightLogPage() {
               <Tooltip {...scrub} cursor={lineCursor} contentStyle={tooltipStyle} labelFormatter={dayLabel} formatter={(v, key) => [`${v} ${unit}`, key === 'trend' ? 'Trend' : 'Weigh-in']} />
               <Line type="monotone" dataKey="weight" stroke="none" dot={{ r: 2.5, fill: 'hsl(var(--muted-foreground))', strokeWidth: 0 }} activeDot={{ r: 4 }} isAnimationActive={false} />
               <Line type="monotone" dataKey="trend" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+              {/* The goal, dashed; its label on the side facing the weigh-ins, clear of the dates and the top edge */}
+              {goal != null && <ReferenceLine y={bodyWeight(goal, unit)} ifOverflow="extendDomain" stroke="hsl(var(--foreground))" strokeDasharray="4 4" label={{ value: `Goal ${bodyText(goal, unit)}`, position: goal < (trendNow ?? goal) ? 'insideBottomRight' : 'insideTopRight', fontSize: 10, fill: 'hsl(var(--foreground))' }} />}
             </LineChart>
           </ResponsiveContainer>
           <p className="mt-2 text-xs text-muted-foreground">
