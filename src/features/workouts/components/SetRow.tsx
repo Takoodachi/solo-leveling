@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, Play, Square, X } from 'lucide-react'
 import type { WeightUnit } from '@/types'
 import { cn } from '@/lib/utils'
 import { sanitizeNumeric as sanitize, type SetDraft, type LastSet } from '../types'
 import { SET_COLUMNS, SET_GRID, type SetField, type SetRowMode } from '../setColumns'
+import HoldTimer from './HoldTimer'
 
 function describeLast(s: LastSet | undefined, mode: SetRowMode, unit: WeightUnit): string {
   if (!s) return '—'
+  if (mode === 'stretch') return s.duration != null ? `${s.duration}s` : '—' // last time's hold, in seconds already
   if (mode === 'load') {
     if (s.weight != null && s.reps != null) return `${s.weight}×${s.reps}`
     if (s.reps != null) return `${s.reps} reps`
@@ -33,9 +35,13 @@ interface Props {
   onUseLast: () => void
   /** Takes this set out. Left off for an exercise's only set. */
   onRemove?: () => void
+  /** A stretch's hold running on this set, counting down in place of its field. */
+  hold?: { endAt: number; total: number } | null
+  /** Starts or stops the hold (a stretch); left off while a past workout is edited. */
+  onHold?: () => void
 }
 
-export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, onToggleDone, onUseLast, onRemove }: Props) {
+export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, onToggleDone, onUseLast, onRemove, hold, onHold }: Props) {
   // Tapping the set's number offers to remove it: two taps, so a stray one costs nothing
   const [armed, setArmed] = useState(false)
   const removing = armed && !!onRemove
@@ -76,7 +82,7 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
             onRemove()
           }}
           className="h-11 rounded-xl bg-destructive/15 text-sm font-semibold text-destructive"
-          style={{ gridColumn: `span ${1 + SET_COLUMNS[mode].length}` }}
+          style={{ gridColumn: `span ${1 + SET_COLUMNS[mode].length + (mode === 'stretch' ? 1 : 0)}` }}
         >
           Remove set {index + 1}
         </button>
@@ -92,7 +98,9 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
           >
             {describeLast(last, mode, unit)}
           </button>
-          {SET_COLUMNS[mode].map(([field, label, keyboard]) => (
+          {SET_COLUMNS[mode].map(([field, label, keyboard]) => hold ? (
+            <HoldTimer key={field} endAt={hold.endAt} total={hold.total} />
+          ) : (
             <input
               key={field}
               type="text"
@@ -110,6 +118,21 @@ export default function SetRow({ index, set, mode, unit = 'kg', last, onChange, 
               )}
             />
           ))}
+          {mode === 'stretch' && (onHold ? (
+            <button
+              type="button"
+              onClick={onHold}
+              onPointerDown={e => e.stopPropagation()} // a press here isn't a hold on the row
+              disabled={set.done && !hold}
+              aria-label={hold ? 'Stop the hold' : `Start a ${set.duration || 30} second hold`}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-xl transition-colors disabled:opacity-30',
+                hold ? 'bg-primary/15 text-primary' : 'bg-secondary text-foreground',
+              )}
+            >
+              {hold ? <Square size={15} className="fill-current" /> : <Play size={17} className="ml-0.5 fill-current" />}
+            </button>
+          ) : <span />)}
         </>
       )}
       <button

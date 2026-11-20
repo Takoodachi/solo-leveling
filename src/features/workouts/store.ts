@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { db } from '@/db'
 import { moved } from '@/lib/utils'
+import { setModeFor } from '@/lib/workoutMath'
 import type { Exercise, WeightUnit } from '@/types'
 import { applyFill, type HintFill } from './progression'
 import { type WorkoutDraft, type BlockDraft, type BlockHistory, type SetDraft, cardioSet, emptySet, numText, setHasValue } from './types'
-import { convertWeightText, weightText } from './units'
+import { DEFAULT_HOLD_SECONDS, convertWeightText, holdText, weightText } from './units'
 import type { Effort } from './effort'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
@@ -73,13 +74,17 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       if (!s.draft) return s
       const last = opts?.lastSets?.[0]
       // Cardio is one entry (time + distance + effort); everything else starts from last session's first set.
+      // A stretch is a hold in seconds, and the next one is paced by its own timer, not a rest.
+      const stretch = setModeFor(exercise) === 'stretch'
       const first = exercise.type === 'cardio'
         ? cardioSet(last)
-        : emptySet({ weight: weightText(last?.weight, opts?.unit), reps: numText(last?.reps) })
+        : stretch
+          ? emptySet({ duration: holdText(last?.duration) || String(DEFAULT_HOLD_SECONDS) })
+          : emptySet({ weight: weightText(last?.weight, opts?.unit), reps: numText(last?.reps) })
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload, recovery: opts?.recovery }],
+          blocks: [...s.draft.blocks, { exercise, restSec: stretch ? 0 : opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload, recovery: opts?.recovery }],
         },
       }
     }),

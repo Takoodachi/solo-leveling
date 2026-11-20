@@ -34,6 +34,14 @@ describe('the watch’s buttons', () => {
     expect(sets()).toEqual(['135×5 ✓'])
   })
 
+  it('a stretch is done as last time’s hold in seconds, and with no rest set the next hold isn’t held up', () => {
+    const quad = { ...ex('Quad Stretch'), type: 'flexibility', defaultUnit: 'min' } as Exercise
+    start([block(quad, [{ ...set('', ''), duration: '' }, set('', '')], { restSec: 0, lastSets: [{ duration: 0.5 }] })])
+    applyWatchAction('tick', 90)
+    expect(useWorkoutStore.getState().draft?.blocks[0].sets[0]).toMatchObject({ duration: '30', done: true })
+    expect(restEndsAt()).toBeNull()
+  })
+
   it('Skip ends the rest, +15 s stretches it', () => {
     start([block(ex('Squat'), [set('100', '8')])])
     applyWatchAction('tick', 90)

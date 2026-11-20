@@ -7,14 +7,16 @@ import type { Exercise, Routine, RoutineExercise } from '@/types'
 import { cn, swapped } from '@/lib/utils'
 import { CATEGORIES, CATEGORY_META, LEVELS, LEVEL_META, WEEKDAY_SHORT, WEEK_ORDER } from '../categories'
 import { useExerciseMap } from '../hooks/useExercises'
+import { DEFAULT_HOLD_SECONDS } from '../units'
 import ExercisePickerSheet from './ExercisePickerSheet'
 import RoutineExerciseEditor from './RoutineExerciseEditor'
 import RoutinePhotoField from './RoutinePhotoField'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-/** Defaults for a newly added exercise: cardio is one 20-minute entry, timed holds 3 × 1 min, lifts 3 × 10. */
+/** Defaults for a newly added exercise: cardio is one 20-minute entry, a stretch 2 × 30 s (a side each, or twice), timed holds 3 × 1 min, lifts 3 × 10. */
 function newRoutineExercise(ex: Exercise): RoutineExercise {
   if (ex.type === 'cardio') return { exerciseId: ex.uuid, sets: 1, reps: 20, restSec: 0 }
+  if (ex.type === 'flexibility') return { exerciseId: ex.uuid, sets: 2, reps: DEFAULT_HOLD_SECONDS, restSec: 0 }
   return { exerciseId: ex.uuid, sets: 3, reps: ex.defaultUnit === 'min' ? 1 : 10, restSec: 90 }
 }
 

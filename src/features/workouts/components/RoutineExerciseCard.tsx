@@ -13,7 +13,7 @@ interface Props {
 export default function RoutineExerciseCard({ index, item, exercise, onOpen }: Props) {
   const minutes = Math.max(1, Math.round(exerciseMinutes(item, exercise)))
   const mode = exercise ? setModeFor(exercise) : 'load'
-  const target = mode === 'cardio' ? 'Cardio' : `${item.reps}${mode === 'time' ? ' min' : ''}×${item.sets}`
+  const target = mode === 'cardio' ? 'Cardio' : `${item.reps}${mode === 'time' ? ' min' : mode === 'stretch' ? ' s' : ''}×${item.sets}`
   return (
     <button
       type="button"

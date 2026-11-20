@@ -6,7 +6,7 @@ import { formatKm, formatSpeed, paceStyle, speedKmh } from '@/lib/cardio'
 import { est1RM } from '@/lib/workoutMath'
 import { describeSet } from './describeSet'
 import { exerciseUnit } from './hooks/useExerciseNote'
-import { shownWeight } from './units'
+import { holdSeconds, shownWeight } from './units'
 
 /** How many past sessions the info sheet lists. */
 const SESSIONS_SHOWN = 5
@@ -58,6 +58,11 @@ function bestsOf(sets: DatedSet[], exercise: Exercise, unit: WeightUnit, day: (d
       add('Fastest', top(sets.filter(s => (s.distanceKm ?? 0) >= minKm), s => speedKmh(s) ?? 0), s => formatSpeed(exercise.uuid, speedKmh(s)!))
     }
     if (bests.length === 0) add('Longest', top(sets, s => s.duration ?? 0), s => `${s.duration} min`)
+    return bests
+  }
+
+  if (exercise.type === 'flexibility') {
+    add('Longest hold', top(sets, s => s.duration ?? 0), s => `${holdSeconds(s.duration!)} s`)
     return bests
   }
 

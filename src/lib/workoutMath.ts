@@ -9,14 +9,16 @@ export function resolveBodyKg(bodyKg: number | undefined): number {
 
 /**
  * How an exercise is logged: `load` = weight × reps sets, `time` = timed sets
- * (planks), `cardio` = one entry of time + distance + effort (never sets).
+ * (planks), `stretch` = holds in seconds (stretches), `cardio` = one entry of
+ * time + distance + effort (never sets).
  */
-export type SetMode = 'load' | 'time' | 'cardio'
+export type SetMode = 'load' | 'time' | 'stretch' | 'cardio'
 
 export type ExerciseKind = Pick<Exercise, 'type' | 'defaultUnit'>
 
 export function setModeFor(exercise: ExerciseKind): SetMode {
   if (exercise.type === 'cardio') return 'cardio'
+  if (exercise.type === 'flexibility') return 'stretch'
   if (exercise.defaultUnit === 'min') return 'time'
   return 'load' // kg / lb / reps
 }
@@ -46,6 +48,7 @@ const MET: Record<RoutineCategory, number> = {
   cardio: 7,
   core: 3.8,
   mobility: 2.5,
+  stretching: 2.3, // Compendium 02101, stretching (mild)
 }
 
 const LIGHT_MET = 3
@@ -61,7 +64,9 @@ export function estimateKcal(met: number, bodyKg: number | undefined, minutes: n
  */
 export function liftMetFor(category: RoutineCategory | undefined, exercises: ExerciseKind[]): number {
   if (category && category !== 'cardio') return MET[category]
-  return exercises.some(e => setModeFor(e) !== 'cardio') ? MET.strength : LIGHT_MET
+  const modes = exercises.map(setModeFor).filter(m => m !== 'cardio')
+  if (modes.length === 0) return LIGHT_MET
+  return modes.every(m => m === 'stretch') ? MET.stretching : MET.strength
 }
 
 /** Max heart rate by Tanaka (208 − 0.7 × age) at 25: the app doesn't know anyone's age. */
@@ -86,12 +91,12 @@ const WORK_SECONDS_PER_SET = 40
 
 /**
  * Minutes one routine exercise takes. Cardio: its target minutes (`reps`).
- * Timed sets: sets × (hold + rest). Load sets: sets × (~40 s work + rest).
+ * Timed sets: sets × (hold + rest); a stretch's hold is in seconds. Load sets: sets × (~40 s work + rest).
  */
 export function exerciseMinutes(re: RoutineExercise, exercise?: ExerciseKind): number {
   const mode = exercise ? setModeFor(exercise) : 'load'
   if (mode === 'cardio') return re.sets * re.reps + (Math.max(0, re.sets - 1) * re.restSec) / 60
-  const workSec = mode === 'time' ? re.reps * 60 : WORK_SECONDS_PER_SET
+  const workSec = mode === 'time' ? re.reps * 60 : mode === 'stretch' ? re.reps : WORK_SECONDS_PER_SET
   return (re.sets * (workSec + re.restSec)) / 60
 }
 

@@ -52,8 +52,10 @@ export default function RoutineExerciseEditor({ item, exercise, isFirst, isLast,
               <NumberStepper value={String(item.sets)} onChange={v => onChange({ ...item, sets: toInt(v) })} min={1} max={20} inputMode="numeric" />
             </div>
             <div>
-              <p className="mb-1 text-xs text-muted-foreground">{mode === 'time' ? 'Minutes' : 'Reps'}</p>
-              <NumberStepper value={String(item.reps)} onChange={v => onChange({ ...item, reps: toInt(v) })} min={1} max={200} inputMode="numeric" />
+              <p className="mb-1 text-xs text-muted-foreground">{mode === 'time' ? 'Minutes' : mode === 'stretch' ? 'Hold (seconds)' : 'Reps'}</p>
+              {mode === 'stretch'
+                ? <NumberStepper value={String(item.reps)} onChange={v => onChange({ ...item, reps: toInt(v) })} step={5} min={5} max={300} inputMode="numeric" />
+                : <NumberStepper value={String(item.reps)} onChange={v => onChange({ ...item, reps: toInt(v) })} min={1} max={200} inputMode="numeric" />}
             </div>
           </div>
           <p className="mb-1.5 mt-3 text-xs text-muted-foreground">Rest between sets</p>

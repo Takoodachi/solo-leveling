@@ -11,7 +11,7 @@ import { initials } from '@/features/settings/avatar'
 import { BODY, HEADING, fit, loadImage, logo, wrap, type CardOwner, type Ctx } from '@/features/share/card'
 import { describeBest, type NewBest } from './hooks/useWorkoutHistory'
 import { describeSet } from './describeSet'
-import { LISTED, MIN_ALPHA, musclesWorked } from './musclesWorked'
+import { LISTED, MIN_ALPHA, bodyMap } from './musclesWorked'
 import { summaryStats } from './summaryStats'
 
 /**
@@ -37,10 +37,12 @@ const sentence = (parts: string[]) => `${parts.slice(0, -1).join(', ')}${parts.l
 
 /** The line sent with the image: "6 exercises, 15 sets, 1 new best and 1 rank-up." */
 export function workoutHeadline({ workout, bests, rankUps }: WorkoutShare): string {
-  const lifts = workout.sets.filter(s => s.exercise.type !== 'cardio')
+  const lifts = workout.sets.filter(s => s.exercise.type !== 'cardio' && s.exercise.type !== 'flexibility')
+  const stretches = new Set(workout.sets.filter(s => s.exercise.type === 'flexibility').map(s => s.exerciseId)).size
   const km = workout.sets.reduce((n, s) => n + (s.exercise.type === 'cardio' ? (s.distanceKm ?? 0) : 0), 0)
   const parts: string[] = []
   if (lifts.length) parts.push(plural(new Set(lifts.map(s => s.exerciseId)).size, 'exercise'), plural(lifts.length, 'set'))
+  if (stretches) parts.push(`${stretches} stretch${stretches === 1 ? '' : 'es'}`)
   if (km > 0) parts.push(`${formatKm(km)} of cardio`)
   if (bests.length) parts.push(plural(bests.length, 'new best'))
   if (rankUps.length) parts.push(plural(rankUps.length, 'rank-up'))
@@ -300,9 +302,9 @@ function figure(ctx: Ctx, shapes: Shape[], center: Shape[], level: Map<MuscleReg
   ctx.restore()
 }
 
-/** "Muscles worked": the two figures, and the most worked named beside them with a bar each. */
+/** "Muscles worked" (or stretched): the two figures, and the most worked named beside them with a bar each. */
 function musclesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], c: Colors): Block | null {
-  const work = musclesWorked(sets)
+  const { label, work } = bodyMap(sets)
   if (work.size === 0) return null
   const most = Math.max(...work.values())
   const level = new Map([...work].map(([region, value]) => [region, value / most]))
@@ -322,7 +324,7 @@ function musclesBlock(ctx: Ctx, sets: WorkoutSetWithExercise[], c: Colors): Bloc
   return {
     height: XS.line + 12 + rowH,
     draw(ctx, top) {
-      say(ctx, 'Muscles worked', X0, top, XS, rgba(c.muted))
+      say(ctx, label, X0, top, XS, rgba(c.muted))
       const rowTop = top + XS.line + 12
       figure(ctx, FRONT, CENTER_FRONT, level, X0, rowTop + (rowH - figH) / 2, figW, c)
       figure(ctx, BACK, CENTER_BACK, level, X0 + figW + 4, rowTop + (rowH - figH) / 2, figW, c)

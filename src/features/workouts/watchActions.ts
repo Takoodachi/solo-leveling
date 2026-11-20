@@ -1,6 +1,7 @@
 import { useWorkoutStore } from './store'
 import { setHasValue } from './types'
-import { lastSetsIn } from './units'
+import { setModeFor } from '@/lib/workoutMath'
+import { lastSetsOf } from './units'
 import { nextSet } from './workoutNotice'
 import { addRestSeconds, startRest, stopRest } from './hooks/useRestTimer'
 
@@ -21,12 +22,13 @@ export function applyWatchAction(action: string, defaultRest: number): void {
   if (!at) return
   const block = draft.blocks[at.blockIdx]
   // A wrist can't type numbers: an empty set is done as last time's, as "Use last" fills it
-  const last = setHasValue(block.sets[at.setIdx]) ? undefined : lastSetsIn(block.lastSets, block.unit)?.[at.setIdx]
+  const last = setHasValue(block.sets[at.setIdx]) ? undefined : lastSetsOf(block)?.[at.setIdx]
   if (last?.weight != null) store.updateSet(at.blockIdx, at.setIdx, 'weight', String(last.weight))
   if (last?.reps != null) store.updateSet(at.blockIdx, at.setIdx, 'reps', String(last.reps))
   if (last?.duration != null) store.updateSet(at.blockIdx, at.setIdx, 'duration', String(last.duration))
   if (last?.distanceKm != null) store.updateSet(at.blockIdx, at.setIdx, 'distanceKm', String(last.distanceKm))
   if (!store.toggleDone(at.blockIdx, at.setIdx)) return
-  startRest(block.restSec || defaultRest)
+  // A stretch with no rest goes straight on to the next hold; anything else rests at least the default
+  if (setModeFor(block.exercise) !== 'stretch' || block.restSec > 0) startRest(block.restSec || defaultRest)
   store.foldWhenDone(at.blockIdx)
 }

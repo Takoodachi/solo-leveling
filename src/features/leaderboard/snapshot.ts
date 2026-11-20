@@ -30,7 +30,7 @@ async function weekTotals(weekStart: string): Promise<LeaderboardSnapshot['week'
   return {
     start: weekStart,
     workouts: workouts.length,
-    sets: sets.filter(s => exerciseOf.get(s.exerciseId)?.type !== 'cardio').length,
+    sets: sets.filter(s => !['cardio', 'flexibility'].includes(exerciseOf.get(s.exerciseId)?.type ?? '')).length,
     minutes: Math.round(workouts.reduce((m, w) => m + (w.durationMin || 0), 0)),
     runKm: Math.round(runKm * 10) / 10,
   }

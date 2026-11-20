@@ -7,7 +7,7 @@ export type SetDraft = {
   uuid: string
   weight: string
   reps: string
-  duration: string // minutes
+  duration: string // minutes; a stretch's hold in seconds (units.ts)
   distanceKm: string
   /** Cardio effort (saved as rpe). */
   intensity?: Intensity

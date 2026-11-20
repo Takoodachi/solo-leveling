@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { WorkoutSetWithExercise } from '@/types'
 import { REGION_LABEL, type MuscleRegion } from '@/features/ranks/standards'
 import { BACK, BODY_FILL, BODY_LINE, CENTER_BACK, CENTER_FRONT, FRONT, HALVES, MUSCLE_FILL, MUSCLE_LINE, VIEWBOX, bodyInk, type Shape } from '@/features/ranks/components/bodygraphShapes'
-import { LISTED, MIN_ALPHA, musclesWorked } from '../musclesWorked'
+import { LISTED, MIN_ALPHA, bodyMap } from '../musclesWorked'
 
 const accent = (alpha: number) => `hsl(var(--primary) / ${alpha})`
 
@@ -41,7 +41,7 @@ function Figure({ label, shapes, center, level }: FigureProps) {
  * exercises name no muscles.
  */
 export default function MusclesWorked({ sets }: { sets: WorkoutSetWithExercise[] }) {
-  const work = musclesWorked(sets)
+  const { label, work } = bodyMap(sets)
   if (work.size === 0) return null
 
   const most = Math.max(...work.values())
@@ -50,7 +50,7 @@ export default function MusclesWorked({ sets }: { sets: WorkoutSetWithExercise[]
 
   return (
     <div>
-      <p className="mb-3 text-xs text-muted-foreground">Muscles worked</p>
+      <p className="mb-3 text-xs text-muted-foreground">{label}</p>
       <div className="flex items-center gap-4">
         <div className="grid w-[56%] shrink-0 grid-cols-2 gap-1">
           <Figure label="Front" shapes={FRONT} center={CENTER_FRONT} level={level} />
