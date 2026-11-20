@@ -10,7 +10,7 @@ interface Props {
 
 const pill = 'flex h-11 items-center gap-2 rounded-xl bg-secondary px-3 text-sm font-medium'
 
-/** One reminder: its switch and, once on, its time (and for workouts, which days). */
+/** One reminder: its switch and, once on, its time (and for workouts and stretching, which days). */
 export default function ReminderRow({ def, pref, onChange }: Props) {
   return (
     <div className="border-b border-foreground/5 py-3 last:border-0">
@@ -32,7 +32,7 @@ export default function ReminderRow({ def, pref, onChange }: Props) {
               className="min-w-0 bg-transparent text-base font-medium tabular-nums outline-none"
             />
           </label>
-          {def.kind === 'workout' && (
+          {(def.kind === 'workout' || def.kind === 'stretch') && (
             <button type="button" className={`${pill} hover:bg-accent`} onClick={() => onChange({ ...pref, days: pref.days === 'daily' ? 'workout-days' : 'daily' })}>
               {pref.days === 'daily' ? 'Every day' : 'Days with a routine'}
             </button>

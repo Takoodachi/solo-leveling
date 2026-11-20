@@ -24,6 +24,7 @@ export interface ReminderDef {
 
 export const REMINDERS: ReminderDef[] = [
   { kind: 'workout', label: 'Workout', description: 'When it’s time to train', time: '17:30', title: 'Time to train', body: 'Tap to start your workout.', url: '/workouts?start=1' },
+  { kind: 'stretch', label: 'Stretching', description: 'Until you’ve stretched that day', time: '20:30', title: 'Time to stretch', body: 'A few minutes for your muscles. Tap to start.', url: '/workouts?category=stretching' },
   { kind: 'creatine', label: 'Creatine', description: 'Until you’ve ticked it off', time: '09:00', title: 'Creatine', body: 'Take it and tick it off.', url: '/home#creatine' },
   { kind: 'food', label: 'Log your food', description: 'If nothing is logged by then', time: '20:00', title: 'Log today’s food', body: 'Nothing logged yet today.', url: '/nutrition?add=1' },
   { kind: 'weight', label: 'Weigh-in', description: 'If you haven’t weighed in that day', time: '07:30', title: 'Weigh-in', body: 'Step on the scale and log it.', url: '/analytics/weight?log=1' },
@@ -41,6 +42,7 @@ export function reminderPrefs(settings: Settings | undefined): ReminderPrefs {
     prefs.workout = { on: settings.reminderEnabled, time: settings.reminderTime ?? prefs.workout.time }
   }
   prefs.workout = { ...prefs.workout, days: saved.workout?.days ?? settings?.reminderDays ?? 'workout-days' }
+  prefs.stretch = { ...prefs.stretch, days: saved.stretch?.days ?? 'daily' }
   return prefs
 }
 
@@ -51,6 +53,8 @@ export interface ReminderFacts {
   routines: Record<number, string>
   /** Days (YYYY-MM-DD) whose planned workout was skipped: no workout nudge on them. */
   skipped?: string[]
+  /** The user's stretching routine, which the stretching nudge opens. */
+  stretchRoutine?: { id: string; name: string }
 }
 
 /**
@@ -86,6 +90,9 @@ export function planReminders(prefs: ReminderPrefs, facts: ReminderFacts, now: D
       if (def.kind === 'recap' && day.getDay() !== 1) continue
       if (def.kind === 'workout' && pref.days !== 'daily' && !routine) continue
       if (def.kind === 'workout' && facts.skipped?.includes(toDateStr(day))) continue
+      // Stretching on the days you train: none on a day without a routine, or one whose workout was skipped
+      if (def.kind === 'stretch' && pref.days === 'workout-days' && (!routine || facts.skipped?.includes(toDateStr(day)))) continue
+      const stretch = def.kind === 'stretch' ? facts.stretchRoutine : undefined
       const at = new Date(day)
       at.setHours(hours, minutes, 0, 0)
       if (at.getTime() <= now.getTime()) continue
@@ -94,8 +101,8 @@ export function planReminders(prefs: ReminderPrefs, facts: ReminderFacts, now: D
         kind: def.kind,
         at: at.getTime(),
         title: def.kind === 'workout' && routine ? `${routine} today` : def.title,
-        body: def.body,
-        url: def.url,
+        body: stretch ? `${stretch.name}. Tap to start.` : def.body,
+        url: stretch ? `/workouts/routine/${stretch.id}` : def.url,
       })
     }
   }

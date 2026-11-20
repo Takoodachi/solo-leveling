@@ -91,12 +91,12 @@ export interface Achievement {
 export type ReminderDays = 'daily' | 'workout-days'
 
 /** What the app can remind you about (Settings → Reminders). */
-export type ReminderKind = 'workout' | 'creatine' | 'food' | 'weight' | 'water' | 'recap'
+export type ReminderKind = 'workout' | 'stretch' | 'creatine' | 'food' | 'weight' | 'water' | 'recap'
 
 export interface ReminderPref {
   on: boolean
   time: string // HH:mm, local
-  /** Workout only: every day, or only the days with a scheduled routine. */
+  /** Workout and stretching: every day, or only the days with a scheduled routine. */
   days?: ReminderDays
 }
 
