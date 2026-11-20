@@ -15,6 +15,8 @@ export interface WorkoutSummary extends Workout {
   setCount: number
   /** Sets that aren't cardio entries. */
   liftSetCount: number
+  /** A stretch's holds among them. */
+  stretchSetCount: number
   distanceKm: number
   exerciseNames: string[]
   volume: number
@@ -43,7 +45,8 @@ export function useWorkoutList(limit = 1000, date?: string): WorkoutSummary[] | 
       }
       const liftSets = ws.filter(s => !isCardio(s.exerciseId))
       const distanceKm = ws.reduce((sum, s) => sum + (isCardio(s.exerciseId) ? (s.distanceKm ?? 0) : 0), 0)
-      return { ...w, setCount: ws.length, liftSetCount: liftSets.length, distanceKm, exerciseNames: names, volume: totalVolume(liftSets) }
+      const stretchSetCount = ws.filter(s => exerciseOf.get(s.exerciseId)?.type === 'flexibility').length
+      return { ...w, setCount: ws.length, liftSetCount: liftSets.length, stretchSetCount, distanceKm, exerciseNames: names, volume: totalVolume(liftSets) }
     })
   }, [limit, date])
 }

@@ -64,6 +64,9 @@ export default function HomePage() {
   const weekday = parseISO(selected).getDay()
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const routine = routines.find(r => r.scheduleDays.includes(weekday))
+  // What comes after the day's workout: a stretching routine of their own, the one planned for the day first
+  const stretching = routines.filter(r => r.category === 'stretching')
+  const stretchRoutine = stretching.find(r => r.scheduleDays.includes(weekday)) ?? stretching[0]
   const showSearch = settings?.showSearch !== false
   const kcalProgress = budget.targets.kcal > 0 ? netKcal(day?.kcal ?? 0, budget.burn) / budget.targets.kcal : 0
 
@@ -115,6 +118,7 @@ export default function HomePage() {
                 steps={day?.steps ?? 0}
                 budget={budget}
                 routine={routine}
+                stretchRoutine={stretchRoutine}
                 completed={completed}
                 onCustomize={() => setCustomizing(true)}
               />

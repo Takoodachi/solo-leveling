@@ -9,8 +9,12 @@ import { CATEGORY_META, LEVEL_META } from '@/features/workouts/categories'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
+import type { WorkoutSummary } from '@/features/workouts/hooks/useWorkoutHistory'
 import { useWorkoutStore } from '@/features/workouts/store'
 import { toneStyle, usePhotoTone } from '@/features/workouts/photoTone'
+
+/** A workout finished on the day on show. */
+export type CompletedWorkout = Pick<WorkoutSummary, 'uuid' | 'name' | 'createdAt' | 'setCount' | 'stretchSetCount'>
 
 interface Props {
   /** The day on show (YYYY-MM-DD): Skip applies to it. */
@@ -18,31 +22,39 @@ interface Props {
   isToday: boolean
   isFuture: boolean
   routine?: Routine
-  completed: { uuid: string; name?: string }[]
+  /** The user's own stretching routine: once the day's workout is done, it's what comes next. */
+  stretchRoutine?: Routine
+  completed: CompletedWorkout[]
 }
 
-export default function TodayWorkoutCard({ date, isToday, isFuture, routine, completed }: Props) {
-  const navigate = useNavigate()
-  const { startFromRoutine } = useActiveWorkout()
-  const minutesFor = useRoutineMinutes()
-  const hasDraft = useWorkoutStore(s => !!s.draft)
-  const tone = usePhotoTone(routine?.image, 'left')
-  const skipped = useCheckin('skip', date)
+/** A session of nothing but stretches: it doesn't finish the day's workout. */
+const stretchOnly = (w: CompletedWorkout) => w.setCount > 0 && w.stretchSetCount === w.setCount
 
-  if (completed.length > 0) {
-    return (
-      <div className="flex flex-col gap-2">
-        {completed.map(w => (
-          <Link key={w.uuid} to={`/workouts/summary/${w.uuid}`} className="flex items-center gap-3 rounded-3xl bg-card p-4">
-            <CheckCircle2 size={24} className="text-primary" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{w.name ?? 'Workout'}</p>
-              <p className="text-sm text-muted-foreground">Completed · view summary</p>
-            </div>
+/** Where "stretch?" goes for someone without a stretching routine: the stretching templates. */
+const STRETCH_TEMPLATES = '/workouts?category=stretching'
+
+export default function TodayWorkoutCard({ date, isToday, isFuture, routine, stretchRoutine, completed }: Props) {
+  const navigate = useNavigate()
+  const hasDraft = useWorkoutStore(s => !!s.draft)
+  const skipped = useCheckin('skip', date)
+  const last = completed.filter(w => !stretchOnly(w)).sort((a, b) => a.createdAt - b.createdAt).at(-1)
+  // Trained today, and nothing stretched in any of today's workouts yet
+  const stretchDue = isToday && !!last && !completed.some(w => w.stretchSetCount > 0)
+  // Only a stretch so far today with a workout still planned: a morning stretch doesn't finish the day
+  const stillPlanned = isToday && !last && !!routine && !skipped && routine.category !== 'stretching'
+
+  if (completed.length > 0 && !stillPlanned) {
+    if (stretchDue && last && stretchRoutine) {
+      return (
+        <PlanCard routine={stretchRoutine} label="Stretch next" canStart={!hasDraft}>
+          <Link to={`/workouts/summary/${last.uuid}`} className="flex min-w-0 items-center gap-1.5 text-sm text-foreground/80">
+            <CheckCircle2 size={15} className="shrink-0 text-primary" />
+            <span className="truncate">{last.name ?? 'Workout'} done · view summary</span>
           </Link>
-        ))}
-      </div>
-    )
+        </PlanCard>
+      )
+    }
+    return <Completed rows={completed} nudge={stretchDue ? last?.uuid : undefined} />
   }
 
   if (!routine) {
@@ -62,18 +74,32 @@ export default function TodayWorkoutCard({ date, isToday, isFuture, routine, com
     )
   }
 
+  const canStart = isToday && !hasDraft
+  const plan = (
+    <PlanCard
+      routine={routine}
+      label={isFuture ? 'Planned' : 'Today'}
+      canStart={canStart}
+      onSkip={canStart || isFuture ? () => void tickCheckin('skip', date) : undefined}
+    />
+  )
+  return stillPlanned ? <div className="flex flex-col gap-2">{plan}<Completed rows={completed} /></div> : plan
+}
+
+/** A routine to do: the day's plan, or the stretch that follows it (`children` goes under it). */
+function PlanCard({ routine, label, canStart, onSkip, children }: { routine: Routine; label: string; canStart: boolean; onSkip?: () => void; children?: ReactNode }) {
+  const { startFromRoutine } = useActiveWorkout()
+  const minutesFor = useRoutineMinutes()
+  const tone = usePhotoTone(routine.image, 'left')
   const cat = CATEGORY_META[routine.category]
   const lvl = LEVEL_META[routine.level]
-  const canStart = isToday && !hasDraft
   return (
     <div className="relative overflow-hidden rounded-3xl bg-card p-5 text-foreground" style={toneStyle(tone)}>
       <RoutineArt category={routine.category} image={routine.image} />
       <div className="relative flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
-          <Badge variant="tag" className="w-fit gap-1.5"><cat.Icon size={13} />{isFuture ? 'Planned' : 'Today'}</Badge>
-          {(canStart || isFuture) && (
-            <Button size="sm" variant="ghost" className="-my-2 -mr-2" onClick={() => void tickCheckin('skip', date)}>Skip</Button>
-          )}
+          <Badge variant="tag" className="w-fit gap-1.5"><cat.Icon size={13} />{label}</Badge>
+          {onSkip && <Button size="sm" variant="ghost" className="-my-2 -mr-2" onClick={onSkip}>Skip</Button>}
         </div>
         <Link to={`/workouts/routine/${routine.uuid}`} className="mt-4 text-lg font-semibold leading-tight">{routine.name}</Link>
         <div className="flex items-center justify-between gap-3">
@@ -83,7 +109,33 @@ export default function TodayWorkoutCard({ date, isToday, isFuture, routine, com
           </div>
           {canStart && <Button size="sm" onClick={() => void startFromRoutine(routine)}>Start</Button>}
         </div>
+        {children}
       </div>
+    </div>
+  )
+}
+
+/** The day's finished workouts, each opening its summary; the one named by `nudge` asks "stretch?". */
+function Completed({ rows, nudge }: { rows: CompletedWorkout[]; nudge?: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map(w => (
+        <div key={w.uuid} className="press relative flex items-center gap-3 rounded-3xl bg-card p-4">
+          <CheckCircle2 size={24} className="shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            {/* The whole card opens the summary (the link's ::after covers it); "stretch?" sits above that */}
+            <Link to={`/workouts/summary/${w.uuid}`} className="block truncate font-semibold after:absolute after:inset-0 after:rounded-3xl">
+              {w.name ?? 'Workout'}
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              Completed · view summary
+              {w.uuid === nudge && (
+                <> · <Link to={STRETCH_TEMPLATES} className="relative z-10 py-3 font-semibold text-primary">stretch?</Link></>
+              )}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

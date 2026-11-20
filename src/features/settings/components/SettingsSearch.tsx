@@ -1,8 +1,7 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Search, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useStuck } from '@/features/search/useStuck'
+import { useScrollFill } from '@/features/search/useScrollFill'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/features/auth/authStore'
 import { SETTING_ENTRIES } from '@/features/search/searchIndex'
@@ -22,7 +21,7 @@ interface Props {
 export default function SettingsSearch({ query, onQuery }: Props) {
   const navigate = useNavigate()
   const strip = useRef<HTMLDivElement>(null)
-  const stuck = useStuck(strip)
+  useScrollFill(strip)
   const signedIn = useAuthStore(s => !!s.userId)
   const searching = query.trim().length > 0
   const entries = SETTING_ENTRIES.filter(e => (e.only !== 'signedIn' || signedIn) && (e.only !== 'account' || isSupabaseConfigured))
@@ -37,7 +36,9 @@ export default function SettingsSearch({ query, onQuery }: Props) {
   return (
     <>
       {/* Holds the top as the page scrolls, and only then is a bar: Home's search does the same (HomeSearch) */}
-      <div ref={strip} className={cn('sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -my-2 bg-background/90 px-4 py-2 backdrop-blur-xl transition-colors duration-300 ease-out', !stuck && 'wallpaper-clear')}>
+      <div ref={strip} className="sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -my-2 px-4 py-2">
+        {/* Its fill: as much as the page has gone up under it (useScrollFill sets --fill) */}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-background/90 opacity-[var(--fill,0)] backdrop-blur-xl" />
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input

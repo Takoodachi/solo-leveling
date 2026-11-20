@@ -15,7 +15,7 @@ import { ROUTINE_TEMPLATES } from '@/data/routineTemplates'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
-import { WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
+import { CATEGORIES, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
 import CategoryChips from '@/features/workouts/components/CategoryChips'
 import RoutineCard from '@/features/workouts/components/RoutineCard'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
@@ -32,11 +32,13 @@ export default function WorkoutsPage() {
   const routines = useRoutines()
   const recent = useWorkoutList(3)
   const minutesFor = useRoutineMinutes()
-  const [category, setCategory] = useState<RoutineCategory | null>(null)
   const [params, setParams] = useSearchParams()
+  // A link can open a category (Home's "stretch?": ?category=stretching), its templates showing
+  const linked = CATEGORIES.find(c => c === params.get('category')) ?? null
+  const [category, setCategory] = useState<RoutineCategory | null>(linked)
   const startOpen = params.get('start') === '1'
   // Templates wait behind a button; open, they stay open for Back from one
-  const [browsing, setBrowsing] = useEntryState('workouts-templates', false)
+  const [browsing, setBrowsing] = useEntryState('workouts-templates', !!linked)
 
   const byCategory = <T extends { category: RoutineCategory }>(list: T[]) =>
     category ? list.filter(r => r.category === category) : list

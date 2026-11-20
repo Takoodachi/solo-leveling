@@ -21,6 +21,19 @@ describe('planReminders', () => {
     expect(workoutDays(planReminders(prefs, { ...facts, done: { workout: true } }, morning, 10))[0]).toBe('workout-2026-11-04')
   })
 
+  it('reminds to stretch every day by default, opening the stretching routine, and not once stretched', () => {
+    const stretch = reminderPrefs({ reminders: { stretch: { on: true, time: '20:30' } } } as Partial<Settings> as Settings)
+    const days = (plan: ReturnType<typeof planReminders>) => plan.filter(p => p.kind === 'stretch').map(p => p.key)
+    expect(days(planReminders(stretch, facts, morning, 3))).toEqual(['stretch-2026-11-02', 'stretch-2026-11-03', 'stretch-2026-11-04'])
+    expect(days(planReminders(stretch, { ...facts, done: { stretch: true } }, morning, 2))).toEqual(['stretch-2026-11-03'])
+    const mine = planReminders(stretch, { ...facts, stretchRoutine: { id: 'r1', name: 'Evening Stretch' } }, morning, 1)[0]
+    expect(mine).toMatchObject({ url: '/workouts/routine/r1', body: 'Evening Stretch. Tap to start.' })
+    expect(planReminders(stretch, facts, morning, 1)[0].url).toBe('/workouts?category=stretching')
+    // On the days you train only: not on a day without a routine, nor on a skipped one
+    const trainDays = reminderPrefs({ reminders: { stretch: { on: true, time: '20:30', days: 'workout-days' } } } as Partial<Settings> as Settings)
+    expect(days(planReminders(trainDays, { ...facts, skipped: ['2026-11-04'] }, morning, 10))).toEqual(['stretch-2026-11-02', 'stretch-2026-11-09', 'stretch-2026-11-11'])
+  })
+
   it('announces the recap on Mondays only, and nothing already past', () => {
     const recaps = planReminders(prefs, facts, morning, 14).filter(p => p.kind === 'recap').map(p => p.key)
     expect(recaps).toEqual(['recap-2026-11-02', 'recap-2026-11-09'])

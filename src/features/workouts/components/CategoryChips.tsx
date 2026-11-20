@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { LayoutGrid } from 'lucide-react'
 import type { RoutineCategory } from '@/types'
 import { cn } from '@/lib/utils'
@@ -10,6 +11,17 @@ interface Props {
 
 /** Horizontal icon chips ("My activity" row in the design). */
 export default function CategoryChips({ value, onChange }: Props) {
+  const picked = useRef<HTMLButtonElement>(null)
+  // Opened on a category (Home's "stretch?" links to one), its chip comes into view: it can be past the screen's edge
+  // (The row itself is scrolled: scrollIntoView moved the page sideways too, through an overflow-hidden parent)
+  useEffect(() => {
+    const chip = picked.current
+    const row = chip?.parentElement
+    if (!chip || !row) return
+    const at = chip.getBoundingClientRect()
+    const box = row.getBoundingClientRect()
+    row.scrollLeft += at.left - box.left - (box.width - at.width) / 2
+  }, [])
   const items = [
     { key: null, label: 'All', Icon: LayoutGrid },
     ...CATEGORIES.map(c => ({ key: c, label: CATEGORY_META[c].label, Icon: CATEGORY_META[c].Icon })),
@@ -21,7 +33,9 @@ export default function CategoryChips({ value, onChange }: Props) {
         return (
           <button
             key={label}
+            ref={active ? picked : undefined}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(key)}
             className={cn(
               'flex shrink-0 items-center gap-2.5 rounded-2xl py-2 pl-2 pr-4 transition-colors',

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db'
+import { exercisesById, setsOfWorkouts } from '@/db/read'
 import { useNow } from '@/hooks/useNow'
 import { addDays, parseISO } from 'date-fns'
 import { toDateStr } from '@/lib/date'
@@ -18,19 +19,24 @@ async function loadInputs(today: string, working: boolean): Promise<{ prefs: Rem
     db.settings.get(1),
     db.checkins.get(`creatine-${today}`),
     db.checkins.get(`water-${today}`),
-    db.workouts.where('date').equals(today).count(),
+    db.workouts.where('date').equals(today).toArray(),
     db.foodLog.where('date').equals(today).count(),
     db.bodyMetrics.where('date').equals(today).count(),
     db.routines.toArray(),
     db.checkins.where('date').between(today, toDateStr(addDays(parseISO(today), PLAN_DAYS - 1)), true, true)
       .filter(c => c.key === 'skip' && c.done).toArray(),
   ])
+  // Stretched today: a stretch in any of today's workouts, a cool-down at the end of one included
+  const [sets, exerciseOf] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById()])
+  const stretched = sets.some(s => exerciseOf.get(s.exerciseId)?.type === 'flexibility')
+  const stretching = routines.filter(r => r.category === 'stretching').sort((a, b) => b.scheduleDays.length - a.scheduleDays.length)[0]
   return {
     prefs: reminderPrefs(settings),
     facts: {
       done: {
         // A workout in progress counts: no "time to train" halfway through one
-        workout: workouts > 0 || working,
+        workout: workouts.length > 0 || working,
+        stretch: stretched || working,
         creatine: !!creatine?.done,
         food: food > 0,
         weight: weighIns > 0,
@@ -38,6 +44,7 @@ async function loadInputs(today: string, working: boolean): Promise<{ prefs: Rem
       },
       routines: Object.fromEntries(routines.flatMap(r => r.scheduleDays.map(d => [d, r.name]))),
       skipped: skips.map(c => c.date),
+      stretchRoutine: stretching && { id: stretching.uuid, name: stretching.name },
     },
   }
 }

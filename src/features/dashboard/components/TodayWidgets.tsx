@@ -10,7 +10,7 @@ import WaterCard from '@/features/checkins/components/WaterCard'
 import QuestCard from '@/features/gamification/components/QuestCard'
 import type { CalorieBudget } from '../hooks/useCalorieBudget'
 import { homeRows, homeWidgetsFrom } from '../homeWidgets'
-import TodayWorkoutCard from './TodayWorkoutCard'
+import TodayWorkoutCard, { type CompletedWorkout } from './TodayWorkoutCard'
 import { StepsCard, CaloriesCard } from './ActivityCards'
 import MacrosCard from './MacrosCard'
 import StreakLevelCard from './StreakLevelCard'
@@ -21,12 +21,13 @@ interface Props {
   steps: number
   budget: CalorieBudget
   routine?: Routine
-  completed: { uuid: string; name?: string }[]
+  stretchRoutine?: Routine
+  completed: CompletedWorkout[]
   onCustomize: () => void
 }
 
 /** "Today's Plan": the cards the user picked, in their order (tiles pair up two per row). */
-export default function TodayWidgets({ selected, today, steps, budget, routine, completed, onCustomize }: Props) {
+export default function TodayWidgets({ selected, today, steps, budget, routine, stretchRoutine, completed, onCustomize }: Props) {
   const { settings } = useSettings()
   const { totals } = useDailyLog(selected)
   if (!settings) return null // wait for the saved layout instead of flashing the default one
@@ -36,7 +37,7 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
   function render(id: HomeWidgetId) {
     switch (id) {
       case 'workout':
-        return <TodayWorkoutCard date={selected} isToday={selected === today} isFuture={selected > today} routine={routine} completed={completed} />
+        return <TodayWorkoutCard date={selected} isToday={selected === today} isFuture={selected > today} routine={routine} stretchRoutine={stretchRoutine} completed={completed} />
       case 'quest':
         return <QuestCard date={selected} today={today} />
       case 'steps':
