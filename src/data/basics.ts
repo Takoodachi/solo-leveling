@@ -18,5 +18,5 @@ export const QUICK_ADD_FOOD: Food = {
 }
 
 export const EXERCISE_CATEGORIES = [
-  'Back', 'Chest', 'Shoulders', 'Arms', 'Lower Body', 'Core', 'Full Body', 'Cardio', 'Mobility',
+  'Back', 'Chest', 'Shoulders', 'Arms', 'Lower Body', 'Core', 'Full Body', 'Cardio', 'Mobility', 'Stretching',
 ] as const

@@ -59,8 +59,8 @@ export function lastWeekStart(now: Date): string {
   return periodStart('week', addDays(now, -7))
 }
 
-function trainingOf(workouts: Workout[], sets: WorkoutSet[], cardio: Set<string>): PeriodTraining {
-  const lifts = sets.filter(s => !cardio.has(s.exerciseId))
+function trainingOf(workouts: Workout[], sets: WorkoutSet[], cardio: Set<string>, stretches: Set<string>): PeriodTraining {
+  const lifts = sets.filter(s => !cardio.has(s.exerciseId) && !stretches.has(s.exerciseId))
   return {
     workouts: workouts.length,
     activeMin: workouts.reduce((n, w) => n + w.durationMin, 0),
@@ -109,6 +109,7 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
   ])
   const [sets, exerciseOf, foodById] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById(), foodsById()])
   const cardio = new Set([...new Set(sets.map(s => s.exerciseId))].filter(id => exerciseOf.get(id)?.type === 'cardio'))
+  const stretches = new Set([...new Set(sets.map(s => s.exerciseId))].filter(id => exerciseOf.get(id)?.type === 'flexibility'))
 
   const inPeriod = (w: Workout) => w.date >= first
   const current = workouts.filter(inPeriod)
@@ -142,7 +143,7 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
   const rankAfter = await computeRanks(w => w.date <= last)
   const waterGoal = settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
-  const training = trainingOf(current, periodSets, cardio)
+  const training = trainingOf(current, periodSets, cardio, stretches)
 
   const logged = [
     ...current.map(w => w.date), ...periodSteps.filter(d => d.steps > 0).map(d => d.date), ...logs.map(l => l.date),
@@ -154,7 +155,7 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
     since: logged.length ? logged.reduce((a, d) => (d < a ? d : a)) : first,
     empty: current.length === 0 && logs.length === 0 && periodSteps.every(d => d.steps === 0) && during.length === 0 && checkins.every(c => !c.done || c.key === 'skip' || c.key === 'targets'),
     training,
-    previous: { ...trainingOf(earlier, setsOf(earlier), cardio), steps: previousSteps },
+    previous: { ...trainingOf(earlier, setsOf(earlier), cardio, stretches), steps: previousSteps },
     workoutGoal: Math.round(((settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)) * dates.length) / 7),
     bests: await bestsOf(periodSets, first, last, cardio),
     rank: rankAfter.overall ? { from: rankBefore.overall, to: rankAfter.overall } : null,

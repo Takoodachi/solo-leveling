@@ -11,6 +11,7 @@ const TRACKING = [
   { key: 'load',       label: 'Weight × reps', type: 'strength',   unit: 'kg' },
   { key: 'bodyweight', label: 'Reps',          type: 'bodyweight', unit: 'reps' },
   { key: 'hold',       label: 'Timed sets',    type: 'bodyweight', unit: 'min' },
+  { key: 'stretch',    label: 'Stretch hold',  type: 'flexibility', unit: 'min' },
   { key: 'cardio',     label: 'Cardio',        type: 'cardio',     unit: 'min' },
 ] as const
 
@@ -49,7 +50,17 @@ export default function CreateExerciseForm({ initialName = '', onCreated, onCanc
         <Label>Muscle group</Label>
         <div className="flex flex-wrap gap-2">
           {EXERCISE_CATEGORIES.map(c => (
-            <button key={c} type="button" className={chip(category === c)} onClick={() => setCategory(c)}>{c}</button>
+            <button
+              key={c}
+              type="button"
+              className={chip(category === c)}
+              onClick={() => {
+                setCategory(c)
+                if (c === 'Stretching') setTracking('stretch') // a stretch is a hold in seconds
+              }}
+            >
+              {c}
+            </button>
           ))}
         </div>
       </div>

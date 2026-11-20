@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Check, Plus, Minus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { WeightUnit } from '@/types'
@@ -16,15 +17,19 @@ import { applyFill, isBarbell, suggestProgress } from '../progression'
 import { orderEffect } from '../fatigue'
 import { suggestStart, type RankedLift } from '../startWeight'
 import { EFFORTS } from '../effort'
-import { lastSetsIn, setsInKg } from '../units'
+import { DEFAULT_HOLD_SECONDS, lastSetsOf, setsInKg } from '../units'
+import { restEndsAt, stopRest } from '../hooks/useRestTimer'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
 import { useHoldToMove } from '../hooks/useHoldToMove'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/liveRank'
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
-import { tap } from '@/lib/haptics'
+import { buzz, tap } from '@/lib/haptics'
 import { useSettings } from '@/features/settings/hooks/useSettings'
+
+/** When a hold of `seconds` starting now ends: read when ▶ is pressed, never while the card is drawn. */
+const holdEndsAt = (seconds: number) => Date.now() + seconds * 1000
 
 interface Props extends BlockCardProps {
   onSetDone: (restSec: number) => void
@@ -41,12 +46,15 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   // Hold a set (anywhere but its fields and its tick) to carry it to another place in the exercise
   const { attach, handle, style, from } = useHoldToMove((from, to) => moveSet(blockIdx, from, to))
   const { settings } = useSettings()
-  // Cardio blocks render CardioLogCard; here it's weight × reps or timed sets.
-  const mode: SetRowMode = setModeFor(block.exercise) === 'time' ? 'time' : 'load'
+  // Cardio blocks render CardioLogCard; here it's weight × reps, timed sets or a stretch's holds.
+  const setMode = setModeFor(block.exercise)
+  const mode: SetRowMode = setMode === 'time' || setMode === 'stretch' ? setMode : 'load'
+  // A stretch's hold counting down on one of its sets (by id, so a set moved meanwhile keeps it)
+  const [holding, setHolding] = useState<{ setId: string; endAt: number; total: number } | null>(null)
   const done = block.sets.filter(s => s.done).length
   // The fields hold the block's unit; ranks only know kg, and last time's sets are stored in it
   const kgSets = setsInKg(block.sets, block.unit)
-  const lastSets = lastSetsIn(block.lastSets, block.unit)
+  const lastSets = lastSetsOf(block)
   const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done), liftRank, rankContext) : liftRank
   // No "what to try today" while correcting a workout that's already happened, or with tips switched off
   const tips = !draft?.editing && settings?.workoutTips !== false
@@ -64,11 +72,28 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   const nextSet = block.sets.find(s => !s.done) ?? block.sets[block.sets.length - 1]
 
   function handleToggle(setIdx: number) {
+    if (holding && block.sets[setIdx]?.uuid === holding.setId) setHolding(null) // ticked by hand: that hold is over
     if (!toggleDone(blockIdx, setIdx)) return
     tap()
-    onSetDone(block.restSec)
+    // A stretch with no rest goes straight on to the next hold, which its own timer paces
+    if (mode !== 'stretch' || block.restSec > 0) onSetDone(block.restSec)
     announceRankUp(setIdx)
     foldWhenDone(blockIdx) // the last one: the card gets out of the way of the next exercise
+  }
+
+  // A stretch's hold: ▶ counts the set's seconds down and ticks it at the end, so nothing has to be
+  // watched or touched mid-stretch. Stopping it logs nothing.
+  function toggleHold(setIdx: number) {
+    const set = block.sets[setIdx]
+    if (holding?.setId === set.uuid) return setHolding(null)
+    let seconds = Number(set.duration)
+    if (!(seconds > 0)) {
+      seconds = DEFAULT_HOLD_SECONDS
+      updateSet(blockIdx, setIdx, 'duration', String(seconds))
+    }
+    if (restEndsAt()) stopRest() // in place for the next hold: the rest is over
+    tap()
+    setHolding({ setId: set.uuid, endAt: holdEndsAt(seconds), total: seconds })
   }
 
   // A set with something in it can be put back, like a removed exercise
@@ -109,6 +134,21 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
     void saveExerciseUnit(block.exercise.uuid, unit)
   }
 
+  // The hold's end: tick its set, as the ✓ would, and buzz. Set again after every draw, so it acts on the card as it is
+  useEffect(() => {
+    if (!holding) return
+    const timer = setTimeout(() => {
+      setHolding(null)
+      // The set as it is now: ticked by hand meanwhile, or gone, and there's nothing to do
+      const now = useWorkoutStore.getState().draft?.blocks[blockIdx]
+      const setIdx = now?.exercise.uuid === block.exercise.uuid ? now.sets.findIndex(s => s.uuid === holding.setId) : -1
+      if (setIdx < 0 || now?.sets[setIdx].done) return
+      handleToggle(setIdx)
+      buzz([200, 100, 200]) // after the tick's own tap, which a vibration would cut short
+    }, Math.max(0, holding.endAt - Date.now()))
+    return () => clearTimeout(timer)
+  })
+
   return (
     <BlockCard
       {...card}
@@ -116,7 +156,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
       subtitle={
         <>
           {done === block.sets.length && <Check size={12} strokeWidth={3.5} className="text-primary" aria-label="All sets done" />}
-          {done}/{block.sets.length} sets · rest {block.restSec}s
+          {done}/{block.sets.length} sets{(mode !== 'stretch' || block.restSec > 0) && <> · rest {block.restSec}s</>}
           {effortTag && !asksEffort && <> · {effortTag}</>}
           {rank && (
             <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
@@ -136,6 +176,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
             ? <UnitToggle key={field} unit={block.unit} onChange={changeUnit} />
             : <span key={field} className="text-center">{label}</span>
         ))}
+        {mode === 'stretch' && <span />}
         <span className="text-center">✓</span>
       </div>
 
@@ -157,6 +198,8 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
               onToggleDone={() => handleToggle(setIdx)}
               onUseLast={() => copyLast(setIdx)}
               onRemove={block.sets.length > 1 ? () => handleRemoveSet(setIdx) : undefined}
+              hold={holding?.setId === set.uuid ? holding : null}
+              onHold={mode === 'stretch' && !draft?.editing ? () => toggleHold(setIdx) : undefined}
             />
           </div>
         ))}

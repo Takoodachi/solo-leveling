@@ -1,4 +1,4 @@
-import { Dumbbell, Zap, HeartPulse, Target, Waves, SignalLow, SignalMedium, SignalHigh, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Zap, HeartPulse, Target, Waves, PersonStanding, SignalLow, SignalMedium, SignalHigh, type LucideIcon } from 'lucide-react'
 import type { RoutineCategory, RoutineLevel } from '@/types'
 
 export const CATEGORY_META: Record<RoutineCategory, { label: string; Icon: LucideIcon; hue: number }> = {
@@ -7,6 +7,7 @@ export const CATEGORY_META: Record<RoutineCategory, { label: string; Icon: Lucid
   cardio:      { label: 'Cardio',    Icon: HeartPulse, hue: 355 },
   core:        { label: 'Core',      Icon: Target,     hue: 38 },
   mobility:    { label: 'Mobility',  Icon: Waves,      hue: 200 },
+  stretching:  { label: 'Stretching', Icon: PersonStanding, hue: 160 },
 }
 
 export const CATEGORIES = Object.keys(CATEGORY_META) as RoutineCategory[]

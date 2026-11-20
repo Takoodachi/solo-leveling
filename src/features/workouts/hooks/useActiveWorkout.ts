@@ -18,7 +18,7 @@ import { findRankUps, rankUpXp, type RankUp } from '@/features/ranks/computeRank
 import { playsIntro } from '@/features/ranks/useRankUpIntro'
 import { useWorkoutStore } from '../store'
 import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
-import { weightKg, weightText } from '../units'
+import { durationOf, weightKg, weightText } from '../units'
 import { effortRpe } from '../effort'
 import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
 
@@ -45,7 +45,8 @@ const CARDIO_XP_CAP = 120
 
 function prefillSet(block: Pick<BlockDraft, 'exercise' | 'lastSets' | 'unit'>, index: number, targetReps: number): SetDraft {
   const last = block.lastSets?.[index] ?? block.lastSets?.at(-1)
-  return setModeFor(block.exercise) === 'time'
+  // A timed set's target is its time: minutes, or a stretch's seconds, as its field takes them
+  return setModeFor(block.exercise) === 'time' || setModeFor(block.exercise) === 'stretch'
     ? emptySet({ duration: String(targetReps) })
     : emptySet({ weight: weightText(last?.weight, block.unit), reps: String(targetReps) })
 }
@@ -133,7 +134,7 @@ export function useActiveWorkout() {
         setIndex: bi * 100 + si,
         reps: num(s.reps),
         weight: weightKg(s.weight, block.unit),
-        duration: num(s.duration),
+        duration: durationOf(s.duration, block),
         distanceKm: num(s.distanceKm),
         // Cardio's effort; a lift's "reps left" goes on its last set (effort.ts)
         rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,

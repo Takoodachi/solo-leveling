@@ -225,13 +225,13 @@ export interface ExerciseNote {
   syncPending?: boolean
 }
 
-export type RoutineCategory = 'strength' | 'cardio' | 'core' | 'mobility' | 'full-body'
+export type RoutineCategory = 'strength' | 'cardio' | 'core' | 'mobility' | 'stretching' | 'full-body'
 export type RoutineLevel = 'beginner' | 'intermediate' | 'advanced'
 
 export interface RoutineExercise {
   exerciseId: string
   sets: number
-  reps: number // target reps (or minutes for cardio)
+  reps: number // target reps (minutes for cardio and timed sets, seconds for a stretch)
   restSec: number
 }
 

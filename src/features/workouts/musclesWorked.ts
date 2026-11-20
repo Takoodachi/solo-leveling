@@ -51,6 +51,17 @@ export function sharesOf(exercise: Exercise): Map<MuscleRegion, number> {
   return shares
 }
 
+/**
+ * What the summary's body map shows: the muscles worked, leaving stretches out (a hold trains
+ * nothing), or for a workout of nothing but stretches, the muscles it stretched.
+ */
+export function bodyMap(sets: (Pick<WorkoutSet, 'duration'> & { exercise: Exercise })[]): { label: string; work: Map<MuscleRegion, number> } {
+  const worked = sets.filter(s => s.exercise.type !== 'flexibility')
+  return worked.length > 0 || sets.length === 0
+    ? { label: 'Muscles worked', work: musclesWorked(worked) }
+    : { label: 'Muscles stretched', work: musclesWorked(sets) }
+}
+
 /** Set-equivalents per muscle region for these sets; regions nothing touched are left out. */
 export function musclesWorked(sets: (Pick<WorkoutSet, 'duration'> & { exercise: Exercise })[]): Map<MuscleRegion, number> {
   const work = new Map<MuscleRegion, number>()

@@ -1,5 +1,6 @@
 import type { Exercise } from '@/types'
 import { MORE_EXERCISES } from './exerciseVariations'
+import { STRETCHES } from './stretches'
 
 const NOW = 0
 
@@ -176,4 +177,5 @@ export const BUILT_IN_EXERCISES: Exercise[] = [
   { uuid: 'ex-swimming',                 name: 'Swimming',                 category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Lats', 'Chest', 'Shoulders'], musclesSecondary: ['Core', 'Legs'], instructions: "Swim laps with a chosen stroke. Maintain a steady, efficient rhythm and breathe in sync with the stroke. Full-body, zero-impact." },
   { uuid: 'ex-hiking',                   name: 'Hiking',                   category: 'Cardio', type: 'cardio',    defaultUnit: 'min',  isCustom: false, updatedAt: NOW,                muscles: ['Quadriceps', 'Glutes', 'Calves'], musclesSecondary: ['Hamstrings', 'Core'], instructions: "Walk on uneven, outdoor terrain (trails, hills). Carry a small pack for added load. Low-impact endurance + glute work from the inclines." },
   ...MORE_EXERCISES,
+  ...STRETCHES,
 ]

@@ -1,7 +1,7 @@
 import type { Exercise } from '@/types'
 import { setModeFor } from '@/lib/workoutMath'
 import { cardioSet, emptySet, numText, type BlockDraft, type BlockHistory } from './types'
-import { weightText } from './units'
+import { holdText, weightText } from './units'
 
 /**
  * The card that takes another's place in the logger (the machine is taken): the same rest and as
@@ -17,9 +17,10 @@ export function replacementBlock(old: BlockDraft, exercise: Exercise, history: B
   const left = Math.max(1, old.sets.filter(s => !s.done).length)
   const sets = Array.from({ length: left }, (_, i) => {
     const last = lastSets?.[i] ?? lastSets?.at(-1)
+    if (mode === 'stretch') return emptySet({ duration: target != null ? String(target) : holdText(last?.duration) })
     return mode === 'time'
       ? emptySet({ duration: numText(target ?? last?.duration) })
       : emptySet({ weight: weightText(last?.weight, unit), reps: numText(target ?? last?.reps) })
   })
-  return { exercise, restSec: old.restSec, targetReps: target, sets, ...history }
+  return { exercise, restSec: mode === 'stretch' ? 0 : old.restSec, targetReps: target, sets, ...history }
 }

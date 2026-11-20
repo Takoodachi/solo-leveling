@@ -1,16 +1,17 @@
 import type { WeightUnit, WorkoutWithSets } from '@/types'
 import { formatVolume, totalReps, totalVolume } from '@/lib/workoutMath'
-import { formatKm } from '@/lib/cardio'
+import { formatClock, formatKm } from '@/lib/cardio'
 
 /**
  * The figures at the top of a workout's summary as [label, value], for the card on screen and
- * the share image. Strength is measured in sets and volume; cardio in time and distance.
+ * the share image. Strength is measured in sets and volume; cardio in time and distance; stretches in holds and time.
  * `shared` (the share image) leaves out the heart rate and the calorie estimate: the owner's call.
  */
 export function summaryStats(workout: WorkoutWithSets, unit: WeightUnit, { shared = false } = {}): [string, string][] {
   const exerciseCount = new Set(workout.sets.map(s => s.exerciseId)).size
   const cardio = workout.sets.filter(s => s.exercise.type === 'cardio')
-  const lifts = workout.sets.filter(s => s.exercise.type !== 'cardio')
+  const stretches = workout.sets.filter(s => s.exercise.type === 'flexibility')
+  const lifts = workout.sets.filter(s => s.exercise.type !== 'cardio' && s.exercise.type !== 'flexibility')
   const volume = totalVolume(lifts)
   const cardioMin = Math.round(cardio.reduce((sum, s) => sum + (s.duration ?? 0), 0))
   const km = cardio.reduce((sum, s) => sum + (s.distanceKm ?? 0), 0)
@@ -24,6 +25,10 @@ export function summaryStats(workout: WorkoutWithSets, unit: WeightUnit, { share
   if (lifts.length > 0) {
     stats.push(['Sets finished:', `${lifts.length} sets`])
     stats.push(volume > 0 ? ['Volume:', formatVolume(volume, unit)] : ['Total reps:', String(totalReps(lifts))])
+  }
+  if (stretches.length > 0) {
+    const minutes = stretches.reduce((sum, s) => sum + (s.duration ?? 0), 0)
+    stats.push(['Stretches held:', `${stretches.length} · ${formatClock(minutes)}`]) // "12 · 6:30"
   }
   if (cardio.length > 0) {
     stats.push(['Cardio time:', `${cardioMin} min`])

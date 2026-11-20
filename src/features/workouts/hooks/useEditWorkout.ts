@@ -12,7 +12,7 @@ import { intensityFromRpe, rpeFor } from '@/lib/cardio'
 import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
 import { emptySet, parsePositive, type BlockDraft, numText } from '../types'
-import { weightKg, weightText } from '../units'
+import { durationOf, holdText, weightKg, weightText } from '../units'
 import { effortFromRpe, effortRpe } from '../effort'
 import { exerciseUnit } from './useExerciseNote'
 import { getWorkoutWithSets, lastSessionSets } from './useWorkoutHistory'
@@ -57,6 +57,7 @@ export function useEditWorkout() {
     for (const sets of byBlock.values()) {
       const exercise = sets[0].exercise
       const cardio = setModeFor(exercise) === 'cardio'
+      const stretch = setModeFor(exercise) === 'stretch'
       const unit = await exerciseUnit(exercise.uuid)
       blocks.push({
         exercise,
@@ -68,7 +69,7 @@ export function useEditWorkout() {
           uuid: s.uuid,
           weight: weightText(s.weight, unit),
           reps: numText(s.reps),
-          duration: numText(s.duration),
+          duration: stretch ? holdText(s.duration) : numText(s.duration),
           distanceKm: numText(s.distanceKm),
           intensity: cardio ? intensityFromRpe(s.rpe) : undefined,
           done: true,
@@ -120,7 +121,7 @@ export function useEditWorkout() {
           setIndex: bi * 100 + si,
           reps: parsePositive(s.reps),
           weight: weightKg(s.weight, block.unit),
-          duration: parsePositive(s.duration),
+          duration: durationOf(s.duration, block),
           distanceKm: parsePositive(s.distanceKm),
           rpe: cardio ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,
           updatedAt: now,

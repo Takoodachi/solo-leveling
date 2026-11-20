@@ -1,5 +1,6 @@
 import type { WeightUnit } from '@/types'
-import { parsePositive, type LastSet } from './types'
+import { setModeFor } from '@/lib/workoutMath'
+import { parsePositive, type BlockDraft, type LastSet } from './types'
 
 /**
  * Weights are stored, rated and charted in kg. An exercise can be *logged* in pounds instead
@@ -65,3 +66,31 @@ export function setsInKg<T extends { weight: string }>(sets: T[], unit: WeightUn
   if (!isLb(unit)) return sets
   return sets.map(s => ({ ...s, weight: weightKg(s.weight, unit)?.toString() ?? '' }))
 }
+
+/**
+ * A stretch's hold is stored in minutes, like every other set's duration (0.5 = 30 s), so what adds
+ * time up stays right; its logger card shows and takes seconds. These cross that line.
+ */
+export const holdSeconds = (minutes: number) => Math.round(minutes * 60)
+
+/** A stretch's hold when nothing says otherwise: ACSM's 10–30 s for most adults, at its top. */
+export const DEFAULT_HOLD_SECONDS = 30
+
+/** A hold field's text (seconds) as it's stored (minutes); undefined when it's empty. */
+export function holdMinutes(text: string): number | undefined {
+  const seconds = parsePositive(text)
+  return seconds == null ? undefined : seconds / 60
+}
+
+/** The text for a hold field holding `minutes`. */
+export const holdText = (minutes: number | undefined) => (minutes != null ? String(holdSeconds(minutes)) : '')
+
+/** Last time's sets as the card's fields hold them: weights in its unit, a stretch's holds in seconds. */
+export function lastSetsOf(block: Pick<BlockDraft, 'exercise' | 'lastSets' | 'unit'>): LastSet[] | undefined {
+  if (setModeFor(block.exercise) !== 'stretch') return lastSetsIn(block.lastSets, block.unit)
+  return block.lastSets?.map(s => (s.duration != null ? { ...s, duration: holdSeconds(s.duration) } : s))
+}
+
+/** A draft set's duration field as it's stored: minutes, from a stretch's seconds. */
+export const durationOf = (text: string, block: Pick<BlockDraft, 'exercise'>) =>
+  setModeFor(block.exercise) === 'stretch' ? holdMinutes(text) : parsePositive(text)

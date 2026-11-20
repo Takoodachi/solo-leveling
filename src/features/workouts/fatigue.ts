@@ -60,8 +60,9 @@ export function overlap(ex: Exercise, before: Exercise): number {
   return most
 }
 
-/** Sets' worth of work, from the durations of what was done (cardio entries count by their minutes). */
+/** Sets' worth of work, from the durations of what was done (cardio entries count by their minutes, stretches as none). */
 export function workDone(exercise: Exercise, durations: number[]): number {
+  if (exercise.type === 'flexibility') return 0
   if (exercise.type !== 'cardio') return durations.length
   return durations.reduce((sum, minutes) => sum + Math.min(CARDIO_MAX_SETS, Math.max(1, minutes / CARDIO_MINUTES_PER_SET)), 0)
 }

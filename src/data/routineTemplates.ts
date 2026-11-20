@@ -7,6 +7,8 @@ import type { Routine } from '@/types'
 export type RoutineTemplate = Omit<Routine, 'updatedAt' | 'syncPending' | 'scheduleDays'>
 
 const ex = (exerciseId: string, sets: number, reps: number, restSec = 90) => ({ exerciseId, sets, reps, restSec })
+/** A stretch: `sets` holds of `seconds` (one per side for a one-sided stretch), paced by the hold timer, so no rest. */
+const hold = (exerciseId: string, sets: number, seconds: number) => ex(exerciseId, sets, seconds, 0)
 
 export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
   {
@@ -80,6 +82,75 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
       ex('ex-burpee', 3, 10, 60),
       ex('ex-mountain-climber', 3, 1, 45),
       ex('ex-stationary-bike', 1, 15, 0),
+    ],
+  },
+  {
+    uuid: 'tpl-full-body-stretch',
+    name: 'Full Body Stretch',
+    category: 'stretching',
+    level: 'beginner',
+    notes: 'Ten minutes head to toe, a stretch for every major muscle group. Ease in and hold still, without bouncing.',
+    exercises: [
+      hold('ex-neck-side-stretch', 2, 30),
+      hold('ex-cross-body-shoulder-stretch', 2, 30),
+      hold('ex-doorway-chest-stretch', 2, 30),
+      hold('ex-overhead-triceps-stretch', 2, 30),
+      hold('ex-childs-pose', 2, 30),
+      hold('ex-kneeling-hip-flexor-stretch', 2, 30),
+      hold('ex-standing-hamstring-stretch', 2, 30),
+      hold('ex-standing-quad-stretch', 2, 30),
+      hold('ex-figure-four-stretch', 2, 30),
+      hold('ex-standing-calf-stretch', 2, 30),
+    ],
+  },
+  {
+    uuid: 'tpl-leg-day-stretch',
+    name: 'Leg Day Cool-Down',
+    category: 'stretching',
+    level: 'beginner',
+    notes: 'Quads, hamstrings, hips, glutes and calves, for after squats and deadlifts.',
+    exercises: [
+      hold('ex-standing-quad-stretch', 2, 30),
+      hold('ex-kneeling-hip-flexor-stretch', 2, 30),
+      hold('ex-lying-hamstring-stretch', 2, 30),
+      hold('ex-pigeon-pose', 2, 45),
+      hold('ex-butterfly-stretch', 2, 30),
+      hold('ex-standing-calf-stretch', 2, 30),
+      hold('ex-childs-pose', 1, 60),
+    ],
+  },
+  {
+    uuid: 'tpl-upper-body-stretch',
+    name: 'Upper Body Stretch',
+    category: 'stretching',
+    level: 'beginner',
+    notes: 'Neck, shoulders, chest, back and arms, for after a push or pull day or a long day at a desk.',
+    exercises: [
+      hold('ex-neck-side-stretch', 2, 30),
+      hold('ex-upper-back-stretch', 2, 30),
+      hold('ex-doorway-chest-stretch', 2, 30),
+      hold('ex-cross-body-shoulder-stretch', 2, 30),
+      hold('ex-overhead-triceps-stretch', 2, 30),
+      hold('ex-kneeling-lat-stretch', 2, 30),
+      hold('ex-biceps-wall-stretch', 2, 30),
+      hold('ex-wrist-flexor-stretch', 2, 30),
+    ],
+  },
+  {
+    uuid: 'tpl-hips-back-stretch',
+    name: 'Hips & Lower Back',
+    category: 'stretching',
+    level: 'intermediate',
+    notes: 'Loosens tight hips and a stiff lower back, after a day of sitting or on a rest day.',
+    exercises: [
+      hold('ex-cat-cow', 1, 60),
+      hold('ex-knees-to-chest', 2, 30),
+      hold('ex-lying-spinal-twist', 2, 30),
+      hold('ex-figure-four-stretch', 2, 30),
+      hold('ex-ninety-ninety-stretch', 2, 45),
+      hold('ex-frog-stretch', 2, 30),
+      hold('ex-happy-baby', 1, 45),
+      hold('ex-cobra-stretch', 2, 20),
     ],
   },
 ]

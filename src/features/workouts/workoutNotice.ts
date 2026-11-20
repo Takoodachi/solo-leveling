@@ -9,7 +9,9 @@ import type { BlockDraft, SetDraft, WorkoutDraft } from './types'
  */
 
 function describe(block: BlockDraft, set: SetDraft): string {
-  if (setModeFor(block.exercise) !== 'load') return set.duration ? `${set.duration} min` : ''
+  const mode = setModeFor(block.exercise)
+  if (mode === 'stretch') return set.duration ? `${set.duration} s hold` : ''
+  if (mode !== 'load') return set.duration ? `${set.duration} min` : ''
   const weight = set.weight && `${set.weight} ${block.unit ?? 'kg'}`
   if (weight && set.reps) return `${weight} × ${set.reps}`
   return set.reps ? `${set.reps} reps` : weight || ''
