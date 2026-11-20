@@ -45,6 +45,8 @@ describe('stretches', () => {
 
   it('have unique ids, and every template uses exercises that exist', () => {
     expect(byId.size).toBe(BUILT_IN_EXERCISES.length)
+    // Two entries a picker can't tell apart ("Child's Pose" and "Childs Pose") would split one exercise's history
+    expect(new Set(BUILT_IN_EXERCISES.map(e => e.name.toLowerCase().replace(/[^a-z0-9]/g, ''))).size).toBe(BUILT_IN_EXERCISES.length)
     const stretches = BUILT_IN_EXERCISES.filter(e => e.category === 'Stretching')
     expect(stretches.length).toBeGreaterThan(30)
     expect(stretches.every(e => e.type === 'flexibility' && e.instructions && e.muscles?.length)).toBe(true)
