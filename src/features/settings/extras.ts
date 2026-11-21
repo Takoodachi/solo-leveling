@@ -25,6 +25,7 @@ export const EXTRAS: Extra[] = [
   { key: 'highFives', label: 'High-five notices', description: 'A note when friends high-five your bests', keywords: 'high five friends leaderboard notice message popup alert social', only: 'signedIn' },
   { key: 'rankUps', label: 'Rank-up sequence', description: 'The full-screen show after a workout that moved a rank', keywords: 'rank animation celebration ceremony fullscreen show finish workout level effects' },
   { key: 'haptics', label: 'Vibration', description: 'A tick when you check off a set, a buzz when rest is over', keywords: 'vibrate vibrating vibration haptic haptics buzz buzzing shake feel tick' },
+  { key: 'stretchSounds', label: 'Stretch sounds', description: 'A chime when a stretching hold ends, and a note when the next one starts', keywords: 'sound sounds chime beep audio noise ding bell tone stretch stretching hold mute quiet silent' },
   { key: 'workoutNotice', label: 'Workout notification', description: 'What’s next and the rest timer on the lock screen while you train', keywords: 'notification notifications lock screen ongoing status bar rest timer workout', only: 'android' },
 ]
 

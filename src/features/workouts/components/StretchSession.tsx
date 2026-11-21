@@ -2,6 +2,8 @@ import { Check, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SectionHeader from '@/components/SectionHeader'
 import type { Exercise } from '@/types'
+import { extraOn } from '@/features/settings/extras'
+import { useSettings } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
 import { useStretchSession } from '../hooks/useStretchSession'
 import { holdLength, nextHold, secondsLeft } from '../stretchSession'
@@ -23,6 +25,7 @@ interface Props {
 export default function StretchSession({ onShowInfo, onFinish }: Props) {
   const draft = useWorkoutStore(s => s.draft)
   const { at, phase, toggle, skip, back, jump, resume } = useStretchSession()
+  const { settings } = useSettings()
   if (!draft) return null
 
   if (phase.kind === 'done' || !at || !draft.blocks[at.b]) {
@@ -79,7 +82,9 @@ export default function StretchSession({ onShowInfo, onFinish }: Props) {
         </button>
       </div>
       {phase.kind === 'ready' && (
-        <p className="-mt-2 text-center text-xs text-muted-foreground">It chimes when a hold ends and starts the next one by itself.</p>
+        <p className="-mt-2 text-center text-xs text-muted-foreground">
+          {extraOn('stretchSounds', settings?.extras) ? 'It chimes when a hold ends and starts the next one by itself.' : 'It starts the next hold by itself.'}
+        </p>
       )}
 
       {block.exercise.instructions && (

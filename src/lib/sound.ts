@@ -3,8 +3,11 @@
  * chime when a hold runs out, and a single note when the next one starts by itself. Made with Web
  * Audio, so there's no file to load and it works offline. A page may only make sound once it has
  * been touched (iOS, and Chrome's autoplay rule), so the tap that starts a hold calls `unlockSound`
- * first. It plays at media volume, and an iPhone on silent stays silent.
+ * first. It plays at media volume, and an iPhone on silent stays silent; Settings → Extras → Stretch
+ * sounds turns it off.
  */
+import { extraOn } from '@/features/settings/extras'
+
 let ctx: AudioContext | null = null
 
 /** Call from a tap: makes the page able to play sound from then on. */
@@ -19,7 +22,7 @@ export function unlockSound(): void {
 
 /** Soft bell-like notes: [frequency in Hz, seconds after now]. */
 function play(notes: readonly (readonly [number, number])[]): void {
-  if (!ctx || ctx.state !== 'running') return
+  if (!ctx || ctx.state !== 'running' || !extraOn('stretchSounds')) return
   const now = ctx.currentTime
   for (const [freq, delay] of notes) {
     const osc = ctx.createOscillator()
