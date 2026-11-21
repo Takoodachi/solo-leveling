@@ -26,6 +26,7 @@ import { liveRank, rankUpFromSet, type RankContext } from '@/features/ranks/live
 import RankBadge from '@/features/ranks/components/RankBadge'
 import { ink } from '@/lib/colors'
 import { buzz, tap } from '@/lib/haptics'
+import { chime, unlockSound } from '@/lib/sound'
 import { useSettings } from '@/features/settings/hooks/useSettings'
 
 /** When a hold of `seconds` starting now ends: read when ▶ is pressed, never while the card is drawn. */
@@ -93,6 +94,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
     }
     if (restEndsAt()) stopRest() // in place for the next hold: the rest is over
     tap()
+    unlockSound() // from this tap, so the end of the hold can be heard
     setHolding({ setId: set.uuid, endAt: holdEndsAt(seconds), total: seconds })
   }
 
@@ -145,6 +147,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
       if (setIdx < 0 || now?.sets[setIdx].done) return
       handleToggle(setIdx)
       buzz([200, 100, 200]) // after the tick's own tap, which a vibration would cut short
+      chime() // for a phone out of sight while stretching
     }, Math.max(0, holding.endAt - Date.now()))
     return () => clearTimeout(timer)
   })
