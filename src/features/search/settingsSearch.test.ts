@@ -21,6 +21,8 @@ describe('settings search', () => {
     expect(top('stop the caffeine warning')[0]).toBe('extra-caffeine')
     expect(top('spotify instead of youtube music')[0]).toBe('music-app')
     expect(top('put a picture behind everything')[0]).toBe('background-photo')
+    expect(top('turn off the chime when I stretch')[0]).toBe('extra-stretchSounds')
+    expect(top('mute the stretching sounds')[0]).toBe('extra-stretchSounds')
   })
 
   it('finds both weekly things that pop up on Home', () => {
