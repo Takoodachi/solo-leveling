@@ -1,8 +1,9 @@
 /**
- * The app's own sounds (November 2026): a chime when a stretch's hold runs out, for when the phone
- * is out of sight. Made with Web Audio, so there's no file to load and it works offline. A page may
- * only make sound once it has been touched (iOS, and Chrome's autoplay rule), so the tap that starts
- * a hold calls `unlockSound` first. It plays at media volume, and an iPhone on silent stays silent.
+ * The app's own sounds (November 2026), for a stretching session with the phone out of sight: a
+ * chime when a hold runs out, and a single note when the next one starts by itself. Made with Web
+ * Audio, so there's no file to load and it works offline. A page may only make sound once it has
+ * been touched (iOS, and Chrome's autoplay rule), so the tap that starts a hold calls `unlockSound`
+ * first. It plays at media volume, and an iPhone on silent stays silent.
  */
 let ctx: AudioContext | null = null
 
@@ -16,11 +17,11 @@ export function unlockSound(): void {
   }
 }
 
-/** A soft two-note chime, rising: a hold is over. */
-export function chime(): void {
+/** Soft bell-like notes: [frequency in Hz, seconds after now]. */
+function play(notes: readonly (readonly [number, number])[]): void {
   if (!ctx || ctx.state !== 'running') return
   const now = ctx.currentTime
-  for (const [freq, delay] of [[784, 0], [1175, 0.14]] as const) {
+  for (const [freq, delay] of notes) {
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.frequency.value = freq
@@ -33,3 +34,9 @@ export function chime(): void {
     osc.stop(now + delay + 0.85)
   }
 }
+
+/** Two rising notes: a hold is over. */
+export const chime = () => play([[784, 0], [1175, 0.14]])
+
+/** One lower note: the next hold starts. */
+export const cue = () => play([[587, 0]])

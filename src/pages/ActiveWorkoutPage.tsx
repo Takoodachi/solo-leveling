@@ -16,6 +16,7 @@ import { useHoldToMove } from '@/features/workouts/hooks/useHoldToMove'
 import { blockHistory } from '@/features/workouts/hooks/useWorkoutHistory'
 import ExerciseLogCard from '@/features/workouts/components/ExerciseLogCard'
 import CardioLogCard from '@/features/workouts/components/CardioLogCard'
+import StretchSession from '@/features/workouts/components/StretchSession'
 import { parsePositive } from '@/features/workouts/types'
 import { replacementBlock } from '@/features/workouts/replaceExercise'
 import { setModeFor } from '@/lib/workoutMath'
@@ -68,6 +69,8 @@ export default function ActiveWorkoutPage() {
   if (!draft) return leaving ? null : <Navigate to="/workouts" replace />
 
   const defaultRest = settings?.defaultRestSeconds ?? DEFAULT_REST_SECONDS
+  // Nothing but stretches: a guided player, one hold at a time, in place of the cards (not while correcting one)
+  const guided = !editing && draft.blocks.length > 0 && draft.blocks.every(b => setModeFor(b.exercise) === 'stretch')
   const allSets = draft.blocks.flatMap(b => b.sets)
   const doneSets = allSets.filter(s => s.done).length
   const elapsedMin = Math.max(0, Math.round((finishAt - draft.startedAt) / 60_000))
@@ -184,7 +187,9 @@ export default function ActiveWorkoutPage() {
             </div>
           )}
 
-          {draft.blocks.length > 0 && (
+          {guided ? (
+            <StretchSession onShowInfo={setInfo} onFinish={() => { setFinishAt(Date.now()); setFinishOpen(true) }} />
+          ) : draft.blocks.length > 0 && (
             <div ref={attach} className="relative flex flex-col gap-3">
               {draft.blocks.map((block, idx) => {
                 const card = {
