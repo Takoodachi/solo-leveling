@@ -4,7 +4,8 @@ import { nativeNotifyState, replaceScheduled, requestNativeNotify } from '@/lib/
 
 const STORAGE_KEY = 'solo:restTimer'
 
-type Persisted = { endAt: number; total: number }
+/** `why`: what Auto rest picked it from ("Heavy lift · failure"), shown on the rest bar; empty for a fixed time. */
+type Persisted = { endAt: number; total: number; why?: string }
 
 function readPersisted(): Persisted | null {
   try {
@@ -72,16 +73,16 @@ function save(next: Persisted | null): void {
 }
 
 /** Starts a rest of `seconds` from now, from anywhere: the workout screen, or a button on the watch. */
-export function startRest(seconds: number): void {
-  if (seconds > 0) save({ endAt: Date.now() + seconds * 1000, total: seconds })
+export function startRest(seconds: number, why = ''): void {
+  if (seconds > 0) save({ endAt: Date.now() + seconds * 1000, total: seconds, why })
 }
 
 export const stopRest = (): void => save(null)
 
-/** Stretches (or shortens) the running rest; nothing without one. */
-export function addRestSeconds(delta: number): void {
+/** Stretches (or shortens) the running rest, with a new reason if one is given; nothing without one. */
+export function addRestSeconds(delta: number, why?: string): void {
   const timer = readPersisted()
-  if (timer) save({ endAt: timer.endAt + delta * 1000, total: timer.total + delta })
+  if (timer) save({ endAt: timer.endAt + delta * 1000, total: timer.total + delta, why: why ?? timer.why })
 }
 
 /**
@@ -120,13 +121,14 @@ export function useRestTimer() {
 
   // The state follows through REST_EVENT. Not inside a state update function: that runs while the
   // screen is being drawn, and telling the rest of the app (the workout notification) was too early
-  const start = useCallback((seconds: number) => startRest(seconds), [])
+  const start = useCallback((seconds: number, why?: string) => startRest(seconds, why), [])
   const stop = useCallback(() => stopRest(), [])
   const addSeconds = useCallback((delta: number) => addRestSeconds(delta), [])
 
   return {
     endAt: timer?.endAt ?? null,
     totalSeconds: timer?.total ?? 0,
+    why: timer?.why ?? '',
     start,
     stop,
     addSeconds,

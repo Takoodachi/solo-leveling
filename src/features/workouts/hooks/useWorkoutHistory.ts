@@ -169,8 +169,14 @@ async function lastTime(exerciseId: string, last: { at: number; workoutId: strin
 export async function blockHistory(exerciseId: string): Promise<BlockHistory> {
   const past = await pastSessions(exerciseId)
   // The last workout that had it is the first of those: found once, not looked up again
-  const [unit, last] = await Promise.all([exerciseUnit(exerciseId), lastTime(exerciseId, past[0])])
-  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), unit, ...last }
+  const [unit, last, best] = await Promise.all([exerciseUnit(exerciseId), lastTime(exerciseId, past[0]), bestEst1RM(exerciseId)])
+  return { lastSets: past[0]?.sets, trend: trendOf(past, Date.now()), best, unit, ...last }
+}
+
+/** An exercise's best est. 1RM ever (kg), as the summary's new bests count it; 0 with nothing weighed. */
+async function bestEst1RM(exerciseId: string): Promise<number> {
+  const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
+  return sets.reduce((best, s) => Math.max(best, est1RM(s.weight ?? 0, s.reps ?? 0)), 0)
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useRoutines } from '@/features/workouts/hooks/useRoutines'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import { useSettings, updateSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
 import { CATEGORY_META, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import DayRoutineSheet from '@/features/workouts/components/DayRoutineSheet'
@@ -106,6 +107,12 @@ export default function PlanPage() {
           <p className="mb-2 px-1 text-sm text-muted-foreground">Default rest between sets (seconds)</p>
           <NumberStepper value={String(settings?.defaultRestSeconds ?? DEFAULT_REST_SECONDS)} step={15} min={0} max={600} inputMode="numeric"
             onChange={v => void updateSettings({ defaultRestSeconds: Math.max(0, Math.round(Number(v) || 0)) })} />
+          {extraOn('autoRest', settings?.extras) && (
+            <p className="mt-2 px-1 text-xs text-muted-foreground">
+              Auto rest is on, so lifts rest by the movement and how hard the set was; this is for when it’s off (
+              <Link to="/settings#extras--autoRest" className="underline underline-offset-2">Extras</Link>).
+            </p>
+          )}
         </div>
       </section>
 

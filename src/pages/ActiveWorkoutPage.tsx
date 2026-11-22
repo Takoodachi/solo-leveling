@@ -29,6 +29,9 @@ import MusicControls from '@/features/workouts/components/MusicControls'
 import { useWorkoutLayout } from '@/features/workouts/workoutLayout'
 import DiscardWorkoutDialog from '@/features/workouts/components/DiscardWorkoutDialog'
 import { useSettings, DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
+import { restAfterSet } from '@/features/workouts/autoRest'
+import type { BlockDraft } from '@/features/workouts/types'
 import { useRanks } from '@/features/ranks/useRanks'
 import type { Exercise } from '@/types'
 
@@ -103,10 +106,11 @@ export default function ActiveWorkoutPage() {
     })
   }
 
-  function handleSetDone(restSec: number) {
-    if (editing) return
+  function handleSetDone(block: BlockDraft) {
+    const pick = editing ? null : restAfterSet(block, defaultRest, extraOn('autoRest', settings?.extras))
+    if (!pick) return
     requestNotificationPermission() // inside the tap, as iOS requires
-    rest.start(restSec || defaultRest)
+    rest.start(pick.seconds, pick.why)
   }
 
   function handleDiscard() {
@@ -168,7 +172,7 @@ export default function ActiveWorkoutPage() {
           {/* The rest timer at the top hangs under the header, over the cards, so nothing below it moves */}
           {layout.rest === 'top' && (
             <div className="pointer-events-none absolute inset-x-0 top-full px-3 pt-2">
-              <RestBanner edge="top" endAt={rest.endAt} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+              <RestBanner edge="top" endAt={rest.endAt} totalSeconds={rest.totalSeconds} why={rest.why} onAdjust={rest.addSeconds} onSkip={rest.stop} />
             </div>
           )}
         </div>
@@ -234,7 +238,7 @@ export default function ActiveWorkoutPage() {
         {/* What floats at the bottom: the rest timer over the music bar, whichever of them is put there */}
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           {layout.rest === 'bottom' && (
-            <RestBanner edge="bottom" endAt={rest.endAt} totalSeconds={rest.totalSeconds} onAdjust={rest.addSeconds} onSkip={rest.stop} />
+            <RestBanner edge="bottom" endAt={rest.endAt} totalSeconds={rest.totalSeconds} why={rest.why} onAdjust={rest.addSeconds} onSkip={rest.stop} />
           )}
           {!editing && layout.music === 'bottom' && <MusicControls floating />}
         </div>

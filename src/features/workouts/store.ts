@@ -91,7 +91,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return {
         draft: {
           ...s.draft,
-          blocks: [...s.draft.blocks, { exercise, restSec: stretch ? 0 : opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, unit: opts?.unit, lastPreload: opts?.lastPreload, recovery: opts?.recovery }],
+          blocks: [...s.draft.blocks, { exercise, restSec: stretch ? 0 : opts?.restSec ?? 90, sets: [first], lastSets: opts?.lastSets, trend: opts?.trend, best: opts?.best, unit: opts?.unit, lastPreload: opts?.lastPreload, recovery: opts?.recovery }],
         },
       }
     }),

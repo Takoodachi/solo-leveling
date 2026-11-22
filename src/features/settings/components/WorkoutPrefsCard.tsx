@@ -27,7 +27,7 @@ export default function WorkoutPrefsCard() {
         <div className="min-w-0 flex-1">
           <p className="font-medium">Tips during workouts</p>
           <p className="text-xs text-muted-foreground">
-            What to try on each lift, from your last session: a rep more, or the next weight up.
+            What to try on each lift, from your last session: a rep more, or the next weight up. And under your next set, the reps for a new best.
           </p>
         </div>
         <Switch

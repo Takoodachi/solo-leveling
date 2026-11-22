@@ -114,6 +114,16 @@ function gearOf(name: string): Gear {
 /** Loaded with plates on a bar (the logger's plate calculator). */
 export const isBarbell = (name: string) => gearOf(name.toLowerCase()) === 'barbell'
 
+export type LiftKind = 'heavy' | 'compound' | 'single' | 'small'
+
+/** A lift by its name, as the rep targets class it: a compound on a barbell, another compound, a single-joint lift, or a small-muscle one (Auto rest, autoRest.ts). */
+export function liftKind(name: string): LiftKind {
+  const n = name.toLowerCase()
+  if (SMALL.test(n)) return 'small'
+  if (SINGLE_JOINT.test(n)) return 'single'
+  return gearOf(n) === 'barbell' ? 'heavy' : 'compound'
+}
+
 /** The usual smallest jump on this equipment, until the lifter's own history shows the real one. */
 function defaultStep(gear: Gear, name: string, weight: number, lb: boolean): number {
   const heavy = weight >= (lb ? 225 : 100) && /deadlift|squat|hip thrust|rack pull/.test(name)

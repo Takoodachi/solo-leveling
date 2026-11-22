@@ -25,7 +25,8 @@ describe('the watch’s buttons', () => {
     applyWatchAction('tick', 90)
     expect(sets()).toEqual(['100×8 ✓', '100×8 ✓', '40×12'])
     const left = (restEndsAt() ?? 0) - Date.now()
-    expect(left).toBeGreaterThan(118_000) // the exercise's own 120 s, not the default
+    expect(left).toBeGreaterThan(148_000) // Auto rest's 2:30 after a heavy lift (it's on unless switched off), not the default
+    expect(left).toBeLessThanOrEqual(150_000)
   })
 
   it('an empty set is done as last time’s, in the exercise’s unit', () => {

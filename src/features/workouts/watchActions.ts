@@ -1,9 +1,9 @@
 import { useWorkoutStore } from './store'
 import { setHasValue } from './types'
-import { setModeFor } from '@/lib/workoutMath'
 import { lastSetsOf } from './units'
 import { nextSet } from './workoutNotice'
 import { addRestSeconds, startRest, stopRest } from './hooks/useRestTimer'
+import { restAfterSet } from './autoRest'
 
 /**
  * The watch app's buttons (android/wear, through WatchActions.kt and the `watchAction` event):
@@ -28,7 +28,8 @@ export function applyWatchAction(action: string, defaultRest: number): void {
   if (last?.duration != null) store.updateSet(at.blockIdx, at.setIdx, 'duration', String(last.duration))
   if (last?.distanceKm != null) store.updateSet(at.blockIdx, at.setIdx, 'distanceKm', String(last.distanceKm))
   if (!store.toggleDone(at.blockIdx, at.setIdx)) return
-  // A stretch with no rest goes straight on to the next hold; anything else rests at least the default
-  if (setModeFor(block.exercise) !== 'stretch' || block.restSec > 0) startRest(block.restSec || defaultRest)
+  // As the phone's tick: Auto rest's pick, or the block's own time; a stretch with no rest goes straight on
+  const pick = restAfterSet(block, defaultRest)
+  if (pick) startRest(pick.seconds, pick.why)
   store.foldWhenDone(at.blockIdx)
 }

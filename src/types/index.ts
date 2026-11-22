@@ -127,7 +127,7 @@ export type VolumeMuscle =
 
 /** What the account remembers of the Android app's Samsung Health link (features/health/healthPrefs.ts). */
 /** Things the app does by itself that can each be switched off (features/settings/extras.ts). */
-export type ExtraKey = 'checkIn' | 'recapBanner' | 'caffeine' | 'highFives' | 'rankUps' | 'haptics' | 'stretchSounds' | 'workoutNotice'
+export type ExtraKey = 'checkIn' | 'recapBanner' | 'caffeine' | 'highFives' | 'rankUps' | 'haptics' | 'stretchSounds' | 'autoRest' | 'workoutNotice'
 /** false = off; a key that isn't there is on. */
 export type Extras = Partial<Record<ExtraKey, boolean>>
 

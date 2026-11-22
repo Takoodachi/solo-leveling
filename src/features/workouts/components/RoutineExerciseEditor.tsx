@@ -1,8 +1,11 @@
+import { Link } from 'react-router-dom'
 import { ArrowUp, ArrowDown, X } from 'lucide-react'
 import NumberStepper from '@/components/NumberStepper'
 import type { Exercise, RoutineExercise } from '@/types'
 import { setModeFor } from '@/lib/workoutMath'
 import { cn } from '@/lib/utils'
+import { useSettings } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
 
 const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180]
 
@@ -20,6 +23,9 @@ const toInt = (v: string) => Math.max(1, Math.round(Number(v) || 1))
 
 export default function RoutineExerciseEditor({ item, exercise, isFirst, isLast, onChange, onMove, onRemove }: Props) {
   const mode = exercise ? setModeFor(exercise) : 'load'
+  const { settings } = useSettings()
+  // Auto rest picks a lift's rest for each set (autoRest.ts): the routine's time isn't used while it's on
+  const autoRested = mode !== 'stretch' && extraOn('autoRest', settings?.extras)
   const iconBtn = 'flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent disabled:opacity-30'
 
   return (
@@ -59,6 +65,12 @@ export default function RoutineExerciseEditor({ item, exercise, isFirst, isLast,
             </div>
           </div>
           <p className="mb-1.5 mt-3 text-xs text-muted-foreground">Rest between sets</p>
+          {autoRested ? (
+            <p className="text-sm text-muted-foreground">
+              Auto: picked for each set from the movement and how hard it was.{' '}
+              <Link to="/settings#extras--autoRest" className="font-medium text-foreground underline underline-offset-2">Turn it off in Extras</Link> to set one here.
+            </p>
+          ) : (
           <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
             {REST_OPTIONS.map(s => (
               <button
@@ -74,6 +86,7 @@ export default function RoutineExerciseEditor({ item, exercise, isFirst, isLast,
               </button>
             ))}
           </div>
+          )}
         </>
       )}
     </div>
