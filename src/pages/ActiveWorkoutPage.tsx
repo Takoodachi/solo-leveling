@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Plus, X, Timer, Pencil } from 'lucide-react'
@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useEnterAnimation } from '@/hooks/useEnterAnimation'
-import { useWorkoutStore } from '@/features/workouts/store'
+import { dropFinished, useWorkoutStore } from '@/features/workouts/store'
 import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
 import { useRestTimer, requestNotificationPermission } from '@/features/workouts/hooks/useRestTimer'
@@ -57,16 +57,16 @@ export default function ActiveWorkoutPage() {
   const [finishAt, setFinishAt] = useState(0)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [info, setInfo] = useState<Exercise | null>(null)
-  // Set before saving/cancelling an edit, which navigates on its own: the store
-  // clears synchronously, before the router's (transition) navigation lands.
-  const [leaving, setLeaving] = useState(false)
   const ranks = useRanks()
 
   // Keep the screen on for the whole session.
   useWakeLock(!!draft && !editing)
+  // Finished (saved, or an edit called off): the draft stays until this screen is gone, so it
+  // never draws an empty frame on its way out
+  useEffect(() => () => dropFinished(), [])
 
   if (!restored) return null
-  if (!draft) return leaving ? null : <Navigate to="/workouts" replace />
+  if (!draft) return <Navigate to="/workouts" replace />
 
   const defaultRest = settings?.defaultRestSeconds ?? DEFAULT_REST_SECONDS
   // Nothing but stretches: a guided player, one hold at a time, in place of the cards (not while correcting one)
@@ -112,8 +112,7 @@ export default function ActiveWorkoutPage() {
   function handleDiscard() {
     rest.stop()
     if (editing) {
-      setLeaving(true)
-      cancelEditing()
+      void cancelEditing()
       return
     }
     discard()
@@ -260,8 +259,6 @@ export default function ActiveWorkoutPage() {
           editing={editing && { avgHeartRate: editing.avgHeartRate, notes: draft.notes }}
           onFinish={async opts => {
             rest.stop()
-            // Finishing navigates on its own, after the store has cleared: no detour to Workouts in between
-            setLeaving(true)
             await (editing ? saveEdits(opts) : finish(opts))
           }}
         />

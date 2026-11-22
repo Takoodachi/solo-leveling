@@ -64,8 +64,22 @@ export async function getWorkoutWithSets(uuid: string): Promise<WorkoutWithSets 
   return { ...workout, sets: withEx }
 }
 
+/** The workout a summary is about to open on (`readWorkoutAhead`). */
+let readAhead: WorkoutWithSets | null = null
+
+/**
+ * Read a workout for the summary about to open (on finishing it, or saving or calling off an edit),
+ * so the summary has it on its first frame instead of an empty page while the database answers:
+ * that flashed white on light themes. A failed read only costs that frame.
+ */
+export async function readWorkoutAhead(uuid: string): Promise<WorkoutWithSets | null> {
+  readAhead = await getWorkoutWithSets(uuid).catch(() => null)
+  return readAhead
+}
+
 export function useWorkoutDetail(uuid: string | undefined): WorkoutWithSets | null | undefined {
-  return useLiveQuery(() => (uuid ? getWorkoutWithSets(uuid) : Promise.resolve(null)), [uuid])
+  // shortcut: the copy read ahead stands in only until the live read answers; on a later visit it may be a frame old
+  return useLiveQuery(() => (uuid ? getWorkoutWithSets(uuid) : Promise.resolve(null)), [uuid], readAhead?.uuid === uuid ? readAhead : undefined)
 }
 
 export async function deleteWorkout(uuid: string): Promise<void> {

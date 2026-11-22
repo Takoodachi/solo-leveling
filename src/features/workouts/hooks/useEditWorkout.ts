@@ -15,7 +15,7 @@ import { emptySet, parsePositive, type BlockDraft, numText } from '../types'
 import { durationOf, holdText, weightKg, weightText } from '../units'
 import { effortFromRpe, effortRpe } from '../effort'
 import { exerciseUnit } from './useExerciseNote'
-import { getWorkoutWithSets, lastSessionSets } from './useWorkoutHistory'
+import { getWorkoutWithSets, lastSessionSets, readWorkoutAhead } from './useWorkoutHistory'
 import type { FinishOptions } from './useActiveWorkout'
 
 /** Workouts stay editable for this many days after the day they were logged. */
@@ -97,9 +97,9 @@ export function useEditWorkout() {
   }
 
   async function saveEdits(opts: FinishOptions): Promise<void> {
-    const draft = useWorkoutStore.getState().draft
+    const { draft, finished } = useWorkoutStore.getState()
     const editing = draft?.editing
-    if (!draft || !editing) return
+    if (!draft || !editing || finished) return
     const workoutId = editing.workoutId
 
     if (!(await db.workouts.get(workoutId))) {
@@ -156,18 +156,20 @@ export function useEditWorkout() {
     })
     await deleteSynced(db.workoutSets, 'workout_sets', removed)
 
+    await readWorkoutAhead(workoutId)
+    useWorkoutStore.setState({ finished: true }) // the draft goes once the summary is up (dropFinished)
     navigate(`/workouts/summary/${workoutId}`, { replace: true })
-    useWorkoutStore.getState().discard()
     toast.success('Workout updated')
     await announceAchievements(await evaluateAchievements())
     requestSync()
   }
 
   /** Drop the edits and go back to the workout as it was saved. */
-  function cancelEditing(): void {
+  async function cancelEditing(): Promise<void> {
     const workoutId = useWorkoutStore.getState().draft?.editing?.workoutId
+    if (workoutId) await readWorkoutAhead(workoutId)
+    useWorkoutStore.setState({ finished: true }) // the draft goes once the logger is off screen (dropFinished)
     navigate(workoutId ? `/workouts/summary/${workoutId}` : '/workouts', { replace: true })
-    useWorkoutStore.getState().discard()
   }
 
   return { startEditing, saveEdits, cancelEditing }
