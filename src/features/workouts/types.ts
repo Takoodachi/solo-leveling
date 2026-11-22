@@ -54,6 +54,8 @@ export type BlockDraft = {
   sets: SetDraft[]
   lastSets?: LastSet[]
   trend?: LiftTrend
+  /** The best est. 1RM ever logged on it, in kg (the live PR line, prPace.ts); 0 or unset with none. */
+  best?: number
   /** What came before this exercise in the last workout that had it, so the tips can weigh today's order against it. */
   lastPreload?: Preload
   /** How rested its muscles are: the work they got in the two days before today, and before the last workout that had it. */
@@ -67,7 +69,7 @@ export type BlockDraft = {
 }
 
 /** What a new logger card takes from history (blockHistory). */
-export type BlockHistory = Pick<BlockDraft, 'lastSets' | 'trend' | 'unit' | 'lastPreload' | 'recovery'>
+export type BlockHistory = Pick<BlockDraft, 'lastSets' | 'trend' | 'best' | 'unit' | 'lastPreload' | 'recovery'>
 
 /** A saved workout being edited in the logger (instead of a live session). */
 export type EditingInfo = {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Check, Plus, Minus } from 'lucide-react'
+import { Check, Plus, Minus, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 import type { WeightUnit } from '@/types'
-import { setModeFor } from '@/lib/workoutMath'
+import { est1RM, setModeFor } from '@/lib/workoutMath'
+import { formatClock } from '@/lib/cardio'
 import { cn } from '@/lib/utils'
 import { useWorkoutStore } from '../store'
-import { setHasValue } from '../types'
+import { setHasValue, type BlockDraft } from '../types'
 import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockCard, { type BlockCardProps } from './BlockCard'
@@ -16,7 +17,9 @@ import UnitToggle from './UnitToggle'
 import { applyFill, isBarbell, suggestProgress } from '../progression'
 import { orderEffect } from '../fatigue'
 import { suggestStart, type RankedLift } from '../startWeight'
-import { EFFORTS } from '../effort'
+import { EFFORTS, type Effort } from '../effort'
+import { autoRest, restForFailure } from '../autoRest'
+import { prPace } from '../prPace'
 import { DEFAULT_HOLD_SECONDS, lastSetsOf, setsInKg } from '../units'
 import { restEndsAt, stopRest } from '../hooks/useRestTimer'
 import { saveExerciseUnit } from '../hooks/useExerciseNote'
@@ -28,12 +31,14 @@ import { ink } from '@/lib/colors'
 import { buzz, tap } from '@/lib/haptics'
 import { chime, unlockSound } from '@/lib/sound'
 import { useSettings } from '@/features/settings/hooks/useSettings'
+import { extraOn } from '@/features/settings/extras'
 
 /** When a hold of `seconds` starting now ends: read when ▶ is pressed, never while the card is drawn. */
 const holdEndsAt = (seconds: number) => Date.now() + seconds * 1000
 
 interface Props extends BlockCardProps {
-  onSetDone: (restSec: number) => void
+  /** A set was ticked: the screen starts its rest (autoRest.ts). */
+  onSetDone: (block: BlockDraft) => void
   /** Best rank so far on this lift (from history), if it's a ranked lift. */
   liftRank?: RankInfo
   rankContext: RankContext | null
@@ -57,11 +62,14 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   const kgSets = setsInKg(block.sets, block.unit)
   const lastSets = lastSetsOf(block)
   const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done), liftRank, rankContext) : liftRank
+  // Auto rest (Settings → Extras): the rest is picked from the movement and the set, not the routine's time
+  const auto = extraOn('autoRest', settings?.extras)
+  const autoPick = auto ? autoRest(block.exercise) : null
   // No "what to try today" while correcting a workout that's already happened, or with tips switched off
   const tips = !draft?.editing && settings?.workoutTips !== false
   const hint = !tips
     ? null
-    : (suggestProgress({ ...block, bodyKg: rankContext?.bodyKg, order: draft ? orderEffect(draft.blocks, blockIdx) : undefined })
+    : (suggestProgress({ ...block, restSec: autoPick?.seconds ?? block.restSec, bodyKg: rankContext?.bodyKg, order: draft ? orderEffect(draft.blocks, blockIdx) : undefined })
       // Never logged: a first weight from the lifter's related lifts, until the first set is in
       ?? (!block.lastSets?.length && rankContext && lifts && done === 0 ? suggestStart({ ...block, ...rankContext, lifts }) : null))
   // Its last set was the latest ticked: ask how many reps that left (not while correcting a past workout)
@@ -71,13 +79,25 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
   // The plate calculator starts from the next set's weight
   const nextSet = block.sets.find(s => !s.done) ?? block.sets[block.sets.length - 1]
+  // The live PR line under the next set: the reps at its weight for a new best or the next division (prPace.ts)
+  const nextIdx = block.sets.findIndex(s => !s.done)
+  const pace = tips && mode === 'load' && nextIdx >= 0
+    ? prPace({
+        exerciseId: block.exercise.uuid,
+        kg: Number(kgSets[nextIdx].weight) || 0,
+        planned: Number(block.sets[nextIdx].reps) || block.lastSets?.[nextIdx]?.reps || block.targetReps,
+        best: kgSets.reduce((best, s) => (s.done ? Math.max(best, est1RM(Number(s.weight) || 0, Number(s.reps) || 0)) : best), block.best ?? 0),
+        rank,
+        ctx: rankContext,
+        assisted: /assisted/i.test(block.exercise.name),
+      })
+    : null
 
   function handleToggle(setIdx: number) {
     if (holding && block.sets[setIdx]?.uuid === holding.setId) setHolding(null) // ticked by hand: that hold is over
     if (!toggleDone(blockIdx, setIdx)) return
     tap()
-    // A stretch with no rest goes straight on to the next hold, which its own timer paces
-    if (mode !== 'stretch' || block.restSec > 0) onSetDone(block.restSec)
+    onSetDone(block)
     announceRankUp(setIdx)
     foldWhenDone(blockIdx) // the last one: the card gets out of the way of the next exercise
   }
@@ -108,6 +128,13 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
       duration: 7000,
       action: { label: 'Undo', onClick: () => restoreSet(blockIdx, setIdx, removed, block.exercise.uuid, startedAt) },
     })
+  }
+
+  // "None" left is a set to failure: Auto rest adds its 30 s to the rest running (and takes them back with it)
+  function pickEffort(effort: Effort) {
+    setEffort(blockIdx, effort)
+    const failure = effort !== block.effort && effort === 'hard' // the same answer again takes it back
+    if (failure !== (block.effort === 'hard')) restForFailure(block.exercise, failure, auto)
   }
 
   function announceRankUp(setIdx: number) {
@@ -155,11 +182,11 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   return (
     <BlockCard
       {...card}
-      footer={asksEffort ? <EffortRow value={block.effort} onPick={effort => setEffort(blockIdx, effort)} /> : undefined}
+      footer={asksEffort ? <EffortRow value={block.effort} onPick={pickEffort} /> : undefined}
       subtitle={
         <>
           {done === block.sets.length && <Check size={12} strokeWidth={3.5} className="text-primary" aria-label="All sets done" />}
-          {done}/{block.sets.length} sets{(mode !== 'stretch' || block.restSec > 0) && <> · rest {block.restSec}s</>}
+          {done}/{block.sets.length} sets{(mode !== 'stretch' || block.restSec > 0) && <> · rest {autoPick ? `${formatClock(autoPick.seconds / 60)} auto` : `${block.restSec}s`}</>}
           {effortTag && !asksEffort && <> · {effortTag}</>}
           {rank && (
             <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: ink(rank.tier.color) }}>
@@ -204,6 +231,11 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
               hold={holding?.setId === set.uuid ? holding : null}
               onHold={mode === 'stretch' && !draft?.editing ? () => toggleHold(setIdx) : undefined}
             />
+            {pace && setIdx === nextIdx && (
+              <p className="flex items-center gap-1.5 px-2 pb-1 pt-0.5 text-xs font-semibold text-primary">
+                <Trophy size={13} aria-hidden="true" />{pace}
+              </p>
+            )}
           </div>
         ))}
       </div>

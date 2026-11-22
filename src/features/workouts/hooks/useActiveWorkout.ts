@@ -78,7 +78,7 @@ export function useActiveWorkout() {
       const exercise = exercises[i]
       const history = histories[i]
       if (!exercise || !history) continue
-      const { lastSets, trend, unit, lastPreload, recovery } = history
+      const { lastSets, trend, best, unit, lastPreload, recovery } = history
       const base = { exercise, lastSets, unit }
       const cardio = setModeFor(exercise) === 'cardio'
       blocks.push({
@@ -89,6 +89,7 @@ export function useActiveWorkout() {
         targetReps: re.reps,
         lastSets,
         trend,
+        best,
         unit,
         lastPreload,
         recovery,
