@@ -42,8 +42,9 @@ export default function FinishWorkoutDialog({ open, onOpenChange, elapsedMin, do
         notes,
         date: date ?? undefined,
       })
-    } finally {
-      setSaving(false)
+    } catch (err) {
+      setSaving(false) // saved, it stays on "Saving…": the screen is on its way to the summary
+      throw err
     }
   }
 

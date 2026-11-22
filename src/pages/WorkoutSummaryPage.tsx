@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useNavigationType, useParams } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
 import { Trophy, Trash2, Pencil, Share2 } from 'lucide-react'
@@ -16,6 +16,7 @@ import { useExerciseUnits } from '@/features/workouts/hooks/useExerciseNote'
 import { useUnits } from '@/features/settings/units'
 import { describeSet } from '@/features/workouts/describeSet'
 import { useNow } from '@/hooks/useNow'
+import { dropFinished } from '@/features/workouts/store'
 import type { FinishResult } from '@/features/workouts/hooks/useActiveWorkout'
 import { findRankUps, type RankUp } from '@/features/ranks/computeRanks'
 import RankUpsSection from '@/features/ranks/components/RankUpsSection'
@@ -40,10 +41,12 @@ export default function WorkoutSummaryPage() {
   const { id } = useParams()
   const state = useLocation().state as FinishResult | null
   const { intro, endIntro } = useRankUpIntro(id, state?.celebrate ? state.rankUps : undefined)
+  // Here from the logger: its draft goes now that this screen has taken its place
+  useEffect(() => dropFinished(), [])
 
   return (
     <>
-      <RankUpCeremony ups={intro} onDone={endIntro} />
+      <RankUpCeremony ups={intro} onDone={endIntro} cut />
       {!intro && <WorkoutSummary />}
     </>
   )
@@ -63,6 +66,10 @@ function WorkoutSummary() {
   const unit = useUnits(s => s.weight)
   const stillness = useReducedMotion()
   const celebrate = state?.celebrate === true
+  // In the logger's place (finished, or an edit saved or called off): on screen at once, since a
+  // fade from an empty page flashed white on light themes; after the rank-up sequence, the stage
+  // fading away is its entrance
+  const fromLogger = useNavigationType() === 'REPLACE'
 
   // History view: work out new bests and rank-ups on the fly (the finish flow passes them in).
   useEffect(() => {
@@ -100,7 +107,7 @@ function WorkoutSummary() {
   }
 
   return (
-    <FullScreen className="flex flex-col gap-5">
+    <FullScreen className="flex flex-col gap-5" enter={!fromLogger}>
       {celebrate ? (
         <CompletionHero xp={state.xp} />
       ) : (

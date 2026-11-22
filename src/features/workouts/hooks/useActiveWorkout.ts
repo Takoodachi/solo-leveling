@@ -20,7 +20,7 @@ import { useWorkoutStore } from '../store'
 import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { durationOf, weightKg, weightText } from '../units'
 import { effortRpe } from '../effort'
-import { blockHistory, findNewBests, getWorkoutWithSets, type NewBest } from './useWorkoutHistory'
+import { blockHistory, findNewBests, readWorkoutAhead, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
   durationMin: number
@@ -116,8 +116,8 @@ export function useActiveWorkout() {
 
   /** Save the draft's completed sets as a workout and open the summary. */
   async function finish(opts: FinishOptions): Promise<void> {
-    const draft = useWorkoutStore.getState().draft
-    if (!draft) return
+    const { draft, finished } = useWorkoutStore.getState()
+    if (!draft || finished) return // already saved, and on its way to the summary
 
     const now = Date.now()
     const workoutUuid = crypto.randomUUID()
@@ -180,7 +180,7 @@ export function useActiveWorkout() {
     // saved (a second Finish would save it twice), so a failure there still ends on the summary.
     let result: FinishResult = { celebrate: true, xp: 0, newBests: [], rankUps: [] }
     try {
-      const saved = await getWorkoutWithSets(workoutUuid)
+      const saved = await readWorkoutAhead(workoutUuid)
       const newBests = saved ? await findNewBests(saved) : []
       const rankUps = saved ? await findRankUps(saved) : []
       // The summary opens with the rank-up sequence: the toasts below wait for it (or 5 s, if it never opens)
@@ -201,9 +201,9 @@ export function useActiveWorkout() {
     }
 
     // Only now, with everything worked out: the logger (its dialog saying "Saving…") stays up until
-    // the summary takes over. Cleared earlier, it sent you to Workouts for those seconds and then on
-    // to the summary, a jump between screens on a phone.
-    useWorkoutStore.getState().discard()
+    // the summary has taken its place, and the draft goes then (dropFinished). Cleared earlier, it
+    // sent you to Workouts for those seconds, and later left an empty frame between the two.
+    useWorkoutStore.setState({ finished: true })
     navigate(`/workouts/summary/${workoutUuid}`, { replace: true, state: result })
   }
 

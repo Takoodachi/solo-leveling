@@ -17,6 +17,12 @@ interface WorkoutStore {
   draft: WorkoutDraft | null
   /** True once we've checked IndexedDB for an in-progress workout. */
   restored: boolean
+  /**
+   * The draft is done with (saved, or an edit called off) and goes once the logger is off screen
+   * (`dropFinished`). Cleared while the logger was still up, it drew an empty frame on its way to
+   * the summary, a white flash on a light theme.
+   */
+  finished: boolean
 
   start: (draft: WorkoutDraft) => void
   discard: () => void
@@ -63,9 +69,10 @@ function mapBlock(draft: WorkoutDraft, blockIdx: number, fn: (b: WorkoutDraft['b
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   draft: null,
   restored: false,
+  finished: false,
 
   start: draft => set({ draft }),
-  discard: () => set({ draft: null }),
+  discard: () => set({ draft: null, finished: false }),
   rename: name => set(s => (s.draft ? { draft: { ...s.draft, name } } : s)),
   setNotes: notes => set(s => (s.draft ? { draft: { ...s.draft, notes } } : s)),
 
@@ -235,6 +242,12 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return { draft: { ...s.draft, blocks } }
     }),
 }))
+
+/** The logger is off screen (it unmounted, or the summary took its place): a finished draft goes now. */
+export function dropFinished(): void {
+  const { finished, discard } = useWorkoutStore.getState()
+  if (finished) discard()
+}
 
 // ── Persistence ────────────────────────────────────────────────────────────────
 // The in-progress workout is mirrored to IndexedDB so a force-close, memory

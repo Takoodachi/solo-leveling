@@ -14,6 +14,8 @@ interface Props {
   ups: RankUp[] | null
   /** The last scene ended, or the user skipped. */
   onDone: () => void
+  /** It opens a screen (a just-finished workout's summary): on screen at once, with nothing behind it to fade in over. */
+  cut?: boolean
 }
 
 /**
@@ -21,14 +23,14 @@ interface Props {
  * Always dark, like the share card: the glow and the rays need a dark stage, whatever the theme.
  * Three presses anywhere skip the rest (useTriplePress).
  */
-export default function RankUpCeremony({ ups, onDone }: Props) {
+export default function RankUpCeremony({ ups, onDone, cut }: Props) {
   return createPortal(
-    <AnimatePresence>{ups && ups.length > 0 && <Stage key="stage" ups={ups} onDone={onDone} />}</AnimatePresence>,
+    <AnimatePresence>{ups && ups.length > 0 && <Stage key="stage" ups={ups} onDone={onDone} cut={cut} />}</AnimatePresence>,
     document.body,
   )
 }
 
-function Stage({ ups, onDone }: { ups: RankUp[]; onDone: () => void }) {
+function Stage({ ups, onDone, cut }: { ups: RankUp[]; onDone: () => void; cut?: boolean }) {
   const [index, setIndex] = useState(0)
   const { count, press } = useTriplePress(onDone)
   const finish = useEffectEvent(onDone)
@@ -60,7 +62,7 @@ function Stage({ ups, onDone }: { ups: RankUp[]; onDone: () => void }) {
       aria-label="Rank up"
       onClick={press}
       className="fixed inset-0 z-[60] flex touch-none select-none flex-col items-center justify-center overflow-hidden bg-[#070709] text-zinc-50"
-      initial={{ opacity: 0 }}
+      initial={cut ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
