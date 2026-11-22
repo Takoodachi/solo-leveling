@@ -19,7 +19,8 @@ import { playsIntro } from '@/features/ranks/useRankUpIntro'
 import { useWorkoutStore } from '../store'
 import { cardioSet, emptySet, parsePositive, type BlockDraft, type SetDraft } from '../types'
 import { durationOf, weightKg, weightText } from '../units'
-import { effortRpe } from '../effort'
+import { liftRpe } from '../effort'
+import { CARRY_ON_CREDIT, lastMain } from '../setKinds'
 import { blockHistory, findNewBests, readWorkoutAhead, type NewBest } from './useWorkoutHistory'
 
 export interface FinishOptions {
@@ -128,6 +129,7 @@ export function useActiveWorkout() {
     const cardioIds = new Set(draft.blocks.filter(b => setModeFor(b.exercise) === 'cardio').map(b => b.exercise.uuid))
     const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) => {
       const done = block.sets.filter(s => s.done)
+      const last = lastMain(done)
       return done.map((s, si) => ({
         uuid: s.uuid,
         workoutId: workoutUuid,
@@ -137,8 +139,9 @@ export function useActiveWorkout() {
         weight: weightKg(s.weight, block.unit),
         duration: durationOf(s.duration, block),
         distanceKm: num(s.distanceKm),
-        // Cardio's effort; a lift's "reps left" goes on its last set (effort.ts)
-        rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,
+        // Cardio's effort; a lift's failure marks, and its "reps left" on its last set (effort.ts)
+        rpe: cardioIds.has(block.exercise.uuid) ? rpeFor(s.intensity ?? 'moderate') : liftRpe(s, si === last, block.effort),
+        kind: s.kind,
         updatedAt: now,
         syncPending: true,
       }))
@@ -189,7 +192,9 @@ export function useActiveWorkout() {
 
       if (day === today()) await updateStreak() // a day that has passed can't be added to the streak
       const cardioXp = cardioSets.reduce((sum, s) => sum + Math.min(CARDIO_XP_CAP, Math.round((s.duration ?? 0) * XP.PER_CARDIO_MIN)), 0)
-      const xp = XP.WORKOUT + (sets.length - cardioSets.length) * XP.PER_SET + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
+      // A drop set, rest-pause or partials row is half a set (setKinds.ts)
+      const setXp = Math.round(sets.reduce((n, s) => n + (cardioIds.has(s.exerciseId) ? 0 : s.kind ? CARRY_ON_CREDIT : 1), 0) * XP.PER_SET)
+      const xp = XP.WORKOUT + setXp + cardioXp + newBests.length * XP.NEW_BEST + rankUpXp(rankUps)
       const xpResult = await grantXp(xp)
       const achievements = await evaluateAchievements()
       requestSync()

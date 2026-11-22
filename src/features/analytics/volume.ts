@@ -1,6 +1,7 @@
 import { differenceInYears } from 'date-fns'
 import type { Exercise, TrainingLevel, VolumeMuscle, WorkoutSet } from '@/types'
 import { parseDate } from '@/lib/date'
+import { CARRY_ON_CREDIT } from '@/features/workouts/setKinds'
 
 /**
  * Weekly set volume per muscle against volume landmarks (Renaissance
@@ -138,7 +139,9 @@ export const WORKING_REPS = 4
  * so it counts half, and the radar isn't read as too much training by someone who lifts heavy and
  * low. A timed hold counts whole; a set with neither reps nor time counts for nothing.
  */
-export function setCredit(s: Pick<WorkoutSet, 'reps' | 'duration'>): number {
+export function setCredit(s: Pick<WorkoutSet, 'reps' | 'duration' | 'kind'>): number {
+  // A drop set, rest-pause or partials row is half a set, its owner's choice (workouts/setKinds.ts)
+  if (s.kind) return CARRY_ON_CREDIT
   if (s.reps != null && s.reps > 0) return s.reps < WORKING_REPS ? 0.5 : 1
   return s.duration ? 1 : 0
 }

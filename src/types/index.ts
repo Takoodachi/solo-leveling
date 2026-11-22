@@ -265,6 +265,9 @@ export interface Workout {
   syncPending?: boolean
 }
 
+/** A row that carries on the set before it with no rest: a drop set, rest-pause or partials (features/workouts/setKinds.ts). */
+export type SetKind = 'drop' | 'rest-pause' | 'partials'
+
 export interface WorkoutSet {
   uuid: string
   workoutId: string
@@ -274,7 +277,10 @@ export interface WorkoutSet {
   weight?: number // kg
   duration?: number // minutes
   distanceKm?: number
+  /** Cardio's effort; on a lift, 10 = taken to failure ("None" left), 7 / 8 = 3+ / 1–2 left (effort.ts). */
   rpe?: number
+  /** Unset on an ordinary set. */
+  kind?: SetKind | null
   updatedAt: number
   syncPending?: boolean
 }

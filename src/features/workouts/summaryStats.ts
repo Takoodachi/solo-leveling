@@ -1,6 +1,7 @@
 import type { WeightUnit, WorkoutWithSets } from '@/types'
 import { formatVolume, totalReps, totalVolume } from '@/lib/workoutMath'
 import { formatClock, formatKm } from '@/lib/cardio'
+import { kindLabel } from './setKinds'
 
 /**
  * The figures at the top of a workout's summary as [label, value], for the card on screen and
@@ -23,7 +24,7 @@ export function summaryStats(workout: WorkoutWithSets, unit: WeightUnit, { share
   }
   stats.push(['Exercises:', String(exerciseCount)])
   if (lifts.length > 0) {
-    stats.push(['Sets finished:', `${lifts.length} sets`])
+    stats.push(['Sets finished:', setsFinished(lifts)])
     stats.push(volume > 0 ? ['Volume:', formatVolume(volume, unit)] : ['Total reps:', String(totalReps(lifts))])
   }
   if (stretches.length > 0) {
@@ -35,4 +36,15 @@ export function summaryStats(workout: WorkoutWithSets, unit: WeightUnit, { share
     if (km > 0) stats.push(['Distance:', formatKm(km)])
   }
   return stats
+}
+
+/** "4 sets", or with what carried them on: "4 sets + 2 drop sets", "4 sets + 3 more" for a mix (setKinds.ts). */
+function setsFinished(lifts: WorkoutWithSets['sets']): string {
+  const extra = lifts.filter(s => s.kind)
+  const main = `${lifts.length - extra.length} sets`
+  if (extra.length === 0) return main
+  const kinds = new Set(extra.map(s => s.kind))
+  const only = kinds.size === 1 ? extra[0].kind : null
+  const what = only === 'drop' ? (extra.length === 1 ? 'drop set' : 'drop sets') : only ? kindLabel(only).toLowerCase() : 'more'
+  return `${main} + ${extra.length} ${what}`
 }

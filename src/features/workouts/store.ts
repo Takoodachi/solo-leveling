@@ -2,11 +2,12 @@ import { create } from 'zustand'
 import { db } from '@/db'
 import { moved } from '@/lib/utils'
 import { setModeFor } from '@/lib/workoutMath'
-import type { Exercise, WeightUnit } from '@/types'
-import { applyFill, type HintFill } from './progression'
+import type { Exercise, SetKind, WeightUnit } from '@/types'
+import { applyFill, dropWeight, type HintFill } from './progression'
 import { type WorkoutDraft, type BlockDraft, type BlockHistory, type SetDraft, cardioSet, emptySet, numText, setHasValue } from './types'
 import { DEFAULT_HOLD_SECONDS, convertWeightText, holdText, weightText } from './units'
 import type { Effort } from './effort'
+import { chainEnd, isMainSet, lastMain, mainOf } from './setKinds'
 
 type SetField = keyof Omit<SetDraft, 'uuid' | 'done'>
 
@@ -41,8 +42,15 @@ interface WorkoutStore {
   toggleCollapsed: (blockIdx: number) => void
   /** Call after a tick: if that was the card's last set, it folds away a moment later. */
   foldWhenDone: (blockIdx: number) => void
-  /** How many reps the exercise's last set left (effort.ts); the same answer again takes it back. */
+  /**
+   * How many reps the exercise's last set left (effort.ts); the same answer again takes it back.
+   * "None" is that set's failure mark (`toggleFailure`), so the two always agree.
+   */
   setEffort: (blockIdx: number, effort: Effort) => void
+  /** Marks an ordinary set as taken to failure, or takes the mark back. */
+  toggleFailure: (blockIdx: number, setIdx: number) => void
+  /** A drop set, rest-pause or partials after this set and any it already has; a drop set starts lighter (setKinds.ts). */
+  addCarryOn: (blockIdx: number, setIdx: number, kind: SetKind) => void
   /**
    * Another exercise in this one's place (the machine is taken). Sets already ticked stay logged
    * under the old exercise and the new one takes the rest; returns how to take it back.
@@ -52,11 +60,12 @@ interface WorkoutStore {
   addSet: (blockIdx: number) => void
   updateSet: (blockIdx: number, setIdx: number, field: SetField, value: string) => void
   toggleDone: (blockIdx: number, setIdx: number) => boolean
+  /** Takes a set out, with the drop sets, rest-pause or partials that carry it on. */
   removeSet: (blockIdx: number, setIdx: number) => void
   /** Takes a set to another place in its exercise. */
   moveSet: (blockIdx: number, from: number, to: number) => void
-  /** Puts a removed set back where it was, if that exercise is still there in the same workout. */
-  restoreSet: (blockIdx: number, setIdx: number, set: SetDraft, exerciseId: string, startedAt: number) => void
+  /** Puts removed sets back where they were, if that exercise is still there in the same workout. */
+  restoreSet: (blockIdx: number, setIdx: number, sets: SetDraft[], exerciseId: string, startedAt: number) => void
   /** Write a progression hint's numbers into the block's sets that aren't done yet. */
   fillSets: (blockIdx: number, fill: HintFill) => void
   markAllFilledDone: () => void
@@ -149,7 +158,39 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   setEffort: (blockIdx, effort) =>
-    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, effort: b.effort === effort ? undefined : effort })) } : s)),
+    set(s => (s.draft ? {
+      draft: mapBlock(s.draft, blockIdx, b => {
+        const last = lastMain(b.sets)
+        const failure = effort === 'hard' && !b.sets[last]?.failure
+        // "None" lives on the set as its failure mark; 3+ and 1–2 are the block's own
+        const next = effort === 'hard' || b.effort === effort ? undefined : effort
+        return { ...b, effort: next, sets: b.sets.map((st, j) => (j === last ? { ...st, failure } : st)) }
+      }),
+    } : s)),
+
+  toggleFailure: (blockIdx, setIdx) =>
+    set(s => (s.draft ? {
+      draft: mapBlock(s.draft, blockIdx, b => {
+        const row = b.sets[setIdx]
+        if (!row || row.kind) return b
+        const failure = !row.failure
+        // On the last set it answers the reps-left question too: "None" replaces a 3+ or 1–2
+        const effort = failure && setIdx === lastMain(b.sets) ? undefined : b.effort
+        return { ...b, effort, sets: b.sets.map((st, j) => (j === setIdx ? { ...st, failure } : st)) }
+      }),
+    } : s)),
+
+  addCarryOn: (blockIdx, setIdx, kind) =>
+    set(s => (s.draft ? {
+      draft: mapBlock(s.draft, blockIdx, b => {
+        if (!b.sets[setIdx]) return b
+        const at = chainEnd(b.sets, mainOf(b.sets, setIdx))
+        const before = b.sets[at - 1]
+        const row = emptySet({ kind, weight: kind === 'drop' ? dropWeight(before.weight, b.exercise.name, b.unit) : before.weight })
+        // Open, so the new row shows on a card that folded itself after its last set
+        return { ...b, collapsed: false, sets: [...b.sets.slice(0, at), row, ...b.sets.slice(at)] }
+      }),
+    } : s)),
 
   replaceBlock: (blockIdx, block) => {
     const draft = get().draft
@@ -178,8 +219,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       if (!s.draft) return s
       return {
         draft: mapBlock(s.draft, blockIdx, b => {
-          // Copy the previous set's numbers so the next set is one tap away.
-          const prev = b.sets.at(-1)
+          // Copy the previous set's numbers so the next set is one tap away (not a drop set's lighter ones)
+          const prev = b.sets.filter(isMainSet).at(-1)
           const next = emptySet(prev ? { weight: prev.weight, reps: prev.reps, duration: prev.duration, distanceKm: prev.distanceKm } : undefined)
           return { ...b, sets: [...b.sets, next] }
         }),
@@ -214,11 +255,22 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   removeSet: (blockIdx, setIdx) =>
     set(s => {
       if (!s.draft) return s
-      return { draft: mapBlock(s.draft, blockIdx, b => ({ ...b, sets: b.sets.filter((_, j) => j !== setIdx) })) }
+      return { draft: mapBlock(s.draft, blockIdx, b => {
+        const end = chainEnd(b.sets, setIdx)
+        return { ...b, sets: b.sets.filter((_, j) => j < setIdx || j >= end) }
+      }) }
     }),
 
   moveSet: (blockIdx, from, to) =>
-    set(s => (s.draft ? { draft: mapBlock(s.draft, blockIdx, b => (b.sets[from] && b.sets[to] ? { ...b, sets: moved(b.sets, from, to) } : b)) } : s)),
+    set(s => (s.draft ? {
+      draft: mapBlock(s.draft, blockIdx, b => {
+        if (!b.sets[from] || !b.sets[to]) return b
+        const sets = moved(b.sets, from, to)
+        // A drop set or the like moved to the top has no set to carry on: it's an ordinary one there
+        if (sets[0].kind) sets[0] = { ...sets[0], kind: undefined }
+        return { ...b, sets }
+      }),
+    } : s)),
 
   restoreSet: (blockIdx, setIdx, removed, exerciseId, startedAt) =>
     set(s => {
@@ -226,7 +278,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       return {
         draft: mapBlock(s.draft, blockIdx, b => {
           const sets = [...b.sets]
-          sets.splice(Math.min(setIdx, sets.length), 0, removed)
+          sets.splice(Math.min(setIdx, sets.length), 0, ...removed)
           return { ...b, sets }
         }),
       }

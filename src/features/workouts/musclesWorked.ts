@@ -1,5 +1,6 @@
 import type { Exercise, WorkoutSet } from '@/types'
 import type { MuscleRegion } from '@/features/ranks/standards'
+import { CARRY_ON_CREDIT } from './setKinds'
 
 /**
  * Which muscles a workout worked and how much, for the body map on its summary. Unlike the
@@ -63,12 +64,12 @@ export function bodyMap(sets: (Pick<WorkoutSet, 'duration'> & { exercise: Exerci
 }
 
 /** Set-equivalents per muscle region for these sets; regions nothing touched are left out. */
-export function musclesWorked(sets: (Pick<WorkoutSet, 'duration'> & { exercise: Exercise })[]): Map<MuscleRegion, number> {
+export function musclesWorked(sets: (Pick<WorkoutSet, 'duration' | 'kind'> & { exercise: Exercise })[]): Map<MuscleRegion, number> {
   const work = new Map<MuscleRegion, number>()
   for (const s of sets) {
     const weight = s.exercise.type === 'cardio'
       ? Math.min(CARDIO_MAX_SETS, Math.max(1, (s.duration ?? 0) / CARDIO_MINUTES_PER_SET))
-      : 1
+      : s.kind ? CARRY_ON_CREDIT : 1
     for (const [region, share] of sharesOf(s.exercise)) work.set(region, (work.get(region) ?? 0) + share * weight)
   }
   return work

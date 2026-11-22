@@ -29,7 +29,7 @@ export function applyWatchAction(action: string, defaultRest: number): void {
   if (last?.distanceKm != null) store.updateSet(at.blockIdx, at.setIdx, 'distanceKm', String(last.distanceKm))
   if (!store.toggleDone(at.blockIdx, at.setIdx)) return
   // As the phone's tick: Auto rest's pick, or the block's own time; a stretch with no rest goes straight on
-  const pick = restAfterSet(block, defaultRest)
+  const pick = restAfterSet(block, at.setIdx, defaultRest)
   if (pick) startRest(pick.seconds, pick.why)
   store.foldWhenDone(at.blockIdx)
 }

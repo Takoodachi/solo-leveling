@@ -66,7 +66,8 @@ function bestsOf(sets: DatedSet[], exercise: Exercise, unit: WeightUnit, day: (d
     return bests
   }
 
-  const loaded = sets.filter(s => s.weight && s.reps)
+  // A drop set, rest-pause or partials row carries a set on: not a best of its own (setKinds.ts)
+  const loaded = sets.filter(s => s.weight && s.reps && !s.kind)
   if (loaded.length > 0) {
     const w = (kg: number) => `${shownWeight(kg, unit)} ${unit}`
     add('Best set', top(loaded, s => est1RM(s.weight!, s.reps!)), s => `${w(s.weight!)} × ${s.reps} · est. 1RM ${w(Math.round(est1RM(s.weight!, s.reps!) * 10) / 10)}`)

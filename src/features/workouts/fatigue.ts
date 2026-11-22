@@ -1,4 +1,5 @@
-import type { Exercise } from '@/types'
+import type { Exercise, SetKind } from '@/types'
+import { CARRY_ON_CREDIT } from './setKinds'
 import { sharesOf } from './musclesWorked'
 import type { BlockDraft, Preload, Recent } from './types'
 
@@ -60,11 +61,11 @@ export function overlap(ex: Exercise, before: Exercise): number {
   return most
 }
 
-/** Sets' worth of work, from the durations of what was done (cardio entries count by their minutes, stretches as none). */
-export function workDone(exercise: Exercise, durations: number[]): number {
+/** Sets' worth of work in what was done: cardio entries count by their minutes, stretches as none, a drop set, rest-pause or partials row as half a set (setKinds.ts). */
+export function workDone(exercise: Exercise, sets: { duration?: number; kind?: SetKind | null }[]): number {
   if (exercise.type === 'flexibility') return 0
-  if (exercise.type !== 'cardio') return durations.length
-  return durations.reduce((sum, minutes) => sum + Math.min(CARDIO_MAX_SETS, Math.max(1, minutes / CARDIO_MINUTES_PER_SET)), 0)
+  if (exercise.type !== 'cardio') return sets.reduce((sum, s) => sum + (s.kind ? CARRY_ON_CREDIT : 1), 0)
+  return sets.reduce((sum, s) => sum + Math.min(CARDIO_MAX_SETS, Math.max(1, (s.duration ?? 0) / CARDIO_MINUTES_PER_SET)), 0)
 }
 
 /** What the earlier exercises (each with its sets' worth of work) put on `ex`: on its muscles, and in all. */
@@ -117,7 +118,7 @@ export function orderEffect(blocks: BlockDraft[], idx: number): OrderEffect | un
   const all = block.lastPreload
     ? preload(block.exercise, blocks.flatMap((b, i) => {
         const done = i === idx ? [] : b.sets.filter(s => s.done)
-        return done.length ? [{ exercise: b.exercise, sets: workDone(b.exercise, done.map(s => Number(s.duration) || 0)) }] : []
+        return done.length ? [{ exercise: b.exercise, sets: workDone(b.exercise, done.map(s => ({ duration: Number(s.duration) || 0, kind: s.kind }))) }] : []
       }))
     : NOTHING
   // A card from before every set was counted: only the muscles' work can be compared
