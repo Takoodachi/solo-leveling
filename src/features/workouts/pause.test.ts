@@ -34,6 +34,9 @@ describe('pausing training', () => {
     await setPause('2026-11-23', '2026-12-07')
     await setPause('2026-11-24', '2026-11-27')
     expect(await paused()).toEqual(['2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26'])
+    await setPause('2026-11-25', '2026-11-29') // later again
+    expect(await paused()).toEqual(['2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28'])
+    expect(await pausedUntil('2026-11-25')).toBe('2026-11-29')
     expect(await db.checkins.get('skip-2026-11-24')).toMatchObject({ done: true })
   })
 
