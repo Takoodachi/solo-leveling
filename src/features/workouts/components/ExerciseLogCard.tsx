@@ -6,12 +6,15 @@ import { est1RM, setModeFor } from '@/lib/workoutMath'
 import { formatClock } from '@/lib/cardio'
 import { cn } from '@/lib/utils'
 import { useWorkoutStore } from '../store'
-import { setHasValue, type BlockDraft } from '../types'
+import type { BlockDraft } from '../types'
 import SetRow from './SetRow'
 import { SET_COLUMNS, SET_GRID, type SetRowMode } from '../setColumns'
 import BlockCard, { type BlockCardProps } from './BlockCard'
 import ProgressHint from './ProgressHint'
 import EffortRow from './EffortRow'
+import SetMenu from './SetMenu'
+import { useSetOptions } from '../hooks/useSetOptions'
+import { lastMain } from '../setKinds'
 import PlatesButton from './PlatesButton'
 import UnitToggle from './UnitToggle'
 import { applyFill, isBarbell, suggestProgress } from '../progression'
@@ -38,7 +41,7 @@ const holdEndsAt = (seconds: number) => Date.now() + seconds * 1000
 
 interface Props extends BlockCardProps {
   /** A set was ticked: the screen starts its rest (autoRest.ts). */
-  onSetDone: (block: BlockDraft) => void
+  onSetDone: (block: BlockDraft, setIdx: number) => void
   /** Best rank so far on this lift (from history), if it's a ranked lift. */
   liftRank?: RankInfo
   rankContext: RankContext | null
@@ -48,7 +51,7 @@ interface Props extends BlockCardProps {
 
 export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lifts, ...card }: Props) {
   const { block, blockIdx } = card
-  const { addSet, removeSet, restoreSet, moveSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, setEffort, draft } = useWorkoutStore()
+  const { addSet, removeSet, moveSet, updateSet, toggleDone, foldWhenDone, fillSets, setUnit, setEffort, draft } = useWorkoutStore()
   // Hold a set (anywhere but its fields and its tick) to carry it to another place in the exercise
   const { attach, handle, style, from } = useHoldToMove((from, to) => moveSet(blockIdx, from, to))
   const { settings } = useSettings()
@@ -61,10 +64,16 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   // The fields hold the block's unit; ranks only know kg, and last time's sets are stored in it
   const kgSets = setsInKg(block.sets, block.unit)
   const lastSets = lastSetsOf(block)
-  const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done), liftRank, rankContext) : liftRank
+  // Drop sets, rest-pause and partials never count toward a rank or a best (setKinds.ts)
+  const rank = rankContext ? liveRank(block.exercise.uuid, kgSets.filter(s => s.done && !s.kind), liftRank, rankContext) : liftRank
   // Auto rest (Settings → Extras): the rest is picked from the movement and the set, not the routine's time
   const auto = extraOn('autoRest', settings?.extras)
   const autoPick = auto ? autoRest(block.exercise) : null
+  // Tap a set's number: failure, a drop set, rest-pause or partials after it, or out (useSetOptions)
+  const { numbers, menu, openMenu, carryOn } = useSetOptions(block, blockIdx, mode === 'load', auto)
+  // "None" left is the last set's failure mark (an answer from before marks is the block's own)
+  const lastSetFailed = !!block.sets[lastMain(block.sets)]?.failure
+  const effort = lastSetFailed ? 'hard' : block.effort
   // No "what to try today" while correcting a workout that's already happened, or with tips switched off
   const tips = !draft?.editing && settings?.workoutTips !== false
   const hint = !tips
@@ -74,19 +83,19 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
       ?? (!block.lastSets?.length && rankContext && lifts && done === 0 ? suggestStart({ ...block, ...rankContext, lifts }) : null))
   // Its last set was the latest ticked: ask how many reps that left (not while correcting a past workout)
   const asksEffort = !draft?.editing && draft?.justDone === block.exercise.uuid && mode === 'load' && done === block.sets.length
-  const effortTag = EFFORTS.find(e => e.value === block.effort)?.tag
+  const effortTag = EFFORTS.find(e => e.value === effort)?.tag
   const fill = hint?.fill
   const fillChanges = !!fill && applyFill(block.sets, fill).some((s, i) => s !== block.sets[i])
   // The plate calculator starts from the next set's weight
   const nextSet = block.sets.find(s => !s.done) ?? block.sets[block.sets.length - 1]
-  // The live PR line under the next set: the reps at its weight for a new best or the next division (prPace.ts)
-  const nextIdx = block.sets.findIndex(s => !s.done)
+  // The live PR line under the next ordinary set: the reps at its weight for a new best or the next division (prPace.ts)
+  const nextIdx = block.sets.findIndex(s => !s.done && !s.kind)
   const pace = tips && mode === 'load' && nextIdx >= 0
     ? prPace({
         exerciseId: block.exercise.uuid,
         kg: Number(kgSets[nextIdx].weight) || 0,
         planned: Number(block.sets[nextIdx].reps) || block.lastSets?.[nextIdx]?.reps || block.targetReps,
-        best: kgSets.reduce((best, s) => (s.done ? Math.max(best, est1RM(Number(s.weight) || 0, Number(s.reps) || 0)) : best), block.best ?? 0),
+        best: kgSets.reduce((best, s) => (s.done && !s.kind ? Math.max(best, est1RM(Number(s.weight) || 0, Number(s.reps) || 0)) : best), block.best ?? 0),
         rank,
         ctx: rankContext,
         assisted: /assisted/i.test(block.exercise.name),
@@ -97,7 +106,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
     if (holding && block.sets[setIdx]?.uuid === holding.setId) setHolding(null) // ticked by hand: that hold is over
     if (!toggleDone(blockIdx, setIdx)) return
     tap()
-    onSetDone(block)
+    onSetDone(block, setIdx)
     announceRankUp(setIdx)
     foldWhenDone(blockIdx) // the last one: the card gets out of the way of the next exercise
   }
@@ -118,28 +127,17 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
     setHolding({ setId: set.uuid, endAt: holdEndsAt(seconds), total: seconds })
   }
 
-  // A set with something in it can be put back, like a removed exercise
-  function handleRemoveSet(setIdx: number) {
-    const removed = block.sets[setIdx]
-    const startedAt = draft?.startedAt
-    removeSet(blockIdx, setIdx)
-    if (startedAt == null || !(removed.done || setHasValue(removed))) return
-    toast(`Removed set ${setIdx + 1} of ${block.exercise.name}`, {
-      duration: 7000,
-      action: { label: 'Undo', onClick: () => restoreSet(blockIdx, setIdx, removed, block.exercise.uuid, startedAt) },
-    })
-  }
-
-  // "None" left is a set to failure: Auto rest adds its 30 s to the rest running (and takes them back with it)
-  function pickEffort(effort: Effort) {
-    setEffort(blockIdx, effort)
-    const failure = effort !== block.effort && effort === 'hard' // the same answer again takes it back
-    if (failure !== (block.effort === 'hard')) restForFailure(block.exercise, failure, auto)
+  // "None" left is a set to failure: Auto rest adds its 30 s to the rest running (and takes them back with it).
+  // Not after a drop set or the like, whose rest is already the one after failure (autoRest.ts)
+  function pickEffort(answer: Effort) {
+    setEffort(blockIdx, answer)
+    const failure = answer === 'hard' && !lastSetFailed // the same answer again takes it back
+    if (failure !== lastSetFailed && !block.sets.at(-1)?.kind) restForFailure(block.exercise, failure, auto)
   }
 
   function announceRankUp(setIdx: number) {
-    if (!rankContext) return
-    const others = kgSets.filter((s, i) => s.done && i !== setIdx)
+    if (!rankContext || block.sets[setIdx]?.kind) return
+    const others = kgSets.filter((s, i) => s.done && i !== setIdx && !s.kind)
     const up = rankUpFromSet(block.exercise.uuid, kgSets[setIdx], others, liftRank, rankContext)
     if (!up) return
     toast(up.from ? `Rank up! ${up.to.label}` : `Ranked ${up.to.label}`, {
@@ -182,7 +180,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
   return (
     <BlockCard
       {...card}
-      footer={asksEffort ? <EffortRow value={block.effort} onPick={pickEffort} /> : undefined}
+      footer={asksEffort ? <EffortRow value={effort} onPick={pickEffort} onCarryOn={kind => carryOn(lastMain(block.sets), kind)} /> : undefined}
       subtitle={
         <>
           {done === block.sets.length && <Check size={12} strokeWidth={3.5} className="text-primary" aria-label="All sets done" />}
@@ -219,7 +217,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
             className={cn('rounded-2xl', from === setIdx && 'wallpaper-solid bg-card shadow-lg ring-1 ring-primary/50')}
           >
             <SetRow
-              index={setIdx}
+              number={numbers[setIdx]}
               set={set}
               mode={mode}
               unit={block.unit}
@@ -227,7 +225,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
               onChange={(field, value) => updateSet(blockIdx, setIdx, field, value)}
               onToggleDone={() => handleToggle(setIdx)}
               onUseLast={() => copyLast(setIdx)}
-              onRemove={block.sets.length > 1 ? () => handleRemoveSet(setIdx) : undefined}
+              onMenu={openMenu && (() => openMenu(setIdx))}
               hold={holding?.setId === set.uuid ? holding : null}
               onHold={mode === 'stretch' && !draft?.editing ? () => toggleHold(setIdx) : undefined}
             />
@@ -259,6 +257,7 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
           <Minus size={16} />
         </button>
       </div>
+      <SetMenu {...menu} />
     </BlockCard>
   )
 }

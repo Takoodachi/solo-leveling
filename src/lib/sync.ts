@@ -83,7 +83,7 @@ const COLLECTIONS: CollectionSpec[] = [
   {
     remote: 'workout_sets',
     table: () => t(db.workoutSets),
-    columns: ['uuid', 'workoutId', 'exerciseId', 'setIndex', 'reps', 'weight', 'duration', 'distanceKm', 'rpe', 'updatedAt'],
+    columns: ['uuid', 'workoutId', 'exerciseId', 'setIndex', 'reps', 'weight', 'duration', 'distanceKm', 'rpe', 'kind', 'updatedAt'],
   },
   {
     remote: 'routines',

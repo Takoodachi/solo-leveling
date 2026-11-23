@@ -69,7 +69,7 @@ export function useOneRmHistory(exerciseId: string | undefined): OneRmPoint[] | 
     const best = new Map<string, OneRmPoint>()
     for (const s of sets) {
       const date = workoutOf.get(s.workoutId)?.date
-      if (!date || !s.weight || !s.reps) continue
+      if (!date || !s.weight || !s.reps || s.kind) continue // a drop set or the like isn't a strength mark (workouts/setKinds.ts)
       const e = est1RM(s.weight, s.reps)
       const cur = best.get(date)
       if (!cur || e > cur.est1RM) best.set(date, { date, est1RM: Math.round(e * 10) / 10, topWeight: s.weight, topReps: s.reps })

@@ -108,7 +108,7 @@ export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinit
     sets: sets
       .filter(s => s.workoutId === w.uuid)
       .sort((a, b) => a.setIndex - b.setIndex)
-      .map(s => ({ weight: s.weight, reps: s.reps, duration: s.duration, distanceKm: s.distanceKm, rpe: s.rpe })),
+      .map(s => ({ weight: s.weight, reps: s.reps, duration: s.duration, distanceKm: s.distanceKm, rpe: s.rpe, kind: s.kind })),
   }))
 }
 
@@ -124,7 +124,7 @@ async function workByExercise(sets: WorkoutSet[]): Promise<{ exercise: Exercise;
   const exerciseOf = await exercisesById()
   return [...new Set(sets.map(s => s.exerciseId))].flatMap(id => {
     const ex = exerciseOf.get(id)
-    return ex ? [{ exercise: ex, sets: workDone(ex, sets.filter(s => s.exerciseId === id).map(s => s.duration ?? 0)) }] : []
+    return ex ? [{ exercise: ex, sets: workDone(ex, sets.filter(s => s.exerciseId === id)) }] : []
   })
 }
 
@@ -176,7 +176,7 @@ export async function blockHistory(exerciseId: string): Promise<BlockHistory> {
 /** An exercise's best est. 1RM ever (kg), as the summary's new bests count it; 0 with nothing weighed. */
 async function bestEst1RM(exerciseId: string): Promise<number> {
   const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-  return sets.reduce((best, s) => Math.max(best, est1RM(s.weight ?? 0, s.reps ?? 0)), 0)
+  return sets.reduce((best, s) => (s.kind ? best : Math.max(best, est1RM(s.weight ?? 0, s.reps ?? 0))), 0)
 }
 
 export type BestKind = '1rm' | 'distance' | 'speed'
@@ -234,7 +234,8 @@ export async function findNewBests(workout: WorkoutWithSets): Promise<NewBest[]>
         add('speed', speed(sets), speed(earlier), 0.001)
       }
     } else {
-      const oneRm = (xs: WorkoutSet[]) => maxOf(xs.filter(s => s.weight && s.reps).map(s => est1RM(s.weight!, s.reps!)))
+      // Drop sets, rest-pause and partials carry a set on and never make a best (setKinds.ts)
+      const oneRm = (xs: WorkoutSet[]) => maxOf(xs.filter(s => s.weight && s.reps && !s.kind).map(s => est1RM(s.weight!, s.reps!)))
       add('1rm', oneRm(sets), oneRm(earlier), 0.1)
     }
   }

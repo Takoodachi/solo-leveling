@@ -15,6 +15,16 @@ export const EFFORTS: { value: Effort; label: string; tag: string; rpe: number }
 
 export const effortRpe = (effort: Effort | undefined): number | undefined => EFFORTS.find(e => e.value === effort)?.rpe
 
+/**
+ * The rpe a lift's set is saved with: 10 when it was taken to failure (on any set: the same "None"
+ * left), else on the last ordinary set the reps-left answer; none on a row carrying another on.
+ */
+export function liftRpe(s: { kind?: string | null; failure?: boolean }, last: boolean, effort: Effort | undefined): number | undefined {
+  if (s.kind) return undefined
+  if (s.failure) return 10
+  return last ? effortRpe(effort) : undefined
+}
+
 export function effortFromRpe(rpe: number | undefined): Effort | undefined {
   if (rpe == null) return undefined
   return rpe <= 7 ? 'easy' : rpe >= 10 ? 'hard' : 'right'

@@ -4,6 +4,7 @@ import { extraOn } from '@/features/settings/extras'
 import { liftKind, type LiftKind } from './progression'
 import type { BlockDraft } from './types'
 import { addRestSeconds, restEndsAt } from './hooks/useRestTimer'
+import { REST_PAUSE_SECONDS } from './setKinds'
 
 /**
  * Auto rest (Settings → Extras, on by default; November 2026, at the owner's request): the rest after
@@ -48,13 +49,18 @@ export function autoRest(exercise: Movement, failure = false): RestPick | null {
 }
 
 /**
- * The rest to start once a set of this block is ticked (the phone's tick and the watch's Done):
+ * The rest to start once the set at `setIdx` is ticked (the phone's tick and the watch's Done):
  * Auto rest's pick while it's on, else the block's own time or the default. Null for none: a
- * stretch with no rest of its own goes straight on to the next hold.
+ * stretch with no rest of its own goes straight on to the next hold, and so does a set that a drop
+ * set or partials carry on (rest-pause gets its short pause). Those, on or off.
  */
-export function restAfterSet(block: Pick<BlockDraft, 'exercise' | 'restSec'>, defaultRest: number, auto = extraOn('autoRest')): RestPick | null {
+export function restAfterSet(block: Pick<BlockDraft, 'exercise' | 'restSec' | 'sets'>, setIdx: number, defaultRest: number, auto = extraOn('autoRest')): RestPick | null {
   if (setModeFor(block.exercise) === 'stretch') return block.restSec > 0 ? { seconds: block.restSec, why: '' } : null
-  return (auto ? autoRest(block.exercise) : null) ?? { seconds: block.restSec || defaultRest, why: '' }
+  const next = block.sets[setIdx + 1]
+  if (next?.kind && !next.done) return next.kind === 'rest-pause' ? { seconds: REST_PAUSE_SECONDS, why: 'Rest-pause' } : null
+  // The last row carrying a set on ends it at failure, as one marked to failure does
+  const row = block.sets[setIdx]
+  return (auto ? autoRest(block.exercise, !!row?.kind || !!row?.failure) : null) ?? { seconds: block.restSec || defaultRest, why: '' }
 }
 
 /** A set was marked as taken to failure, or unmarked, during its rest: the running rest grows or shrinks by the 30 s. */

@@ -64,13 +64,13 @@ function trainingOf(workouts: Workout[], sets: WorkoutSet[], cardio: Set<string>
   return {
     workouts: workouts.length,
     activeMin: workouts.reduce((n, w) => n + w.durationMin, 0),
-    sets: lifts.length,
+    sets: lifts.filter(s => !s.kind).length, // a drop set, rest-pause or partials row is part of its set
     volume: lifts.reduce((n, s) => n + setVolume(s), 0),
     cardioKm: sets.reduce((n, s) => n + (cardio.has(s.exerciseId) ? (s.distanceKm ?? 0) : 0), 0),
   }
 }
 
-const best1RM = (sets: WorkoutSet[]) => Math.max(0, ...sets.filter(s => s.weight && s.reps).map(s => est1RM(s.weight ?? 0, s.reps ?? 0)))
+const best1RM = (sets: WorkoutSet[]) => Math.max(0, ...sets.filter(s => s.weight && s.reps && !s.kind).map(s => est1RM(s.weight ?? 0, s.reps ?? 0)))
 const longest = (sets: WorkoutSet[]) => Math.max(0, ...sets.map(s => s.distanceKm ?? 0))
 
 /** Lifts and runs whose best in the period beat everything logged before it. */

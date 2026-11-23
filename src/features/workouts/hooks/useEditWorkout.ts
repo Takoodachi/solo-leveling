@@ -13,10 +13,14 @@ import { DEFAULT_REST_SECONDS } from '@/features/settings/hooks/useSettings'
 import { useWorkoutStore } from '../store'
 import { emptySet, parsePositive, type BlockDraft, numText } from '../types'
 import { durationOf, holdText, weightKg, weightText } from '../units'
-import { effortFromRpe, effortRpe } from '../effort'
+import { effortFromRpe, liftRpe, type Effort } from '../effort'
+import { lastMain } from '../setKinds'
 import { exerciseUnit } from './useExerciseNote'
 import { getWorkoutWithSets, lastSessionSets, readWorkoutAhead } from './useWorkoutHistory'
 import type { FinishOptions } from './useActiveWorkout'
+
+/** 3+ or 1–2 left; "None" is carried by the set's failure mark instead. */
+const notHard = (effort: Effort | undefined) => (effort === 'hard' ? undefined : effort)
 
 /** Workouts stay editable for this many days after the day they were logged. */
 export const EDIT_WINDOW_DAYS = 7
@@ -64,8 +68,11 @@ export function useEditWorkout() {
         restSec: cardio ? 0 : DEFAULT_REST_SECONDS,
         lastSets: await lastSessionSets(exercise.uuid, workout.createdAt),
         unit,
-        effort: cardio ? undefined : effortFromRpe(sets[sets.length - 1]?.rpe),
+        // "None" left is the last set's failure mark; 3+ and 1–2 stay the block's answer
+        effort: cardio ? undefined : notHard(effortFromRpe(sets[lastMain(sets)]?.rpe)),
         sets: sets.map(s => emptySet({
+          kind: s.kind ?? undefined,
+          failure: !cardio && !stretch && !s.kind && s.rpe === 10,
           uuid: s.uuid,
           weight: weightText(s.weight, unit),
           reps: numText(s.reps),
@@ -113,6 +120,7 @@ export function useEditWorkout() {
     const sets: WorkoutSet[] = draft.blocks.flatMap((block, bi) => {
       const cardio = setModeFor(block.exercise) === 'cardio'
       const done = block.sets.filter(s => s.done)
+      const last = lastMain(done)
       return done
         .map((s, si) => ({
           uuid: s.uuid,
@@ -123,7 +131,8 @@ export function useEditWorkout() {
           weight: weightKg(s.weight, block.unit),
           duration: durationOf(s.duration, block),
           distanceKm: parsePositive(s.distanceKm),
-          rpe: cardio ? rpeFor(s.intensity ?? 'moderate') : si === done.length - 1 ? effortRpe(block.effort) : undefined,
+          rpe: cardio ? rpeFor(s.intensity ?? 'moderate') : liftRpe(s, si === last, block.effort),
+          kind: s.kind,
           updatedAt: now,
           syncPending: true,
         }))

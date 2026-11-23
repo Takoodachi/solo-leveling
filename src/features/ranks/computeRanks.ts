@@ -115,7 +115,8 @@ const loadInputs = cached([db.settings, db.bodyMetrics, db.workoutSets, db.worko
       continue
     }
     const std = standardFor(s.exerciseId)
-    if (!workout || !std) continue
+    // A drop set, rest-pause or partials row carries a set on and never ranks (workouts/setKinds.ts)
+    if (!workout || !std || s.kind) continue
     const rating = rateSet(std, s, sex, bodyOn(workout.date) ?? latest.weightKg)
     if (rating > 0) rated.push({ exerciseId: s.exerciseId, workout, rating, weight: s.weight, reps: s.reps, duration: s.duration })
   }

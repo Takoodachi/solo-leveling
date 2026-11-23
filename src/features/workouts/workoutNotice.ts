@@ -1,6 +1,7 @@
 import { soloHas, soloPlugin, type WorkoutNoticeState } from '@/lib/native'
 import { setModeFor } from '@/lib/workoutMath'
 import type { BlockDraft, SetDraft, WorkoutDraft } from './types'
+import { isMainSet, kindLabel } from './setKinds'
 
 /**
  * The Android app's workout notification (WorkoutNotice.kt): on the lock screen and in the
@@ -33,8 +34,11 @@ export function noticeFor(draft: WorkoutDraft, restEndsAt: number | null, now: n
   }
   const block = draft.blocks[at.blockIdx]
   const i = at.setIdx
-  const what = describe(block, block.sets[i])
-  const text = setModeFor(block.exercise) === 'cardio' ? what : [`Set ${i + 1} of ${block.sets.length}`, what].filter(Boolean).join(' · ')
+  const row = block.sets[i]
+  const what = describe(block, row)
+  // Counted among the ordinary sets; a drop set, rest-pause or partials row says what it is (setKinds.ts)
+  const which = row.kind ? kindLabel(row.kind) : `Set ${block.sets.slice(0, i + 1).filter(isMainSet).length} of ${block.sets.filter(isMainSet).length}`
+  const text = setModeFor(block.exercise) === 'cardio' ? what : [which, what].filter(Boolean).join(' · ')
   return { name, title: block.exercise.name, text, startedAt: draft.startedAt, restEndsAt: restEndsAt && restEndsAt > now ? restEndsAt : null, canTick: true }
 }
 

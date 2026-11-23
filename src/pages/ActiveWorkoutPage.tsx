@@ -106,8 +106,8 @@ export default function ActiveWorkoutPage() {
     })
   }
 
-  function handleSetDone(block: BlockDraft) {
-    const pick = editing ? null : restAfterSet(block, defaultRest, extraOn('autoRest', settings?.extras))
+  function handleSetDone(block: BlockDraft, setIdx: number) {
+    const pick = editing ? null : restAfterSet(block, setIdx, defaultRest, extraOn('autoRest', settings?.extras))
     if (!pick) return
     requestNotificationPermission() // inside the tap, as iOS requires
     rest.start(pick.seconds, pick.why)

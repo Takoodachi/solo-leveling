@@ -78,7 +78,7 @@ export interface ProgressInput {
   /** What came before it today against last time (fatigue.ts `orderEffect`). */
   order?: OrderEffect
   /** The block's own sets today, in its unit: the ones ticked so far re-aim the rest. */
-  sets?: Pick<SetDraft, 'weight' | 'reps' | 'done'>[]
+  sets?: Pick<SetDraft, 'weight' | 'reps' | 'done' | 'kind'>[]
   /** What the block's rest timer is set to, in seconds. */
   restSec?: number
 }
@@ -113,6 +113,18 @@ function gearOf(name: string): Gear {
 
 /** Loaded with plates on a bar (the logger's plate calculator). */
 export const isBarbell = (name: string) => gearOf(name.toLowerCase()) === 'barbell'
+
+/** A drop set starts at this share of the weight before it (setKinds.ts). */
+const DROP_SHARE = 0.8
+
+/** A drop set's weight from the row before it: 20% lighter, down to the equipment's step ("" with nothing to start from). */
+export function dropWeight(weight: string, name: string, unit: WeightUnit | null | undefined): string {
+  const from = Number(weight)
+  if (!(from > 0)) return ''
+  const step = stepFor(name, from, isLb(unit))
+  const to = Math.floor((from * DROP_SHARE) / step + 1e-9) * step
+  return to > 0 ? String(round(to)) : ''
+}
 
 export type LiftKind = 'heavy' | 'compound' | 'single' | 'small'
 
@@ -230,7 +242,7 @@ function repsAt(from: number, reps: number, to: number): number {
 
 /** A session's working weight (its heaviest; 0 at bodyweight) and the reps done there, in order. */
 function workOf(sets: LastSet[]): { weight: number; reps: number[] } {
-  const done = sets.filter(s => (s.reps ?? 0) > 0)
+  const done = sets.filter(s => (s.reps ?? 0) > 0 && !s.kind)
   const weight = Math.max(0, ...done.map(s => s.weight ?? 0))
   return { weight, reps: done.filter(s => (s.weight ?? 0) === weight).map(s => s.reps ?? 0) }
 }
@@ -255,12 +267,14 @@ export function trendOf(sessions: PastSession[], now: number): LiftTrend | undef
   }
 }
 
-export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit, order, sets: today, restSec }: ProgressInput): ProgressHint | null {
+export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg, unit, order, sets: todayRows, restSec }: ProgressInput): ProgressHint | null {
   if (setModeFor(exercise) !== 'load') return null
   // From here on every weight is in the unit the exercise is logged in
   const lb = isLb(unit)
   const u = lb ? 'lb' : 'kg'
-  const sets = (lastSetsIn(lastSets, unit) ?? []).filter(s => (s.reps ?? 0) > 0)
+  // The sets themselves: drop sets, rest-pause and partials only carry them on (setKinds.ts)
+  const sets = (lastSetsIn(lastSets, unit) ?? []).filter(s => (s.reps ?? 0) > 0 && !s.kind)
+  const today = todayRows?.filter(s => !s.kind)
   if (sets.length === 0) return null
 
   const name = exercise.name.toLowerCase()
@@ -438,7 +452,11 @@ function bodyweightHint({ reps, target: targetReps, gapDays, assisted, order, ef
 
 /** The sets with a hint's numbers written into the ones not done yet (unchanged sets keep their identity). */
 export function applyFill(sets: SetDraft[], fill: HintFill): SetDraft[] {
-  return sets.map((s, i) => {
+  // The aims are the sets' own: a drop set, rest-pause or partials row keeps what it has (setKinds.ts)
+  let i = -1
+  return sets.map(s => {
+    if (s.kind) return s
+    i++
     if (s.done) return s
     const swap = fill.weight != null && (s.weight.trim() === '' || Number(s.weight) === fill.from)
     const weight = swap ? kg(fill.weight ?? 0) : s.weight

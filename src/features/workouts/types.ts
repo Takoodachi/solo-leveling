@@ -1,4 +1,4 @@
-import type { Exercise, RoutineCategory, WeightUnit } from '@/types'
+import type { Exercise, RoutineCategory, SetKind, WeightUnit } from '@/types'
 import { intensityFromRpe, type Intensity } from '@/lib/cardio'
 import type { Effort } from './effort'
 
@@ -12,6 +12,10 @@ export type SetDraft = {
   /** Cardio effort (saved as rpe). */
   intensity?: Intensity
   done: boolean
+  /** A drop set, rest-pause or partials, carrying on the set before it (setKinds.ts). */
+  kind?: SetKind
+  /** Taken to failure (saved as rpe 10, effort.ts's "None" left); on an ordinary lift set. */
+  failure?: boolean
 }
 
 /** A set from the previous session of the same exercise ("Previous" column). */
@@ -21,6 +25,7 @@ export type LastSet = {
   duration?: number
   distanceKm?: number
   rpe?: number
+  kind?: SetKind | null
 }
 
 /** One earlier session of an exercise: when it was logged and its sets in order. */
