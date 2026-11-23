@@ -38,10 +38,11 @@ export function summaryStats(workout: WorkoutWithSets, unit: WeightUnit, { share
   return stats
 }
 
-/** "4 sets", or with what carried them on: "4 sets + 2 drop sets", "4 sets + 3 more" for a mix (setKinds.ts). */
+/** "4 sets" ("1 set"), or with what carried them on: "4 sets + 2 drop sets", "4 sets + 3 more" for a mix (setKinds.ts). */
 function setsFinished(lifts: WorkoutWithSets['sets']): string {
   const extra = lifts.filter(s => s.kind)
-  const main = `${lifts.length - extra.length} sets`
+  const count = lifts.length - extra.length
+  const main = `${count} ${count === 1 ? 'set' : 'sets'}`
   if (extra.length === 0) return main
   const kinds = new Set(extra.map(s => s.kind))
   const only = kinds.size === 1 ? extra[0].kind : null

@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import type { SetKind } from '@/types'
 import { useWorkoutStore } from '../store'
 import { setHasValue, type BlockDraft } from '../types'
-import { REST_PAUSE_SECONDS, chainEnd, kindLabel } from '../setKinds'
+import { REST_PAUSE_SECONDS, chainEnd, isMainSet, kindLabel } from '../setKinds'
 import { restEndsAt, startRest, stopRest } from './useRestTimer'
 import { restForFailure } from '../autoRest'
 import type SetMenu from '../components/SetMenu'
@@ -48,8 +48,9 @@ export function useSetOptions(block: BlockDraft, blockIdx: number, lift: boolean
   function failure(setIdx: number) {
     const row = block.sets[setIdx]
     toggleFailure(blockIdx, setIdx)
-    // Marked while its rest runs (the set just done): Auto rest adds its 30 s, or takes them back
-    if (row.done && !block.sets[setIdx + 1]?.done) restForFailure(block.exercise, !row.failure, auto)
+    // Marked while its own rest runs (the set just done, with nothing carrying it on): Auto rest adds its 30 s, or takes them back
+    const next = block.sets[setIdx + 1]
+    if (row.done && !next?.done && !next?.kind) restForFailure(block.exercise, !row.failure, auto)
   }
 
   const row = open != null ? block.sets[open] : undefined
@@ -60,7 +61,8 @@ export function useSetOptions(block: BlockDraft, blockIdx: number, lift: boolean
     failure: row?.failure,
     onFailure: lift && row && !row.kind ? () => failure(at) : undefined,
     onAdd: lift ? kind => carryOn(at, kind) : undefined,
-    onRemove: block.sets.length > 1 ? () => remove(at) : undefined,
+    // A set goes with its rows, so the exercise's only set stays; a row on its own can always go
+    onRemove: row && (row.kind || block.sets.filter(isMainSet).length > 1) ? () => remove(at) : undefined,
   }
   // A hold's or a stretch's only set has nothing to offer
   const hasMenu = lift || block.sets.length > 1

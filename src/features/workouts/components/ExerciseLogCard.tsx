@@ -127,11 +127,12 @@ export default function ExerciseLogCard({ onSetDone, liftRank, rankContext, lift
     setHolding({ setId: set.uuid, endAt: holdEndsAt(seconds), total: seconds })
   }
 
-  // "None" left is a set to failure: Auto rest adds its 30 s to the rest running (and takes them back with it)
+  // "None" left is a set to failure: Auto rest adds its 30 s to the rest running (and takes them back with it).
+  // Not after a drop set or the like, whose rest is already the one after failure (autoRest.ts)
   function pickEffort(answer: Effort) {
     setEffort(blockIdx, answer)
     const failure = answer === 'hard' && !lastSetFailed // the same answer again takes it back
-    if (failure !== lastSetFailed) restForFailure(block.exercise, failure, auto)
+    if (failure !== lastSetFailed && !block.sets.at(-1)?.kind) restForFailure(block.exercise, failure, auto)
   }
 
   function announceRankUp(setIdx: number) {
