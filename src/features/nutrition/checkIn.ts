@@ -44,8 +44,8 @@ export interface WeeklyCheckIn {
 }
 
 /**
- * Planned days in the four weeks before `today` and how many had a workout. Skipped days don't
- * count either way. shortcut: it takes today's plan as the plan all along; good enough for a
+ * Planned days in the four weeks before `today` and how many had a workout. Skipped and paused
+ * days don't count either way. shortcut: it takes today's plan as the plan all along; good enough for a
  * four-week glance, upgrade if plans start changing often.
  */
 export async function planCommitment(today: string): Promise<WeeklyCheckIn['workouts']> {
@@ -59,7 +59,7 @@ export async function planCommitment(today: string): Promise<WeeklyCheckIn['work
   const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
   if (weekdays.size === 0) return null
   const trained = new Set(workouts.map(w => w.date))
-  const skipped = new Set(skips.filter(c => c.key === 'skip' && c.done).map(s => s.date))
+  const skipped = new Set(skips.filter(c => (c.key === 'skip' || c.key === 'pause') && c.done).map(s => s.date))
   let planned = 0
   let done = 0
   for (let back = 1; back <= COMMITMENT_DAYS; back++) {

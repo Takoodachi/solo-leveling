@@ -29,14 +29,17 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
   const unit = useUnits(s => s.weight)
   const more = training.workouts - previous.workouts
   const than = (now: number, before: number) => (finished ? versus(now, before, period) : null)
-  // A month or year only partly logged (or still going) gets its share of the goal
-  const goal = period === 'week' ? recap.workoutGoal : Math.max(1, Math.round((recap.workoutGoal * elapsedDays) / recap.dates.length))
+  // A month or year only partly logged (or still going) gets its share of the goal; with training
+  // paused throughout there's none. shortcut: paused days come off the whole period before that
+  // share is taken, so a pause plus a late start in one month lowers the goal a little too much;
+  // count the paused days inside the share if that ever reads wrong.
+  const goal = period === 'week' || recap.workoutGoal === 0 ? recap.workoutGoal : Math.max(1, Math.round((recap.workoutGoal * elapsedDays) / recap.dates.length))
   return (
     <div className="grid grid-cols-2 gap-3">
       <IconTile
         Icon={Dumbbell}
         label="Workouts"
-        value={`${training.workouts} / ${goal}`}
+        value={goal > 0 ? `${training.workouts} / ${goal}` : String(training.workouts)}
         note={finished && previous.workouts > 0 ? (more === 0 ? `Same as the ${period} before` : `${Math.abs(more)} ${more > 0 ? 'more' : 'fewer'} than the ${period} before`) : null}
       />
       <IconTile Icon={Timer} label="Training time" value={formatDurationMin(Math.round(training.activeMin))} note={than(training.activeMin, previous.activeMin)} />

@@ -1,5 +1,5 @@
 import {
-  Award, Bell, ClipboardList, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, ChartLine, ChartPie, Cloud, Dumbbell, Eye,
+  Award, Bell, ClipboardList, BicepsFlexed, CalendarCheck, CalendarDays, ChartColumn, CirclePause, ChartLine, ChartPie, Cloud, Dumbbell, Eye,
   Footprints, GlassWater, Goal, History, House, LayoutGrid, Lightbulb, ListPlus, Medal, Music2, PanelBottom, Palette, PersonStanding,
   Play, Radar, Ruler, Scale, Settings, Smartphone, Target, Timer, ToggleRight, TrendingUp, Trophy, UserRound, UtensilsCrossed, Zap,
   type LucideIcon,
@@ -69,6 +69,7 @@ export const SETTING_ENTRIES: Entry[] = [
   { id: 'step-calories', title: 'Step calories', subtitle: 'Profile › Daily targets', keywords: 'steps walking burn burned calories subtract net', Icon: Goal, to: '/profile#targets' },
   { id: 'training-carbs', title: 'More carbs on workout days', subtitle: 'Profile › Daily targets', keywords: 'carbs carbohydrates workout training days fat rest cycling', Icon: Goal, to: '/profile#targets' },
   { id: 'plan', title: 'Weekly plan', subtitle: 'Workouts › Plan', keywords: 'schedule split days program routine', Icon: CalendarDays, to: '/workouts/plan#schedule' },
+  { id: 'pause-training', title: 'Pause training', subtitle: 'Workouts › Plan', keywords: 'pause break holiday vacation trip travel injury injured sick ill time off away rest stop hold resume plan routine schedule workout reminders days weeks', Icon: CirclePause, to: '/workouts/plan#pause' },
   { id: 'frequency', title: 'Training frequency goal', subtitle: 'Workouts › Plan', keywords: 'workouts per week weekly goal times', Icon: Target, to: '/workouts/plan#frequency' },
   { id: 'rest', title: 'Rest timer', subtitle: 'Workouts › Plan', keywords: 'rest seconds between sets timer length long short', Icon: Timer, to: '/workouts/plan#rest-timer' },
 ]

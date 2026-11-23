@@ -49,7 +49,7 @@ function hash(text: string): number {
 /** What a day's objectives are worked out from. */
 async function dayFacts(date: string) {
   const weekday = parseISO(date).getDay()
-  const [settings, targets, workouts, activity, logs, water, creatine, claim, skip, routines, weighIns, lastWeighIn] = await Promise.all([
+  const [settings, targets, workouts, activity, logs, water, creatine, claim, skip, pause, routines, weighIns, lastWeighIn] = await Promise.all([
     db.settings.get(1),
     db.targets.get(1),
     db.workouts.where('date').equals(date).count(),
@@ -59,6 +59,7 @@ async function dayFacts(date: string) {
     db.checkins.get(`creatine-${date}`),
     db.checkins.get(claimId(date)),
     db.checkins.get(`skip-${date}`),
+    db.checkins.get(`pause-${date}`),
     db.routines.toArray(),
     db.bodyMetrics.where('date').equals(date).count(),
     db.bodyMetrics.where('date').below(date).last(),
@@ -68,8 +69,8 @@ async function dayFacts(date: string) {
     date, settings, targets, workouts, logs, water, creatine, claim, weighIns, cards,
     steps: Math.max(0, ...activity.map(a => a.steps)),
     stepGoal: settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL,
-    // The day's planned routine, unless it was skipped
-    planned: skip?.done ? undefined : routines.find(r => r.scheduleDays.includes(weekday)),
+    // The day's planned routine, unless it was skipped or training is paused
+    planned: skip?.done || pause?.done ? undefined : routines.find(r => r.scheduleDays.includes(weekday)),
     tracksFood: cards.includes('calories') || cards.includes('macros'),
     // Weighing in is something they do: a weigh-in in the month before
     weighs: weighIns > 0 || (!!lastWeighIn && lastWeighIn.date >= toDateStr(subDays(parseISO(date), 30))),

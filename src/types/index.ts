@@ -328,9 +328,10 @@ export interface Challenge {
 /**
  * 'achxp': the one row that marks the XP for earlier achievements as paid (lib/achievementEval.ts).
  * 'skip': the day's planned workout is skipped (Home's card; no dot, card or reminder for it).
+ * 'pause': training is paused that day (features/workouts/pause.ts): like a skip, and no stretching reminder either.
  * 'targets': the week's check-in was answered (`targets-<Monday>`; amount = the kcal applied, 0 = kept).
  */
-export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip' | 'targets'
+export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip' | 'pause' | 'targets'
 
 /**
  * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).

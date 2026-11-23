@@ -15,7 +15,7 @@ import { REMINDERS_CHANGED } from './useDeviceNotifications'
 
 /** The settings and today's state that decide which nudges are still due. */
 async function loadInputs(today: string, working: boolean): Promise<{ prefs: ReminderPrefs; facts: ReminderFacts }> {
-  const [settings, creatine, water, workouts, food, weighIns, routines, skips] = await Promise.all([
+  const [settings, creatine, water, workouts, food, weighIns, routines, ahead] = await Promise.all([
     db.settings.get(1),
     db.checkins.get(`creatine-${today}`),
     db.checkins.get(`water-${today}`),
@@ -23,9 +23,9 @@ async function loadInputs(today: string, working: boolean): Promise<{ prefs: Rem
     db.foodLog.where('date').equals(today).count(),
     db.bodyMetrics.where('date').equals(today).count(),
     db.routines.toArray(),
-    db.checkins.where('date').between(today, toDateStr(addDays(parseISO(today), PLAN_DAYS - 1)), true, true)
-      .filter(c => c.key === 'skip' && c.done).toArray(),
+    db.checkins.where('date').between(today, toDateStr(addDays(parseISO(today), PLAN_DAYS - 1)), true, true).toArray(),
   ])
+  const daysOf = (key: 'skip' | 'pause') => ahead.filter(c => c.key === key && c.done).map(c => c.date)
   // Stretched today: a stretch in any of today's workouts, a cool-down at the end of one included
   const [sets, exerciseOf] = await Promise.all([setsOfWorkouts(workouts.map(w => w.uuid)), exercisesById()])
   const stretched = sets.some(s => exerciseOf.get(s.exerciseId)?.type === 'flexibility')
@@ -43,7 +43,8 @@ async function loadInputs(today: string, working: boolean): Promise<{ prefs: Rem
         water: (water?.amount ?? 0) >= (settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML),
       },
       routines: Object.fromEntries(routines.flatMap(r => r.scheduleDays.map(d => [d, r.name]))),
-      skipped: skips.map(c => c.date),
+      skipped: daysOf('skip'),
+      paused: daysOf('pause'),
       stretchRoutine: stretching && { id: stretching.uuid, name: stretching.name },
     },
   }

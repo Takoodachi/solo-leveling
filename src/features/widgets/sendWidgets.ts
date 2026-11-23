@@ -1,6 +1,7 @@
+import { addDays, parseISO } from 'date-fns'
 import { db } from '@/db'
 import { exercisesById } from '@/db/read'
-import { today } from '@/lib/date'
+import { toDateStr, today } from '@/lib/date'
 import { soloPlugin } from '@/lib/native'
 import { routineMinutes } from '@/lib/workoutMath'
 import type { Exercise, Routine } from '@/types'
@@ -36,7 +37,7 @@ export interface WidgetData {
   water: { ml: number; goal: number }
   creatine: boolean
   workout: { routine: RoutineInfo | null; done: boolean; skipped: boolean; active: string | null }
-  /** Each weekday's routine, Sunday first (as getDay counts). */
+  /** Each weekday's routine, Sunday first (as getDay counts), as its next day shows it: none while training is paused. */
   week: (RoutineInfo | null)[]
   rank: { label: string; rating: number; color: string; progress: number; next: string | null; toNext: number } | null
 }
@@ -67,19 +68,25 @@ function routineInfo(r: Routine | undefined, exercises: ReadonlyMap<string, Exer
 
 async function build(): Promise<{ data: WidgetData; overall: RankInfo | null }> {
   const day = today()
-  const [[summary], budget, settings, water, creatine, skip, routines, exercises, done, ranks] = await Promise.all([
+  const dateIn = (n: number) => toDateStr(addDays(parseISO(day), n))
+  const [[summary], budget, settings, water, creatine, skip, ahead, routines, exercises, done, ranks] = await Promise.all([
     daySummaries([day]),
     calorieBudget(day),
     db.settings.get(1),
     db.checkins.get(`water-${day}`),
     db.checkins.get(`creatine-${day}`),
     db.checkins.get(`skip-${day}`),
+    db.checkins.where('date').between(day, dateIn(7), true, true).toArray(),
     db.routines.toArray(),
     exercisesById(),
     db.workouts.where('date').equals(day).count(),
     computeRanks(),
   ])
-  const week = Array.from({ length: 7 }, (_, d) => routineInfo(routines.find(r => r.scheduleDays.includes(d)), exercises))
+  // Paused days are rest days, here and on the next 7 days a widget may show before the app is opened
+  const paused = new Set(ahead.filter(c => c.key === 'pause' && c.done).map(c => c.date))
+  const dow = parseISO(day).getDay()
+  const plan = (d: number) => routineInfo(routines.find(r => r.scheduleDays.includes(d)), exercises)
+  const week = Array.from({ length: 7 }, (_, d) => (paused.has(dateIn((d - dow + 7) % 7 || 7)) ? null : plan(d)))
   const draft = useWorkoutStore.getState().draft
   const colors = themeColors()
   const overall = ranks.overall
@@ -93,7 +100,7 @@ async function build(): Promise<{ data: WidgetData; overall: RankInfo | null }> 
       steps: { value: summary?.steps ?? 0, goal: settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL },
       water: { ml: water?.amount ?? 0, goal: settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML },
       creatine: !!creatine?.done,
-      workout: { routine: week[new Date().getDay()], done: done > 0, skipped: !!skip?.done, active: draft && !draft.editing ? draft.name : null },
+      workout: { routine: paused.has(day) ? null : plan(dow), done: done > 0, skipped: !!skip?.done, active: draft && !draft.editing ? draft.name : null },
       week,
       rank: overall && {
         label: overall.label,

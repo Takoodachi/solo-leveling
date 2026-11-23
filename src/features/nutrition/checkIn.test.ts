@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '@/db'
 import { daysBefore, resetDb } from '@/test/db'
 import type { Settings } from '@/types'
+import { setPause } from '@/features/workouts/pause'
 import { answerCheckIn, loadCheckIn } from './checkIn'
 
 const today = '2026-11-03' // a Tuesday; its week starts 2026-11-02
@@ -47,6 +48,12 @@ describe('loadCheckIn', () => {
     expect(checkIn?.trimmed).toBe(true)
     expect(checkIn?.pace).toBe(0.125)
     expect(checkIn?.workouts).toEqual({ planned: 12, done: 3 })
+  })
+
+  it('leaves the days training was paused out of the planned workouts', async () => {
+    await seed({ goalType: 'bulk' }, { trainedEvery: 4 })
+    await setPause(daysBefore(today, 14), today) // the last two weeks: 6 planned days, 2 of them trained anyway
+    expect((await loadCheckIn(today))?.workouts).toEqual({ planned: 6, done: 1 })
   })
 
   it('waits for 10 of the last 14 days to be logged', async () => {

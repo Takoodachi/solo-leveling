@@ -8,6 +8,7 @@ interface Props {
   days: DaySummary[]
   /** Days up to and including today — averages ignore days that haven't happened yet. */
   elapsedDays: number
+  /** For the days training isn't paused; 0 shows the count alone. */
   workoutGoal: number
 }
 
@@ -20,7 +21,7 @@ export default function WeeklyStatsGrid({ days, elapsedDays, workoutGoal }: Prop
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      <IconTile Icon={Dumbbell} label="Workouts this week" value={`${sum('workouts')} / ${workoutGoal}`} />
+      <IconTile Icon={Dumbbell} label="Workouts this week" value={workoutGoal > 0 ? `${sum('workouts')} / ${workoutGoal}` : String(sum('workouts'))} />
       <IconTile Icon={Weight} label="Volume lifted" value={formatVolume(sum('volume'), unit)} />
       <IconTile Icon={Timer} label="Active minutes" value={String(Math.round(sum('activeMin')))} />
       <IconTile Icon={Footprints} label="Avg steps / day" value={Math.round(sum('steps') / n).toLocaleString()} />
