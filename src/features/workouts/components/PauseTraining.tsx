@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { CalendarDays, ChevronRight, CirclePause } from 'lucide-react'
 import DatePicker from '@/components/DatePicker'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { toDateStr } from '@/lib/date'
+import { cn } from '@/lib/utils'
 import { setPause } from '../pause'
 
 const LENGTHS = [
@@ -23,7 +24,7 @@ interface Props {
   until: string | null
 }
 
-/** Workouts → Plan: pause training for a while (a sheet of lengths), or, while paused, when it's back and Resume now. */
+/** Workouts → Plan: pause training for a while (a sheet of lengths), or, while paused, when it's back, Change date and Resume now. */
 export default function PauseTraining({ today, until }: Props) {
   const [open, setOpen] = useState(false)
   const inDays = (n: number) => toDateStr(addDays(parseISO(today), n))
@@ -34,13 +35,22 @@ export default function PauseTraining({ today, until }: Props) {
 
   if (until) {
     return (
-      <div className="flex items-center gap-3 rounded-3xl bg-card p-4">
-        <CirclePause size={18} className="shrink-0 text-primary" />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Paused until <span className="whitespace-nowrap">{day(until)}</span></span>
-          <span className="block text-sm text-muted-foreground">Your plan comes back by itself that day</span>
-        </span>
-        <Button size="sm" variant="secondary" onClick={() => void setPause(today, null)}>Resume now</Button>
+      <div className="rounded-3xl bg-card p-4">
+        <div className="flex items-center gap-3">
+          <CirclePause size={18} className="shrink-0 text-primary" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Paused until <span className="whitespace-nowrap">{day(until)}</span></span>
+            <span className="block text-sm text-muted-foreground">Your plan comes back by itself that day</span>
+          </span>
+        </div>
+        <div className="mt-3 flex gap-2">
+          {/* A new end, sooner or later: the days already paused stay as they were */}
+          <DatePicker value={until} min={inDays(1)} max={inDays(365)} onChange={back => void setPause(today, back)}
+            aria-label="Change the day training comes back" className={cn(buttonVariants({ variant: 'secondary' }), 'flex-1')}>
+            <CalendarDays /> Change date
+          </DatePicker>
+          <Button variant="secondary" className="flex-1" onClick={() => void setPause(today, null)}>Resume now</Button>
+        </div>
       </div>
     )
   }
