@@ -4,6 +4,7 @@ import { CalendarDays, ChevronRight, CirclePause } from 'lucide-react'
 import DatePicker from '@/components/DatePicker'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { useNow } from '@/hooks/useNow'
 import { toDateStr } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { setPause } from '../pause'
@@ -17,6 +18,7 @@ const LENGTHS = [
 
 const ROW = 'flex w-full items-center gap-4 rounded-2xl bg-secondary px-4 py-3.5 text-left hover:bg-accent'
 const day = (date: string) => format(parseISO(date), 'EEE, MMM d')
+const after = (date: string, n: number) => toDateStr(addDays(parseISO(date), n))
 
 interface Props {
   today: string
@@ -27,7 +29,7 @@ interface Props {
 /** Workouts → Plan: pause training for a while (a sheet of lengths), or, while paused, when it's back, Change date and Resume now. */
 export default function PauseTraining({ today, until }: Props) {
   const [open, setOpen] = useState(false)
-  const inDays = (n: number) => toDateStr(addDays(parseISO(today), n))
+  const inDays = (n: number) => after(today, n)
   const pause = (back: string) => {
     void setPause(today, back)
     setOpen(false)
@@ -43,14 +45,7 @@ export default function PauseTraining({ today, until }: Props) {
             <span className="block text-sm text-muted-foreground">Your plan comes back by itself that day</span>
           </span>
         </div>
-        <div className="mt-3 flex gap-2">
-          {/* A new end, sooner or later: the days already paused stay as they were */}
-          <DatePicker value={until} min={inDays(1)} max={inDays(365)} onChange={back => void setPause(today, back)}
-            aria-label="Change the day training comes back" className={cn(buttonVariants({ variant: 'secondary' }), 'flex-1')}>
-            <CalendarDays /> Change date
-          </DatePicker>
-          <Button variant="secondary" className="flex-1" onClick={() => void setPause(today, null)}>Resume now</Button>
-        </div>
+        <PauseActions until={until} className="mt-3" />
       </div>
     )
   }
@@ -89,5 +84,22 @@ export default function PauseTraining({ today, until }: Props) {
         </SheetContent>
       </Sheet>
     </>
+  )
+}
+
+/**
+ * While paused (here and on Home's card): a new end on the calendar, sooner or later, from today
+ * on, or Resume now. Either way the days already paused stay as they were.
+ */
+export function PauseActions({ until, className }: { until: string; className?: string }) {
+  const today = toDateStr(useNow())
+  return (
+    <div className={cn('flex gap-2', className)}>
+      <DatePicker value={until} min={after(today, 1)} max={after(today, 365)} onChange={back => void setPause(today, back)}
+        aria-label="Change the day training comes back" className={cn(buttonVariants({ variant: 'secondary' }), 'flex-1')}>
+        <CalendarDays /> Change date
+      </DatePicker>
+      <Button variant="secondary" className="flex-1" onClick={() => void setPause(today, null)}>Resume now</Button>
+    </div>
   )
 }

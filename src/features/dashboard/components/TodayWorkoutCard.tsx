@@ -12,8 +12,8 @@ import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import type { WorkoutSummary } from '@/features/workouts/hooks/useWorkoutHistory'
 import { useWorkoutStore } from '@/features/workouts/store'
-import { setPause, usePausedUntil } from '@/features/workouts/pause'
-import { today } from '@/lib/date'
+import { usePausedUntil } from '@/features/workouts/pause'
+import { PauseActions } from '@/features/workouts/components/PauseTraining'
 import { toneStyle, usePhotoTone } from '@/features/workouts/photoTone'
 
 /** A workout finished on the day on show. */
@@ -64,9 +64,12 @@ export default function TodayWorkoutCard({ date, isToday, isFuture, routine, str
   // Training paused: no plan on any of its days, until it comes back by itself (pause.ts)
   if (pausedTill) {
     return (
-      <RestCard Icon={CirclePause} title="Training paused" note={`Back to your plan on ${format(parseISO(pausedTill), 'EEE, MMM d')}`}>
-        {(isToday || isFuture) && <Button size="sm" variant="secondary" onClick={() => void setPause(today(), null)}>Resume</Button>}
-      </RestCard>
+      <RestCard
+        Icon={CirclePause}
+        title="Training paused"
+        note={`Back to your plan on ${format(parseISO(pausedTill), 'EEE, MMM d')}`}
+        footer={(isToday || isFuture) && <PauseActions until={pausedTill} className="mt-4" />}
+      />
     )
   }
 
@@ -153,16 +156,19 @@ function Completed({ rows, nudge }: { rows: CompletedWorkout[]; nudge?: string }
   )
 }
 
-/** A day without a workout to start: nothing planned, a rest day, a skipped one or training paused. */
-function RestCard({ Icon = Moon, title, note, children }: { Icon?: LucideIcon; title: string; note: string; children?: ReactNode }) {
+/** A day without a workout to start: nothing planned, a rest day, a skipped one or training paused (`children` beside the text, `footer` under it). */
+function RestCard({ Icon = Moon, title, note, children, footer }: { Icon?: LucideIcon; title: string; note: string; children?: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="flex items-center gap-4 rounded-3xl bg-card p-5">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary"><Icon size={22} className="text-muted-foreground" /></span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold">{title}</p>
-        <p className="text-sm text-muted-foreground">{note}</p>
+    <div className="rounded-3xl bg-card p-5">
+      <div className="flex items-center gap-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary"><Icon size={22} className="text-muted-foreground" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">{title}</p>
+          <p className="text-sm text-muted-foreground">{note}</p>
+        </div>
+        {children}
       </div>
-      {children}
+      {footer}
     </div>
   )
 }
