@@ -13,6 +13,10 @@ import { extraOn } from '@/features/settings/extras'
 import { CATEGORY_META, WEEKDAY_SHORT, WEEK_ORDER } from '@/features/workouts/categories'
 import RoutineArt from '@/features/workouts/components/RoutineArt'
 import DayRoutineSheet from '@/features/workouts/components/DayRoutineSheet'
+import PauseTraining from '@/features/workouts/components/PauseTraining'
+import { usePausedUntil } from '@/features/workouts/pause'
+import { useNow } from '@/hooks/useNow'
+import { toDateStr } from '@/lib/date'
 import { reminderPrefs } from '@/features/reminders/reminders'
 import { useShareRoutineLink } from '@/features/leaderboard/useShareRoutineLink'
 
@@ -25,6 +29,8 @@ export default function PlanPage() {
   const [editingDay, setEditingDay] = useState<number | null>(null)
   const [editingGoal, setEditingGoal] = useState(false)
   const shareLink = useShareRoutineLink()
+  const today = toDateStr(useNow())
+  const pausedTill = usePausedUntil(today)
 
   const byDay = new Map(WEEK_ORDER.map(d => [d, routines.find(r => r.scheduleDays.includes(d))]))
   const trainingDays = WEEK_ORDER.filter(d => byDay.get(d))
@@ -52,6 +58,10 @@ export default function PlanPage() {
           <p className="text-sm text-foreground/85">{trainingDays.length} sessions · ~{weeklyMinutes} min per week</p>
         </div>
       </div>
+
+      <section id="pause" className="-mt-3">
+        {pausedTill !== undefined && <PauseTraining today={today} until={pausedTill} />}
+      </section>
 
       <section id="schedule" className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Schedule</h2>
@@ -122,7 +132,7 @@ export default function PlanPage() {
           <Bell size={18} className="text-primary" />
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">Workout reminder</span>
-            <span className="block text-sm text-muted-foreground">{workoutReminder.on ? `On at ${workoutReminder.time}` : 'Off'} · set it in Settings</span>
+            <span className="block text-sm text-muted-foreground">{!workoutReminder.on ? 'Off' : pausedTill ? 'Paused with your training' : `On at ${workoutReminder.time}`} · set it in Settings</span>
           </span>
           <ChevronRight size={18} className="text-muted-foreground" />
         </Link>

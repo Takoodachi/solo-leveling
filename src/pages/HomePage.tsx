@@ -56,6 +56,7 @@ export default function HomePage() {
   const days = useWeekSummary(week)
   const routines = useRoutines()
   const skipped = useCheckinDays('skip', week)
+  const paused = useCheckinDays('pause', week)
   const completed = useWorkoutList(1000, selected) ?? []
   const { settings } = useSettings()
   const budget = useCalorieBudget(selected)
@@ -90,7 +91,7 @@ export default function HomePage() {
               today={todayStr}
               kcalProgress={kcalProgress}
               scheduledWeekdays={scheduled}
-              skipped={skipped}
+              off={new Set([...skipped, ...paused])}
               onSelect={pick}
             />
           )}
@@ -132,7 +133,7 @@ export default function HomePage() {
                 <WeeklyStatsGrid
                   days={days}
                   elapsedDays={week.filter(d => d <= todayStr).length}
-                  workoutGoal={settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)}
+                  workoutGoal={Math.round(((settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)) * (7 - paused.size)) / 7)}
                 />
                 <Link to="/recap" className="flex items-center justify-between rounded-3xl bg-card px-5 py-4 font-medium hover:bg-accent">
                   Last week’s recap <ChevronRight size={18} className="text-muted-foreground" />

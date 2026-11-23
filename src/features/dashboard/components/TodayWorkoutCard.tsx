@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CheckCircle2, Moon, Clock } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { CheckCircle2, Moon, Clock, CirclePause, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Routine } from '@/types'
@@ -11,6 +12,8 @@ import { useActiveWorkout } from '@/features/workouts/hooks/useActiveWorkout'
 import { useRoutineMinutes } from '@/features/workouts/hooks/useExercises'
 import type { WorkoutSummary } from '@/features/workouts/hooks/useWorkoutHistory'
 import { useWorkoutStore } from '@/features/workouts/store'
+import { setPause, usePausedUntil } from '@/features/workouts/pause'
+import { today } from '@/lib/date'
 import { toneStyle, usePhotoTone } from '@/features/workouts/photoTone'
 
 /** A workout finished on the day on show. */
@@ -37,11 +40,12 @@ export default function TodayWorkoutCard({ date, isToday, isFuture, routine, str
   const navigate = useNavigate()
   const hasDraft = useWorkoutStore(s => !!s.draft)
   const skipped = useCheckin('skip', date)
+  const pausedTill = usePausedUntil(date)
   const last = completed.filter(w => !stretchOnly(w)).sort((a, b) => a.createdAt - b.createdAt).at(-1)
   // Trained today, and nothing stretched in any of today's workouts yet
   const stretchDue = isToday && !!last && !completed.some(w => w.stretchSetCount > 0)
   // Only a stretch so far today with a workout still planned: a morning stretch doesn't finish the day
-  const stillPlanned = isToday && !last && !!routine && !skipped && routine.category !== 'stretching'
+  const stillPlanned = isToday && !last && !!routine && !skipped && !pausedTill && routine.category !== 'stretching'
 
   if (completed.length > 0 && !stillPlanned) {
     if (stretchDue && last && stretchRoutine) {
@@ -55,6 +59,15 @@ export default function TodayWorkoutCard({ date, isToday, isFuture, routine, str
       )
     }
     return <Completed rows={completed} nudge={stretchDue ? last?.uuid : undefined} />
+  }
+
+  // Training paused: no plan on any of its days, until it comes back by itself (pause.ts)
+  if (pausedTill) {
+    return (
+      <RestCard Icon={CirclePause} title="Training paused" note={`Back to your plan on ${format(parseISO(pausedTill), 'EEE, MMM d')}`}>
+        {(isToday || isFuture) && <Button size="sm" variant="secondary" onClick={() => void setPause(today(), null)}>Resume</Button>}
+      </RestCard>
+    )
   }
 
   if (!routine) {
@@ -140,11 +153,11 @@ function Completed({ rows, nudge }: { rows: CompletedWorkout[]; nudge?: string }
   )
 }
 
-/** A day without a workout to start: nothing planned, a rest day, or a skipped one. */
-function RestCard({ title, note, children }: { title: string; note: string; children?: ReactNode }) {
+/** A day without a workout to start: nothing planned, a rest day, a skipped one or training paused. */
+function RestCard({ Icon = Moon, title, note, children }: { Icon?: LucideIcon; title: string; note: string; children?: ReactNode }) {
   return (
     <div className="flex items-center gap-4 rounded-3xl bg-card p-5">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary"><Moon size={22} className="text-muted-foreground" /></span>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary"><Icon size={22} className="text-muted-foreground" /></span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{title}</p>
         <p className="text-sm text-muted-foreground">{note}</p>

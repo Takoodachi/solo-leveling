@@ -34,6 +34,24 @@ describe('planReminders', () => {
     expect(days(planReminders(trainDays, { ...facts, skipped: ['2026-11-04'] }, morning, 10))).toEqual(['stretch-2026-11-02', 'stretch-2026-11-09', 'stretch-2026-11-11'])
   })
 
+  it('leaves out workout and stretching nudges while training is paused, and nothing else', () => {
+    const many = reminderPrefs({
+      reminders: {
+        workout: { on: true, time: '17:30', days: 'daily' },
+        stretch: { on: true, time: '20:30' },
+        creatine: { on: true, time: '09:00' },
+        food: { on: true, time: '20:00' },
+      },
+    } as Partial<Settings> as Settings)
+    const plan = planReminders(many, { ...facts, paused: ['2026-11-02', '2026-11-03'] }, morning, 3)
+    expect(plan.map(p => p.key)).toEqual([
+      'creatine-2026-11-02', 'food-2026-11-02',
+      'creatine-2026-11-03', 'food-2026-11-03',
+      // The pause is over: everything comes back
+      'creatine-2026-11-04', 'workout-2026-11-04', 'food-2026-11-04', 'stretch-2026-11-04',
+    ])
+  })
+
   it('announces the recap on Mondays only, and nothing already past', () => {
     const recaps = planReminders(prefs, facts, morning, 14).filter(p => p.kind === 'recap').map(p => p.key)
     expect(recaps).toEqual(['recap-2026-11-02', 'recap-2026-11-09'])

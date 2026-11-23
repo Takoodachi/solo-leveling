@@ -20,12 +20,13 @@ export function useCalorieBudget(date?: string): CalorieBudget {
 
 /** The same budget outside React (the Android widgets, features/widgets). */
 export async function calorieBudget(day: string): Promise<CalorieBudget> {
-  const [baseline, burns, settings, routines, skip] = await Promise.all([
-    db.targets.get(1), loadStepBurns([day]), db.settings.get(1), db.routines.toArray(), db.checkins.get(`skip-${day}`),
+  const [baseline, burns, settings, routines, skip, pause] = await Promise.all([
+    db.targets.get(1), loadStepBurns([day]), db.settings.get(1), db.routines.toArray(), db.checkins.get(`skip-${day}`), db.checkins.get(`pause-${day}`),
   ])
   const burn = burns.get(day) ?? null
   const weekdays = new Set(routines.flatMap(r => r.scheduleDays))
-  const plan: DayPlan | undefined = settings?.trainingDayCarbs !== false && weekdays.size > 0
+  // A paused day has no plan to balance: the baseline, neither a workout day's carbs nor a rest day's give-back
+  const plan: DayPlan | undefined = settings?.trainingDayCarbs !== false && weekdays.size > 0 && !pause?.done
     ? { training: weekdays.has(parseISO(day).getDay()) && !skip?.done, perWeek: weekdays.size }
     : undefined
   return { targets: targetsForDay(baseline, burn?.kcal ?? 0, plan), burn }

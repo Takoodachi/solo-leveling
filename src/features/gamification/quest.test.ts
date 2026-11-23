@@ -45,6 +45,19 @@ describe('loadQuest', () => {
     }
   })
 
+  it('doesn’t ask for the planned routine while training is paused', async () => {
+    await seed()
+    const asked: string[] = []
+    for (const date of month) if ((await loadQuest(date)).objectives.some(o => o.id === 'workout')) asked.push(date)
+    expect(asked.length).toBeGreaterThan(0)
+    await db.checkins.bulkPut(asked.map(date => ({ uuid: `pause-${date}`, date, key: 'pause' as const, done: true, updatedAt: now })))
+    for (const date of asked) {
+      const quest = await loadQuest(date)
+      expect(quest.objectives).toHaveLength(3)
+      expect(quest.objectives.map(o => o.id)).not.toContain('workout')
+    }
+  })
+
   it('leaves eating out for someone not tracking food, and is never about calories', async () => {
     await seed(['workout', 'steps', 'creatine', 'quest'])
     for (const date of month) {

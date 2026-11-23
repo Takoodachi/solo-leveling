@@ -53,6 +53,8 @@ export interface ReminderFacts {
   routines: Record<number, string>
   /** Days (YYYY-MM-DD) whose planned workout was skipped: no workout nudge on them. */
   skipped?: string[]
+  /** Days training is paused (features/workouts/pause.ts): no workout or stretching nudge at all. */
+  paused?: string[]
   /** The user's stretching routine, which the stretching nudge opens. */
   stretchRoutine?: { id: string; name: string }
 }
@@ -88,6 +90,7 @@ export function planReminders(prefs: ReminderPrefs, facts: ReminderFacts, now: D
       if (!pref.on || !Number.isInteger(hours) || !Number.isInteger(minutes)) continue
       if (i === 0 && facts.done[def.kind]) continue
       if (def.kind === 'recap' && day.getDay() !== 1) continue
+      if ((def.kind === 'workout' || def.kind === 'stretch') && facts.paused?.includes(toDateStr(day))) continue
       if (def.kind === 'workout' && pref.days !== 'daily' && !routine) continue
       if (def.kind === 'workout' && facts.skipped?.includes(toDateStr(day))) continue
       // Stretching on the days you train: none on a day without a routine, or one whose workout was skipped

@@ -1,7 +1,7 @@
 import { addDays } from 'date-fns'
 import { db } from '@/db'
 import { exercisesById, foodsById, setsOfWorkouts, workoutsById } from '@/db/read'
-import type { Workout, WorkoutSet } from '@/types'
+import type { Checkin, Workout, WorkoutSet } from '@/types'
 import { est1RM, setVolume } from '@/lib/workoutMath'
 import { loadStepBurns } from '@/lib/stepCalories'
 import { computeRanks } from '@/features/ranks/computeRanks'
@@ -40,7 +40,7 @@ export interface Recap {
   empty: boolean
   training: PeriodTraining
   previous: PeriodTraining & { steps: number }
-  /** The weekly workout goal, scaled to the period's length. */
+  /** The weekly workout goal, scaled to the period's days that weren't paused (0 for a paused week). */
   workoutGoal: number
   bests: RecapBest[]
   /** Overall strength rank going into the period and at its end (null while unranked). */
@@ -144,19 +144,22 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
   const waterGoal = settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML
   const scheduled = new Set(routines.flatMap(r => r.scheduleDays))
   const training = trainingOf(current, periodSets, cardio, stretches)
+  // Skips, pauses and the targets check-in are about the plan, not something logged
+  const notLogged = (c: Checkin) => c.key === 'skip' || c.key === 'pause' || c.key === 'targets'
+  const paused = checkins.filter(c => c.key === 'pause' && c.done).length
 
   const logged = [
     ...current.map(w => w.date), ...periodSteps.filter(d => d.steps > 0).map(d => d.date), ...logs.map(l => l.date),
-    ...checkins.filter(c => c.done && c.key !== 'skip' && c.key !== 'targets').map(c => c.date), ...during.map(m => m.date),
+    ...checkins.filter(c => c.done && !notLogged(c)).map(c => c.date), ...during.map(m => m.date),
   ]
   return {
     period,
     dates,
     since: logged.length ? logged.reduce((a, d) => (d < a ? d : a)) : first,
-    empty: current.length === 0 && logs.length === 0 && periodSteps.every(d => d.steps === 0) && during.length === 0 && checkins.every(c => !c.done || c.key === 'skip' || c.key === 'targets'),
+    empty: current.length === 0 && logs.length === 0 && periodSteps.every(d => d.steps === 0) && during.length === 0 && checkins.every(c => !c.done || notLogged(c)),
     training,
     previous: { ...trainingOf(earlier, setsOf(earlier), cardio, stretches), steps: previousSteps },
-    workoutGoal: Math.round(((settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)) * dates.length) / 7),
+    workoutGoal: Math.round(((settings?.weeklyWorkoutGoal ?? Math.max(3, scheduled.size)) * (dates.length - paused)) / 7),
     bests: await bestsOf(periodSets, first, last, cardio),
     rank: rankAfter.overall ? { from: rankBefore.overall, to: rankAfter.overall } : null,
     steps: {

@@ -1,8 +1,13 @@
 import { Bell } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Switch } from '@/components/ui/switch'
 import type { ReminderKind, ReminderPref } from '@/types'
 import { isAndroidApp } from '@/lib/native'
+import { toDateStr } from '@/lib/date'
+import { useNow } from '@/hooks/useNow'
+import { usePausedUntil } from '@/features/workouts/pause'
 import { useSettings, updateSettings } from '@/features/settings/hooks/useSettings'
 import { REMINDERS, reminderPrefs } from '../reminders'
 import { useDeviceNotifications, type DeviceNotify } from '../useDeviceNotifications'
@@ -28,6 +33,7 @@ const STATUS: Record<DeviceNotify, string> = {
 export default function RemindersCard() {
   const { settings } = useSettings()
   const device = useDeviceNotifications()
+  const pausedTill = usePausedUntil(toDateStr(useNow()))
   if (!settings) return null
 
   const prefs = reminderPrefs(settings)
@@ -62,6 +68,11 @@ export default function RemindersCard() {
       {anyOn && device.state === 'off' && (
         <p className="mt-3 rounded-2xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
           Reminders are set, but this {here} won’t show them until notifications are switched on above.
+        </p>
+      )}
+      {pausedTill && (prefs.workout.on || prefs.stretch.on) && (
+        <p className="mt-3 rounded-2xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
+          Training is <Link to="/workouts/plan#pause" className="underline underline-offset-2">paused</Link> until {format(parseISO(pausedTill), 'EEE, MMM d')}, so workout and stretching reminders wait until then.
         </p>
       )}
       <div className="mt-2 flex flex-col">
