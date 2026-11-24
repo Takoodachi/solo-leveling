@@ -14,6 +14,7 @@ import { useCheckinDays } from '@/features/checkins/useCheckins'
 import { useCreatineLink } from '@/features/checkins/useCreatineLink'
 import { useWorkoutList } from '@/features/workouts/hooks/useWorkoutHistory'
 import ResumeBanner from '@/features/workouts/components/ResumeBanner'
+import PlateauCard from '@/features/workouts/components/PlateauCard'
 import { netKcal, useCalorieBudget } from '@/features/dashboard/hooks/useCalorieBudget'
 import { useWeekSummary } from '@/features/dashboard/hooks/useWeekSummary'
 import HomeHeader from '@/features/dashboard/components/HomeHeader'
@@ -101,6 +102,7 @@ export default function HomePage() {
               <ResumeBanner />
               {settings && extraOn('recapBanner', settings.extras) && <RecapBanner now={now} />}
               {settings && extraOn('checkIn', settings.extras) && <WeeklyCheckInCard today={todayStr} />}
+              <PlateauCard today={todayStr} />
               <SectionHeader actionLabel="Customize" onAction={() => setCustomizing(true)}>
                 <DatePicker
                   value={selected}

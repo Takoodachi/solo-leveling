@@ -9,6 +9,8 @@ import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import CompletionHero from '@/features/workouts/components/CompletionHero'
 import WorkoutSummaryCard from '@/features/workouts/components/WorkoutSummaryCard'
+import ProgressHint from '@/features/workouts/components/ProgressHint'
+import { plateauHint } from '@/features/workouts/plateau'
 import ShareWorkoutDialog from '@/features/workouts/components/ShareWorkoutDialog'
 import { useWorkoutDetail, findNewBests, deleteWorkout, describeBest, type NewBest } from '@/features/workouts/hooks/useWorkoutHistory'
 import { canEditWorkout, EDIT_WINDOW_DAYS, useEditWorkout } from '@/features/workouts/hooks/useEditWorkout'
@@ -96,6 +98,8 @@ function WorkoutSummary() {
   const bests = celebrate ? state.newBests : (computed?.bests ?? NONE)
   // Older router state (before ranks existed) has no rankUps.
   const rankUps = celebrate ? (state.rankUps ?? NONE) : (computed?.rankUps ?? NONE)
+  // Right after finishing: the lifts that plateaued with it (plateau.ts)
+  const plateaus = (celebrate && state.plateaus) || NONE
   // In history, wait for the bests and rank-ups so the card has them
   const canShare = celebrate || computed !== null
 
@@ -150,12 +154,16 @@ function WorkoutSummary() {
       <section className="rounded-3xl bg-card p-5">
         <h2 className="mb-3 font-semibold">Exercises</h2>
         <ul className="flex flex-col divide-y divide-foreground/5">
-          {groupByExercise(workout.sets).map(g => (
-            <li key={g.name} className="py-3 first:pt-0 last:pb-0">
-              <p className="font-medium">{g.name}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(s => describeSet(s, s.exercise, unitOf(s.exerciseId), true)).join('  ·  ')}</p>
-            </li>
-          ))}
+          {groupByExercise(workout.sets).map(g => {
+            const plateau = plateaus.find(p => p.exerciseId === g.sets[0].exerciseId)
+            return (
+              <li key={g.name} className="py-3 first:pt-0 last:pb-0">
+                <p className="font-medium">{g.name}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{g.sets.map(s => describeSet(s, s.exercise, unitOf(s.exerciseId), true)).join('  ·  ')}</p>
+                {plateau && <ProgressHint hint={plateauHint(plateau)} className="mb-0 mt-3" />}
+              </li>
+            )
+          })}
         </ul>
         {workout.notes && <p className="mt-4 rounded-2xl bg-secondary p-3 text-sm text-foreground/85">{workout.notes}</p>}
       </section>

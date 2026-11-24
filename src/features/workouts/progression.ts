@@ -92,7 +92,8 @@ const MAX_JUMP = 0.1
 const EASY_REPS = 2
 const EASE_AFTER_DAYS = 28
 const LONG_BREAK_DAYS = 56
-const FLAT_SESSIONS = 3
+/** Sessions in a row at one weight without more reps that make a plateau. */
+export const FLAT_SESSIONS = 3
 const DAY_MS = 86_400_000
 
 type Gear = 'barbell' | 'dumbbell' | 'kettlebell' | 'cable' | 'machine' | 'other'
@@ -403,6 +404,30 @@ export function suggestProgress({ exercise, lastSets, trend, targetReps, bodyKg,
     why: `${plan ? `Aim for ${list(plan.rest)} on the rest: ${plan.note}.` : `Aim for ${list(goals)} (last time ${list(work)}${left}).${note}`} ${when}${restNote(work, restSec, compound)}`,
     fill: straight ? { weight: top, from: top, reps: aims } : undefined,
   }
+}
+
+/** A lift stuck at one weight, and the lighter one the tip says to build back up from (in `unit`). */
+export interface Plateau {
+  /** Sessions in a row at `from` without more reps, the last included. */
+  sessions: number
+  from: number
+  to: number
+  unit: WeightUnit
+}
+
+/**
+ * The plateau as the workout tip sees it, for Home and the summary: FLAT_SESSIONS or more sessions
+ * without more reps, and a tip for next time that takes weight off. Read from the tip itself, so the
+ * two can't disagree (another tip wins, as in the logger: a weight that's due to go up, a long break).
+ * Nothing is known here of what comes before the lift on the day, so no order is weighed.
+ */
+export function plateauOf(input: Omit<ProgressInput, 'order' | 'sets' | 'restSec'>): Plateau | null {
+  const sessions = input.trend?.flat ?? 0
+  if (sessions < FLAT_SESSIONS) return null
+  const hint = suggestProgress(input)
+  const fill = hint?.kind === 'reset' ? hint.fill : undefined
+  if (fill?.weight == null || fill.from == null) return null
+  return { sessions, from: fill.from, to: fill.weight, unit: isLb(input.unit) ? 'lb' : 'kg' }
 }
 
 interface BodyweightInput {

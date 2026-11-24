@@ -1,4 +1,5 @@
 import { Equal, Flag, Plus, RotateCcw, TrendingUp, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { ProgressHint as Hint } from '../progression'
 
 const ICON: Record<Hint['kind'], LucideIcon> = { weight: TrendingUp, reps: Plus, hold: Equal, ease: RotateCcw, reset: RotateCcw, start: Flag }
@@ -7,13 +8,14 @@ interface Props {
   hint: Hint
   /** Fills the hint's numbers into the sets not done yet; left out when they're already there. */
   onUse?: () => void
+  className?: string
 }
 
-/** What to try today on this lift, from last time's numbers (see progression.ts). */
-export default function ProgressHint({ hint, onUse }: Props) {
+/** What to try today on this lift, from last time's numbers (see progression.ts); on the summary, a plateau's reset for next time. */
+export default function ProgressHint({ hint, onUse, className }: Props) {
   const Icon = ICON[hint.kind]
   return (
-    <div className="mb-3 flex items-center gap-3 rounded-2xl bg-primary/10 px-3 py-2">
+    <div className={cn('mb-3 flex items-center gap-3 rounded-2xl bg-primary/10 px-3 py-2', className)}>
       <Icon size={16} className="shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-tight">{hint.title}</p>
