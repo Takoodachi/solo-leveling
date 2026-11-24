@@ -22,6 +22,7 @@ import { durationOf, weightKg, weightText } from '../units'
 import { liftRpe } from '../effort'
 import { CARRY_ON_CREDIT, lastMain } from '../setKinds'
 import { blockHistory, findNewBests, readWorkoutAhead, type NewBest } from './useWorkoutHistory'
+import { showsPlateaus, workoutPlateaus, type LiftPlateau } from '../plateau'
 
 export interface FinishOptions {
   durationMin: number
@@ -37,6 +38,8 @@ export interface FinishResult {
   xp: number
   newBests: NewBest[]
   rankUps: RankUp[]
+  /** Lifts that plateaued with this workout (unset on summaries from before it existed). */
+  plateaus?: LiftPlateau[]
 }
 
 const num = parsePositive
@@ -187,6 +190,8 @@ export function useActiveWorkout() {
       const saved = await readWorkoutAhead(workoutUuid)
       const newBests = saved ? await findNewBests(saved) : []
       const rankUps = saved ? await findRankUps(saved) : []
+      // Lifts that plateaued with it, for the summary: a failed read costs only those
+      const plateaus = saved ? await showsPlateaus(today()).then(on => (on ? workoutPlateaus(saved) : [])).catch(() => []) : []
       // The summary opens with the rank-up sequence: the toasts below wait for it (or 5 s, if it never opens)
       if (playsIntro(rankUps)) holdStage(5000)
 
@@ -201,7 +206,7 @@ export function useActiveWorkout() {
 
       if (xpResult?.leveledUp) afterStage(() => toast.success(`Level up! You're now level ${xpResult.newLevel}`, { icon: '⭐' }))
       await announceAchievements(achievements)
-      result = { celebrate: true, xp, newBests, rankUps }
+      result = { celebrate: true, xp, newBests, rankUps, plateaus }
     } catch (err) {
       console.warn('[finish] after saving:', err)
     }

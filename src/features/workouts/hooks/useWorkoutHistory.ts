@@ -88,17 +88,18 @@ export async function deleteWorkout(uuid: string): Promise<void> {
   await deleteSynced(db.workouts, 'workouts', [uuid])
 }
 
-/** The workouts these sets were logged in (a new list, in no order). */
-async function workoutsOf(sets: WorkoutSet[]): Promise<Workout[]> {
-  const workoutOf = await workoutsById()
-  return [...new Set(sets.map(s => s.workoutId))].flatMap(id => workoutOf.get(id) ?? [])
-}
+export type Session = PastSession & { workoutId: string }
 
 /** Earlier workouts that included this exercise, newest first, with its sets in order. */
-export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinity, limit = 8): Promise<(PastSession & { workoutId: string })[]> {
+export async function pastSessions(exerciseId: string, beforeCreatedAt = Infinity, limit = 8): Promise<Session[]> {
   const sets = await db.workoutSets.where('exerciseId').equals(exerciseId).toArray()
-  if (sets.length === 0) return []
-  const workouts = (await workoutsOf(sets))
+  return sets.length === 0 ? [] : sessionsFrom(sets, await workoutsById(), beforeCreatedAt, limit)
+}
+
+/** `pastSessions` from one exercise's sets already in hand (the plateaus on Home read them all at once). */
+export function sessionsFrom(sets: readonly WorkoutSet[], workoutOf: ReadonlyMap<string, Workout>, beforeCreatedAt = Infinity, limit = 8): Session[] {
+  const workouts = [...new Set(sets.map(s => s.workoutId))]
+    .flatMap(id => workoutOf.get(id) ?? [])
     .filter(w => w.createdAt < beforeCreatedAt)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, limit)
