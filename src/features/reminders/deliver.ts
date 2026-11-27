@@ -1,7 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
 import { nativeNotifyState, replaceScheduled } from '@/lib/localNotifications'
-import { creatineTickLink, type PlannedReminder } from './reminders'
+import { tickLink, type PlannedReminder } from './reminders'
 
 /**
  * Hands the reminder plan to whatever delivers it. In the Android app that's the phone's own
@@ -30,7 +30,9 @@ const fingerprint = (plan: PlannedReminder[]) => plan.map(p => `${p.key}@${p.at}
 /** Reminders whose notification can log the thing itself (a button that works with the app closed). */
 const isQuickLog = (p: PlannedReminder): p is PlannedReminder & { kind: QuickLogReminder['kind'] } => p.kind === 'creatine' || p.kind === 'water'
 
-/** In the app a tap on the creatine reminder itself ticks it too, as it opens Home; a web push keeps the plain link. */
+/** In the app a tap on the creatine or magnesium reminder itself ticks it too, as it opens Home; a web push keeps the plain link. */
+const appUrl = (p: PlannedReminder) => (p.kind === 'creatine' || p.kind === 'magnesium' ? tickLink(p.kind, p.key.slice(-10)) : p.url)
+
 function quickLogItem(p: PlannedReminder & { kind: QuickLogReminder['kind'] }): QuickLogReminder {
   const date = p.key.slice(-10) // keys are kind-YYYY-MM-DD
   return {
@@ -40,7 +42,7 @@ function quickLogItem(p: PlannedReminder & { kind: QuickLogReminder['kind'] }): 
     at: p.at,
     title: p.title,
     body: p.body,
-    url: p.kind === 'creatine' ? creatineTickLink(date) : p.url,
+    url: appUrl(p),
     action: p.kind === 'creatine' ? 'Tick it off' : 'Add a glass',
   }
 }
@@ -59,7 +61,7 @@ async function toPhone(plan: PlannedReminder[]): Promise<void> {
   // A leading marker, so "on with nothing planned" still differs from "never scheduled"
   const print = `${on ? 'on' : 'off'}|${fingerprint(viaPlugin)}`
   if (localStorage.getItem(NATIVE_PLAN_KEY) === print) return
-  await replaceScheduled(ID_FROM, ID_TO, viaPlugin.map(p => ({ id: idOf(p.key), title: p.title, body: p.body, at: p.at, url: p.url, channel: 'reminders' })))
+  await replaceScheduled(ID_FROM, ID_TO, viaPlugin.map(p => ({ id: idOf(p.key), title: p.title, body: p.body, at: p.at, url: appUrl(p), channel: 'reminders' })))
   localStorage.setItem(NATIVE_PLAN_KEY, print)
 }
 

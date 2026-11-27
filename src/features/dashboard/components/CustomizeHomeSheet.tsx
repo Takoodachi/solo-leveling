@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import type { HomeWidgetId } from '@/types'
 import { swapped } from '@/lib/utils'
 import { useSettings } from '@/features/settings/hooks/useSettings'
-import { DEFAULT_HOME_WIDGETS, homeWidgetDef, homeWidgetsFrom } from '../homeWidgets'
+import { ALL_HOME_WIDGETS, homeWidgetDef, homeWidgetsFrom, withCard } from '../homeWidgets'
 
 interface Props {
   open: boolean
@@ -53,12 +53,13 @@ function WidgetRow({ id, index, count, onMove, onToggle }: RowProps) {
 export default function CustomizeHomeSheet({ open, onOpenChange }: Props) {
   const { settings, updateSettings } = useSettings()
   const shown = homeWidgetsFrom(settings)
-  const hidden = DEFAULT_HOME_WIDGETS.filter(id => !shown.includes(id))
+  const hidden = ALL_HOME_WIDGETS.filter(id => !shown.includes(id))
   const save = (ids: HomeWidgetId[]) => void updateSettings({ homeWidgets: ids })
 
   const move = (i: number, delta: -1 | 1) => save(swapped(shown, i, i + delta))
 
-  const toggle = (id: HomeWidgetId, on: boolean) => save(on ? [...shown, id] : shown.filter(x => x !== id))
+  // A card switched on goes back to its usual place, so a tile lands among the tiles
+  const toggle = (id: HomeWidgetId, on: boolean) => save(on ? withCard(shown, id) : shown.filter(x => x !== id))
   const rowProps = { count: shown.length, onMove: move, onToggle: toggle }
 
   return (
@@ -84,7 +85,7 @@ export default function CustomizeHomeSheet({ open, onOpenChange }: Props) {
           </>
         )}
 
-        <Button variant="ghost" className="mt-4 w-full" onClick={() => save(DEFAULT_HOME_WIDGETS)}>Show everything (default)</Button>
+        <Button variant="ghost" className="mt-4 w-full" onClick={() => save(ALL_HOME_WIDGETS)}>Show everything</Button>
       </SheetContent>
     </Sheet>
   )

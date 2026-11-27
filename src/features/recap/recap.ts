@@ -51,6 +51,7 @@ export interface Recap {
   /** The last weigh-in before the period (else the first in it) and the last one in it. */
   weight: { from: number; to: number } | null
   creatineDays: number
+  magnesiumDays: number
   waterGoalDays: number
 }
 
@@ -179,6 +180,7 @@ export async function buildRecap(period: RecapPeriod, start: string): Promise<Re
       : null,
     weight: during.length ? { from: (before ?? during[0]).weightKg, to: during[during.length - 1].weightKg } : null,
     creatineDays: checkins.filter(c => c.key === 'creatine' && c.done).length,
+    magnesiumDays: checkins.filter(c => c.key === 'magnesium' && c.done).length,
     waterGoalDays: checkins.filter(c => c.key === 'water' && (c.amount ?? 0) >= waterGoal).length,
   }
 }

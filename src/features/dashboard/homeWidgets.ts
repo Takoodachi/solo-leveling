@@ -1,4 +1,4 @@
-import { Dumbbell, Footprints, Flame, GlassWater, Pill, PieChart, Swords, Medal, Star, Users, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Footprints, Flame, GlassWater, Moon, Pill, PieChart, Swords, Medal, Star, Users, type LucideIcon } from 'lucide-react'
 import type { HomeWidgetId, Settings } from '@/types'
 
 export interface HomeWidgetDef {
@@ -8,6 +8,8 @@ export interface HomeWidgetDef {
   icon: LucideIcon
   /** Half-width tile; neighbouring tiles share a row. */
   tile?: boolean
+  /** Off Home until it's switched on (Customize, or the setup's "what to track"). */
+  optIn?: boolean
 }
 
 /** Every card the Home screen can show, in default order. */
@@ -17,6 +19,8 @@ export const HOME_WIDGETS: HomeWidgetDef[] = [
   { id: 'calories',  label: 'Calories',        description: 'Food logged vs your target',            icon: Flame,      tile: true },
   { id: 'water',     label: 'Water',           description: 'One-tap glass counter',                 icon: GlassWater, tile: true },
   { id: 'creatine',  label: 'Creatine',        description: 'Daily check-off',                       icon: Pill,       tile: true },
+  // Added after every account had its Home, so it waits to be asked for
+  { id: 'magnesium', label: 'Magnesium',       description: 'Daily check-off',                       icon: Moon,       tile: true, optIn: true },
   { id: 'quest',     label: 'Daily quest',     description: 'Today’s objectives, and XP for clearing them', icon: Swords },
   { id: 'macros',    label: 'Macros',          description: 'Protein, carbs and fat',                icon: PieChart },
   { id: 'rank',      label: 'Strength rank',   description: 'Overall rank and progress',             icon: Medal },
@@ -25,7 +29,10 @@ export const HOME_WIDGETS: HomeWidgetDef[] = [
 ]
 
 const BY_ID = new Map(HOME_WIDGETS.map(w => [w.id, w]))
-export const DEFAULT_HOME_WIDGETS: HomeWidgetId[] = HOME_WIDGETS.map(w => w.id)
+/** Every card, in the order Home puts them. */
+export const ALL_HOME_WIDGETS: HomeWidgetId[] = HOME_WIDGETS.map(w => w.id)
+/** What Home shows before it's customized. */
+export const DEFAULT_HOME_WIDGETS: HomeWidgetId[] = HOME_WIDGETS.filter(w => !w.optIn).map(w => w.id)
 
 export function homeWidgetDef(id: HomeWidgetId): HomeWidgetDef | undefined {
   return BY_ID.get(id)
@@ -36,6 +43,14 @@ export function homeWidgetsFrom(settings: Settings | undefined): HomeWidgetId[] 
   if (settings?.homeWidgets) return [...new Set(settings.homeWidgets)].filter(id => BY_ID.has(id))
   // Before customization existed, the creatine card could be switched off on its own.
   return DEFAULT_HOME_WIDGETS.filter(id => id !== 'creatine' || settings?.creatineEnabled !== false)
+}
+
+/** `ids` with `id` added after the nearest card shown that usually comes before it (magnesium after creatine), else first. */
+export function withCard(ids: HomeWidgetId[], id: HomeWidgetId): HomeWidgetId[] {
+  if (ids.includes(id)) return ids
+  const before = ALL_HOME_WIDGETS.slice(0, ALL_HOME_WIDGETS.indexOf(id)).reverse().find(c => ids.includes(c))
+  const at = before ? ids.indexOf(before) + 1 : 0
+  return [...ids.slice(0, at), id, ...ids.slice(at)]
 }
 
 /**

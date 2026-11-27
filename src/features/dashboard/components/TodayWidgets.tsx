@@ -5,7 +5,7 @@ import { useDailyLog } from '@/features/nutrition/hooks/useDailyLog'
 import { useSettings, DEFAULT_STEP_GOAL } from '@/features/settings/hooks/useSettings'
 import RankSummaryCard from '@/features/ranks/components/RankSummaryCard'
 import LeaderboardCard from '@/features/leaderboard/components/LeaderboardCard'
-import CreatineCard from '@/features/checkins/components/CreatineCard'
+import SupplementCard from '@/features/checkins/components/SupplementCard'
 import WaterCard from '@/features/checkins/components/WaterCard'
 import QuestCard from '@/features/gamification/components/QuestCard'
 import type { CalorieBudget } from '../hooks/useCalorieBudget'
@@ -47,7 +47,8 @@ export default function TodayWidgets({ selected, today, steps, budget, routine, 
       case 'water':
         return <WaterCard date={selected} today={today} />
       case 'creatine':
-        return <CreatineCard date={selected} today={today} />
+      case 'magnesium':
+        return <SupplementCard kind={id} date={selected} today={today} />
       case 'macros':
         return <MacrosCard totals={totals} budget={budget} />
       case 'rank':

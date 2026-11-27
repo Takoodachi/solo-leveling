@@ -26,6 +26,8 @@ export const REMINDERS: ReminderDef[] = [
   { kind: 'workout', label: 'Workout', description: 'When it’s time to train', time: '17:30', title: 'Time to train', body: 'Tap to start your workout.', url: '/workouts?start=1' },
   { kind: 'stretch', label: 'Stretching', description: 'Until you’ve stretched that day', time: '20:30', title: 'Time to stretch', body: 'A few minutes for your muscles. Tap to start.', url: '/workouts?category=stretching' },
   { kind: 'creatine', label: 'Creatine', description: 'Until you’ve ticked it off', time: '09:00', title: 'Creatine', body: 'Take it and tick it off.', url: '/home#creatine' },
+  // In the evening: magnesium glycinate is mostly taken before bed
+  { kind: 'magnesium', label: 'Magnesium', description: 'Until you’ve ticked it off', time: '21:00', title: 'Magnesium', body: 'Take it and tick it off.', url: '/home#magnesium' },
   { kind: 'food', label: 'Log your food', description: 'If nothing is logged by then', time: '20:00', title: 'Log today’s food', body: 'Nothing logged yet today.', url: '/nutrition?add=1' },
   { kind: 'weight', label: 'Weigh-in', description: 'If you haven’t weighed in that day', time: '07:30', title: 'Weigh-in', body: 'Step on the scale and log it.', url: '/analytics/weight?log=1' },
   { kind: 'water', label: 'Water', description: 'If you’re short of your goal', time: '15:00', title: 'Water check', body: 'Have a glass and log it.', url: '/home?log=water' },
@@ -60,11 +62,11 @@ export interface ReminderFacts {
 }
 
 /**
- * Home, ticking that day's creatine as it opens (useCreatineLink): what a tap on the creatine
- * reminder opens in the Android app. A query and not a #hash, which the app drops from a
+ * Home, ticking that day's creatine or magnesium as it opens (useSupplementLink): what a tap on
+ * that reminder opens in the Android app. A query and not a #hash, which the app drops from a
  * notification's link.
  */
-export const creatineTickLink = (day: string) => `/home?log=creatine&day=${day}`
+export const tickLink = (kind: 'creatine' | 'magnesium', day: string) => `/home?log=${kind}&day=${day}`
 
 export interface PlannedReminder {
   /** `kind-YYYY-MM-DD`: one per reminder per day. */
