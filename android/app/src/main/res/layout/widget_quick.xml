@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Quick log: four buttons into the app (Widgets.kt) -->
+<!-- Quick log: buttons into the app; magnesium's shows only when it's tracked (Widgets.kt) -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -52,9 +52,14 @@
 
                 <TextView
                     android:id="@+id/quick_workout_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
                     android:layout_marginTop="3dp"
+                    android:autoSizeMaxTextSize="11sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="0.5sp"
+                    android:autoSizeTextType="uniform"
+                    android:gravity="center"
                     android:maxLines="1"
                     android:text="Workout"
                     android:textColor="#FFF4F1EC"
@@ -95,9 +100,14 @@
 
                 <TextView
                     android:id="@+id/quick_food_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
                     android:layout_marginTop="3dp"
+                    android:autoSizeMaxTextSize="11sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="0.5sp"
+                    android:autoSizeTextType="uniform"
+                    android:gravity="center"
                     android:maxLines="1"
                     android:text="Food"
                     android:textColor="#FFF4F1EC"
@@ -138,9 +148,14 @@
 
                 <TextView
                     android:id="@+id/quick_water_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
                     android:layout_marginTop="3dp"
+                    android:autoSizeMaxTextSize="11sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="0.5sp"
+                    android:autoSizeTextType="uniform"
+                    android:gravity="center"
                     android:maxLines="1"
                     android:text="Water"
                     android:textColor="#FFF4F1EC"
@@ -181,11 +196,65 @@
 
                 <TextView
                     android:id="@+id/quick_creatine_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
                     android:layout_marginTop="3dp"
+                    android:autoSizeMaxTextSize="11sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="0.5sp"
+                    android:autoSizeTextType="uniform"
+                    android:gravity="center"
                     android:maxLines="1"
                     android:text="Creatine"
+                    android:textColor="#FFF4F1EC"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/quick_magnesium"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_margin="3dp"
+            android:layout_weight="1"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/quick_magnesium_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_pill"
+                android:tint="#FF2A2A2E" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="4dp">
+
+                <ImageView
+                    android:id="@+id/quick_magnesium_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_widget_magnesium" />
+
+                <TextView
+                    android:id="@+id/quick_magnesium_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"
+                    android:layout_marginTop="3dp"
+                    android:autoSizeMaxTextSize="11sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="0.5sp"
+                    android:autoSizeTextType="uniform"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:text="Magnesium"
                     android:textColor="#FFF4F1EC"
                     android:textSize="11sp"
                     android:textStyle="bold" />

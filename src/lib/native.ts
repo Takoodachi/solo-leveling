@@ -36,7 +36,7 @@ export interface BackgroundStepsStatus {
 /** A reminder the app posts itself, with a button that logs without opening it (QuickLog.kt). */
 export interface QuickLogReminder {
   id: number
-  kind: 'creatine' | 'water'
+  kind: 'creatine' | 'magnesium' | 'water'
   /** The day it's for (YYYY-MM-DD): the button logs to that day. */
   date: string
   at: number
@@ -175,7 +175,7 @@ export function isUnimplemented(err: unknown): boolean {
 }
 
 /**
- * Hands creatine and water reminders to the app's own notifications, which carry a log button
+ * Hands creatine, magnesium and water reminders to the app's own notifications, which carry a log button
  * (QuickLog.kt). False when the APK predates them: then they go out as plain notifications.
  */
 export async function scheduleQuickLogReminders(items: QuickLogReminder[]): Promise<boolean> {

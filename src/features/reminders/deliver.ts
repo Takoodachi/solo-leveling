@@ -1,5 +1,5 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
-import { isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
+import { apkBuild, isAndroidApp, scheduleQuickLogReminders, type QuickLogReminder } from '@/lib/native'
 import { nativeNotifyState, replaceScheduled } from '@/lib/localNotifications'
 import { tickLink, type PlannedReminder } from './reminders'
 
@@ -27,23 +27,26 @@ function idOf(key: string): number {
 
 const fingerprint = (plan: PlannedReminder[]) => plan.map(p => `${p.key}@${p.at}:${p.title}`).join('|')
 
-/** Reminders whose notification can log the thing itself (a button that works with the app closed). */
-const isQuickLog = (p: PlannedReminder): p is PlannedReminder & { kind: QuickLogReminder['kind'] } => p.kind === 'creatine' || p.kind === 'water'
+/**
+ * Reminders whose notification can log the thing itself (a button that works with the app closed).
+ * Magnesium's from APK build 10: before it, the button's "working" line said it was adding water.
+ */
+const isQuickLog = (p: PlannedReminder, build: number) => p.kind === 'creatine' || p.kind === 'water' || (p.kind === 'magnesium' && build >= 10)
 
 /** In the app a tap on the creatine or magnesium reminder itself ticks it too, as it opens Home; a web push keeps the plain link. */
 const appUrl = (p: PlannedReminder) => (p.kind === 'creatine' || p.kind === 'magnesium' ? tickLink(p.kind, p.key.slice(-10)) : p.url)
 
-function quickLogItem(p: PlannedReminder & { kind: QuickLogReminder['kind'] }): QuickLogReminder {
+function quickLogItem(p: PlannedReminder): QuickLogReminder {
   const date = p.key.slice(-10) // keys are kind-YYYY-MM-DD
   return {
     id: idOf(p.key),
-    kind: p.kind,
+    kind: p.kind as QuickLogReminder['kind'],
     date,
     at: p.at,
     title: p.title,
     body: p.body,
     url: appUrl(p),
-    action: p.kind === 'creatine' ? 'Tick it off' : 'Add a glass',
+    action: p.kind === 'water' ? 'Add a glass' : 'Tick it off',
   }
 }
 
@@ -51,13 +54,15 @@ async function toPhone(plan: PlannedReminder[]): Promise<void> {
   if (!isAndroidApp()) return
   const on = localStorage.getItem(NATIVE_ON_KEY) === '1' && (await nativeNotifyState()) === 'granted'
   const wanted = on ? plan : []
-  // Creatine and water go to the app's own notifications, with a log button, when this APK has
-  // them (cheap, and always sent so an updated APK takes them over); the rest to the plugin
-  const quick = await scheduleQuickLogReminders(wanted.filter(isQuickLog).map(quickLogItem)).catch((err: unknown) => {
+  // Creatine, magnesium and water go to the app's own notifications, with a log button, when this
+  // APK has them (cheap, and always sent so an updated APK takes them over); the rest to the plugin
+  const build = await apkBuild()
+  const withButton = wanted.filter(p => isQuickLog(p, build))
+  const quick = await scheduleQuickLogReminders(withButton.map(quickLogItem)).catch((err: unknown) => {
     console.warn('[reminders] quick-log scheduling failed, using plain notifications:', err)
     return false
   })
-  const viaPlugin = quick ? wanted.filter(p => !isQuickLog(p)) : wanted
+  const viaPlugin = quick ? wanted.filter(p => !withButton.includes(p)) : wanted
   // A leading marker, so "on with nothing planned" still differs from "never scheduled"
   const print = `${on ? 'on' : 'off'}|${fingerprint(viaPlugin)}`
   if (localStorage.getItem(NATIVE_PLAN_KEY) === print) return

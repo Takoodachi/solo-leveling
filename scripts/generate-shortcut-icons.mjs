@@ -67,6 +67,7 @@ const WIDGET_ICONS = {
   food: 'utensils',
   water: 'glass-water',
   creatine: 'pill',
+  magnesium: 'moon',
 }
 
 for (const [id, name] of Object.entries(WIDGET_ICONS)) {

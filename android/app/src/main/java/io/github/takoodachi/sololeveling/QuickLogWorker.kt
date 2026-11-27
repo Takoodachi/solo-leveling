@@ -24,7 +24,7 @@ import org.json.JSONObject
 /**
  * One press of a reminder's log button ([QuickLog]). Like [StepsSyncWorker], the site does the
  * writing, loaded in a WebView nobody sees: it finds the job on `window.SoloBackground.task()`,
- * ticks creatine or adds a glass to that day, syncs, and answers through `done`
+ * ticks creatine or magnesium or adds a glass to that day, syncs, and answers through `done`
  * (src/features/reminders/quickLogTask.ts). The answer replaces the notification.
  */
 class QuickLogWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
