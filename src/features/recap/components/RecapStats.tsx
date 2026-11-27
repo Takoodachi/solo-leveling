@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { Beef, Dumbbell, Flame, Footprints, GlassWater, Pill, Route, Scale, Timer, Weight } from 'lucide-react'
+import { Beef, Dumbbell, Flame, Footprints, GlassWater, Moon, Pill, Route, Scale, Timer, Weight } from 'lucide-react'
 import IconTile from '@/components/IconTile'
 import { formatDurationMin } from '@/lib/format'
 import { formatVolume } from '@/lib/workoutMath'
@@ -73,6 +73,7 @@ export default function RecapStats({ recap, elapsedDays, finished }: Props) {
       )}
       {weight && <IconTile Icon={Scale} label="Body weight" value={bodyText(weight.to, unit)} note={weight.to === weight.from ? null : `${signed(inUnit(weight.to - weight.from, unit), unit)} over the ${period}`} />}
       {recap.creatineDays > 0 && <IconTile Icon={Pill} label="Creatine" value={`${recap.creatineDays} / ${elapsedDays} days`} />}
+      {recap.magnesiumDays > 0 && <IconTile Icon={Moon} label="Magnesium" value={`${recap.magnesiumDays} / ${elapsedDays} days`} />}
       {recap.waterGoalDays > 0 && <IconTile Icon={GlassWater} label="Water goal" value={`${recap.waterGoalDays} / ${elapsedDays} days`} />}
     </div>
   )

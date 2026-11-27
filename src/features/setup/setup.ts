@@ -5,13 +5,13 @@ import { today } from '@/lib/date'
 import { useSyncStatus } from '@/lib/syncStatus'
 import { useAuthStore } from '@/features/auth/authStore'
 import { logWeight } from '@/features/bodyMetrics/useBodyMetrics'
-import { DEFAULT_HOME_WIDGETS, homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
+import { DEFAULT_HOME_WIDGETS, homeWidgetsFrom, withCard } from '@/features/dashboard/homeWidgets'
 import { updateSettings } from '@/features/settings/hooks/useSettings'
 import { formulaMaintenance, goalPace, suggestedTargets, type GoalType, type Sex } from '@/features/settings/targetSuggestion'
 import { bodyKg, bodyWeight, cmFrom, feetInches, unitsOf, type Units } from '@/features/settings/units'
 import { spreadDays, startPlan, type StarterPlanId } from './plans'
 
-export type TrackChoice = 'food' | 'steps' | 'water' | 'creatine'
+export type TrackChoice = 'food' | 'steps' | 'water' | 'creatine' | 'magnesium'
 
 /** What the setup asks to track, and the Home cards each brings. The rest of Home is always there. */
 export const TRACK_CHOICES: { id: TrackChoice; cards: HomeWidgetId[] }[] = [
@@ -19,6 +19,7 @@ export const TRACK_CHOICES: { id: TrackChoice; cards: HomeWidgetId[] }[] = [
   { id: 'steps', cards: ['steps'] },
   { id: 'water', cards: ['water'] },
   { id: 'creatine', cards: ['creatine'] },
+  { id: 'magnesium', cards: ['magnesium'] },
 ]
 
 /** The Home cards the setup decides. */
@@ -166,13 +167,7 @@ export async function savedSetup(): Promise<SetupForm> {
 
 /** Home's cards with the trackers set to `chosen`: the others keep their place, an added one goes where it sits by default. */
 function withTrackers(current: HomeWidgetId[], chosen: HomeWidgetId[]): HomeWidgetId[] {
-  const cards = current.filter(id => !TRACKABLE.includes(id) || chosen.includes(id))
-  for (const id of chosen.filter(c => !cards.includes(c))) {
-    const later = DEFAULT_HOME_WIDGETS.slice(DEFAULT_HOME_WIDGETS.indexOf(id) + 1)
-    const at = cards.findIndex(c => later.includes(c))
-    cards.splice(at < 0 ? cards.length : at, 0, id)
-  }
-  return cards
+  return chosen.reduce(withCard, current.filter(id => !TRACKABLE.includes(id) || chosen.includes(id)))
 }
 
 /**
@@ -190,9 +185,7 @@ export async function finishSetup(form: SetupForm | null, redo = false): Promise
     if (form.avatar) settings.avatar = form.avatar
     if (form.theme) settings.theme = form.theme
     const chosen = cardsFor(form.track)
-    settings.homeWidgets = redo
-      ? withTrackers(homeWidgetsFrom(await db.settings.get(1)), chosen)
-      : DEFAULT_HOME_WIDGETS.filter(id => !TRACKABLE.includes(id) || chosen.includes(id))
+    settings.homeWidgets = withTrackers(redo ? homeWidgetsFrom(await db.settings.get(1)) : DEFAULT_HOME_WIDGETS, chosen)
     if (form.sex) settings.sex = form.sex
     settings.weightUnit = form.units.weight
     settings.heightUnit = form.units.height

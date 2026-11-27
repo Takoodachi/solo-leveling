@@ -5,6 +5,7 @@ import { requestSync } from '@/lib/sync'
 import { grantXp, XP } from '@/lib/xp'
 import type { MealType } from '@/types'
 import { homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
+import { SUPPLEMENTS } from '@/features/checkins/useCheckins'
 import { DEFAULT_STEP_GOAL, DEFAULT_WATER_GOAL_ML } from '@/features/settings/hooks/useSettings'
 
 /**
@@ -20,7 +21,7 @@ import { DEFAULT_STEP_GOAL, DEFAULT_WATER_GOAL_ML } from '@/features/settings/ho
  */
 
 export interface QuestObjective {
-  id: 'move' | 'workout' | 'steps' | 'protein' | 'food' | 'meals' | 'breakfast' | 'water' | 'creatine' | 'weigh'
+  id: 'move' | 'workout' | 'steps' | 'protein' | 'food' | 'meals' | 'breakfast' | 'water' | 'creatine' | 'magnesium' | 'weigh'
   label: string
   /** Where it stands, e.g. "6,000 / 10,000 steps". */
   progress: string
@@ -49,7 +50,7 @@ function hash(text: string): number {
 /** What a day's objectives are worked out from. */
 async function dayFacts(date: string) {
   const weekday = parseISO(date).getDay()
-  const [settings, targets, workouts, activity, logs, water, creatine, claim, skip, pause, routines, weighIns, lastWeighIn] = await Promise.all([
+  const [settings, targets, workouts, activity, logs, water, creatine, magnesium, claim, skip, pause, routines, weighIns, lastWeighIn] = await Promise.all([
     db.settings.get(1),
     db.targets.get(1),
     db.workouts.where('date').equals(date).count(),
@@ -57,6 +58,7 @@ async function dayFacts(date: string) {
     db.foodLog.where('date').equals(date).toArray(),
     db.checkins.get(`water-${date}`),
     db.checkins.get(`creatine-${date}`),
+    db.checkins.get(`magnesium-${date}`),
     db.checkins.get(claimId(date)),
     db.checkins.get(`skip-${date}`),
     db.checkins.get(`pause-${date}`),
@@ -66,12 +68,13 @@ async function dayFacts(date: string) {
   ])
   const cards = homeWidgetsFrom(settings)
   return {
-    date, settings, targets, workouts, logs, water, creatine, claim, weighIns, cards,
+    date, settings, targets, workouts, logs, water, creatine, magnesium, claim, weighIns, cards,
     steps: Math.max(0, ...activity.map(a => a.steps)),
     stepGoal: settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL,
     // The day's planned routine, unless it was skipped or training is paused
     planned: skip?.done || pause?.done ? undefined : routines.find(r => r.scheduleDays.includes(weekday)),
     tracksFood: cards.includes('calories') || cards.includes('macros'),
+    supplements: SUPPLEMENTS.filter(s => cards.includes(s)),
     // Weighing in is something they do: a weigh-in in the month before
     weighs: weighIns > 0 || (!!lastWeighIn && lastWeighIn.date >= toDateStr(subDays(parseISO(date), 30))),
   }
@@ -145,8 +148,13 @@ const KINDS: Record<'move' | 'eat' | 'habit', Option[]> = {
       },
     },
     {
-      available: f => f.cards.includes('creatine'),
-      build: f => ({ id: 'creatine', label: 'Take your creatine', progress: f.creatine?.done ? 'Taken' : 'Not yet', done: !!f.creatine?.done }),
+      // One option for every supplement on Home, so adding magnesium moved nobody's quest days
+      available: f => f.supplements.length > 0,
+      build: f => {
+        const kind = f.supplements[hash(`${f.date}:supplement`) % f.supplements.length]
+        const done = !!f[kind]?.done
+        return { id: kind, label: `Take your ${kind}`, progress: done ? 'Taken' : 'Not yet', done }
+      },
     },
     {
       available: f => f.weighs,

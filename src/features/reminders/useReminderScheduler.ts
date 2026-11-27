@@ -15,9 +15,10 @@ import { REMINDERS_CHANGED } from './useDeviceNotifications'
 
 /** The settings and today's state that decide which nudges are still due. */
 async function loadInputs(today: string, working: boolean): Promise<{ prefs: ReminderPrefs; facts: ReminderFacts }> {
-  const [settings, creatine, water, workouts, food, weighIns, routines, ahead] = await Promise.all([
+  const [settings, creatine, magnesium, water, workouts, food, weighIns, routines, ahead] = await Promise.all([
     db.settings.get(1),
     db.checkins.get(`creatine-${today}`),
+    db.checkins.get(`magnesium-${today}`),
     db.checkins.get(`water-${today}`),
     db.workouts.where('date').equals(today).toArray(),
     db.foodLog.where('date').equals(today).count(),
@@ -38,6 +39,7 @@ async function loadInputs(today: string, working: boolean): Promise<{ prefs: Rem
         workout: workouts.length > 0 || working,
         stretch: stretched || working,
         creatine: !!creatine?.done,
+        magnesium: !!magnesium?.done,
         food: food > 0,
         weight: weighIns > 0,
         water: (water?.amount ?? 0) >= (settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML),

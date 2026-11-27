@@ -44,7 +44,7 @@ export const SETTING_ENTRIES: Entry[] = [
   { id: 'sharing', title: 'Leaderboard sharing', subtitle: 'Settings › Leaderboard', keywords: 'privacy private share sharing visible hide friends public', Icon: Eye, to: '/settings#sharing', only: 'signedIn' },
   { id: 'share-routines', title: 'Show my routines', subtitle: 'Settings › Leaderboard', keywords: 'routines plan share friends copy privacy private visible', Icon: Eye, to: '/settings#sharing', only: 'signedIn' },
   ...(isAndroidApp() ? [{ id: 'health-steps', title: 'Samsung Health steps', subtitle: 'Settings › Steps', keywords: 'steps health connect samsung watch sync background import walking heart rate', Icon: Footprints, to: '/settings#steps' }] : []),
-  { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert alarm remind nudge workout stretch stretching creatine food weigh weight water recap time', Icon: Bell, to: '/settings#reminders' },
+  { id: 'reminders', title: 'Reminders', subtitle: 'Settings', keywords: 'notifications notify push alert alarm remind nudge workout stretch stretching creatine magnesium glycinate supplement food weigh weight water recap time', Icon: Bell, to: '/settings#reminders' },
   { id: 'weight-unit', title: 'Weight in kg or lb', subtitle: 'Settings › Units', keywords: 'units unit kg kgs kilograms kilos lb lbs pounds metric imperial weight weights bodyweight lifting lifted heavy', Icon: Scale, to: '/settings#units--weight' },
   { id: 'height-unit', title: 'Height in cm or feet', subtitle: 'Settings › Units', keywords: 'units unit height tall cm centimetres centimeters metres feet foot ft inches inch metric imperial', Icon: Ruler, to: '/settings#units--height' },
   { id: 'workout-tips', title: 'Tips during workouts', subtitle: 'Settings › Workouts', keywords: 'suggestions hints progression weight reps increase recommend advice personal best record pr pace target goal', Icon: Lightbulb, to: '/settings#workouts' },
@@ -54,7 +54,7 @@ export const SETTING_ENTRIES: Entry[] = [
   { id: 'card-style', title: 'Card style', subtitle: 'Settings › Theme', keywords: 'cards boxes glass outline glow raised aura solid border transparent look', Icon: Palette, to: '/settings#theme' },
   { id: 'background-photo', title: 'Background photo', subtitle: 'Settings › Theme', keywords: 'wallpaper background picture image photo behind', Icon: Palette, to: '/settings#theme' },
   { id: 'bottom-bar', title: 'Bottom bar', subtitle: 'Settings', keywords: 'navigation nav bar tabs menu buttons', Icon: PanelBottom, to: '/settings#bottom-bar' },
-  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings › Home screen', keywords: 'widgets cards customize home order arrange daily quest steps calories water creatine macros streak', Icon: LayoutGrid, to: '/settings#home-screen' },
+  { id: 'home-screen', title: 'Home screen layout', subtitle: 'Settings › Home screen', keywords: 'widgets cards customize home order arrange daily quest steps calories water creatine magnesium glycinate supplement macros streak', Icon: LayoutGrid, to: '/settings#home-screen' },
   { id: 'home-search', title: 'Search bar on Home', subtitle: 'Settings › Home screen', keywords: 'search bar home find', Icon: LayoutGrid, to: '/settings#home-screen' },
   ...EXTRAS.filter(x => x.only !== 'android' || isAndroidApp()).map((x): Entry => ({
     id: `extra-${x.key}`, title: x.label, subtitle: 'Settings › Extras', keywords: `${x.keywords} ${x.description}`, Icon: ToggleRight,

@@ -1,12 +1,14 @@
-import { Check, Pill } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { tap } from '@/lib/haptics'
-import { toggleCheckin, useCheckin, useCheckinStreak } from '../useCheckins'
+import { homeWidgetDef } from '@/features/dashboard/homeWidgets'
+import { toggleCheckin, useCheckin, useCheckinStreak, type Supplement } from '../useCheckins'
 
-/** Home tile: one tap ticks off the selected day's creatine. */
-export default function CreatineCard({ date, today }: { date: string; today: string }) {
-  const done = useCheckin('creatine', date)
-  const streak = useCheckinStreak('creatine', today)
+/** Home tile: one tap ticks off the selected day's creatine or magnesium. */
+export default function SupplementCard({ kind, date, today }: { kind: Supplement; date: string; today: string }) {
+  const done = useCheckin(kind, date)
+  const streak = useCheckinStreak(kind, today)
+  const def = homeWidgetDef(kind)
   const isToday = date === today
   const future = date > today
 
@@ -17,20 +19,21 @@ export default function CreatineCard({ date, today }: { date: string; today: str
   async function handleTap() {
     if (future) return
     if (!done) tap() // inside the tap: iPhones only tick from a touch
-    await toggleCheckin('creatine', date)
+    await toggleCheckin(kind, date)
   }
 
+  if (!def) return null
   return (
     <button
       type="button"
-      id="creatine" // the creatine reminder opens /home#creatine
+      id={kind} // its reminder opens /home#creatine or /home#magnesium
       onClick={() => void handleTap()}
       disabled={future}
       aria-pressed={done}
       className="flex min-h-[150px] flex-col justify-between rounded-3xl bg-card p-4 text-left disabled:opacity-60"
     >
       <span className="flex w-full items-start justify-between">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><Pill size={20} /></span>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary"><def.icon size={20} /></span>
         <span
           key={String(done)}
           className={cn(
@@ -42,7 +45,7 @@ export default function CreatineCard({ date, today }: { date: string; today: str
         </span>
       </span>
       <span className="block">
-        <span className="block font-semibold">Creatine</span>
+        <span className="block font-semibold">{def.label}</span>
         <span className="block text-sm text-muted-foreground">
           {status}
           {isToday && streak >= 2 && <> · {streak}-day streak</>}

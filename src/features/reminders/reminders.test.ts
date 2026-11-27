@@ -52,6 +52,16 @@ describe('planReminders', () => {
     ])
   })
 
+  it('reminds of magnesium in the evening once it’s switched on, and not once it’s ticked', () => {
+    expect(reminderPrefs(undefined).magnesium).toEqual({ on: false, time: '21:00' })
+    const magnesium = reminderPrefs({ reminders: { magnesium: { on: true, time: '21:00' } } } as Partial<Settings> as Settings)
+    expect(planReminders(magnesium, facts, morning, 2)).toMatchObject([
+      { key: 'magnesium-2026-11-02', at: new Date(2026, 10, 2, 21, 0).getTime(), url: '/home#magnesium' },
+      { key: 'magnesium-2026-11-03' },
+    ])
+    expect(planReminders(magnesium, { ...facts, done: { magnesium: true } }, morning, 2).map(p => p.key)).toEqual(['magnesium-2026-11-03'])
+  })
+
   it('announces the recap on Mondays only, and nothing already past', () => {
     const recaps = planReminders(prefs, facts, morning, 14).filter(p => p.kind === 'recap').map(p => p.key)
     expect(recaps).toEqual(['recap-2026-11-02', 'recap-2026-11-09'])

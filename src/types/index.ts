@@ -91,7 +91,7 @@ export interface Achievement {
 export type ReminderDays = 'daily' | 'workout-days'
 
 /** What the app can remind you about (Settings → Reminders). */
-export type ReminderKind = 'workout' | 'stretch' | 'creatine' | 'food' | 'weight' | 'water' | 'recap'
+export type ReminderKind = 'workout' | 'stretch' | 'creatine' | 'magnesium' | 'food' | 'weight' | 'water' | 'recap'
 
 export interface ReminderPref {
   on: boolean
@@ -100,7 +100,7 @@ export interface ReminderPref {
   days?: ReminderDays
 }
 
-export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'macros' | 'rank' | 'leaderboard' | 'streak'
+export type HomeWidgetId = 'workout' | 'quest' | 'steps' | 'calories' | 'water' | 'creatine' | 'magnesium' | 'macros' | 'rank' | 'leaderboard' | 'streak'
 
 /** Pages that can sit in the two customizable bottom-bar slots (Home and Settings are fixed). */
 export type NavTabId = 'workouts' | 'nutrition' | 'analytics' | 'strength' | 'leaderboard' | 'profile'
@@ -331,10 +331,10 @@ export interface Challenge {
  * 'pause': training is paused that day (features/workouts/pause.ts): like a skip, and no stretching reminder either.
  * 'targets': the week's check-in was answered (`targets-<Monday>`; amount = the kcal applied, 0 = kept).
  */
-export type CheckinKey = 'creatine' | 'water' | 'quest' | 'achxp' | 'skip' | 'pause' | 'targets'
+export type CheckinKey = 'creatine' | 'magnesium' | 'water' | 'quest' | 'achxp' | 'skip' | 'pause' | 'targets'
 
 /**
- * One row per habit per day (id `creatine-YYYY-MM-DD`, `water-YYYY-MM-DD`).
+ * One row per habit per day (id `creatine-YYYY-MM-DD`, `magnesium-YYYY-MM-DD`, `water-YYYY-MM-DD`).
  * Unticking sets done = false; water keeps a running `amount` in ml.
  * `quest-YYYY-MM-DD` (done) records that the day's quest XP was given, so it's given once.
  * `skip-YYYY-MM-DD` (done) skips that day's planned workout; undoing it sets done = false.

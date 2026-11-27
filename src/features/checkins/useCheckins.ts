@@ -7,6 +7,11 @@ import { toDateStr } from '@/lib/date'
 
 const idFor = (key: CheckinKey, date: string) => `${key}-${date}`
 
+/** The daily supplements Home ticks off, one check-in a day each (`magnesium-YYYY-MM-DD`). */
+export const SUPPLEMENTS = ['creatine', 'magnesium'] as const
+export type Supplement = (typeof SUPPLEMENTS)[number]
+export const isSupplement = (key: unknown): key is Supplement => SUPPLEMENTS.includes(key as Supplement)
+
 export function useCheckin(key: CheckinKey, date: string): boolean {
   return useLiveQuery(() => db.checkins.get(idFor(key, date)), [key, date])?.done ?? false
 }

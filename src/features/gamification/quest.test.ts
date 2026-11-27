@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '@/db'
 import { daysBefore, resetDb } from '@/test/db'
 import type { HomeWidgetId, Settings } from '@/types'
+import { DEFAULT_HOME_WIDGETS, withCard } from '@/features/dashboard/homeWidgets'
 import { loadQuest } from './quest'
 
 const now = Date.now()
@@ -56,6 +57,29 @@ describe('loadQuest', () => {
       expect(quest.objectives).toHaveLength(3)
       expect(quest.objectives.map(o => o.id)).not.toContain('workout')
     }
+  })
+
+  it('asks for magnesium only once its card is on Home, on days that asked for creatine before', async () => {
+    const supplementDays = async (ids: string[]) => {
+      const days: string[] = []
+      for (const date of month) if ((await loadQuest(date)).objectives.some(o => ids.includes(o.id))) days.push(date)
+      return days
+    }
+    await seed()
+    const creatineDays = await supplementDays(['creatine'])
+    expect(creatineDays.length).toBeGreaterThan(0)
+    expect(await supplementDays(['magnesium'])).toEqual([])
+
+    // Adding the card moves nobody's other objectives: the same days take one of the two
+    await seed(withCard(DEFAULT_HOME_WIDGETS, 'magnesium'))
+    expect(await supplementDays(['creatine', 'magnesium'])).toEqual(creatineDays)
+    const magnesiumDays = await supplementDays(['magnesium'])
+    expect(magnesiumDays.length).toBeGreaterThan(0)
+    expect(magnesiumDays.length).toBeLessThan(creatineDays.length)
+
+    const day = magnesiumDays[0]
+    await db.checkins.put({ uuid: `magnesium-${day}`, date: day, key: 'magnesium', done: true, updatedAt: now })
+    expect((await loadQuest(day)).objectives.find(o => o.id === 'magnesium')).toMatchObject({ label: 'Take your magnesium', done: true })
   })
 
   it('leaves eating out for someone not tracking food, and is never about calories', async () => {
