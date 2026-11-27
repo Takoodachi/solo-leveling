@@ -15,8 +15,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Creatine and water reminders with a button that logs without opening the app ("Tick it off",
- * "Add a glass"). The site plans them (src/features/reminders/deliver.ts) and hands them over
+ * Creatine, magnesium and water reminders with a button that logs without opening the app ("Tick it
+ * off", "Add a glass"). The site plans them (src/features/reminders/deliver.ts) and hands them over
  * through [SoloPlugin.scheduleQuickLog]; they're kept here so a reboot doesn't lose them, set
  * as exact alarms, and posted by [QuickLogReceiver] when one goes off. The other reminders stay
  * with the local-notifications plugin, whose buttons can only open the app.

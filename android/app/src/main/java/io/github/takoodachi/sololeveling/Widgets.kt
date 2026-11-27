@@ -28,8 +28,8 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 
 /**
- * Home-screen widgets: Today (calories, protein, steps, water and creatine), Quick log (four
- * buttons into the app), Today's workout and Strength rank, one provider each at the bottom. The
+ * Home-screen widgets: Today (calories, protein, steps, water, creatine and magnesium), Quick log
+ * (buttons into the app), Today's workout and Strength rank, one provider each at the bottom. The
  * site sends today's numbers and the theme's colours (src/features/widgets/sendWidgets.ts →
  * [SoloPlugin.setWidgets]) as they change and as the app leaves the screen; they're kept here and
  * drawn from. A new day with the app closed starts from nothing logged, with the routine planned
@@ -79,7 +79,8 @@ object Widgets {
         val data = prefs(context).getString(DATA, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return
         if (data.optString("date") != date) return
         when (kind) {
-            "creatine" -> data.put("creatine", true)
+            // Magnesium only where the widgets show it (null = its card isn't on Home)
+            "creatine", "magnesium" -> if (data.has(kind) && !data.isNull(kind)) data.put(kind, true) else return
             "water" -> {
                 val water = data.optJSONObject("water")
                 if (water == null || waterMl == null) return
@@ -160,6 +161,9 @@ object Widgets {
         val water = now("water", "ml")
         val waterGoal = goal("water", "goal")
         val creatine = fresh && json?.optBoolean("creatine") == true
+        /** Magnesium is on Home (the site sends null when it isn't), and whether it's taken today. */
+        val tracksMagnesium = json?.has("magnesium") == true && !json.isNull("magnesium")
+        val magnesium = fresh && json?.optBoolean("magnesium") == true
 
         private val workout = json?.optJSONObject("workout")
         /** Today's routine; on a new day, the one planned for its weekday. */
@@ -188,13 +192,17 @@ object Widgets {
         v.setTextColor(R.id.today_title, c.text)
         v.setTextViewText(R.id.today_creatine, if (d.creatine) "Creatine ✓" else "+ Creatine")
         v.setTextColor(R.id.today_creatine, if (d.creatine) c.accent else c.muted)
+        v.setViewVisibility(R.id.today_magnesium, if (d.tracksMagnesium) View.VISIBLE else View.GONE)
+        v.setTextViewText(R.id.today_magnesium, if (d.magnesium) "Magnesium ✓" else "+ Magnesium")
+        v.setTextColor(R.id.today_magnesium, if (d.magnesium) c.accent else c.muted)
         stat(v, R.id.kcal_label, R.id.kcal_value, R.id.kcal_bar, c, whole(d.kcal), d.kcalTarget, whole(d.kcalTarget), d.kcal)
         stat(v, R.id.protein_label, R.id.protein_value, R.id.protein_bar, c, whole(d.protein), d.proteinTarget, "${whole(d.proteinTarget)} g", d.protein)
         stat(v, R.id.steps_label, R.id.steps_value, R.id.steps_bar, c, whole(d.steps), d.stepGoal, whole(d.stepGoal), d.steps)
         stat(v, R.id.water_label, R.id.water_value, R.id.water_bar, c, litres(d.water), d.waterGoal, "${litres(d.waterGoal)} L", d.water)
         v.setOnClickPendingIntent(R.id.widget_root, open(context, 7101, "/home"))
-        // The tick itself happens as the app opens (src/features/checkins/useCreatineLink.ts)
+        // The tick itself happens as the app opens (src/features/checkins/useSupplementLink.ts)
         v.setOnClickPendingIntent(R.id.today_creatine, open(context, 7102, "/home?log=creatine"))
+        v.setOnClickPendingIntent(R.id.today_magnesium, open(context, 7103, "/home?log=magnesium"))
         return v
     }
 
@@ -219,10 +227,13 @@ object Widgets {
             "Water", false, open(context, 7113, "/home?log=water"))
         button(v, R.id.quick_creatine, R.id.quick_creatine_bg, R.id.quick_creatine_icon, R.id.quick_creatine_label, c,
             if (d.creatine) "Taken" else "Creatine", d.creatine, open(context, 7114, "/home?log=creatine"))
+        v.setViewVisibility(R.id.quick_magnesium, if (d.tracksMagnesium) View.VISIBLE else View.GONE)
+        button(v, R.id.quick_magnesium, R.id.quick_magnesium_bg, R.id.quick_magnesium_icon, R.id.quick_magnesium_label, c,
+            if (d.magnesium) "Taken" else "Magnesium", d.magnesium, open(context, 7115, "/home?log=magnesium"))
         return v
     }
 
-    /** A Quick log button; `lit` (a workout running, creatine taken) fills it with the accent. */
+    /** A Quick log button; `lit` (a workout running, creatine or magnesium taken) fills it with the accent. */
     private fun button(v: RemoteViews, frame: Int, bg: Int, icon: Int, label: Int, c: Colors, text: String, lit: Boolean, tap: PendingIntent) {
         v.setInt(bg, "setColorFilter", if (lit) c.accent else c.secondary)
         v.setInt(icon, "setColorFilter", if (lit) c.onAccent else c.text)

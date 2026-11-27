@@ -17,7 +17,7 @@ class QuickLogReceiver : BroadcastReceiver() {
                 val id = intent.getIntExtra(QuickLog.EXTRA_ID, 0)
                 val kind = intent.getStringExtra(QuickLog.EXTRA_KIND) ?: return
                 val date = intent.getStringExtra(QuickLog.EXTRA_DATE) ?: return
-                QuickLog.working(context, id, if (kind == "creatine") "Ticking off creatine…" else "Adding a glass of water…")
+                QuickLog.working(context, id, if (kind == "water") "Adding a glass of water…" else "Ticking off $kind…")
                 QuickLogWorker.enqueue(context, id, kind, date)
             }
             Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED, "android.intent.action.QUICKBOOT_POWERON" -> QuickLog.rearm(context)

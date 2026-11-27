@@ -13,6 +13,7 @@ import { computeRanks } from '@/features/ranks/computeRanks'
 import { badgeImage } from '@/features/ranks/components/badgeImage'
 import type { RankInfo } from '@/features/ranks/tiers'
 import { useWorkoutStore } from '@/features/workouts/store'
+import { homeWidgetsFrom } from '@/features/dashboard/homeWidgets'
 
 /**
  * The Android app's home-screen widgets (android/…/Widgets.kt) are drawn natively from what this
@@ -36,6 +37,8 @@ export interface WidgetData {
   steps: { value: number; goal: number }
   water: { ml: number; goal: number }
   creatine: boolean
+  /** Taken today; null while its card isn't on Home, which keeps it off the widgets. */
+  magnesium: boolean | null
   workout: { routine: RoutineInfo | null; done: boolean; skipped: boolean; active: string | null }
   /** Each weekday's routine, Sunday first (as getDay counts), as its next day shows it: none while training is paused. */
   week: (RoutineInfo | null)[]
@@ -69,12 +72,13 @@ function routineInfo(r: Routine | undefined, exercises: ReadonlyMap<string, Exer
 async function build(): Promise<{ data: WidgetData; overall: RankInfo | null }> {
   const day = today()
   const dateIn = (n: number) => toDateStr(addDays(parseISO(day), n))
-  const [[summary], budget, settings, water, creatine, skip, ahead, routines, exercises, done, ranks] = await Promise.all([
+  const [[summary], budget, settings, water, creatine, magnesium, skip, ahead, routines, exercises, done, ranks] = await Promise.all([
     daySummaries([day]),
     calorieBudget(day),
     db.settings.get(1),
     db.checkins.get(`water-${day}`),
     db.checkins.get(`creatine-${day}`),
+    db.checkins.get(`magnesium-${day}`),
     db.checkins.get(`skip-${day}`),
     db.checkins.where('date').between(day, dateIn(7), true, true).toArray(),
     db.routines.toArray(),
@@ -100,6 +104,7 @@ async function build(): Promise<{ data: WidgetData; overall: RankInfo | null }> 
       steps: { value: summary?.steps ?? 0, goal: settings?.dailyStepGoal ?? DEFAULT_STEP_GOAL },
       water: { ml: water?.amount ?? 0, goal: settings?.waterGoalMl ?? DEFAULT_WATER_GOAL_ML },
       creatine: !!creatine?.done,
+      magnesium: homeWidgetsFrom(settings).includes('magnesium') ? !!magnesium?.done : null,
       workout: { routine: paused.has(day) ? null : plan(dow), done: done > 0, skipped: !!skip?.done, active: draft && !draft.editing ? draft.name : null },
       week,
       rank: overall && {

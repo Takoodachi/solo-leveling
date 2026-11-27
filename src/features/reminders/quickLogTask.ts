@@ -1,10 +1,10 @@
 import { db } from '@/db'
-import { setWater, tickCheckin } from '@/features/checkins/useCheckins'
+import { isSupplement, setWater, tickCheckin } from '@/features/checkins/useCheckins'
 import { syncInBackground } from '@/features/health/backgroundSteps'
 import { DEFAULT_WATER_GLASS_ML, DEFAULT_WATER_GOAL_ML } from '@/features/settings/hooks/useSettings'
 
 /**
- * A reminder's button, pressed with the app closed (Android). The creatine and water
+ * A reminder's button, pressed with the app closed (Android). The creatine, magnesium and water
  * reminders carry "Tick it off" / "Add a glass" (android/…/QuickLog.kt). The log lives in the
  * site's IndexedDB, so the button has the app load this page off-screen with the job on
  * `window.SoloBackground`; main.tsx sees `task()` and runs this instead of drawing the app.
@@ -12,7 +12,7 @@ import { DEFAULT_WATER_GLASS_ML, DEFAULT_WATER_GOAL_ML } from '@/features/settin
  */
 
 export interface QuickLogBridge {
-  /** JSON: { kind: 'creatine' | 'water', date: 'YYYY-MM-DD' }. */
+  /** JSON: { kind: 'creatine' | 'magnesium' | 'water', date: 'YYYY-MM-DD' }. */
   task(): string
   /** JSON: { ok, title, detail, total? } (total = water's new day total, for the widgets). */
   done(result: string): void
@@ -25,7 +25,10 @@ export function quickLogBridge(): QuickLogBridge | undefined {
 
 /** What was logged, as the notification says it; water also hands back the day's new total (for the widgets). */
 async function log(kind: unknown, date: string): Promise<{ title: string; total?: number }> {
-  if (kind === 'creatine') return { title: (await tickCheckin('creatine', date)) ? 'Creatine ticked off' : 'Creatine was already ticked off' }
+  if (isSupplement(kind)) {
+    const name = kind === 'creatine' ? 'Creatine' : 'Magnesium'
+    return { title: (await tickCheckin(kind, date)) ? `${name} ticked off` : `${name} was already ticked off` }
+  }
   if (kind !== 'water') throw new Error('Unknown reminder')
   const settings = await db.settings.get(1)
   const glass = settings?.waterGlassMl ?? DEFAULT_WATER_GLASS_ML
