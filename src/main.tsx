@@ -9,6 +9,7 @@ import { applyCachedCardStyle } from '@/features/settings/cardStyle'
 import { isLoadingAhead } from '@/lib/lazyAhead'
 import { backgroundBridge, runBackgroundSteps } from '@/features/health/backgroundSteps'
 import { quickLogBridge, runQuickLog } from '@/features/reminders/quickLogTask'
+import { keepUpToDate } from '@/lib/appUpdate'
 
 // Ask the browser not to evict our IndexedDB under storage pressure (best-effort;
 // installed home-screen apps on iOS are already exempt from Safari's 7-day cap).
@@ -70,6 +71,8 @@ function startApp(): void {
   // Paint the last-used theme and card style before the first render, so launches don't flash the defaults.
   applyCachedTheme()
   applyCachedCardStyle()
+  // A new release reaches a page that's already running, not only the next launch (lib/appUpdate.ts)
+  keepUpToDate()
 
   Promise.all([seedDatabase(), restoreDraftFromStorage()])
     .then(() => {
