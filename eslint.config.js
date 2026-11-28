@@ -7,7 +7,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   // supabase/functions is Deno code (deployed separately), not part of the web app.
-  globalIgnores(['dist', 'supabase/functions', '@', 'android']),
+  // .claude: side sessions' git worktrees, whole copies of the project, live in .claude/worktrees
+  globalIgnores(['dist', 'supabase/functions', '@', 'android', '.claude']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
