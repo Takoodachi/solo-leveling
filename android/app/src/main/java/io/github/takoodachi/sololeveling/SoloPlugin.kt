@@ -44,7 +44,8 @@ import java.time.Instant
  * - the app's own background follows the site's theme ([setBackground]);
  * - the workout in progress shows as a notification ([WorkoutNotice]), and its heart rate is
  *   read from Health Connect afterwards ([heartRate]);
- * - the home-screen widgets are drawn from what the site sends ([Widgets]).
+ * - the home-screen widgets are drawn from what the site sends ([Widgets]);
+ * - the app fetches and installs its own new versions ([AppUpdate]).
  */
 @CapacitorPlugin(name = "Solo")
 class SoloPlugin : Plugin() {
@@ -80,6 +81,11 @@ class SoloPlugin : Plugin() {
         if (look.contains(BACKGROUND)) paintBackground(look.getInt(BACKGROUND, 0))
         announceShortcut(activity.intent)
         WatchActions.plugin = java.lang.ref.WeakReference(this)
+        runCatching { AppUpdate.opened(context) }
+    }
+
+    override fun handleOnResume() {
+        AppUpdate.showQuestion(activity)
     }
 
     /** A button pressed on the watch app ([WatchActions]), for the site to act on. */
@@ -285,6 +291,27 @@ class SoloPlugin : Plugin() {
     fun appBuild(call: PluginCall) {
         val info = context.packageManager.getPackageInfo(context.packageName, 0)
         call.resolve(JSObject().put("build", PackageInfoCompat.getLongVersionCode(info)))
+    }
+
+    /**
+     * Fetches build `build` of this app from its GitHub release and, with `install`, installs it over
+     * this one ([AppUpdate]): the app closes and comes back as the new build. Resolves once the APK is
+     * here (installing: once it's in, which this process seldom lives to see); rejects with why not.
+     */
+    @PluginMethod
+    fun updateApp(call: PluginCall) {
+        val build = call.getInt("build") ?: return call.reject("No build")
+        val install = call.getBoolean("install") ?: false
+        val current = PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
+        if (build <= current) return call.reject("Already on build $current")
+        scope.launch(Dispatchers.IO) {
+            try {
+                if (install) AppUpdate.install(context, build) { error -> if (error == null) call.resolve() else call.reject(error) }
+                else AppUpdate.fetch(context, build).also { call.resolve() }
+            } catch (e: Exception) {
+                call.reject(e.message ?: "Couldn’t update the app")
+            }
+        }
     }
 
     /** The workout in progress, in the shade and on the lock screen (src/features/workouts/workoutNotice.ts). */
