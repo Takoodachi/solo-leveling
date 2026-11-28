@@ -1,12 +1,14 @@
-// Builds the Android app (the owner's phone): a debug APK, installed by hand.
+// Builds the Android app (the owner's phone): a debug APK.
 // Run: npm run android            (add -- --install to put it on a USB-connected phone,
 //                                   -- --watch=<ip:port> to put the watch app on a paired watch)
+//      npm run android:release    builds it and publishes it as the GitHub release apk-<build>,
+//                                 which every app from build 11 on installs by itself (AppUpdate.kt)
 //
 // The app loads the live site (capacitor.config.ts), so web changes reach it on deploy and
 // this only needs re-running after native changes: plugins, permissions, icons, capacitor.config.
 // CAP_SERVER_URL=http://10.0.2.2:5174 npm run android  builds one that loads a dev server instead.
 import { execFileSync, spawnSync } from 'child_process'
-import { copyFileSync, existsSync } from 'fs'
+import { copyFileSync, existsSync, readFileSync } from 'fs'
 import { homedir } from 'os'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
@@ -34,6 +36,29 @@ env.ANDROID_HOME ??= win
 
 const run = (cmd, args, cwd = root) => execFileSync(cmd, args, { cwd, env, stdio: 'inherit', shell: win })
 
+// --release: checked before the build, since a release can't be taken back once phones have it
+const REPO = 'Takoodachi/solo-leveling'
+const release = process.argv.includes('--release')
+const apkSource = readFileSync(join(root, 'src', 'lib', 'apkBuild.ts'), 'utf8')
+const build = Number(/build: (\d+)/.exec(apkSource)?.[1])
+const news = /news: '((?:[^'\\]|\\.)*)'/.exec(apkSource)?.[1].replace(/\\(.)/g, '$1') ?? ''
+// Without a shell, so the notes' spaces stay one argument
+const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim()
+const gh = (...args) => spawnSync('gh', [...args, '--repo', REPO], { cwd: root, encoding: 'utf8' })
+const sha = release ? git('rev-parse', 'HEAD') : ''
+if (release) {
+  const stop = message => {
+    console.error(`\n${message}`)
+    process.exit(1)
+  }
+  if (env.CAP_SERVER_URL) stop('A release must load the live site: unset CAP_SERVER_URL.')
+  // A content diff, not `git status`: with core.autocrlf, files `cap sync` rewrites with LF read as changed there
+  const changed = spawnSync('git', ['diff', 'HEAD', '--quiet'], { cwd: root }).status !== 0 || git('ls-files', '--others', '--exclude-standard')
+  if (changed) stop('Commit everything first: the release is tagged at this commit.')
+  if (gh('release', 'view', `apk-${build}`).status === 0) stop(`apk-${build} is out already: bump LATEST_APK.build in src/lib/apkBuild.ts.`)
+  if (spawnSync('gh', ['api', `repos/${REPO}/commits/${sha}`, '--silent']).status !== 0) stop('Push this commit first (a branch will do): the release is tagged at it.')
+}
+
 run('npm', ['run', 'build']) // Capacitor copies dist/ into the APK (a fallback; the live site is what loads)
 run('npx', ['cap', 'sync', 'android'])
 const androidDir = join(root, 'android')
@@ -47,6 +72,16 @@ console.log(`\nBuilt ${out}${env.CAP_SERVER_URL ? ` (loads ${env.CAP_SERVER_URL}
 const watchOut = join(root, 'solo-leveling-watch.apk')
 copyFileSync(join(root, 'android', 'wear', 'build', 'outputs', 'apk', 'debug', 'wear-debug.apk'), watchOut)
 console.log(`Built ${watchOut} (the Galaxy Watch app: README → Watch app)`)
+
+// The watch app stays out: it's installed over Wireless debugging (README → Watch app)
+if (release) {
+  const made = gh('release', 'create', `apk-${build}`, out, '--target', sha, '--title', `Android app, build ${build}`, '--notes', news)
+  if (made.status !== 0) {
+    console.error(made.stderr)
+    process.exit(1)
+  }
+  console.log(`Published ${made.stdout.trim()}: apps from build 11 on install it by themselves once the site's LATEST_APK says ${build}`)
+}
 
 const adb = join(env.ANDROID_HOME, 'platform-tools', win ? 'adb.exe' : 'adb')
 if (process.argv.includes('--install')) run(adb, ['install', '-r', out])

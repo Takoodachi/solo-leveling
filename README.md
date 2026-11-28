@@ -86,12 +86,62 @@ icons, `capacitor.config.ts`); web changes just need the usual deploy.
 open it with when Android asks), or connect by USB with developer mode on and run
 `npm run android -- --install`. Updating = installing a newer APK over it; data is kept.
 
+**Updates install themselves** (from build 11 on). To release one: bump `LATEST_APK` in
+`src/lib/apkBuild.ts` (build, date, news), commit and push (a branch is enough), then run
+
+```bash
+npm run android:release
+```
+
+It builds the APK and publishes it as the GitHub release `apk-<build>`. Then merge to `main`, which
+deploys the site that tells the phones. Each app fetches the new APK at its next launch and installs
+it the next time it's left with no workout open, or at once from *Update now*; a notification
+("Updated to build N") opens it again. The first time, Android asks to allow installs from Solo
+Leveling. Google Play Protect asks to scan a build that no phone has scanned yet (*Scan app*, then
+*Install*); once one has, it goes in without asking on any phone, so trying each release in the
+emulator first (below) spares the phone that question. On a Samsung, *Auto Blocker* (Settings →
+Security and privacy) has to stay off, as it must for installing by hand.
+
+**The signing key**: every APK is signed with this computer's Android debug key,
+`%USERPROFILE%\.android\debug.keystore`, and Android only updates an app with an APK signed by the
+same key (the watch app pairs only with it too). **Keep a copy of that file somewhere safe.** Without
+it, the next APK can only be installed after uninstalling the app.
+
 **First run**: sign in (the app has its own storage, separate from Chrome's home-screen app),
 then Settings → Steps → **Connect** and allow *Steps*. In Samsung Health, turn on
 Settings → Health Connect and let it share steps. Steps then import whenever the app is opened.
 
 **Dev**: `CAP_SERVER_URL=http://10.0.2.2:5174 npm run android` builds an APK that loads a local
 dev server (`npm run dev -- --host 127.0.0.1 --port 5174`) in the Android emulator.
+
+**The emulator** (from Android Studio's SDK; the device here is `Medium_Phone`, Android 16 with Google Play):
+
+```bash
+"$LOCALAPPDATA/Android/Sdk/emulator/emulator.exe" -avd Medium_Phone -qt-hide-window -gpu host
+```
+
+starts it without a window (leave out `-qt-hide-window` to see it). It's ready when
+`adb shell getprop sys.boot_completed` says 1 (adb is `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`).
+`adb install -r -g solo-leveling.apk` installs an APK with its permissions granted,
+`adb exec-out screencap -p > shot.png` takes a screenshot, `adb shell input tap <x> <y>` taps, and
+`adb shell uiautomator dump` lists what's on screen with its bounds. For a local copy of the site on
+a secure address (camera, service worker), build with `CAP_SERVER_URL=http://localhost:4173`, serve a
+build with `npx vite preview --host 127.0.0.1 --port 4173` and run `adb reverse tcp:4173 tcp:4173`.
+
+**Testing an update in the emulator** (a release N, before it's merged to `main`), in this order:
+
+1. With `LATEST_APK.build` set to N − 1 for a moment (not committed), run
+   `CAP_SERVER_URL=http://localhost:4173 npm run android` and copy `solo-leveling.apk` aside: an older
+   app that loads the local site.
+2. Back at N, commit, push and `npm run android:release`. That also leaves `dist/` built at N.
+3. `npx vite preview --host 127.0.0.1 --port 4173`, `adb reverse tcp:4173 tcp:4173`, then
+   `adb install -r -d -i com.google.android.packageinstaller <the older APK>` (`-i` makes Android's
+   installer the installer of record, as after an install by hand).
+4. Open the app: it fetches apk-N (*A newer app is out*). Press Home. If Play Protect asks, tap
+   *Scan app*, then *Install*; that scan is what spares the phones the question. "Updated to build N"
+   appears in the shade, and
+   `adb shell dumpsys package io.github.takoodachi.sololeveling | grep -E "versionCode|installerPackageName"`
+   shows it. Step 3's install puts the older app back to go again (a downgrade, data kept).
 
 **What only the app has** (all need a current APK; older ones say so in Settings):
 - **Reminders** as the phone's own scheduled notifications: no server, they ring with the app closed.

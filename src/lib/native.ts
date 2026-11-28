@@ -128,6 +128,8 @@ interface SoloPlugin {
   setWidgets(options: { data: string; emblem?: string }): Promise<void>
   /** Heart rate between two times (ms). Since heart rate from the watch. */
   heartRate(options: { start: number; end: number }): Promise<HeartRateReading>
+  /** Fetches build `build` from its GitHub release and, with `install`, installs it over this one (AppUpdate.kt). Since build 11. */
+  updateApp(options: { build: number; install: boolean }): Promise<void>
   addListener<E extends keyof SoloEvents>(event: E, listener: (event: SoloEvents[E]) => void): Promise<{ remove: () => Promise<void> }>
 }
 
@@ -164,6 +166,7 @@ export async function soloPlugin(): Promise<SoloPlugin | null> {
     clearWorkoutNotice: () => native.clearWorkoutNotice(),
     heartRate: options => native.heartRate(options),
     setWidgets: options => native.setWidgets(options),
+    updateApp: options => native.updateApp(options),
     addListener: (event, listener) => native.addListener(event, listener),
   }
 }
@@ -302,6 +305,19 @@ export async function apkBuild(): Promise<number> {
   if (!soloHas('appBuild')) return 0
   const plugin = await soloPlugin()
   return (await plugin?.appBuild().catch(() => null))?.build ?? 0
+}
+
+/**
+ * Fetches build `build` of the APK and, with `install`, installs it over this one: the app closes,
+ * and a notification opens it again as the new build. Rejects with why not (offline, the release
+ * isn't up yet, Android's question answered "Cancel"). False in an APK from before build 11.
+ */
+export async function updateApk(build: number, install: boolean): Promise<boolean> {
+  if (!soloHas('updateApp')) return false
+  const plugin = await soloPlugin()
+  if (!plugin) return false
+  await plugin.updateApp({ build, install })
+  return true
 }
 
 /** Ask for the app icon of a theme (an alias such as "IconAbyss"); false in an APK without theme icons. */

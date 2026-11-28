@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "android": "node scripts/build-android.mjs",
+    "android:release": "node scripts/build-android.mjs --release",
     "test": "vitest run"
   },
   "dependencies": {

@@ -334,6 +334,14 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <!-- The app's own updates (AppUpdate.kt): how an install went, and "Updated to build N" after it -->
+        <receiver
+            android:name=".UpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- The watch app's buttons (tick the next set, skip the rest, +15 s), handed to the site (WatchActions.kt) -->
         <service
@@ -369,6 +377,10 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Quick-log reminders set their alarms again after a restart (the plugin asks for it too) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The app installs its own updates (AppUpdate.kt): Android asks once to allow installs from it,
+         and from Android 12 an update of itself then needs no tap -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <!-- Health Connect: steps, and heart rate for workouts (SoloPlugin.heartRate). The site's code
          runs with this app's permissions, so the capacitor-health plugin's other read permissions
