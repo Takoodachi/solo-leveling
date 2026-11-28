@@ -52,7 +52,9 @@ if (release) {
     process.exit(1)
   }
   if (env.CAP_SERVER_URL) stop('A release must load the live site: unset CAP_SERVER_URL.')
-  if (git('status', '--porcelain')) stop('Commit everything first: the release is tagged at this commit.')
+  // A content diff, not `git status`: with core.autocrlf, files `cap sync` rewrites with LF read as changed there
+  const changed = spawnSync('git', ['diff', 'HEAD', '--quiet'], { cwd: root }).status !== 0 || git('ls-files', '--others', '--exclude-standard')
+  if (changed) stop('Commit everything first: the release is tagged at this commit.')
   if (gh('release', 'view', `apk-${build}`).status === 0) stop(`apk-${build} is out already: bump LATEST_APK.build in src/lib/apkBuild.ts.`)
   if (spawnSync('gh', ['api', `repos/${REPO}/commits/${sha}`, '--silent']).status !== 0) stop('Push this commit first (a branch will do): the release is tagged at it.')
 }
