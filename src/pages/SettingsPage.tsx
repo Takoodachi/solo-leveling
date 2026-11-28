@@ -35,7 +35,7 @@ import { REMINDERS, reminderPrefs } from '@/features/reminders/reminders'
 import { isAndroidApp } from '@/lib/native'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
-const APP_VERSION = '0.5.0'
+const APP_VERSION = '0.6.0'
 /** Taps on the version line that bring Backup out: it's the owner's, friends needn't see it (November 2026). */
 const BACKUP_TAPS = 7
 
