@@ -43,7 +43,9 @@ export async function runQuickLog(bridge: QuickLogBridge): Promise<void> {
     const task = JSON.parse(bridge.task()) as { kind?: unknown; date?: unknown }
     if (typeof task.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) throw new Error('No day to log to')
     const { title, total } = await log(task.kind, task.date)
-    result = { ok: true, title, total, detail: `Saved${await syncInBackground()}` }
+    // Saved by now: a sync that throws mustn't answer "Couldn't log it", or water gets a second glass
+    const synced = await syncInBackground().catch((err: unknown) => ` on this phone (sync failed: ${err instanceof Error ? err.message : String(err)})`)
+    result = { ok: true, title, total, detail: `Saved${synced}` }
   } catch (err) {
     result = { ok: false, title: 'Couldn’t log it', detail: `${err instanceof Error ? err.message : String(err)}. Open the app to log it.` }
   }
