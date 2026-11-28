@@ -111,7 +111,7 @@ object AppUpdate {
                 if (MainActivity.inForeground) showQuestion(context)
             }
             PackageInstaller.STATUS_SUCCESS -> settle(context, null)
-            PackageInstaller.STATUS_FAILURE_ABORTED -> settle(context, "Not installed")
+            PackageInstaller.STATUS_FAILURE_ABORTED -> settle(context, "Cancelled")
             else -> settle(context, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "Android didn’t install it")
         }
     }

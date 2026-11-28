@@ -97,8 +97,10 @@ It builds the APK and publishes it as the GitHub release `apk-<build>`. Then mer
 deploys the site that tells the phones. Each app fetches the new APK at its next launch and installs
 it the next time it's left with no workout open, or at once from *Update now*; a notification
 ("Updated to build N") opens it again. The first time, Android asks to allow installs from Solo
-Leveling. On a Samsung, *Auto Blocker* (Settings → Security and privacy) has to stay off, as it must
-for installing by hand.
+Leveling. Google Play Protect asks to scan a build that no phone has scanned yet (*Scan app*, then
+*Install*); once one has, it goes in without asking on any phone, so trying each release in the
+emulator first (below) spares the phone that question. On a Samsung, *Auto Blocker* (Settings →
+Security and privacy) has to stay off, as it must for installing by hand.
 
 **The signing key**: every APK is signed with this computer's Android debug key,
 `%USERPROFILE%\.android\debug.keystore`, and Android only updates an app with an APK signed by the
@@ -126,12 +128,20 @@ starts it without a window (leave out `-qt-hide-window` to see it). It's ready w
 a secure address (camera, service worker), build with `CAP_SERVER_URL=http://localhost:4173`, serve a
 build with `npx vite preview --host 127.0.0.1 --port 4173` and run `adb reverse tcp:4173 tcp:4173`.
 
-**Testing an update in the emulator**: install build N built with `CAP_SERVER_URL=http://localhost:4173`,
-serve a site built with `LATEST_APK.build` = N + 1 (as above), and publish apk-<N + 1> with
-`npm run android:release` from a commit that says N + 1. Open the app (it fetches the APK), then press
-Home: "Updated to build N + 1" appears in the shade, and
-`adb shell dumpsys package io.github.takoodachi.sololeveling | grep -E "versionCode|installerPackageName"`
-shows it. `adb install -r -d` puts the older APK back (a downgrade, data kept) to go again.
+**Testing an update in the emulator** (a release N, before it's merged to `main`), in this order:
+
+1. With `LATEST_APK.build` set to N − 1 for a moment (not committed), run
+   `CAP_SERVER_URL=http://localhost:4173 npm run android` and copy `solo-leveling.apk` aside: an older
+   app that loads the local site.
+2. Back at N, commit, push and `npm run android:release`. That also leaves `dist/` built at N.
+3. `npx vite preview --host 127.0.0.1 --port 4173`, `adb reverse tcp:4173 tcp:4173`, then
+   `adb install -r -d -i com.google.android.packageinstaller <the older APK>` (`-i` makes Android's
+   installer the installer of record, as after an install by hand).
+4. Open the app: it fetches apk-N (*A newer app is out*). Press Home. If Play Protect asks, tap
+   *Scan app*, then *Install*; that scan is what spares the phones the question. "Updated to build N"
+   appears in the shade, and
+   `adb shell dumpsys package io.github.takoodachi.sololeveling | grep -E "versionCode|installerPackageName"`
+   shows it. Step 3's install puts the older app back to go again (a downgrade, data kept).
 
 **What only the app has** (all need a current APK; older ones say so in Settings):
 - **Reminders** as the phone's own scheduled notifications: no server, they ring with the app closed.

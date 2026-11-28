@@ -62,7 +62,8 @@ export default function UpdateAppDialog() {
           {selfUpdates ? (
             <>
               <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>Later</Button>
-              <Button className="flex-1" disabled={busy} onClick={updateNow}>{busy ? 'Updating…' : 'Update now'}</Button>
+              {/* Focused, so the dialog's focus ring isn't on Later */}
+              <Button className="flex-1" autoFocus disabled={busy} onClick={updateNow}>{busy ? 'Updating…' : 'Update now'}</Button>
             </>
           ) : (
             <>
